@@ -15,7 +15,8 @@
  * bu bileşen aggregation sonrası sayıları kabul eder.
  */
 
-import { Badge, cn } from "@vetniva/ui";
+import { Badge } from "@vetniva/ui";
+import { cn } from "@vetniva/ui/cn";
 
 export type KpiCardProps = {
   label: string;

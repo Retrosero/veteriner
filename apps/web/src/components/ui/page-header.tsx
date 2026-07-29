@@ -20,7 +20,7 @@
 import Link from "next/link";
 import { type ReactNode } from "react";
 
-import { cn } from "@vetniva/ui";
+import { cn } from "@vetniva/ui/cn";
 
 export type BreadcrumbItem = {
   label: string;

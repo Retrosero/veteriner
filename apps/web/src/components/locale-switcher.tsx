@@ -2,21 +2,26 @@
  * @file Locale değiştirici (client component).
  * @module @vetniva/web/components/locale-switcher
  *
- * @description Sayfanın aktif locale'ini değiştirmek için kullanılan
- * açılır menü. Server component içinde kullanılamaz; yalnızca
- * 'use client' bileşen olarak render edilir. Mevcut pathname'i koruyarak
- * locale segmentini günceller.
+ * @description Aktif locale'i değiştirmek için kullanılan açılır menü.
+ * Yalnızca client tarafında çalışır çünkü `usePathname` ve
+ * `useRouter` App Router hook'larına bağımlıdır. Aktif locale
+ * pathname'in ilk segmentinden okunur; `react-i18next` ile bağ
+ * kurulmaz (server tarafında çeviriler zaten `getT` ile çözümlenir).
+ *
+ * Erişilebilirlik:
+ * - `<label>` + görsel `sr-only` metin
+ * - Native `<select>` (klavye + ekran okuyucu dostu)
+ * - Pending durumda `disabled`
  *
  * @security Yalnızca desteklenen locale'ler listelenir; kullanıcı
- * keyfi bir URL enjekte edemez. Next.js yönlendirmesi kullanıldığı için
- * güvenli navigasyon sağlanır.
+ * keyfi bir URL enjekte edemez. Next.js yönlendirmesi kullanıldığı
+ * için güvenli navigasyon sağlanır.
  */
 
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { useTranslation } from "react-i18next";
 
 import { SUPPORTED_LOCALES, type Locale } from "@vetniva/contracts";
 
@@ -49,10 +54,8 @@ export function LocaleSwitcher({
   const pathname = usePathname();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const { i18n } = useTranslation();
 
-  const activeLocale =
-    detectLocaleFromPath(pathname) ?? (i18n.language as Locale) ?? null;
+  const activeLocale = detectLocaleFromPath(pathname);
 
   function handleChange(event: React.ChangeEvent<HTMLSelectElement>): void {
     const nextLocale = event.target.value as Locale;

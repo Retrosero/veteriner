@@ -22,19 +22,13 @@ export default defineConfig({
     css: false,
   },
   resolve: {
-    alias: {
-      "@": new URL("./src", import.meta.url).pathname,
-      "@app": new URL("./app", import.meta.url).pathname,
-      "@vetniva/contracts": new URL(
-        "../../packages/contracts/src/index.ts",
-        import.meta.url,
-      ).pathname,
-      "@vetniva/i18n": new URL(
-        "../../packages/i18n/src/index.ts",
-        import.meta.url,
-      ).pathname,
-      "@vetniva/ui": new URL("../../packages/ui/src/index.ts", import.meta.url)
-        .pathname,
-    },
+    alias: [
+      { find: "@vetniva/ui/cn", replacement: new URL("../../packages/ui/src/cn.ts", import.meta.url).pathname },
+      { find: "@vetniva/ui", replacement: new URL("../../packages/ui/src/index.ts", import.meta.url).pathname },
+      { find: "@vetniva/i18n", replacement: new URL("../../packages/i18n/src/index.ts", import.meta.url).pathname },
+      { find: "@vetniva/contracts", replacement: new URL("../../packages/contracts/src/index.ts", import.meta.url).pathname },
+      { find: "@", replacement: new URL("./src", import.meta.url).pathname },
+      { find: "@app", replacement: new URL("./app", import.meta.url).pathname },
+    ],
   },
 });

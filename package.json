@@ -49,5 +49,10 @@
     "extends": [
       "@commitlint/config-conventional"
     ]
+  },
+  "pnpm": {
+    "overrides": {
+      "es-module-lexer": "1.5.4"
+    }
   }
 }

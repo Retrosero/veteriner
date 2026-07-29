@@ -5,6 +5,10 @@
  * @description Klinik listeleri ve form konteynerleri için standart kart.
  * Bölümler: Header, Title, Description, Body, Footer. Tüm bölümler
  * opsiyoneldir; minimal kullanım yalnızca `<Card>{...}</Card>`.
+ *
+ * Not: MVP-1'de yalnızca light tema. Faz 11'de tema varyantları
+ * (dark / yüksek kontrast) eklenecek; bu aşamada `dark:` prefix'leri
+ * kullanılmaz.
  */
 
 import { forwardRef, type HTMLAttributes } from "react";
@@ -21,7 +25,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
     <div
       ref={ref}
       className={cn(
-        "rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900",
+        "rounded-lg border border-gray-200 bg-white shadow-sm",
         className,
       )}
       {...rest}
@@ -48,10 +52,7 @@ export const CardTitle = forwardRef<
   return (
     <h3
       ref={ref}
-      className={cn(
-        "text-base font-semibold text-gray-900 dark:text-gray-100",
-        className,
-      )}
+      className={cn("text-base font-semibold text-gray-900", className)}
       {...rest}
     />
   );
@@ -64,7 +65,7 @@ export const CardDescription = forwardRef<
   return (
     <p
       ref={ref}
-      className={cn("mt-1 text-sm text-gray-600 dark:text-gray-400", className)}
+      className={cn("mt-1 text-sm text-gray-600", className)}
       {...rest}
     />
   );

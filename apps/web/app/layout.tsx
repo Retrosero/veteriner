@@ -11,7 +11,7 @@
  * yön (dir) İngilizce/Türkçe için soldan sağa sabittir.
  */
 
-import "@vetniva/ui/globals.css";
+import "./globals.css";
 
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";

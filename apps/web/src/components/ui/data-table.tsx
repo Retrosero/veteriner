@@ -19,7 +19,8 @@
 
 import { type ReactNode } from "react";
 
-import { Badge, cn } from "@vetniva/ui";
+import { Badge } from "@vetniva/ui";
+import { cn } from "@vetniva/ui/cn";
 
 export type DataTableColumn<T> = {
   key: string;

@@ -11,6 +11,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./cn": {
+      "types": "./dist/cn.d.ts",
+      "import": "./dist/cn.js"
+    },
     "./tailwind-preset": "./tailwind.preset.cjs",
     "./globals.css": "./src/styles/globals.css"
   },
