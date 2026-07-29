@@ -1,0 +1,105 @@
+# Tüm Goal Listesi
+
+- **FAZ-0 / GOAL-000:** Monorepo ve proje iskeleti — `GOAL-000_monorepo_ve_proje_iskeleti.md`
+- **FAZ-0 / GOAL-001:** Domain sözlüğü ve klinik iş akışları — `GOAL-001_domain_s_zl_ve_klinik_i_ak_lar.md`
+- **FAZ-0 / GOAL-002:** Rol ve yetki matrisi — `GOAL-002_rol_ve_yetki_matrisi.md`
+- **FAZ-0 / GOAL-003:** Çoklu dil ve ülke adaptörü sözleşmesi — `GOAL-003_oklu_dil_ve_lke_adapt_r_s_zle_mesi.md`
+- **FAZ-0 / GOAL-004:** Audit, log ve hata kodu standardı — `GOAL-004_audit_log_ve_hata_kodu_standard.md`
+- **FAZ-0 / GOAL-005:** Dokümantasyon ve AI bilgi havuzu şeması — `GOAL-005_dok_mantasyon_ve_ai_bilgi_havuzu_emas.md`
+- **FAZ-1 / GOAL-010:** Tenant ve şube altyapısı — `GOAL-010_tenant_ve_ube_altyap_s.md`
+- **FAZ-1 / GOAL-011:** Kimlik doğrulama ve oturum yönetimi — `GOAL-011_kimlik_do_rulama_ve_oturum_y_netimi.md`
+- **FAZ-1 / GOAL-012:** RBAC ve izin motoru — `GOAL-012_rbac_ve_izin_motoru.md`
+- **FAZ-1 / GOAL-013:** Modül ve paket feature flag altyapısı — `GOAL-013_mod_l_ve_paket_feature_flag_altyap_s.md`
+- **FAZ-1 / GOAL-014:** Dosya ve medya servisi — `GOAL-014_dosya_ve_medya_servisi.md`
+- **FAZ-1 / GOAL-015:** Bildirim altyapısı temeli — `GOAL-015_bildirim_altyap_s_temeli.md`
+- **FAZ-1 / GOAL-016:** Superadmin tenant görünümü — `GOAL-016_superadmin_tenant_g_r_n_m.md`
+- **FAZ-2 / GOAL-020:** Hasta sahibi kayıt ve arama — `GOAL-020_hasta_sahibi_kay_t_ve_arama.md`
+- **FAZ-2 / GOAL-021:** Hayvan kayıt sistemi — `GOAL-021_hayvan_kay_t_sistemi.md`
+- **FAZ-2 / GOAL-022:** Sahiplik geçmişi — `GOAL-022_sahiplik_ge_mi_i.md`
+- **FAZ-2 / GOAL-023:** Alerji, kronik durum ve klinik uyarılar — `GOAL-023_alerji_kronik_durum_ve_klinik_uyar_lar.md`
+- **FAZ-2 / GOAL-024:** Hayvan zaman çizelgesi — `GOAL-024_hayvan_zaman_izelgesi.md`
+- **FAZ-2 / GOAL-025:** Portal erişim daveti — `GOAL-025_portal_eri_im_daveti.md`
+- **FAZ-3 / GOAL-030:** Klinik takvimi — `GOAL-030_klinik_takvimi.md`
+- **FAZ-3 / GOAL-031:** Randevu oluşturma ve yönetim — `GOAL-031_randevu_olu_turma_ve_y_netim.md`
+- **FAZ-3 / GOAL-032:** Bekleme listesi ve resepsiyon akışı — `GOAL-032_bekleme_listesi_ve_resepsiyon_ak.md`
+- **FAZ-3 / GOAL-033:** Hasta sahibi portalı kayıt ve giriş — `GOAL-033_hasta_sahibi_portal_kay_t_ve_giri.md`
+- **FAZ-3 / GOAL-034:** Portal hayvan listesi ve detay — `GOAL-034_portal_hayvan_listesi_ve_detay.md`
+- **FAZ-3 / GOAL-035:** Online randevu talebi — `GOAL-035_online_randevu_talebi.md`
+- **FAZ-3 / GOAL-036:** Randevu hatırlatma sistemi — `GOAL-036_randevu_hat_rlatma_sistemi.md`
+- **FAZ-4 / GOAL-040:** Muayene başlatma ve yaşam döngüsü — `GOAL-040_muayene_ba_latma_ve_ya_am_d_ng_s.md`
+- **FAZ-4 / GOAL-041:** SOAP klinik kaydı — `GOAL-041_soap_klinik_kayd.md`
+- **FAZ-4 / GOAL-042:** Vital bulgular — `GOAL-042_vital_bulgular.md`
+- **FAZ-4 / GOAL-043:** Teşhis ve problem listesi — `GOAL-043_te_his_ve_problem_listesi.md`
+- **FAZ-4 / GOAL-044:** Tedavi planı ve klinik order — `GOAL-044_tedavi_plan_ve_klinik_order.md`
+- **FAZ-4 / GOAL-045:** Reçete oluşturma — `GOAL-045_re_ete_olu_turma.md`
+- **FAZ-4 / GOAL-046:** Kontrol randevusu oluşturma — `GOAL-046_kontrol_randevusu_olu_turma.md`
+- **FAZ-4 / GOAL-047:** Klinik kayıt PDF ve paylaşım — `GOAL-047_klinik_kay_t_pdf_ve_payla_m.md`
+- **FAZ-5 / GOAL-050:** Aşı kataloğu ve protokoller — `GOAL-050_a_katalo_u_ve_protokoller.md`
+- **FAZ-5 / GOAL-051:** Aşı uygulama kaydı — `GOAL-051_a_uygulama_kayd.md`
+- **FAZ-5 / GOAL-052:** Aşı kartı — `GOAL-052_a_kart.md`
+- **FAZ-5 / GOAL-053:** Aşı hatırlatma job'u — `GOAL-053_a_hat_rlatma_job_u.md`
+- **FAZ-5 / GOAL-054:** Aşı amendment ve düzeltme — `GOAL-054_a_amendment_ve_d_zeltme.md`
+- **FAZ-6 / GOAL-060:** Ürün ve hizmet kataloğu — `GOAL-060_r_n_ve_hizmet_katalo_u.md`
+- **FAZ-6 / GOAL-061:** Depo, raf, lot ve SKT — `GOAL-061_depo_raf_lot_ve_skt.md`
+- **FAZ-6 / GOAL-062:** Tedarikçi ve satın alma — `GOAL-062_tedarik_i_ve_sat_n_alma.md`
+- **FAZ-6 / GOAL-063:** Stok hareketleri ve sayım — `GOAL-063_stok_hareketleri_ve_say_m.md`
+- **FAZ-6 / GOAL-064:** Petshop POS — `GOAL-064_petshop_pos.md`
+- **FAZ-6 / GOAL-065:** Satış iadesi — `GOAL-065_sat_iadesi.md`
+- **FAZ-6 / GOAL-066:** Klinik tüketimden otomatik stok düşümü — `GOAL-066_klinik_t_ketimden_otomatik_stok_d_m.md`
+- **FAZ-6 / GOAL-067:** Düşük stok ve SKT uyarıları — `GOAL-067_d_k_stok_ve_skt_uyar_lar.md`
+- **FAZ-7 / GOAL-070:** Fiyat listeleri ve hizmet ücretleri — `GOAL-070_fiyat_listeleri_ve_hizmet_cretleri.md`
+- **FAZ-7 / GOAL-071:** Klinik satış taslağı — `GOAL-071_klinik_sat_tasla.md`
+- **FAZ-7 / GOAL-072:** Tahsilat — `GOAL-072_tahsilat.md`
+- **FAZ-7 / GOAL-073:** Tahsilat iptal ve ters kayıt — `GOAL-073_tahsilat_iptal_ve_ters_kay_t.md`
+- **FAZ-7 / GOAL-074:** Kasa ve gün sonu — `GOAL-074_kasa_ve_g_n_sonu.md`
+- **FAZ-7 / GOAL-075:** Müşteri borç ve alacak görünümü — `GOAL-075_m_teri_bor_ve_alacak_g_r_n_m.md`
+- **FAZ-7 / GOAL-076:** Temel finans raporları — `GOAL-076_temel_finans_raporlar.md`
+- **FAZ-7 / GOAL-077:** e-SMM adapter sözleşmesi — `GOAL-077_e_smm_adapter_s_zle_mesi.md`
+- **FAZ-8 / GOAL-080:** Ameliyat planlama — `GOAL-080_ameliyat_planlama.md`
+- **FAZ-8 / GOAL-081:** Onam formları — `GOAL-081_onam_formlar.md`
+- **FAZ-8 / GOAL-082:** Anestezi takip — `GOAL-082_anestezi_takip.md`
+- **FAZ-8 / GOAL-083:** Operasyon notu ve kullanılan malzemeler — `GOAL-083_operasyon_notu_ve_kullan_lan_malzemeler.md`
+- **FAZ-8 / GOAL-084:** Yatış ve kafes yönetimi — `GOAL-084_yat_ve_kafes_y_netimi.md`
+- **FAZ-8 / GOAL-085:** Yatış order ve uygulama kayıtları — `GOAL-085_yat_order_ve_uygulama_kay_tlar.md`
+- **FAZ-8 / GOAL-086:** Gözlem ve taburcu özeti — `GOAL-086_g_zlem_ve_taburcu_zeti.md`
+- **FAZ-9 / GOAL-090:** Laboratuvar test kataloğu — `GOAL-090_laboratuvar_test_katalo_u.md`
+- **FAZ-9 / GOAL-091:** Laboratuvar isteği ve numune — `GOAL-091_laboratuvar_iste_i_ve_numune.md`
+- **FAZ-9 / GOAL-092:** Laboratuvar sonuçları — `GOAL-092_laboratuvar_sonu_lar.md`
+- **FAZ-9 / GOAL-093:** Görüntüleme isteği ve raporu — `GOAL-093_g_r_nt_leme_iste_i_ve_raporu.md`
+- **FAZ-9 / GOAL-094:** Cihaz ve dış laboratuvar adapter altyapısı — `GOAL-094_cihaz_ve_d_laboratuvar_adapter_altyap_s.md`
+- **FAZ-10 / GOAL-100:** Merkezi backend hata yakalama — `GOAL-100_merkezi_backend_hata_yakalama.md`
+- **FAZ-10 / GOAL-101:** Frontend hata yakalama — `GOAL-101_frontend_hata_yakalama.md`
+- **FAZ-10 / GOAL-102:** Background job ve entegrasyon logları — `GOAL-102_background_job_ve_entegrasyon_loglar.md`
+- **FAZ-10 / GOAL-103:** Superadmin hata merkezi — `GOAL-103_superadmin_hata_merkezi.md`
+- **FAZ-10 / GOAL-104:** Hata atama ve çözüm notları — `GOAL-104_hata_atama_ve_z_m_notlar.md`
+- **FAZ-10 / GOAL-105:** Güvenlik logları ve alarm kuralları — `GOAL-105_g_venlik_loglar_ve_alarm_kurallar.md`
+- **FAZ-10 / GOAL-106:** PII maskeleme ve log retention — `GOAL-106_pii_maskeleme_ve_log_retention.md`
+- **FAZ-11 / GOAL-110:** Sayfa kataloğu — `GOAL-110_sayfa_katalo_u.md`
+- **FAZ-11 / GOAL-111:** İş akışı kataloğu — `GOAL-111_ak_katalo_u.md`
+- **FAZ-11 / GOAL-112:** Alan sözlüğü ve yetki kataloğu — `GOAL-112_alan_s_zl_ve_yetki_katalo_u.md`
+- **FAZ-11 / GOAL-113:** Hata kataloğu — `GOAL-113_hata_katalo_u.md`
+- **FAZ-11 / GOAL-114:** Türkçe kullanıcı eğitim merkezi — `GOAL-114_t_rk_e_kullan_c_e_itim_merkezi.md`
+- **FAZ-11 / GOAL-115:** Context-aware yardım endpoint'i — `GOAL-115_context_aware_yard_m_endpoint_i.md`
+- **FAZ-11 / GOAL-116:** AI bilgi havuzu chunk üretimi — `GOAL-116_ai_bilgi_havuzu_chunk_retimi.md`
+- **FAZ-11 / GOAL-117:** İlk kullanım asistanı — `GOAL-117_lk_kullan_m_asistan.md`
+- **FAZ-11 / GOAL-118:** Doküman-kod CI doğrulaması — `GOAL-118_dok_man_kod_ci_do_rulamas.md`
+- **FAZ-12 / GOAL-120:** Pilot tenant kurulumu — `GOAL-120_pilot_tenant_kurulumu.md`
+- **FAZ-12 / GOAL-121:** Pilot kabul testleri — `GOAL-121_pilot_kabul_testleri.md`
+- **FAZ-12 / GOAL-122:** Performans ve yük testi — `GOAL-122_performans_ve_y_k_testi.md`
+- **FAZ-12 / GOAL-123:** Güvenlik testi — `GOAL-123_g_venlik_testi.md`
+- **FAZ-12 / GOAL-124:** Yedekleme ve restore — `GOAL-124_yedekleme_ve_restore.md`
+- **FAZ-12 / GOAL-125:** Tenant veri dışa aktarma — `GOAL-125_tenant_veri_d_a_aktarma.md`
+- **FAZ-12 / GOAL-126:** KVKK ve veri yaşam döngüsü — `GOAL-126_kvkk_ve_veri_ya_am_d_ng_s.md`
+- **FAZ-12 / GOAL-127:** Production release ve rollback — `GOAL-127_production_release_ve_rollback.md`
+- **FAZ-13 / GOAL-130:** e-SMM gerçek entegrasyonu — `GOAL-130_e_smm_ger_ek_entegrasyonu.md`
+- **FAZ-13 / GOAL-131:** SMS sağlayıcı entegrasyonu — `GOAL-131_sms_sa_lay_c_entegrasyonu.md`
+- **FAZ-13 / GOAL-132:** WhatsApp entegrasyonu — `GOAL-132_whatsapp_entegrasyonu.md`
+- **FAZ-13 / GOAL-133:** Ödeme entegrasyonu — `GOAL-133_deme_entegrasyonu.md`
+- **FAZ-13 / GOAL-134:** Resmî veteriner sistemleri adapter hazırlığı — `GOAL-134_resm_veteriner_sistemleri_adapter_haz_rl.md`
+- **FAZ-14 / GOAL-140:** en-GB locale ve içerik — `GOAL-140_en_gb_locale_ve_i_erik.md`
+- **FAZ-14 / GOAL-141:** GBP, VAT ve İngiltere fiyatlandırma — `GOAL-141_gbp_vat_ve_ngiltere_fiyatland_rma.md`
+- **FAZ-14 / GOAL-142:** İngiltere klinik kayıt kuralları — `GOAL-142_ngiltere_klinik_kay_t_kurallar.md`
+- **FAZ-14 / GOAL-143:** Controlled drug register — `GOAL-143_controlled_drug_register.md`
+- **FAZ-14 / GOAL-144:** Fiyat şeffaflığı ve estimate — `GOAL-144_fiyat_effafl_ve_estimate.md`
+- **FAZ-14 / GOAL-145:** UK GDPR süreçleri — `GOAL-145_uk_gdpr_s_re_leri.md`
+- **FAZ-14 / GOAL-146:** İngiltere ödeme ve iletişim adapterleri — `GOAL-146_ngiltere_deme_ve_ileti_im_adapterleri.md`

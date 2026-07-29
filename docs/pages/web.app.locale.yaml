@@ -1,0 +1,52 @@
+page_id: web.app.locale
+route: "/[locale]"
+module: landing
+title_key: app.tagline
+purpose:
+  tr-TR: "VetNiva landing sayfası. Kullanıcıyı karşılar, sağlık durumuna kısayol sunar."
+  en-GB: "VetNiva landing page. Welcomes the user and offers a shortcut to system health."
+allowed_roles: []
+required_permissions: []
+prerequisites: []
+fields:
+  - key: app.name
+    label_key: app.name
+    description:
+      tr-TR: "Uygulama adı (VetNiva)."
+      en-GB: "Application name (VetNiva)."
+    required: false
+  - key: app.tagline
+    label_key: app.tagline
+    description:
+      tr-TR: "Kısa açıklama."
+      en-GB: "Short tagline."
+    required: false
+  - key: health.title
+    label_key: health.title
+    description:
+      tr-TR: "Sağlık sayfasına yönlendiren buton başlığı."
+      en-GB: "Title of the button linking to the health page."
+    required: false
+actions:
+  - key: open-health
+    description:
+      tr-TR: "Sistem sağlık sayfasını açar."
+      en-GB: "Opens the system health page."
+step_by_step:
+  tr-TR:
+    - "Sayfayı aç."
+    - "Sağlık butonuna tıkla veya /<locale>/health yoluna git."
+  en-GB:
+    - "Open the page."
+    - "Click the health button or navigate to /<locale>/health."
+possible_errors: []
+related_pages:
+  - web.app.locale.health
+related_api:
+  - GET /api/v1/health
+  - GET /api/v1/health/ready
+keywords:
+  tr-TR: [anasayfa, başlangıç, sağlık, landing, home]
+  en-GB: [home, landing, health, start]
+version: "1.0.0"
+last_verified_at: "2026-07-29"

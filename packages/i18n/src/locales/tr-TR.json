@@ -1,0 +1,38 @@
+{
+  "app": {
+    "name": "VetNiva",
+    "tagline": "Veteriner klinik ve petshop yönetimi"
+  },
+  "common": {
+    "save": "Kaydet",
+    "cancel": "Vazgeç",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "create": "Oluştur",
+    "search": "Ara",
+    "loading": "Yükleniyor…",
+    "empty": "Kayıt bulunamadı",
+    "error": "Bir hata oluştu",
+    "retry": "Tekrar dene",
+    "back": "Geri",
+    "next": "İleri",
+    "previous": "Önceki",
+    "yes": "Evet",
+    "no": "Hayır",
+    "required": "Zorunlu alan"
+  },
+  "health": {
+    "title": "Sistem Sağlığı",
+    "ok": "Çalışıyor",
+    "degraded": "Kısmen çalışıyor",
+    "down": "Çalışmıyor",
+    "db": "Veritabanı",
+    "version": "Sürüm"
+  },
+  "errors": {
+    "TR_COMMON_0001": "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.",
+    "TR_COMMON_0002": "Erişim reddedildi.",
+    "TR_COMMON_0003": "Bu işlem için yetkiniz bulunmuyor.",
+    "TR_VALIDATION_0001": "Form doğrulaması başarısız. Lütfen alanları kontrol edin."
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "name": "@vetniva/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "VetNiva müşteri arayüzü — Next.js 14 App Router (server-first).",
+  "type": "module",
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev -p ${PORT_WEB:-3000}",
+    "start": "next start -p ${PORT_WEB:-3000}",
+    "lint": "eslint app src --max-warnings=0",
+    "type-check": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rimraf .next .turbo"
+  },
+  "dependencies": {
+    "@vetniva/contracts": "workspace:*",
+    "@vetniva/i18n": "workspace:*",
+    "@vetniva/ui": "workspace:*",
+    "i18next": "^24.0.5",
+    "next": "14.2.18",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-i18next": "^15.1.3"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@types/node": "^20.17.10",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@typescript-eslint/eslint-plugin": "^8.18.2",
+    "@typescript-eslint/parser": "^8.18.2",
+    "@vetniva/config": "workspace:*",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.17.0",
+    "eslint-config-next": "14.2.18",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-jsdoc": "^50.6.2",
+    "eslint-plugin-react": "^7.37.3",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-security": "^3.0.1",
+    "globals": "^15.14.0",
+    "jsdom": "^25.0.1",
+    "postcss": "^8.4.49",
+    "rimraf": "^6.0.1",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

@@ -1,0 +1,36 @@
+/**
+ * VetNiva UI global CSS. apps/web tarafında bu dosya Tailwind'in base
+ * katmanı olarak içe aktarılır. GOAL-000 kapsamında yalnızca temel reset
+ * ve tasarım değişkenleri bulunur; ileride tema varyantları eklenecektir.
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg: 250 250 252;
+  --color-fg: 17 24 39;
+  --color-muted: 107 114 128;
+  --color-border: 229 231 235;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: 17 24 39;
+    --color-fg: 243 244 246;
+    --color-muted: 156 163 175;
+    --color-border: 55 65 81;
+  }
+}
+
+html,
+body {
+  background-color: rgb(var(--color-bg));
+  color: rgb(var(--color-fg));
+}
+
+*:focus-visible {
+  outline: 2px solid #0359a1;
+  outline-offset: 2px;
+}

@@ -1,0 +1,26 @@
+{
+  "name": "@vetniva/docs-check",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Doküman-kod uyum doğrulayıcı. Next.js route'ları, NestJS controller'ları, error code'ları ve permission referanslarını tarayıp eksik bilgi havuzu kayıtlarını raporlar.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "lint": "eslint src --max-warnings=0",
+    "type-check": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "clean": "rimraf dist .turbo"
+  },
+  "dependencies": {
+    "@vetniva/contracts": "workspace:*",
+    "fast-glob": "^3.3.2",
+    "yaml": "^2.6.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.10",
+    "@vetniva/config": "workspace:*",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

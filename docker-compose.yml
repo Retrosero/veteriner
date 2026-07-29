@@ -1,0 +1,78 @@
+# Docker Compose — local development stack for VetNiva.
+# Tek komut: pnpm docker:up
+# Not: app'ler (api/web/worker) local Node ile çalıştırılır; container'lar
+# yalnızca veritabanı, kuyruk ve mail servislerini sağlar. Production
+# container imajları Faz 12'de hazırlanır.
+
+name: vetniva
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: vetniva-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vetniva
+      POSTGRES_PASSWORD: vetniva
+      POSTGRES_DB: vetniva
+    ports:
+      - "5432:5432"
+    volumes:
+      - vetniva-postgres-data:/var/lib/postgresql/data
+      - ./tools/docker/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vetniva -d vetniva"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  postgres-shadow:
+    image: postgres:15-alpine
+    container_name: vetniva-postgres-shadow
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vetniva
+      POSTGRES_PASSWORD: vetniva
+      POSTGRES_DB: vetniva_shadow
+    ports:
+      - "5433:5432"
+    volumes:
+      - vetniva-postgres-shadow-data:/var/lib/postgresql/data
+    profiles: ["shadow"]
+
+  redis:
+    image: redis:7-alpine
+    container_name: vetniva-redis
+    restart: unless-stopped
+    command:
+      [
+        "redis-server",
+        "--appendonly",
+        "yes",
+        "--maxmemory",
+        "256mb",
+        "--maxmemory-policy",
+        "allkeys-lru",
+      ]
+    ports:
+      - "6379:6379"
+    volumes:
+      - vetniva-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: vetniva-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  vetniva-postgres-data:
+  vetniva-postgres-shadow-data:
+  vetniva-redis-data:

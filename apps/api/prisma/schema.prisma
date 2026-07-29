@@ -1,0 +1,14 @@
+// GOAL-000 — Prisma iskelet şeması.
+// Veri modelleri GOAL-001+ migration'larında eklenecektir.
+// Burada yalnızca generator ve datasource tanımlanır.
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("DATABASE_SHADOW_URL")
+}

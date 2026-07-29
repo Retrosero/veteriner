@@ -1,0 +1,70 @@
+page_id: web.app.locale.health
+route: "/[locale]/health"
+module: health
+title_key: health.title
+purpose:
+  tr-TR: "API'nin ve bağımlılıklarının (veritabanı) canlı durumunu gösterir. Sistem izleme ve smoke test için kullanılır."
+  en-GB: "Shows the live status of the API and its dependencies (database). Used for system monitoring and smoke tests."
+allowed_roles: []
+required_permissions: []
+prerequisites:
+  - "API servisinin çalışıyor olması (API_BASE_URL)."
+fields:
+  - key: status
+    label_key: health.status
+    description:
+      tr-TR: "Genel sağlık durumu: ok / degraded / down."
+      en-GB: "Overall health: ok / degraded / down."
+    required: true
+  - key: components.db.status
+    label_key: health.db
+    description:
+      tr-TR: "Veritabanı bağlantı durumu."
+      en-GB: "Database connection status."
+    required: true
+  - key: components.db.latency_ms
+    label_key: health.latency
+    description:
+      tr-TR: "DB bağlantı gecikmesi (ms)."
+      en-GB: "Database connection latency in ms."
+    required: false
+  - key: version
+    label_key: health.version
+    description:
+      tr-TR: "API sürümü (name, version, build_sha, build_time)."
+      en-GB: "API version info (name, version, build_sha, build_time)."
+    required: true
+  - key: correlation_id
+    label_key: health.correlation
+    description:
+      tr-TR: "X-Request-Id başlığından gelen correlation ID."
+      en-GB: "Correlation ID from the X-Request-Id header."
+    required: false
+actions:
+  - key: refresh
+    description:
+      tr-TR: "Sayfa yeniden yüklenir; server-side fetch tekrar çalışır."
+      en-GB: "Reloads the page; server-side fetch re-runs."
+step_by_step:
+  tr-TR:
+    - "Tarayıcıdan /<locale>/health adresine git."
+    - "Status, DB durumu ve sürüm bilgisini kontrol et."
+    - "down durumunda correlation_id notunu alıp destek ekibine bildir."
+  en-GB:
+    - "Navigate to /<locale>/health in the browser."
+    - "Check the status, DB state, and version info."
+    - "In case of 'down', note the correlation_id and contact support."
+possible_errors:
+  - error_code: TR_COMMON_0001
+    resolution:
+      tr-TR: "API erişilemiyor. API servisinin çalıştığını ve API_BASE_URL'in doğru olduğunu kontrol edin."
+      en-GB: "API unreachable. Check that the API service is running and API_BASE_URL is correct."
+related_pages:
+  - web.app.locale
+related_api:
+  - GET /api/v1/health/ready
+keywords:
+  tr-TR: [sağlık, sistem durumu, monitoring, db, gecikme]
+  en-GB: [health, status, monitoring, db, latency]
+version: "1.0.0"
+last_verified_at: "2026-07-29"

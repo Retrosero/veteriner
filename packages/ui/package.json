@@ -1,0 +1,55 @@
+{
+  "name": "@vetniva/ui",
+  "version": "0.1.0",
+  "private": true,
+  "description": "VetNiva paylaşılan UI kit: Tailwind primitive'leri ve klinik arayüz bileşenleri.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./tailwind-preset": "./tailwind.preset.cjs",
+    "./globals.css": "./src/styles/globals.css"
+  },
+  "typesVersions": {
+    "*": {
+      "tailwind-preset": [
+        "./tailwind.preset.cjs"
+      ]
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch",
+    "lint": "eslint src --max-warnings=0",
+    "type-check": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "clean": "rimraf dist .turbo"
+  },
+  "dependencies": {
+    "@vetniva/contracts": "workspace:*",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^2.5.5"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.10",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vetniva/config": "workspace:*",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

@@ -1,0 +1,37 @@
+page_id: ""
+route: ""
+module: ""
+title_key: ""
+purpose:
+  tr-TR: ""
+  en-GB: ""
+allowed_roles: []
+required_permissions: []
+prerequisites: []
+fields:
+  - key: ""
+    label_key: ""
+    description:
+      tr-TR: ""
+      en-GB: ""
+    required: false
+actions:
+  - key: ""
+    description:
+      tr-TR: ""
+      en-GB: ""
+step_by_step:
+  tr-TR: []
+  en-GB: []
+possible_errors:
+  - error_code: ""
+    resolution:
+      tr-TR: ""
+      en-GB: ""
+related_pages: []
+related_api: []
+keywords:
+  tr-TR: []
+  en-GB: []
+version: "1.0.0"
+last_verified_at: ""

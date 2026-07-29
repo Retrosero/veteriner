@@ -1,0 +1,38 @@
+{
+  "app": {
+    "name": "VetNiva",
+    "tagline": "Veterinary clinic and petshop management"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "loading": "Loading…",
+    "empty": "No records found",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "yes": "Yes",
+    "no": "No",
+    "required": "Required"
+  },
+  "health": {
+    "title": "System Health",
+    "ok": "Operational",
+    "degraded": "Degraded",
+    "down": "Down",
+    "db": "Database",
+    "version": "Version"
+  },
+  "errors": {
+    "TR_COMMON_0001": "An unexpected error occurred. Please try again.",
+    "TR_COMMON_0002": "Access denied.",
+    "TR_COMMON_0003": "You are not authorised for this operation.",
+    "TR_VALIDATION_0001": "Form validation failed. Please check the fields."
+  }
+}

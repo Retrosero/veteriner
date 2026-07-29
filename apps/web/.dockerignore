@@ -1,0 +1,16 @@
+node_modules
+.git
+dist
+.next
+.turbo
+coverage
+tests
+*.md
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+*.log
+.vscode
+.idea

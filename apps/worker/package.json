@@ -1,0 +1,43 @@
+{
+  "name": "@vetniva/worker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "VetNiva arka plan iş süreci (background job) çalıştırıcısı. BullMQ + Redis tabanlı worker süreci; hatırlatma, rapor ve entegrasyon job'larını işler.",
+  "type": "module",
+  "main": "./dist/main.js",
+  "types": "./dist/main.d.ts",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
+    "lint": "eslint src --max-warnings=0",
+    "type-check": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rimraf dist .turbo"
+  },
+  "dependencies": {
+    "@vetniva/contracts": "workspace:*",
+    "bullmq": "^5.34.0",
+    "dotenv": "^16.4.7",
+    "ioredis": "^5.4.1",
+    "pino": "^9.5.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "@types/node": "^20.17.10",
+    "@vetniva/config": "workspace:*",
+    "eslint": "^9.15.0",
+    "globals": "^15.14.0",
+    "pino-pretty": "^13.0.0",
+    "rimraf": "^6.0.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.0",
+    "vitest": "^2.1.8"
+  }
+}

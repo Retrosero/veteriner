@@ -1,0 +1,17 @@
+# CODEOWNERS — GitHub branch protection ile birlikte kullanılır.
+# @vetniva/*'i senkronize etmek için GH kullanıcı/grup adlarını
+# gerçek takıma göre güncelle.
+* @mavis-orchestrator
+
+# Backend
+/apps/api/ @mavis-orchestrator
+/packages/contracts/ @mavis-orchestrator
+/prisma/ @mavis-orchestrator
+
+# Frontend
+/apps/web/ @mavis-orchestrator
+
+# Infra
+/.github/ @mavis-orchestrator
+/docker-compose.yml @mavis-orchestrator
+/tools/ @mavis-orchestrator
