@@ -24,4 +24,6 @@ export {
   type CardProps,
 } from "./components/card.js";
 export { Input, type InputProps } from "./components/input.js";
+export { Badge, type BadgeProps } from "./components/badge.js";
+export { Avatar, type AvatarProps } from "./components/avatar.js";
 export { cn } from "./lib/cn.js";

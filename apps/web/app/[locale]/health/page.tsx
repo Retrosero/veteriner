@@ -1,31 +1,29 @@
 /**
- * @file Sağlık durumu sayfası (server component).
+ * @file Sistem sagligi sayfasi.
  * @module @vetniva/web/app/[locale]/health/page
  *
- * @description API'nin `/api/v1/ready` endpoint'ine server-side fetch ile
- * istek atar. Yanıt `@vetniva/contracts` `readinessResponseSchema`
- * ile doğrulanır; hata/boş/başarı durumları için uygun state
- * render edilir. `X-Request-Id` correlation header'ı response'tan
- * okunur ve kullanıcıya gösterilir.
+ * @description API'nin `/api/v1/ready` endpoint'inden alinan
+ * `ReadinessResponse`'i gorsellestirir. Sistem bilesenlerinin (DB,
+ * queue, storage) canli durumunu ve build bilgisini gosterir. Gozlem
+ * ve smoke test amacli kullanilir.
  *
- * @security Tenant bağlamı GOAL-001 ile gelecek; bu sayfa public
- * olduğu için yalnızca health verisi gösterilir. PII içermez.
+ * @security Tenant filtresi uygulanmaz; health public bir endpoint
+ * uzerinden calisir. Hassas build meta verisi GOAL-000'da yok
+ * (yalnizca sha + version). Faz 10 ile birlikte build meta genisler.
  */
 
-import {
-  readinessResponseSchema,
-  type ReadinessResponse,
-} from "@vetniva/contracts";
+import { notFound } from "next/navigation";
 
-import { HealthCard } from "@/components/health-card";
+import { SUPPORTED_LOCALES, type Locale } from "@vetniva/contracts";
+
+import { AppShell } from "@/components/layouts/app-shell";
+import { Badge, type BadgeProps } from "@vetniva/ui";
+import { PageHeader } from "@/components/ui/page-header";
+import { getLabels } from "@/lib/labels";
 import { apiClient } from "@/lib/api-client";
+import { HealthCard } from "@/components/health-card";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
-type HealthPageProps = {
-  params: Promise<{ locale: string }> | { locale: string };
-};
+type PageParams = { locale: string };
 
 type HealthLabels = {
   title: string;
@@ -42,8 +40,8 @@ type HealthLabels = {
   fetchError: string;
 };
 
-const LABELS: Record<"tr" | "en", HealthLabels> = {
-  tr: {
+const HEALTH_LABELS: Record<"tr-TR" | "en-GB", HealthLabels> = {
+  "tr-TR": {
     title: "Sistem Sağlığı",
     description: "Platform bileşenlerinin canlı durumu.",
     version: "Sürüm",
@@ -58,7 +56,7 @@ const LABELS: Record<"tr" | "en", HealthLabels> = {
     fetchError:
       "API bağlantısı kurulamadı. Lütfen API servisinin çalıştığından emin olun.",
   },
-  en: {
+  "en-GB": {
     title: "System Health",
     description: "Live status of platform components.",
     version: "Version",
@@ -75,69 +73,113 @@ const LABELS: Record<"tr" | "en", HealthLabels> = {
   },
 };
 
-function labelsFor(locale: string): HealthLabels {
-  return locale === "en-GB" ? LABELS.en : LABELS.tr;
+type ReadinessView = {
+  status: "ok" | "degraded" | "down";
+  components: {
+    db: {
+      status: "ok" | "degraded" | "down";
+      latency_ms?: number;
+      message?: string;
+    };
+  };
+};
+
+function statusToBadge(status: "ok" | "degraded" | "down"): {
+  tone: NonNullable<BadgeProps["tone"]>;
+  text: string;
+} {
+  const tr = HEALTH_LABELS["tr-TR"];
+  if (status === "ok") return { tone: "success", text: tr.statusOk };
+  if (status === "degraded")
+    return { tone: "warning", text: tr.statusDegraded };
+  return { tone: "danger", text: tr.statusDown };
 }
 
-/**
- * Server-side fetch + Zod doğrulama. Hata durumunda null data döner;
- * çağıran taraf UI'da uygun state'i gösterir.
- */
-async function fetchReadiness(): Promise<{
-  data: ReadinessResponse | null;
-  errorMessage: string | null;
-  correlationId: string | null;
-}> {
+export default async function HealthPage({
+  params,
+}: {
+  params: Promise<PageParams> | PageParams;
+}): Promise<JSX.Element> {
+  const resolved = await Promise.resolve(params);
+  const { locale: rawLocale } = resolved;
+  if (!(SUPPORTED_LOCALES as readonly string[]).includes(rawLocale)) {
+    notFound();
+  }
+  const locale = rawLocale as Locale;
+  const labels = getLabels(locale);
+  const hl = HEALTH_LABELS[locale === "en-GB" ? "en-GB" : "tr-TR"];
+
   const result = await apiClient.request<unknown>("/api/v1/ready", {
     method: "GET",
     cache: "no-store",
   });
 
-  if (!result.ok) {
-    return {
-      data: null,
-      errorMessage: result.error.message,
-      correlationId: result.requestId,
-    };
-  }
-
-  const parsed = readinessResponseSchema.safeParse(result.data);
-  if (!parsed.success) {
-    return {
-      data: null,
-      errorMessage: "Beklenen sağlık yanıt formatı alınamadı",
-      correlationId: result.requestId,
-    };
-  }
-
-  return {
-    data: parsed.data,
-    errorMessage: null,
-    correlationId: result.requestId,
-  };
-}
-
-export default async function HealthPage({
-  params,
-}: HealthPageProps): Promise<JSX.Element> {
-  const { locale } = await Promise.resolve(params);
-  const labels = labelsFor(locale);
-  const { data, errorMessage, correlationId } = await fetchReadiness();
+  const data: ReadinessView | null = result.ok
+    ? (result.data as ReadinessView)
+    : null;
 
   return (
-    <div className="space-y-4">
-      <header className="space-y-1">
-        <h1 className="text-xl font-semibold text-clinic-800">
-          {labels.title}
-        </h1>
-        <p className="text-sm text-gray-600">{labels.description}</p>
-      </header>
-      <HealthCard
-        data={data}
-        error={errorMessage}
-        correlationId={correlationId}
-        labels={labels}
+    <AppShell
+      locale={locale}
+      pageTitle={labels.health.title}
+      pageDescription={labels.health.description}
+      user={{
+        name: "Dr. Ayşe Yılmaz",
+        role: locale === "en-GB" ? "Veterinarian" : "Veteriner",
+      }}
+    >
+      <PageHeader
+        title={labels.health.title}
+        description={labels.health.description}
+        breadcrumb={[
+          { label: labels.nav.dashboard, href: `/${locale}` },
+          { label: labels.health.title },
+        ]}
       />
-    </div>
+
+      {result.ok && data ? (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-white p-4">
+            <span className="text-sm text-gray-600">Genel durum</span>
+            {(() => {
+              const badge = statusToBadge(data.status);
+              return <Badge tone={badge.tone}>{badge.text}</Badge>;
+            })()}
+            <span className="ml-auto font-mono text-xs text-gray-500">
+              {new Date().toISOString()}
+            </span>
+          </div>
+
+          <div className="rounded-lg border border-gray-200 bg-white p-4">
+            <h3 className="mb-3 text-sm font-semibold text-gray-900">
+              Bileşen durumları
+            </h3>
+            <dl className="divide-y divide-gray-100 text-sm">
+              <div className="flex items-center justify-between py-2">
+                <dt className="text-gray-600">{hl.db}</dt>
+                <dd className="flex items-center gap-2">
+                  {typeof data.components.db.latency_ms === "number" ? (
+                    <span className="font-mono text-xs text-gray-500">
+                      {data.components.db.latency_ms} {labels.units.ms}
+                    </span>
+                  ) : null}
+                  {(() => {
+                    const badge = statusToBadge(data.components.db.status);
+                    return <Badge tone={badge.tone}>{badge.text}</Badge>;
+                  })()}
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      ) : (
+        <HealthCard
+          data={null}
+          error={result.ok ? hl.noData : result.error.message || hl.fetchError}
+          correlationId={result.ok ? null : result.requestId}
+          labels={hl}
+        />
+      )}
+    </AppShell>
   );
 }
