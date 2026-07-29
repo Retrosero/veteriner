@@ -139,11 +139,19 @@ export default async function HealthPage({
 
       {result.ok && data ? (
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-white p-4">
+          <div
+            data-testid="health-status-badge"
+            data-status={data.status}
+            className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-white p-4"
+          >
             <span className="text-sm text-gray-600">Genel durum</span>
             {(() => {
               const badge = statusToBadge(data.status);
-              return <Badge tone={badge.tone}>{badge.text}</Badge>;
+              return (
+                <Badge tone={badge.tone} data-testid="health-badge">
+                  {badge.text}
+                </Badge>
+              );
             })()}
             <span className="ml-auto font-mono text-xs text-gray-500">
               {new Date().toISOString()}
@@ -159,7 +167,10 @@ export default async function HealthPage({
                 <dt className="text-gray-600">{hl.db}</dt>
                 <dd className="flex items-center gap-2">
                   {typeof data.components.db.latency_ms === "number" ? (
-                    <span className="font-mono text-xs text-gray-500">
+                    <span
+                      data-testid="db-latency"
+                      className="font-mono text-xs text-gray-500"
+                    >
                       {data.components.db.latency_ms} {labels.units.ms}
                     </span>
                   ) : null}

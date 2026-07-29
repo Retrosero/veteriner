@@ -7,8 +7,13 @@
  *   1. API başarılı döner → status badge görünür, DB latency yazılır.
  *   2. API ağ hatası → hata kartı görünür, correlation ID gösterilir.
  *
+ * Not: api-client modülü `vi.mock` ile komple mock'lanır; spy yerine
+ * modül düzeyinde mock daha güvenilirdir (ESM + dynamic import).
+ *
  * @security Test verileri sabit; gerçek tenant bilgisi içermez.
  */
+
+import "@testing-library/jest-dom/vitest";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -18,6 +23,13 @@ import type { ReactElement } from "react";
 import { HealthCard } from "@/components/health-card";
 import type { ReadinessResponse } from "@vetniva/contracts";
 import { apiClient } from "@/lib/api-client";
+
+vi.mock("@/lib/api-client", () => ({
+  apiClient: {
+    baseUrl: "http://api.test",
+    request: vi.fn(),
+  },
+}));
 
 const LABELS = {
   title: "Sistem Sağlığı",
@@ -102,12 +114,12 @@ describe("HealthCard", () => {
 });
 
 describe("HealthPage fetch senaryoları", () => {
-  const requestSpy = vi.spyOn(apiClient, "request");
+  const requestMock = vi.mocked(apiClient.request);
   const originalApiBase = process.env["API_BASE_URL"];
 
   beforeEach(() => {
     process.env["API_BASE_URL"] = "http://api.test";
-    requestSpy.mockReset();
+    requestMock.mockReset();
   });
 
   afterEach(() => {
@@ -120,7 +132,7 @@ describe("HealthPage fetch senaryoları", () => {
   });
 
   it("API başarılı döndüğünde HealthCard ok badge gösterir", async () => {
-    requestSpy.mockResolvedValueOnce({
+    requestMock.mockResolvedValueOnce({
       ok: true,
       data: SAMPLE_DATA,
       status: 200,
@@ -131,16 +143,21 @@ describe("HealthPage fetch senaryoları", () => {
     const element = await HealthPage({
       params: Promise.resolve({ locale: "tr-TR" }),
     });
-    const { getByTestId, getByText } = render(element as ReactElement);
+    const { getByTestId } = render(element as ReactElement);
 
     const badge = getByTestId("health-status-badge");
     expect(badge).toBeInTheDocument();
     expect(badge.dataset["status"]).toBe("ok");
-    expect(getByText(/12ms/)).toBeInTheDocument();
+
+    // DB latency ayrı bir data-testid ile işaretlendi; metin iki ayrı
+    // text node olarak render edilir (sayı + birim).
+    const dbLatency = getByTestId("db-latency");
+    expect(dbLatency).toBeInTheDocument();
+    expect(dbLatency.textContent).toMatch(/12\s*ms/);
   });
 
   it("API ağ hatası döndüğünde hata kartı görüntülenir", async () => {
-    requestSpy.mockResolvedValueOnce({
+    requestMock.mockResolvedValueOnce({
       ok: false,
       error: {
         error_code: "TR_COMMON_0001",
@@ -157,9 +174,10 @@ describe("HealthPage fetch senaryoları", () => {
     const element = await HealthPage({
       params: Promise.resolve({ locale: "tr-TR" }),
     });
-    const { getByTestId, getByText } = render(element as ReactElement);
+    const { getByTestId } = render(element as ReactElement);
 
-    expect(getByTestId("health-card-error")).toBeInTheDocument();
-    expect(getByText("req-network-1")).toBeInTheDocument();
+    const errorCard = getByTestId("health-card-error");
+    expect(errorCard).toBeInTheDocument();
+    expect(errorCard.textContent).toMatch(/req-network-1/);
   });
 });

@@ -138,18 +138,7 @@ export default function LoginPage({
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-clinic-50/40 via-white to-white">
-      {/* Arka plan paw deseni */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 20% 20%, currentColor 1.5px, transparent 2px), radial-gradient(circle at 80% 60%, currentColor 1.5px, transparent 2px)",
-          backgroundSize: "48px 48px",
-        }}
-      />
-
+    <div className="relative min-h-screen overflow-hidden bg-gray-50">
       <div className="relative mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-4 py-12 sm:px-6">
         <Link
           href={`/${locale}`}
@@ -162,7 +151,7 @@ export default function LoginPage({
           >
             <span className="h-6 w-6">{ICON.paw}</span>
           </span>
-          <span className="text-lg font-semibold text-clinic-800">
+          <span className="text-lg font-semibold text-gray-900">
             {labels.brand.name}
           </span>
         </Link>
