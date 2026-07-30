@@ -122,4 +122,4 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-013 ✅ Modül ve paket feature flag altyapısı (tamamlandı — 2026-07-30)
   - GOAL-014 ⏳ Dosya ve medya servisi (core tamamlandı: FileMeta + RLS migration `20260101000040_init_file_metas`, storage/scan adapter interface + Local/S3/Noop/ClamAV skeleton, FileService upload/get/list/archive/signed-url, FileController + PermissionsGuard, contracts tarafı genişletildi, 23 unit test geçti; eski `modules/files/` + `common/files/` iskeleti temizlenmeli, S3/ClamAV gerçek implementasyon, docs/i18n sonraki tick'lerde)
   - GOAL-015 ✅ Bildirim altyapısı temeli (tamamlandı — 2026-07-30)
-  - GOAL-016 superadmin tenant görünümü
+  - GOAL-016 ⏳ superadmin tenant görünümü (core tamamlandı: SuperadminService + Controller + Module, PermissionsGuard + audit:log:read koruması, contracts tarafı listSuperadminTenantsQuery/Response, TenantOverview + AuditEventSummary, 8 unit test geçti; docs/i18n sonraki tick'lerde)
