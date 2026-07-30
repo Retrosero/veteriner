@@ -40,3 +40,5 @@ export * from "./diagnosis.js";
 export * from "./vitals.js";
 export * from "./soap.js";
 export * from "./waitlist.js";
+export * from "./order.js";
+export * from "./treatment-plan.js";

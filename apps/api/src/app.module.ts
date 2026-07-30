@@ -56,6 +56,8 @@ import { CalendarModule } from "./modules/calendar/calendar.module.js";
 import { ExaminationsModule } from "./modules/examinations/examinations.module.js";
 import { SoapModule } from "./modules/soap/soap.module.js";
 import { WaitlistModule } from "./modules/waitlist/waitlist.module.js";
+import { TreatmentPlansModule } from "./modules/treatment-plans/treatment-plans.module.js";
+import { OrdersModule } from "./modules/orders/orders.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 
 @Module({
@@ -91,6 +93,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     ExaminationsModule,
     SoapModule,
     WaitlistModule,
+    OrdersModule,
   ],
 })
 export class AppModule {}
