@@ -39,6 +39,7 @@ import { AiFeatureModule } from "./modules/ai/ai.module.js";
 import { BranchModule } from "./modules/branch/branch.module.js";
 import { IdentityModule } from "./modules/identity/identity.module.js";
 import { TenantModule } from "./modules/tenant/tenant.module.js";
+import { FeatureFlagModule } from "./modules/feature-flag/feature-flag.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 
 @Module({
@@ -56,6 +57,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     TenantModule,
     BranchModule,
     IdentityModule,
+    FeatureFlagModule,
   ],
 })
 export class AppModule {}

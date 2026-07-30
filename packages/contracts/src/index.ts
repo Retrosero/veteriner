@@ -19,3 +19,4 @@ export * from "./tenant.js";
 export * from "./branch.js";
 export * from "./auth.js";
 export * from "./rbac.js";
+export * from "./module.js";
