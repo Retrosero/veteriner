@@ -140,5 +140,5 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
     tick: docs/RAG chunk/i18n key parity + telefon doğrulama stub +
     DB migration.
   - GOAL-034 ✅ Portal hayvan listesi ve detayı (tamamlandı — 2026-07-30)
-  - GOAL-035 Online randevu talebi
+  - GOAL-035 ✅ Online randevu talebi (tamamlandı — 2026-07-30)
   - GOAL-036 Randevu hatırlatma sistemi

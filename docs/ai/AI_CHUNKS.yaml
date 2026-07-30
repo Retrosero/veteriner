@@ -3179,3 +3179,105 @@ generated_at: "2026-07-30"
     - "GET /api/v1/portal-pets"
     - "GET /api/v1/portal-pets/{id}"
 
+# -----------------------------------------------------------------------------
+# GOAL-035 — Online randevu talebi (portal) (FAZ-3)
+# -----------------------------------------------------------------------------
+# Source: apps/api/src/modules/portal-appointments/ (GOAL-035 core)
+
+- chunk_id: flow-portal-appointment-request
+  type: flow
+  source: docs/api/api.{post,get}._api_v1_{portal,clinic}_portal-appointments_requests*.md
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Online Randevu Talebi Akışı (Portal)"
+  content: |
+    Hasta sahibi portaldan kendi hayvan(lar)ı için randevu talebi
+    oluşturur; klinik personeli onaylar/reddeder. Talep doğrudan
+    onaylı randevu olmaz; her zaman personel kararı gerekir.
+
+    1. **Talep oluşturma** (`POST /api/v1/portal-appointments/requests`,
+       201): Auth `PortalSessionGuard` (cookie veya `Authorization:
+       Bearer`). Body `AppointmentRequestCreateInput`: `patientId`,
+       `preferredDate` (gelecekte), `preferredVeterinarianId?`,
+       `type`, `reason` (1-2000), `contactPreference`.
+       Service (a) `PortalUser.findById(tenantId, portalUserId)`
+       → `ownerId` çözer (yoksa 404 `VET-CLINIC-0001`,
+       bilgi sızdırmaz); (b) `PatientsService.findById` +
+       `patient.ownerId === ownerId` (cross-owner → 404); (c)
+       `preferredDate > now()` (değilse 422 `VET-VALIDATION-0009`);
+       (d) in-memory `byId` Map'e `pending` kayıt eklenir; (e) 2
+       in-app bildirim best-effort (`portal.appointment.requested`
+       sahibine, `clinic.appointment.requested` personele);
+       (f) audit `audit:portal.appointment.request` (info).
+
+    2. **Liste** (`GET /api/v1/portal-appointments/requests`, 200):
+       `ownerId` filtresi zorunlu; `tenantId` actor'dan. Sıralama
+       `requestedAt` desc. Portal user yoksa boş liste (404 değil).
+       Tenant scope: `actor.tenantId === tenantId`; SUPERADMIN
+       bypass.
+
+    3. **İptal** (`POST /api/v1/portal-appointments/requests/{id}/cancel`,
+       200): Yalnızca talep sahibi. `pending` → `cancelled`; audit
+       `audit:portal.appointment.cancel` (info). `cancelled` → no-op
+       (idempotent). `approved | rejected` → 422 `VET-PORTAL-0006`.
+
+    4. **Personel onayı** (`POST /api/v1/clinic/portal-appointments/requests/{id}/approve`,
+       200): Yetki `clinic:appointment:create`. `pending` → `approved`;
+       `AppointmentsService.create` ile 30dk default randevu
+       oluşturulur (`preferredDate` start, `preferredVeterinarianId`
+       yoksa `PLACEHOLDER_VETERINARIAN_ID` stub). `decidedBy` =
+       `actor.actorId` (fallback `"system"`). Slot çakışması
+       (`VET-APPT-0005`) veya `preferredDate` artık geçmiş
+       (`VET-VALIDATION-0009`) → talep `pending` kalır. Audit
+       `audit:portal.appointment.approve` (info). Sahibine in-app
+       onay bildirimi (`portal.appointment.approved`).
+
+    5. **Personel reddi** (`POST /api/v1/clinic/portal-appointments/requests/{id}/reject`,
+       200): Yetki `clinic:appointment:create`. Body `{ reason:
+       1-500 }` zorunlu. `pending` → `rejected` + `rejectionReason`;
+       audit `audit:portal.appointment.reject` (**warning**);
+       sahibine in-app bildirim (`portal.appointment.rejected`).
+
+    **Tasarım kararları**:
+    - **Doğrudan randevu değil**: Portal → talep → personel onayı →
+      randevu. Hiçbir portal action otomatik appointment
+      oluşturmaz.
+    - **`ownerId` yalnızca session'dan**: URL/body ile override
+      edilemez. Cross-owner patient → 404 `VET-CLINIC-0001`
+      (bilgi sızdırmaz).
+    - **Sabit 404 kodu**: Patient/talep/portal user bulunamadığında
+      hepsi `VET-CLINIC-0001`; 403 yerine 404 (varlık enumeration'a
+      kapalı).
+    - **`approvedAppointmentId`**: Approve sonrası oluşturulan
+      `Appointment.id`; frontend detay için
+      `GET /api/v1/clinic/appointments/{id}` çağırabilir.
+    - **`preferredVeterinarianId` opsiyonel**: Yoksa FAZ-0'da
+      placeholder UUID; FAZ-3+'da round-robin/skill-match ataması.
+    - **Notification best-effort**: `notifications.send` hatası
+      talebi/reddi **durdurmaz**; loglanır ve devam edilir.
+    - **Audit trail**: 4 farklı event
+      (`request | cancel | approve | reject`); `actorType: "portal_user"`
+      portal işlemleri için, `"user"` personel işlemleri için.
+
+    **Idempotency**: Cancel idempotent; approve/reject tek seferlik
+    (ikinci deneme 422). **Audit**: tüm state değişimleri.
+    **Tenant scope**: `actor.tenantId === tenantId`; SUPERADMIN
+    bypass.
+  keywords: [portal, randevu talebi, online randevu, appointment
+    request, onay, red, iptal, approve, reject, cancel, pending,
+    approved, rejected, cancelled, in_app bildirim, audit, personel,
+    staff, veterinarian, PET_OWNER_PORTAL]
+  related_chunks: [glossary-portal-user, glossary-appointment,
+    glossary-owner, glossary-patient, error-VET-CLINIC-0001,
+    error-VET-VALIDATION-0009, error-VET-AUTHZ-0001,
+    error-VET-PORTAL-0006, flow-portal-auth, flow-portal-pet-list]
+  related_pages: []
+  related_api:
+    - "POST /api/v1/portal-appointments/requests"
+    - "GET /api/v1/portal-appointments/requests"
+    - "POST /api/v1/portal-appointments/requests/{id}/cancel"
+    - "POST /api/v1/clinic/portal-appointments/requests/{id}/approve"
+    - "POST /api/v1/clinic/portal-appointments/requests/{id}/reject"

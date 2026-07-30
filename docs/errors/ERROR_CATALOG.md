@@ -326,6 +326,7 @@ bu katalogda yer almasını zorunlu kılar.
 | -------------------- | --------------------------- | ---- | -------- | ------ | ------------------------------------ |
 | `VET-PORTAL-0001`    | Portal daveti geçersiz      | 400  | warning  | server | Davet bağlantısını yenileyin.        |
 | `VET-PORTAL-0002`    | Portal hesabı kilitli       | 423  | error    | server | Yönetici ile iletişime geçin.        |
+| `VET-PORTAL-0006`    | Portal talebi geçersiz state | 422  | warning  | server | (1) **Appointment request**: `pending` dışı statüden `cancel/approve/reject` denemesi. (2) **Davet**: zaten `accepted | revoked` davet üzerinde işlem denemesi. |
 
 ## Entegrasyon (INTEGRATION)
 
