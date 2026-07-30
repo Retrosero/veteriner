@@ -119,6 +119,9 @@ rehberlerinde "Güvenlik ve Uyum" bölümlerine temel olur.
 
 ## Eğitim doldurma zamanlaması
 
+- **Faz 1 (GOAL-010+):** Tenant ve şube yönetimi → `SUPERADMIN.md`
+  ilk bölümleri (pilot onboarding akışı). `OWNER.md` da şube
+  yönetimi bölümünü içerecek.
 - **Faz 2 (GOAL-020+):** Hasta sahibi ve hayvan kaydı → `STAFF.md`,
   `VETERINARIAN.md` ve `PATIENT_OWNER.md` ilk bölümleri.
 - **Faz 3 (GOAL-030+):** Randevu ve portal → `STAFF.md` (kabul),

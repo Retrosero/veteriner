@@ -1,6 +1,19 @@
-// GOAL-000 — Prisma iskelet şeması.
-// Veri modelleri GOAL-001+ migration'larında eklenecektir.
-// Burada yalnızca generator ve datasource tanımlanır.
+// GOAL-010 — Tenant ve şube veri modeli.
+// Bu şema Faz 1 platform çekirdeğinin temelidir:
+// - `tenants` kök tablosudur (multi-tenant kök).
+// - `branches` tenant'a bağlı şubelerdir (pilot tek şube ile başlar).
+// - `audit_events` append-only olay tablosudur (klinik/finansal kayıt
+//   koruması).
+// - `user_tenant_memberships` GOAL-011 ile birlikte doldurulacak; şema
+//   burada GOAL-010 kapsamında hazırlanır (cross-tenant negatif testlerde
+//   kullanılır).
+//
+// RLS (Row Level Security) migration dosyasında etkinleştirilir:
+// apps/api/prisma/migrations/<timestamp>_init/migration.sql
+//
+// @see docs/domain/DOMAIN_GLOSSARY.md — tenant, branch varlık tanımları.
+// @see docs/errors/AUDIT_LOG_STANDARD.md — audit event şeması.
+// @see skills/DATABASE_MULTITENANCY.md — multi-tenant veri kuralları.
 
 generator client {
   provider      = "prisma-client-js"
@@ -11,4 +24,209 @@ datasource db {
   provider          = "postgresql"
   url               = env("DATABASE_URL")
   shadowDatabaseUrl = env("DATABASE_SHADOW_URL")
+}
+
+// -----------------------------------------------------------------------------
+// TENANT — Kök tablo. Her tenant kendi tenant_id'si ile izole edilir.
+// -----------------------------------------------------------------------------
+
+/// Tenant durumu.
+/// - `active`: normal operasyon.
+/// - `suspended`: ödeme/operasyon nedeniyle geçici olarak devre dışı.
+/// - `closed`: kapatılmış (fiziksel silme YOK; audit ve operasyonel
+///   kayıtlar korunur).
+enum TenantStatus {
+  active
+  suspended
+  closed
+
+  @@map("tenant_status")
+}
+
+/// Kök tenant tablosu. Her tenant benzersiz `slug` ile tanınır.
+/// Tenant oluşturma yalnızca SUPERADMIN tarafından yapılır.
+model Tenant {
+  id             String       @id @default(uuid()) @db.Uuid
+  /// URL-dostu benzersiz tanımlayıcı (örn. "pilot-vet-kadikoy").
+  slug           String       @unique @db.VarChar(64)
+  /// Görünen işletme adı.
+  name           String       @db.VarChar(200)
+  /// Tenant ülkesi (TR/GB). Tenant oluşturulduktan sonra değiştirilemez
+  /// (ülke adaptörü seçimi bu alana göre yapılır).
+  country        String       @db.Char(2)
+  /// Tenant varsayılan dili.
+  defaultLocale  String       @default("tr-TR") @db.VarChar(10) @map("default_locale")
+  /// IANA saat dilimi (örn. Europe/Istanbul).
+  timezone       String       @default("Europe/Istanbul") @db.VarChar(64)
+  /// Tenant durumu.
+  status         TenantStatus @default(active)
+  /// Vergi/VKN numarası (opsiyonel).
+  taxId          String?      @db.VarChar(20) @map("tax_id")
+  /// VKN/TCKN sahip tipi (`company` veya `personal`).
+  taxIdType      String?      @db.VarChar(20) @map("tax_id_type")
+  /// İletişim e-posta (tenant düzeyinde).
+  contactEmail   String?      @db.VarChar(200) @map("contact_email")
+  /// Tenant oluşturulma zamanı.
+  createdAt      DateTime     @default(now()) @db.Timestamptz(6) @map("created_at")
+  /// Son güncelleme zamanı.
+  updatedAt      DateTime     @updatedAt @db.Timestamptz(6) @map("updated_at")
+  /// Kapatma/arsivleme zamanı (soft delete).
+  archivedAt     DateTime?    @db.Timestamptz(6) @map("archived_at")
+  /// Kapatma sebebi (operasyonel not).
+  archivedReason String?      @db.VarChar(500) @map("archived_reason")
+
+  branches      Branch[]
+  memberships   UserTenantMembership[]
+
+  @@index([status, createdAt])
+  @@index([country])
+  @@map("tenants")
+}
+
+// -----------------------------------------------------------------------------
+// BRANCH — Tenant'ın fiziksel şubesi. Pilot tek şube ile başlar; veri
+// modeli çoklu şubeye uygundur.
+// -----------------------------------------------------------------------------
+
+/// Şube durumu.
+/// - `active`: aktif şube, operasyon yapılabilir.
+/// - `inactive`: geçici olarak kapalı (tatil, tadilat).
+/// - `closed`: kapatılmış (fiziksel silme YOK).
+enum BranchStatus {
+  active
+  inactive
+  closed
+
+  @@map("branch_status")
+}
+
+/// Tenant şubesi. Her şube bir tenant'a aittir; tenant olmadan şube
+/// oluşturulamaz (FK).
+model Branch {
+  id          String       @id @default(uuid()) @db.Uuid
+  /// Ait olduğu tenant.
+  tenantId    String       @db.Uuid @map("tenant_id")
+  /// Şube kodu (tenant içinde benzersiz; URL-dostu).
+  code        String       @db.VarChar(64)
+  /// Şube görünen adı.
+  name        String       @db.VarChar(200)
+  /// Şehir (operasyonel raporlama için).
+  city        String?      @db.VarChar(100)
+  /// Adres (JSON; ülke adaptörü ile formatlanır).
+  addressJson Json?        @map("address_json")
+  /// Şube telefonu.
+  phone       String?      @db.VarChar(32)
+  /// Şube durumu.
+  status      BranchStatus @default(active)
+  /// Şube oluşturulma zamanı.
+  createdAt   DateTime     @default(now()) @db.Timestamptz(6) @map("created_at")
+  /// Son güncelleme zamanı.
+  updatedAt   DateTime     @updatedAt @db.Timestamptz(6) @map("updated_at")
+  /// Kapatma/arsivleme zamanı.
+  archivedAt  DateTime?    @db.Timestamptz(6) @map("archived_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  /// Tenant içinde şube kodu benzersizdir.
+  @@unique([tenantId, code])
+  @@index([tenantId, status])
+  @@index([city])
+  @@map("branches")
+}
+
+// -----------------------------------------------------------------------------
+// USER_TENANT_MEMBERSHIP — Tenant-scoped kullanıcı üyeliği (GOAL-011
+// tarafından doldurulacak). Şema bu goal'da hazırlanır; auth modülü
+// eklenince kullanıcılar burada tenant + rol ile eşleşir.
+// -----------------------------------------------------------------------------
+
+/// Tenant üyelik durumu.
+enum MembershipStatus {
+  active
+  suspended
+  revoked
+
+  @@map("membership_status")
+}
+
+/// Kullanıcının tenant üyeliği. Kullanıcı birden fazla tenant'a üye
+/// olabilir (örn. SUPERADMIN). Üyelik aktifse o tenant'ta çalışabilir.
+model UserTenantMembership {
+  id         String           @id @default(uuid()) @db.Uuid
+  /// Kullanıcı ID (string; GOAL-011 ile gerçek `User` modeline FK).
+  userId     String           @db.Uuid @map("user_id")
+  /// Ait olduğu tenant.
+  tenantId   String           @db.Uuid @map("tenant_id")
+  /// Kullanıcının bu tenant'taki rolü (OWNER, VETERINARIAN, STAFF).
+  /// SUPERADMIN için bu tablo kullanılmaz (sistem genelinde).
+  role       String           @db.VarChar(32)
+  /// Üyelik durumu.
+  status     MembershipStatus @default(active)
+  /// Atama zamanı.
+  assignedAt DateTime         @default(now()) @db.Timestamptz(6) @map("assigned_at")
+  /// Üyelik sona erme zamanı (null = aktif).
+  revokedAt  DateTime?        @db.Timestamptz(6) @map("revoked_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([userId, tenantId])
+  @@index([tenantId, status])
+  @@index([userId])
+  @@map("user_tenant_memberships")
+}
+
+// -----------------------------------------------------------------------------
+// AUDIT_EVENTS — Append-only audit log. Klinik ve finansal kayıt
+// değişikliklerinin kanıtı. RLS ile tenant izolasyonu uygulanır.
+// -----------------------------------------------------------------------------
+
+/// Audit event kaydı. Insert-only. DB trigger'lar UPDATE/DELETE'i
+/// engeller. 7 yıl retention (TR ticari kayıt gereği).
+model AuditEvent {
+  id             String   @id @default(uuid()) @db.Uuid
+  /// Event adı (`audit:owner.create` formatında).
+  eventName      String   @db.VarChar(100) @map("event_name")
+  /// Tenant context. Sistem olaylarında null.
+  tenantId       String?  @db.Uuid @map("tenant_id")
+  /// Şube (multi-branch). Null olabilir (tenant-düzey event'ler).
+  branchId       String?  @db.Uuid @map("branch_id")
+  /// İşlemi yapan kullanıcı. SYSTEM/JOB event'lerde null.
+  actorId        String?  @db.Uuid @map("actor_id")
+  /// Aktör tipi.
+  actorType      String   @db.VarChar(20) @map("actor_type")
+  /// Etkilenen varlık tipi (örn. `tenant`, `branch`).
+  targetType     String   @db.VarChar(50) @map("target_type")
+  /// Varlık ID (string; UUID veya başka tip).
+  targetId       String   @db.VarChar(100) @map("target_id")
+  /// İşlem tipi (create, update, archive, vb.).
+  action         String   @db.VarChar(30)
+  /// Değişiklik öncesi (mask'li).
+  before         Json?    @map("before")
+  /// Değişiklik sonrası (mask'li).
+  after          Json?    @map("after")
+  /// Alan-bazlı fark.
+  diff           Json?
+  /// Correlation/request/job ID.
+  correlationId  String   @db.VarChar(100) @map("correlation_id")
+  /// Mask'li IP (örn. `192.168.1.***`).
+  ipAddress      String?  @db.VarChar(50) @map("ip_address")
+  /// User agent SHA-256 hash (16 hex).
+  userAgentHash  String?  @db.VarChar(64) @map("user_agent_hash")
+  /// Tenant ülkesi (TR/GB).
+  country        String   @db.Char(2)
+  /// Event severity.
+  severity       String   @db.VarChar(10)
+  /// Ek bağlam (idempotency_key, reason, vb.).
+  metadata       Json?
+  /// Event zamanı.
+  createdAt      DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+
+  @@index([tenantId, createdAt])
+  @@index([branchId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([targetType, targetId])
+  @@index([eventName, createdAt])
+  @@index([correlationId])
+  @@index([severity, createdAt])
+  @@map("audit_events")
 }

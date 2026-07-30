@@ -1,0 +1,55 @@
+page_id: web.app.locale.dashboard
+route: "/[locale]/dashboard"
+module: dashboard
+title_key: nav.dashboard
+purpose:
+  tr-TR: "Klinik veya petshop yönetim panosu. Kullanıcı rolüne göre randevu, muayene veya operasyon özetini gösterir."
+  en-GB: "Clinic or petshop management dashboard. Shows appointment, examination, or operation summaries based on user role."
+allowed_roles:
+  - OWNER
+  - VETERINARIAN
+  - STAFF
+required_permissions: []
+prerequisites:
+  - "Kullanıcının aktif tenant üyeliği olmalı (GOAL-011 ile)."
+fields:
+  - key: today_appointments
+    label_key: dashboard.today_appointments
+    description:
+      tr-TR: "Bugünkü randevu sayısı."
+      en-GB: "Number of today's appointments."
+    required: true
+  - key: pending_examinations
+    label_key: dashboard.pending_examinations
+    description:
+      tr-TR: "Açık muayene sayısı."
+      en-GB: "Number of pending examinations."
+    required: true
+actions:
+  - key: navigate
+    description:
+      tr-TR: "Detaylı listeye gitmek için ilgili modül sayfasına yönlendir."
+      en-GB: "Navigate to the relevant module page for detailed lists."
+step_by_step:
+  tr-TR:
+    - "Tarayıcıdan /<locale>/dashboard adresine git."
+    - "Bugünkü özetleri kontrol et."
+    - "Detay için bir modül kartına tıkla."
+  en-GB:
+    - "Navigate to /<locale>/dashboard in the browser."
+    - "Review today's summary."
+    - "Click a module card for details."
+possible_errors:
+  - error_code: VET-AUTH-0001
+    resolution:
+      tr-TR: "Oturum geçersiz. Yeniden giriş yapın."
+      en-GB: "Session invalid. Please log in again."
+related_pages:
+  - web.app.locale
+related_api:
+  - GET /api/v1/health
+keywords:
+  tr-TR: [dashboard, panel, anasayfa, özet]
+  en-GB: [dashboard, home, summary]
+version: "1.0.0"
+last_verified_at: "2026-07-30"

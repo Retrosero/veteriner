@@ -1,26 +1,32 @@
 /**
- * @file Audit service iskeleti.
+ * @file Audit service (Prisma genişletmesi).
  * @module apps/api/common/audit/audit.service
  *
- * @description Audit event'leri toplar, PII maskeler, batch
- * halinde DB'ye yazar. Bu implementasyon FAZ-0 için iskelettir;
- * gerçek DB yazımı GOAL-010+ ile Prisma AuditEvent modeli
- * üzerinden yapılacak.
+ * @description Audit event'leri toplar, PII maskeler, log + DB'ye yazar.
+ * GOAL-010 ile birlikte Prisma `AuditEvent` tablosuna da yazım eklenmiştir
+ * (append-only). DB yazımı best-effort: hata durumunda log'a düşer,
+ * uygulama akışı engellenmez. GOAL-100+ ile batch insert queue'suna
+ * alınacak.
  *
- * Şu anki davranış:
- * - Pino logger üzerinden yapısal log yazar
- * - Testlerde in-memory queue kullanılabilir
- * - Critical event'ler için console.warn (gerçekte PagerDuty)
+ * Davranış:
+ * - Pino logger üzerinden yapısal log (her zaman).
+ * - Prisma AuditEvent.create (best-effort, await edilir).
+ * - Critical event'ler için console.error (gerçek üretimde PagerDuty).
  *
  * @security PII maskeleme zorunlu. before/after alanları
- *   PiiMasker üzerinden geçmeden yazılmaz.
+ *   PiiMasker üzerinden geçmeden yazılmaz. DB trigger'ı UPDATE/DELETE'i
+ *   engeller (append-only).
  *
  * @since GOAL-004 (FAZ-0) audit + log + hata standardı
+ * @updated GOAL-010 (FAZ-1) Prisma AuditEvent yazımı eklendi
  */
 
 import { Injectable, Logger } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
+import { Prisma } from "@prisma/client";
 
+import { PrismaService } from "../../prisma/prisma.service.js";
+import { PiiMasker } from "../logging/pii-masker.js";
 import type {
   AuditEvent,
   AuditEventInput,
@@ -28,21 +34,19 @@ import type {
 } from "./audit.types.js";
 
 /**
- * AuditService. Audit event'leri kabul eder, zenginleştirir
- * ve log/DB'ye yazar. FAZ-0'da log tabanlı; Faz 10+ ile
- * Prisma AuditEvent modeli kullanılacak.
+ * AuditService. Audit event'leri kabul eder, zenginleştirir, mask'ler
+ * ve hem log hem DB'ye yazar.
  */
 @Injectable()
 export class AuditService {
   private readonly logger = new Logger(AuditService.name);
+  private readonly masker = new PiiMasker();
+
+  public constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Event'i kayıt için kabul eder.
-   *
-   * Not: FAZ-0 iskeletinde gerçek DB yazımı yok; Pino
-   * logger üzerinden `audit.event` mesajı yazılır.
-   * Production'da bu metot, batch insert queue'suna
-   * eklenir.
+   * Event'i log + DB'ye yazar. DB yazımı başarısız olursa log'a
+   * hata düşer; çağırıcı engellenmez.
    */
   public async record(input: AuditEventInput): Promise<AuditEvent> {
     const event: AuditEvent = {
@@ -50,6 +54,12 @@ export class AuditService {
       eventId: randomUUID(),
       timestamp: new Date().toISOString(),
     };
+
+    // PII mask'leme (before/after/diff).
+    const before = this.maskPayload(event.before);
+    const after = this.maskPayload(event.after);
+    const diff = this.maskPayload(event.diff);
+    const metadata = this.maskPayload(event.metadata);
 
     const payload = {
       msg: "audit.event",
@@ -65,12 +75,12 @@ export class AuditService {
       correlation_id: event.correlationId,
       country: event.country,
       severity: event.severity,
-      before: event.before,
-      after: event.after,
-      diff: event.diff,
+      before,
+      after,
+      diff,
       ip_address: event.ipAddress,
       user_agent_hash: event.userAgentHash,
-      metadata: event.metadata,
+      metadata,
     };
 
     this.logBySeverity(event.severity, payload);
@@ -82,13 +92,43 @@ export class AuditService {
       );
     }
 
+    // Best-effort DB yazımı. Hata durumunda log'a düşer.
+    try {
+      await this.prisma.auditEvent.create({
+        data: {
+          id: event.eventId,
+          eventName: event.eventName,
+          tenantId: event.tenantId ?? null,
+          branchId: event.branchId ?? null,
+          actorId: event.actorId ?? null,
+          actorType: event.actorType,
+          targetType: event.targetType,
+          targetId: event.targetId,
+          action: event.action,
+          before: (before as Prisma.InputJsonValue | null) ?? Prisma.JsonNull,
+          after: (after as Prisma.InputJsonValue | null) ?? Prisma.JsonNull,
+          diff: (diff as Prisma.InputJsonValue | null) ?? Prisma.JsonNull,
+          correlationId: event.correlationId,
+          ipAddress: event.ipAddress ?? null,
+          userAgentHash: event.userAgentHash ?? null,
+          country: event.country,
+          severity: event.severity,
+          metadata: (metadata as Prisma.InputJsonValue | null) ?? Prisma.JsonNull,
+        },
+      });
+    } catch (err) {
+      this.logger.error(
+        `Audit DB yazımı başarısız: ${event.eventName} target=${event.targetType}:${event.targetId}`,
+        err instanceof Error ? err.stack : String(err),
+      );
+      // Hata swallow: log her zaman yazıldı; operasyonu engelleme.
+    }
+
     return event;
   }
 
   /**
-   * Severity'ye göre uygun log metodunu çağırır. Dinamik
-   * indeksleme `noImplicitAny` ile uyumsuz olduğundan
-   * switch kullanıyoruz.
+   * Severity'ye göre uygun log metodunu çağırır.
    */
   private logBySeverity(
     severity: AuditSeverity,
@@ -111,29 +151,51 @@ export class AuditService {
   }
 
   /**
+   * PII payload'ı mask'ler. Null/undefined korunur.
+   */
+  private maskPayload(
+    payload: Record<string, unknown> | null | undefined,
+  ): Record<string, unknown> | null {
+    if (payload === null || payload === undefined) return null;
+    return this.masker.mask(payload) as Record<string, unknown>;
+  }
+
+  /**
    * Basit helper: sadece event ismi ve target bilgisi ile
-   * event oluşturur. Diğer alanlar (tenant, actor, vb.)
-   * AuditContext'ten alınır (GOAL-010+'da implement).
+   * event oluşturur. Actor bilgisi dışarıdan verilir.
    */
   public async recordSimple(
     eventName: string,
     targetType: string,
     targetId: string,
     action: AuditEventInput["action"],
+    actor: {
+      actorId: string | null;
+      actorType: AuditEventInput["actorType"];
+      tenantId: string | null;
+      branchId?: string | null;
+      correlationId: string;
+      country: string;
+      ipAddress?: string | null;
+      userAgentHash?: string | null;
+    },
     severity: AuditSeverity = "info",
     metadata?: Record<string, unknown>,
   ): Promise<AuditEvent> {
     return this.record({
       eventName,
-      tenantId: null,
-      actorId: null,
-      actorType: "system",
+      tenantId: actor.tenantId,
+      branchId: actor.branchId ?? null,
+      actorId: actor.actorId,
+      actorType: actor.actorType,
       targetType,
       targetId,
       action,
-      correlationId: "req-unknown",
-      country: "TR",
+      correlationId: actor.correlationId,
+      country: actor.country,
       severity,
+      ipAddress: actor.ipAddress ?? null,
+      userAgentHash: actor.userAgentHash ?? null,
       metadata: metadata ?? null,
     });
   }

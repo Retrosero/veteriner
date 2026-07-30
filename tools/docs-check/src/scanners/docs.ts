@@ -79,17 +79,25 @@ export async function readDocFiles(docsRoot: string): Promise<DocInventory> {
   }
 
   // AI_CHUNKS.yaml — chunk_id envanteri.
+  // Mixed YAML formatını destekler: üst düzey metadata + chunks listesi.
+  // `loadAll` çoklu belge olarak parse eder (metadata document + chunks
+  // document). `load` tek belge bekler, mixed formatta hata verir.
   const aiChunksPath = path.join(docsRoot, "ai/AI_CHUNKS.yaml");
   const aiChunksText = await tryRead(aiChunksPath);
   if (aiChunksText) {
     try {
-      const parsed = yaml.load(aiChunksText) as
-        | { chunks?: Array<{ chunk_id?: string }> }
-        | undefined;
-      if (parsed && Array.isArray(parsed.chunks)) {
-        for (const c of parsed.chunks) {
-          if (c && typeof c.chunk_id === "string") {
-            inv.aiChunks.add(c.chunk_id);
+      const documents = yaml.loadAll(aiChunksText) as Array<
+        Record<string, unknown>
+      >;
+      for (const doc of documents) {
+        const chunks = doc["chunks"];
+        if (Array.isArray(chunks)) {
+          for (const c of chunks) {
+            if (c && typeof (c as { chunk_id?: string }).chunk_id === "string") {
+              inv.aiChunks.add(
+                (c as { chunk_id: string }).chunk_id,
+              );
+            }
           }
         }
       }

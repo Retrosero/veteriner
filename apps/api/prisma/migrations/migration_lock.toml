@@ -1,0 +1,8 @@
+# Prisma migration_lock.toml
+# Bu dosya Prisma migrate tarafından kullanılır. Şu anki provider bilgisini
+# içerir; farklı bir provider'a geçiş migration'ların yeniden üretilmesini
+# gerektirir.
+#
+# @see https://www.prisma.io/docs/orm/prisma-migrate
+
+provider = "postgresql"

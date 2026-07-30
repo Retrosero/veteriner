@@ -853,3 +853,282 @@ generated_at: "2026-07-30"
   related_chunks: [log-sistem, correlation-req-prefix]
   related_pages: [web.app.locale.health]
   related_api: [GET /api/v1/health]
+
+# -----------------------------------------------------------------------------
+# GLOSSARY (GOAL-010) — Tenant, Branch, RLS
+# -----------------------------------------------------------------------------
+- chunk_id: glossary-tenant
+  type: glossary
+  source: docs/domain/DOMAIN_GLOSSARY.md
+  entity: tenant
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Tenant"
+  content: |
+    VetNiva'nın kök multi-tenant varlığı. Her tenant benzersiz
+    `slug` ile tanınır; tüm veriler `tenant_id` ile izole edilir.
+    Tenant oluşturma yalnızca SUPERADMIN tarafından yapılır.
+    Kapatma (soft delete) fiziksel silme yapmaz; audit log
+    korunur. Ülke (TR/GB) oluşturulduktan sonra değiştirilemez
+    (ülke adaptörü seçimi bu alana göre yapılır).
+  keywords: [tenant, multi-tenant, izolasyon, slug, RLS]
+  related_chunks: [glossary-branch, glossary-owner, audit-tenant-create]
+  related_pages: []
+  related_api: [POST /api/v1/tenants, GET /api/v1/tenants]
+
+- chunk_id: glossary-branch
+  type: glossary
+  source: docs/domain/DOMAIN_GLOSSARY.md
+  entity: branch
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Şube (Branch)"
+  content: |
+    Tenant'ın fiziksel şubesi. Pilot tek şube ile başlar;
+    veri modeli çoklu şubeye uygundur. `code` tenant içinde
+    benzersizdir. RLS ile `app.tenant_id` set edilir; actor
+    kendi tenant'ı dışındaki branch'leri göremez. Soft delete
+    (`status=closed`, `archivedAt`) fiziksel silme yapmaz.
+  keywords: [şube, branch, multi-branch, RLS, kod]
+  related_chunks: [glossary-tenant, audit-branch-create]
+  related_pages: []
+  related_api: [POST /api/v1/tenants/:tenantId/branches, GET /api/v1/branches/:id]
+
+- chunk_id: glossary-rls
+  type: glossary
+  source: skills/DATABASE_MULTITENANCY.md
+  entity: rls
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Row Level Security (RLS)"
+  content: |
+    PostgreSQL Row Level Security. Uygulama her sorgu başında
+    `SELECT set_config('app.tenant_id', '<uuid>', true)` ile
+    tenant context set eder; RLS policy bu değere göre
+    filtreler. SUPERADMIN `app.is_superadmin = 'true` ile
+    bypass eder. Aktif tablolar: `branches`,
+    `user_tenant_memberships`, `audit_events`. `tenants`
+    tablosunda RLS yoktur (SUPERADMIN tüm tenant'ları görür).
+
+    Negative test: actor.tenantId = 'B' iken tenant A'nın
+    branch'ini sorgulamak → 0 satır (bilgi sızdırmaz).
+  keywords: [RLS, row level security, multi-tenant, postgres, izolasyon]
+  related_chunks: [glossary-tenant, glossary-branch, security-cross-tenant]
+  related_pages: []
+  related_api: []
+
+# -----------------------------------------------------------------------------
+# AUDIT (GOAL-010) — Tenant ve Branch audit event'leri
+# -----------------------------------------------------------------------------
+- chunk_id: audit-tenant-create
+  type: audit
+  source: docs/errors/AUDIT_EVENTS.yaml
+  event_name: audit:tenant.create
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "audit:tenant.create"
+  content: |
+    Yeni tenant oluşturuldu. Severity: critical. Actor:
+    SUPERADMIN. Audit log append-only; 7 yıl retention. PII
+    alanları (taxId, contactEmail) mask'lenerek yazılır.
+
+    Tetikleyici: SUPERADMIN tenant onboarding akışı.
+  keywords: [audit, tenant, create, critical, onboarding]
+  related_chunks: [glossary-tenant, audit-overview]
+  related_pages: []
+  related_api: [POST /api/v1/tenants]
+
+- chunk_id: audit-tenant-update
+  type: audit
+  source: docs/errors/AUDIT_EVENTS.yaml
+  event_name: audit:tenant.update
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "audit:tenant.update"
+  content: |
+    Tenant ayarları değiştirildi. Severity: warning. diff alanı
+    yalnızca değişen alanları içerir (alan-bazlı fark).
+  keywords: [audit, tenant, update, warning]
+  related_chunks: [glossary-tenant, audit-overview]
+  related_pages: []
+  related_api: [PATCH /api/v1/tenants/:id]
+
+- chunk_id: audit-tenant-close
+  type: audit
+  source: docs/errors/AUDIT_EVENTS.yaml
+  event_name: audit:tenant.close
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "audit:tenant.close"
+  content: |
+    Tenant kapatıldı (soft delete). Severity: critical.
+    `archivedReason` metadata'da saklanır. Audit log
+    korunur; fiziksel silme yok. KVKK gereği 7 yıl retention.
+  keywords: [audit, tenant, close, critical, soft delete]
+  related_chunks: [glossary-tenant, audit-overview, glossary-rls]
+  related_pages: []
+  related_api: [POST /api/v1/tenants/:id/close]
+
+- chunk_id: audit-branch-create
+  type: audit
+  source: docs/errors/AUDIT_EVENTS.yaml
+  event_name: audit:branch.create
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "audit:branch.create"
+  content: |
+    Yeni şube oluşturuldu. Severity: info. Actor: SUPERADMIN
+    veya tenant OWNER. RLS ile yalnızca kendi tenant'ı içinde
+    oluşturulabilir.
+  keywords: [audit, branch, create, info]
+  related_chunks: [glossary-branch, audit-overview]
+  related_pages: []
+  related_api: [POST /api/v1/tenants/:tenantId/branches]
+
+# -----------------------------------------------------------------------------
+# SECURITY — Cross-tenant denemesi
+# -----------------------------------------------------------------------------
+- chunk_id: security-cross-tenant
+  type: security
+  source: docs/errors/AUDIT_LOG_STANDARD.md
+  event_name: audit:security.cross_tenant_attempt
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Cross-tenant Erişim Denemesi"
+  content: |
+    Bir tenant kullanıcısı başka tenant'ın verisine erişmeye
+    çalışırsa RLS sorguyu filtreler (0 satır). Service
+    katmanı 404 döner (bilgi sızdırmaz). Audit event
+    `audit:security.cross_tenant_attempt` (severity: critical)
+    yazılır (Faz 10+).
+
+    Mevcut guard: service.requireReadScope / requireWriteScope
+    + `audit:security.cross_tenant_attempt` event'i Faz 10+
+    ile otomatik tetiklenecek.
+  keywords: [cross-tenant, RLS, izolasyon, security, IDOR]
+  related_chunks: [glossary-rls, glossary-tenant, glossary-branch]
+  related_pages: []
+  related_api: []
+
+# -----------------------------------------------------------------------------
+# PERMISSION (GOAL-010) — Tenant ve Branch permission'ları
+# -----------------------------------------------------------------------------
+- chunk_id: permission-tenant-tenant-create
+  type: permission
+  source: docs/permissions/PERMISSION_CATALOG.yaml
+  permission: tenant:tenant:create
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "tenant:tenant:create"
+  content: |
+    Yeni tenant oluşturma (pilot onboarding). Yalnızca
+    SUPERADMIN. Audit: audit:tenant.create (critical).
+  keywords: [tenant, create, SUPERADMIN, onboarding]
+  related_chunks: [glossary-tenant, audit-tenant-create]
+  related_pages: []
+  related_api: [POST /api/v1/tenants]
+
+- chunk_id: permission-branch-branch-create
+  type: permission
+  source: docs/permissions/PERMISSION_CATALOG.yaml
+  permission: branch:branch:create
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "branch:branch:create"
+  content: |
+    Yeni şube oluşturma. SUPERADMIN veya tenant OWNER.
+    Tenant-scoped. RLS ile yalnızca kendi tenant'ı içinde
+    çalışır. Audit: audit:branch.create.
+  keywords: [branch, create, OWNER, tenant-scoped]
+  related_chunks: [glossary-branch, audit-branch-create]
+  related_pages: []
+  related_api: [POST /api/v1/tenants/:tenantId/branches]
+
+# -----------------------------------------------------------------------------
+# ERROR (GOAL-010) — Yeni hata kodları
+# -----------------------------------------------------------------------------
+- chunk_id: error-VET-TENANT-0004
+  type: error
+  source: docs/errors/ERROR_CATALOG.md
+  error_code: VET-TENANT-0004
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Tenant slug zaten kayıtlı"
+  content: |
+    HTTP 409. Tenant oluşturma sırasında `slug` zaten
+    kullanımda. Çözüm: farklı bir slug seçin (örn. tenant
+    adına tarih/şehir ekleyin: `pilot-vet-kadikoy-2026`).
+  keywords: [409, tenant, slug, çakışma, conflict]
+  related_chunks: [glossary-tenant]
+  related_pages: []
+  related_api: [POST /api/v1/tenants]
+
+- chunk_id: error-VET-BRANCH-0003
+  type: error
+  source: docs/errors/ERROR_CATALOG.md
+  error_code: VET-BRANCH-0003
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Şube kodu zaten kayıtlı"
+  content: |
+    HTTP 409. Şube oluşturma sırasında `(tenant_id, code)`
+    unique constraint ihlal edildi. Çözüm: farklı bir şube
+    kodu seçin.
+  keywords: [409, branch, kod, çakışma, conflict]
+  related_chunks: [glossary-branch]
+  related_pages: []
+  related_api: [POST /api/v1/tenants/:tenantId/branches]
+
+- chunk_id: error-VET-AUTHZ-0005
+  type: error
+  source: docs/errors/ERROR_CATALOG.md
+  error_code: VET-AUTHZ-0005
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Belirli rol gerekli"
+  content: |
+    HTTP 403. Endpoint için belirli bir rol gerekli (örn.
+    SUPERADMIN). Çözüm: yönetici ile iletişime geçin.
+  keywords: [403, role, yetki, SUPERADMIN]
+  related_chunks: [glossary-tenant]
+  related_pages: []
+  related_api: []

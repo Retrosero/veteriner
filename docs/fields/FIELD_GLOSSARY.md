@@ -1,76 +1,185 @@
-# Alan Sözlüğü
+# Alan Sözlüğü — Tenant ve Branch
 
-VetNiva'daki tüm alanların anlamı, tipi, kısıtları ve tenant/güvenlik
-etkisi. Yeni alan eklenirken bu sözlüğe satır eklenir; `pnpm docs:check`
-form alanlarını bu sözlükle karşılaştırır (Faz 2+).
+> **Şema:** [`FIELD_SCHEMA.md`](./FIELD_SCHEMA.md)
+> **Veri modeli:** [`DOMAIN_GLOSSARY.md`](../domain/DOMAIN_GLOSSARY.md)
 
-**Not:** Bu sözlük **alan düzeyindedir** (alan adı + tip + kısıt).
-**Varlık/kavram düzeyinde** sözlük için
-[`docs/domain/DOMAIN_GLOSSARY.md`](../domain/DOMAIN_GLOSSARY.md)
-dosyasına bakın (GOAL-001 ile birlikte üretildi). İlişkiler,
-yaşam döngüsü ve silme/düzeltme kuralları orada tanımlıdır.
+Bu doküman GOAL-010 kapsamında eklenen tenant ve branch alanlarını
+tanımlar. Tüm alanlar Prisma şemasında (apps/api/prisma/schema.prisma)
+ve Zod sözleşmelerinde (packages/contracts/src/tenant.ts,
+branch.ts) tanımlıdır.
 
-## Genel (Common)
+---
 
-| Alan         | Tip         | Açıklama                            | Kısıt                                 |
-| ------------ | ----------- | ----------------------------------- | ------------------------------------- |
-| `id`         | UUID        | Tüm entity'lerin birincil anahtarı. | PK, benzersiz                         |
-| `tenant_id`  | UUID        | Tenant sahiplik anahtarı.           | NOT NULL, RLS zorunlu                 |
-| `branch_id`  | UUID        | Şube kapsamı.                       | NULL olabilir (cross-branch kayıtlar) |
-| `created_at` | timestamptz | Oluşturma zamanı.                   | NOT NULL, default `now()`             |
-| `updated_at` | timestamptz | Son güncelleme.                     | NOT NULL, trigger ile güncellenir     |
-| `created_by` | UUID        | Oluşturan kullanıcı.                | NULL olabilir (system)                |
-| `version`    | int         | Optimistic concurrency.             | NOT NULL, default 0                   |
+## Tenant alanları
 
-## Kullanıcı (User) — GOAL-001
+### id (UUID, zorunlu)
 
-| Alan        | Tip    | Açıklama                                                | Kısıt                       |
-| ----------- | ------ | ------------------------------------------------------- | --------------------------- |
-| `email`     | citext | E-posta adresi.                                         | Tenant içinde unique        |
-| `full_name` | text   | Ad soyad.                                               | 3-200 karakter              |
-| `phone`     | text   | Telefon (maskeli).                                      | E.164 veya yerel; loglanmaz |
-| `role`      | enum   | `OWNER` / `VETERINARIAN` / `STAFF` / `PET_OWNER_PORTAL` | Tenant başına               |
-| `status`    | enum   | `invited` / `active` / `suspended`                      | Default `invited`           |
+- **Tip:** UUID v4
+- **Kaynak:** DB üretir (`gen_random_uuid()`)
+- **PII:** hayır
+- **Açıklama:** Tenant benzersiz tanımlayıcısı. Diğer tüm tablolarda
+  `tenant_id` olarak FK taşınır.
 
-## Hayvan (Patient) — GOAL-002
+### slug (string, zorunlu, unique)
 
-| Alan                   | Tip          | Açıklama                      | Kısıt                               |
-| ---------------------- | ------------ | ----------------------------- | ----------------------------------- |
-| `name`                 | text         | Hayvan adı.                   | 1-100                               |
-| `species`              | enum         | `CAT` / `DOG` / `BIRD`        | Pilot kapsam                        |
-| `breed`                | text         | Irk.                          | NULL olabilir                       |
-| `sex`                  | enum         | `MALE` / `FEMALE` / `UNKNOWN` |                                     |
-| `birth_date`           | date         | Doğum tarihi.                 | NULL olabilir (tahmini yaş)         |
-| `estimated_age_months` | int          | Tahmini yaş (ay).             | NULL olabilir                       |
-| `microchip_no`         | text         | Mikroçip numarası.            | Tenant içinde unique; kuşlarda NULL |
-| `colour`               | text         | Renk/desen.                   | NULL olabilir                       |
-| `weight_kg`            | numeric(6,2) | Ağırlık (kg).                 | NULL olabilir                       |
-| `allergies`            | text[]       | Alerji listesi.               | Klinik uyarı olarak gösterilir      |
-| `chronic_conditions`   | text[]       | Kronik durum listesi.         | Klinik uyarı                        |
-| `warnings`             | text[]       | Özel uyarılar.                | Klinik uyarı                        |
+- **Tip:** String, 2-64 karakter
+- **Format:** `^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$`
+- **Örnek:** `pilot-vet-kadikoy`
+- **PII:** hayır
+- **Açıklama:** URL-dostu benzersiz tenant tanımlayıcısı.
+  Değiştirilemez; yeni tenant için yeni slug gerekir.
 
-## Aşı (Vaccination) — GOAL-003
+### name (string, zorunlu)
 
-| Alan              | Tip         | Açıklama                      | Kısıt                |
-| ----------------- | ----------- | ----------------------------- | -------------------- |
-| `patient_id`      | UUID        | Hayvan referansı.             | FK, NOT NULL         |
-| `product_id`      | UUID        | Aşı ürünü.                    | FK, NOT NULL         |
-| `lot_id`          | UUID        | Lot referansı.                | FK, NOT NULL         |
-| `administered_by` | UUID        | Uygulayan veteriner.          | FK, NOT NULL         |
-| `administered_at` | timestamptz | Uygulama zamanı.              | NOT NULL             |
-| `dose`            | text        | Uygulanan doz.                | ör. "1 ml SC"        |
-| `site`            | text        | Uygulama yeri.                | ör. "sağ ön kol"     |
-| `next_due_at`     | timestamptz | Tekrar tarihi.                | NULL olabilir        |
-| `idempotency_key` | text        | Tekrar koruma.                | Tenant içinde unique |
-| `amends_id`       | UUID        | Düzeltme/amendment referansı. | NULL olabilir        |
+- **Tip:** String, 2-200 karakter
+- **PII:** hayır
+- **Açıklama:** Görünen işletme adı. UI'da gösterilir; audit ve
+  raporlarda referans alınır.
 
-## Hassas alanlar
+### country (string, zorunlu)
 
-Bu alanlar teknik loglara veya uygulama dışı çıktılara yazılmaz:
+- **Tip:** Char(2), ISO 3166-1 alpha-2
+- **Değerler:** `TR` | `GB`
+- **PII:** hayır
+- **Açıklama:** Tenant ülkesi. Oluşturulduktan sonra değiştirilemez
+  (ülke adaptörü seçimi bu alana göre yapılır).
+- **DB constraint:** `chk_tenants_country IN ('TR', 'GB')`
 
-- `phone` (maskeli: `+90 XXX XXX 12 34`)
-- `email` (yalnızca admin görünümü)
-- `microchip_no` (yalnızca klinik personeli)
-- `allergies`, `chronic_conditions` (klinik içerik)
-- SOAP notları, reçete detayları (klinik içerik)
-- Ödeme kartı verisi (Faz 7+, **saklanmaz**)
+### defaultLocale (string, varsayılan `tr-TR`)
+
+- **Tip:** String, max 10 karakter
+- **Değerler:** `tr-TR` | `en-GB`
+- **PII:** hayır
+- **Açıklama:** Tenant varsayılan dili. UI açılışında seçilir.
+
+### timezone (string, varsayılan `Europe/Istanbul`)
+
+- **Tip:** String, max 64 karakter
+- **Format:** IANA timezone (örn. `Europe/Istanbul`, `Europe/London`)
+- **PII:** hayır
+- **Açıklama:** Tenant'ın operasyonel saat dilimi.
+
+### status (enum, varsayılan `active`)
+
+- **Değerler:** `active` | `suspended` | `closed`
+- **PII:** hayır
+- **Açıklama:** Tenant durumu. `closed` olan tenant yeni işlem kabul
+  etmez; audit kayıtları korunur.
+
+### taxId (string, opsiyonel)
+
+- **Tip:** String, 10-20 karakter
+- **PII:** evet (Vergi Kimlik Numarası, mask'lenmiş log)
+- **Açıklama:** VKN veya TCKN. VKN 10 hane, TCKN 11 hane.
+  Doğrulama `CountryAdapter.validateTaxId` ile yapılır.
+
+### taxIdType (string, opsiyonel)
+
+- **Değerler:** `company` | `personal`
+- **PII:** hayır
+- **Açıklama:** `taxId` alanıyla birlikte; VKN mi TCKN mi olduğunu
+  belirtir.
+
+### contactEmail (string, opsiyonel)
+
+- **Tip:** E-posta (RFC 5322)
+- **PII:** evet
+- **Açıklama:** Tenant düzeyinde iletişim e-postası. Süperadmin
+  tarafından yönetilir; tenant kullanıcısı için PII mask'leme
+  uygulanır.
+
+### createdAt (timestamp, otomatik)
+
+- **Tip:** `TIMESTAMPTZ`
+- **PII:** hayır
+- **Açıklama:** Tenant oluşturulma zamanı. DB tarafından atanır.
+
+### updatedAt (timestamp, otomatik)
+
+- **Tip:** `TIMESTAMPTZ`
+- **PII:** hayır
+- **Açıklama:** Son güncelleme zamanı. `touch_updated_at` trigger'ı
+  ile otomatik güncellenir.
+
+### archivedAt (timestamp, opsiyonel)
+
+- **Tip:** `TIMESTAMPTZ` (nullable)
+- **PII:** hayır
+- **Açıklama:** Tenant kapatılma (soft delete) zamanı. NULL ise
+  aktif; set edilmişse kapalı.
+
+### archivedReason (string, opsiyonel)
+
+- **Tip:** String, max 500 karakter
+- **PII:** hayır
+- **Açıklama:** Kapatma sebebi. Operasyonel not olarak audit
+  event'ine de yazılır.
+
+---
+
+## Branch alanları
+
+### id (UUID, zorunlu)
+
+- **Tip:** UUID v4
+- **Kaynak:** DB üretir
+- **PII:** hayır
+
+### tenantId (UUID, zorunlu)
+
+- **Tip:** UUID, FK → tenants.id
+- **PII:** hayır
+- **Açıklama:** Ait olduğu tenant. `ON DELETE RESTRICT` (tenant
+  silinirse branch'ler korunur; fiziksel silme zaten yok).
+
+### code (string, zorunlu, tenant içinde unique)
+
+- **Tip:** String, 2-64 karakter
+- **Format:** `^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$`
+- **Örnek:** `kadikoy`, `merkez`
+- **PII:** hayır
+- **Unique:** `(tenantId, code)` composite unique index
+
+### name (string, zorunlu)
+
+- **Tip:** String, 2-200 karakter
+- **PII:** hayır
+
+### city (string, opsiyonel)
+
+- **Tip:** String, max 100 karakter
+- **PII:** hayır
+- **Açıklama:** Şehir adı. Operasyonel raporlamada kullanılır.
+
+### addressJson (JSON, opsiyonel)
+
+- **Tip:** JSONB
+- **PII:** kısmi (adres PII; mask'leme uygulanır)
+- **Şema:**
+  ```ts
+  {
+    line1: string;
+    line2?: string;
+    city: string;
+    state?: string;
+    postalCode: string;
+    country: string;  // ISO 3166-1 alpha-2
+  }
+  ```
+- **Açıklama:** Ülke adaptörü `formatAddress` ile string'e
+  dönüştürür.
+
+### phone (string, opsiyonel)
+
+- **Tip:** String, 5-32 karakter
+- **Format:** E.164 (`+90...`)
+- **PII:** evet (PII_MASKING telefon alanı olarak mask'ler)
+
+### status (enum, varsayılan `active`)
+
+- **Değerler:** `active` | `inactive` | `closed`
+- **PII:** hayır
+
+### createdAt, updatedAt, archivedAt
+
+- Tenant ile aynı semantik.

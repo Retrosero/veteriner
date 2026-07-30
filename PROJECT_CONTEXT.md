@@ -116,7 +116,7 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
     seed, RAG retrieval + AI help endpoint iskeleti,
     docs-check VET- + AI chunks validator, 18 unit test geçti)
 - **Faz 1 — Platform çekirdeği** ⏳ sırada
-  - GOAL-010 tenant ve şube
+  - GOAL-010 ✅ tenant ve şube (tamamlandı — 2026-07-30)
   - GOAL-011 kimlik doğrulama ve oturum
   - GOAL-012 RBAC ve izin motoru
   - GOAL-013 feature flag

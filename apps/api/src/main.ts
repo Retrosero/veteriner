@@ -5,14 +5,16 @@
  * @description NestJS uygulamasını başlatır:
  * - Global exception filter (AllExceptionsFilter)
  * - Global request ID interceptor
+ * - Global actor interceptor (GOAL-010 auth placeholder)
  * - Helmet (güvenlik başlıkları)
  * - CORS (WEB_BASE_URL'den)
  * - Compression
  * - Swagger UI (/api/docs) ve JSON (/api/docs-json)
  * - Shutdown hooks
  *
- * @security Şu an tenant bağlamı yok; production'da reverse proxy
- * (nginx) tarafında TLS, rate limit ve IP filtreleme uygulanır.
+ * @security Şu an tenant bağlamı header'lardan geliyor (GOAL-010).
+ *   Production'da reverse proxy (nginx) tarafında TLS, rate limit ve
+ *   IP filtreleme uygulanır. GOAL-011 ile gerçek auth gelecek.
  */
 
 import "reflect-metadata";
@@ -24,6 +26,7 @@ import compression from "compression";
 import helmet from "helmet";
 
 import { AppModule } from "./app.module.js";
+import { ActorInterceptor } from "./common/actor/actor.interceptor.js";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter.js";
 import {
   REQUEST_ID_HEADER,
@@ -54,18 +57,33 @@ async function bootstrap(): Promise<void> {
     }),
   );
   app.useGlobalInterceptors(new RequestIdInterceptor());
+  const actorInterceptor = app.get(ActorInterceptor);
+  app.useGlobalInterceptors(actorInterceptor);
   app.useGlobalFilters(new AllExceptionsFilter());
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle("VetNiva API")
     .setDescription(
       "VetNiva çok kiracılı veteriner klinik + petshop SaaS API. " +
-        "GOAL-000: yalnızca health endpoint'leri. Detaylı sözleşme için packages/contracts.",
+        "GOAL-010: tenant + branch altyapısı (auth placeholder). " +
+        "Detaylı sözleşme için packages/contracts.",
     )
     .setVersion(env.APP_VERSION)
     .addApiKey(
       { type: "apiKey", name: REQUEST_ID_HEADER, in: "header" },
       "request-id",
+    )
+    .addApiKey(
+      { type: "apiKey", name: "x-actor-id", in: "header" },
+      "actor-id",
+    )
+    .addApiKey(
+      { type: "apiKey", name: "x-actor-role", in: "header" },
+      "actor-role",
+    )
+    .addApiKey(
+      { type: "apiKey", name: "x-tenant-id", in: "header" },
+      "tenant-id",
     )
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
@@ -80,6 +98,9 @@ async function bootstrap(): Promise<void> {
   );
   logger.log(`Swagger UI: http://localhost:${env.PORT_API}/api/docs`);
   logger.log(`Request ID header: ${REQUEST_ID_HEADER}`);
+  logger.log(
+    "Actor headers (GOAL-010 placeholder): x-actor-id, x-actor-role, x-tenant-id",
+  );
 }
 
 bootstrap().catch((err) => {

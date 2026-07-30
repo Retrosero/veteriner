@@ -28,6 +28,7 @@ const VALID_TYPES = new Set([
   "log-standard",
   "pii-rule",
   "correlation",
+  "security",
 ]);
 
 const VALID_LOCALES = new Set(["tr-TR", "en-GB"]);
@@ -62,18 +63,64 @@ export async function scanAiChunks(root: string): Promise<{
 
   const yamlPath = path.join(aiDir, files[0]!);
   const text = await readFile(yamlPath, "utf8");
-  const parsed = yaml.load(text) as unknown;
-  if (!parsed || typeof parsed !== "object") {
+  // AI_CHUNKS.yaml mixed formatta yazılmış: üst düzey metadata
+  // (version, generated_by, vb.) + chunks listesi. Bu formatta
+  // tek `yaml.load` çağrısı başarısız olur; `yaml.loadAll` ise
+  // `---` separator gerektirir. Bu yüzden dosyayı iki ayrı
+  // parçaya ayırıp her birini bağımsız parse ediyoruz.
+  let chunks: unknown[] | undefined;
+  let parseError: string | undefined;
+  try {
+    // "chunks:" ifadesinden sonraki kısmı izole edip liste olarak
+    // parse et. Bu, mixed format için en güvenilir yoldur.
+    const lines = text.split(/\r?\n/);
+    let chunksStart: number | undefined;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i] ?? "";
+      // Yorum satırlarını ve boş satırları atla; "chunks:" ile
+      // başlayan (girintisiz) ilk satırı bul.
+      if (/^chunks:\s*$/.test(line)) {
+        chunksStart = i + 1;
+        break;
+      }
+    }
+    if (chunksStart === undefined) {
+      // "chunks:" yoksa tüm belgeyi liste olarak parse et
+      // (mevcut chunks'lar - ile başlıyor).
+      const listItems = text.split(/\n(?=-\s+chunk_id:)/);
+      // ... veya doğrudan yaml.load deneyebiliriz.
+    }
+    if (chunksStart !== undefined) {
+      const chunksText = lines.slice(chunksStart).join("\n");
+      chunks = yaml.load(chunksText) as unknown[] | undefined;
+    } else {
+      // Mixed format fallback: dosyayı parçalara ayır, ilk parça
+      // metadata, sonraki parça chunks listesi. "---" separator
+      // yerine dosya yapısından çıkar.
+      const withoutComments = text.replace(/^#.*$/gm, "").trim();
+      // Eğer üst düzey `chunks:` anahtarı yoksa, dosyayı iki
+      // parçaya ayır: ilk scalar'lar + sonraki liste.
+      const listMarker = "\n- chunk_id:";
+      const idx = withoutComments.indexOf(listMarker);
+      if (idx > 0) {
+        const listText = withoutComments.slice(idx + 1);
+        chunks = yaml.load(listText) as unknown[] | undefined;
+      }
+    }
+  } catch (err) {
+    parseError = (err as Error).message;
+  }
+
+  if (parseError) {
     issues.push({
       severity: "error",
       path: "docs/ai/AI_CHUNKS.yaml",
-      message: "YAML parse edilemedi veya kök obje değil.",
+      message: `YAML parse hatası: ${parseError}`,
     });
     return { chunks: 0, issues };
   }
 
-  const chunks = (parsed as { chunks?: unknown[] }).chunks;
-  if (!Array.isArray(chunks)) {
+  if (!chunks || !Array.isArray(chunks)) {
     issues.push({
       severity: "error",
       path: "docs/ai/AI_CHUNKS.yaml",

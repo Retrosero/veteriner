@@ -1,0 +1,60 @@
+page_id: web.app.locale.login
+route: "/[locale]/login"
+module: auth
+title_key: auth.login
+purpose:
+  tr-TR: "Kullanıcı giriş ekranı. E-posta ve şifre ile kimlik doğrulama yapar."
+  en-GB: "User login screen. Authenticates with email and password."
+allowed_roles: []
+required_permissions: []
+prerequisites: []
+fields:
+  - key: email
+    label_key: auth.email
+    description:
+      tr-TR: "Kullanıcı e-posta adresi (tenant düzeyinde benzersiz)."
+      en-GB: "User email (unique within tenant)."
+    required: true
+  - key: password
+    label_key: auth.password
+    description:
+      tr-TR: "Kullanıcı parolası (policy: en az 12 karakter, karmaşık)."
+      en-GB: "User password (policy: at least 12 chars, complex)."
+    required: true
+actions:
+  - key: submit
+    description:
+      tr-TR: "E-posta ve şifreyi gönderir; başarılıysa oturum açar."
+      en-GB: "Submits email and password; opens session on success."
+  - key: forgot_password
+    description:
+      tr-TR: "Parola sıfırlama bağlantısı e-posta ile gönderilir."
+      en-GB: "Sends password reset link by email."
+step_by_step:
+  tr-TR:
+    - "Tarayıcıdan /<locale>/login adresine git."
+    - "E-posta ve şifre gir."
+    - "Giriş Yap butonuna tıkla."
+    - "Başarılıysa dashboard'a yönlendirilirsin."
+  en-GB:
+    - "Navigate to /<locale>/login in the browser."
+    - "Enter email and password."
+    - "Click the Login button."
+    - "On success, you are redirected to the dashboard."
+possible_errors:
+  - error_code: VET-AUTH-0003
+    resolution:
+      tr-TR: "E-posta veya şifre hatalı. Bilgileri kontrol edin."
+      en-GB: "Email or password incorrect. Check your credentials."
+  - error_code: VET-AUTH-0004
+    resolution:
+      tr-TR: "Çok fazla başarısız deneme. 15 dakika sonra tekrar deneyin."
+      en-GB: "Too many failed attempts. Try again in 15 minutes."
+related_pages:
+  - web.app.locale
+related_api: []
+keywords:
+  tr-TR: [giriş, login, oturum, auth]
+  en-GB: [login, signin, auth, session]
+version: "1.0.0"
+last_verified_at: "2026-07-30"

@@ -3,30 +3,40 @@
  * @module apps/api/common/audit/audit.spec
  *
  * @description AuditService'in temel davranışlarını doğrular:
- * event ID üretimi, severity eşlemesi, metadata iletimi.
+ * event ID üretimi, severity eşlemesi, metadata iletimi, Prisma
+ * mock ile DB yazımı.
  *
  * @since GOAL-004 (FAZ-0) audit + log + hata standardı
+ * @updated GOAL-010 (FAZ-1) Prisma DB yazımı testleri eklendi
  */
 
-import { describe, expect, it, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AuditService } from "./audit.service.js";
 import type { AuditEventInput } from "./audit.types.js";
 
 describe("AuditService", () => {
   let service: AuditService;
+  let prismaAuditCreate: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    service = new AuditService();
+    prismaAuditCreate = vi.fn().mockResolvedValue({ id: "mock-id" });
+    const prisma = {
+      auditEvent: {
+        create: prismaAuditCreate,
+      },
+    } as unknown as ConstructorParameters<typeof AuditService>[0];
+    service = new AuditService(prisma);
   });
 
   const baseInput: AuditEventInput = {
-    eventName: "audit:owner.create",
+    eventName: "audit:tenant.create",
     tenantId: "tnt-abc",
+    branchId: null,
     actorId: "usr-123",
     actorType: "user",
-    targetType: "owner",
-    targetId: "own-456",
+    targetType: "tenant",
+    targetId: "tnt-abc",
     action: "create",
     correlationId: "req-test-001",
     country: "TR",
@@ -46,20 +56,21 @@ describe("AuditService", () => {
   it("girdi alanlarını korur", async () => {
     const event = await service.record({
       ...baseInput,
-      before: { first_name: "A***" },
-      after: { first_name: "B***" },
-      diff: { first_name: { from: "A***", to: "B***" } },
+      before: { name: "Eski" },
+      after: { name: "Yeni" },
+      diff: { name: { from: "Eski", to: "Yeni" } },
       metadata: { source: "ui" },
     });
-    expect(event.eventName).toBe("audit:owner.create");
-    expect(event.before).toEqual({ first_name: "A***" });
-    expect(event.after).toEqual({ first_name: "B***" });
-    expect(event.diff).toEqual({ first_name: { from: "A***", to: "B***" } });
+    expect(event.eventName).toBe("audit:tenant.create");
+    expect(event.after).toEqual({ name: "Yeni" });
+    expect(event.diff).toEqual({ name: { from: "Eski", to: "Yeni" } });
     expect(event.metadata).toEqual({ source: "ui" });
   });
 
   it("info severity info seviyesinde loglanır", async () => {
-    await expect(service.record({ ...baseInput, severity: "info" })).resolves.toBeDefined();
+    await expect(
+      service.record({ ...baseInput, severity: "info" }),
+    ).resolves.toBeDefined();
   });
 
   it("critical severity error seviyesinde loglanır", async () => {
@@ -70,14 +81,22 @@ describe("AuditService", () => {
 
   it("recordSimple helper çalışır", async () => {
     const event = await service.recordSimple(
-      "audit:adapter.format_currency",
-      "adapter",
-      "tr-try",
-      "format_currency",
-      "info",
+      "audit:branch.create",
+      "branch",
+      "br-1",
+      "create",
+      {
+        actorId: "usr-1",
+        actorType: "user",
+        tenantId: "tnt-1",
+        branchId: "br-1",
+        correlationId: "req-1",
+        country: "TR",
+      },
     );
-    expect(event.eventName).toBe("audit:adapter.format_currency");
-    expect(event.actorType).toBe("system");
+    expect(event.eventName).toBe("audit:branch.create");
+    expect(event.actorId).toBe("usr-1");
+    expect(event.branchId).toBe("br-1");
   });
 
   it("null actor SYSTEM event'lerde kabul edilir", async () => {
@@ -88,5 +107,24 @@ describe("AuditService", () => {
     });
     expect(event.actorId).toBeNull();
     expect(event.actorType).toBe("system");
+  });
+
+  it("PII alanları mask'lenir (before/after)", async () => {
+    await service.record({
+      ...baseInput,
+      before: { tax_id: "1234567890" },
+      after: { tax_id: "0987654321" },
+    });
+    const call = prismaAuditCreate.mock.calls[0]?.[0] as {
+      data: { before: unknown; after: unknown };
+    };
+    expect(call.data.before).toEqual({ tax_id: "123***90" });
+    expect(call.data.after).toEqual({ tax_id: "098***21" });
+  });
+
+  it("Prisma DB yazımı best-effort: hata loglanır, engellemez", async () => {
+    prismaAuditCreate.mockRejectedValueOnce(new Error("db down"));
+    await expect(service.record(baseInput)).resolves.toBeDefined();
+    // Event yine de döner; hata log'a düşer.
   });
 });

@@ -18,6 +18,13 @@ playwright-report/
 test-results/
 .vitest/
 
+# Prisma generated client (regenerated via `prisma generate`)
+apps/api/node_modules/.prisma/
+apps/api/node_modules/@prisma/client/
+
+# Local Prisma migration artifacts
+apps/api/prisma/.tmp/
+
 # Generated
 **/generated/prisma/**
 src/generated/

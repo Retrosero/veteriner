@@ -60,6 +60,7 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-AUTHZ-0002`     | Cross-tenant erişim denemesi      | 404  | info     | server | (Sessizce 404 döner; bilgi sızdırmaz.)             |
 | `VET-AUTHZ-0003`     | Bu kaynağa erişim yetkiniz yok    | 403  | warning  | server | İlgili modüle erişim yetkisi talep edin.           |
 | `VET-AUTHZ-0004`     | Branches arası erişim reddedildi  | 403  | warning  | server | Yalnızca kendi şubenizdeki kayıtlara erişebilirsiniz. |
+| `VET-AUTHZ-0005`     | Belirli rol gerekli               | 403  | warning  | server | Bu işlem için SUPERADMIN veya OWNER rolü gerekli.   |
 
 ## Tenant (TENANT)
 
@@ -68,6 +69,8 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-TENANT-0001`    | Tenant bulunamadı           | 404  | warning  | server | Tenant kodunuzu kontrol edin.                    |
 | `VET-TENANT-0002`    | Tenant kapatılmış           | 403  | error    | server | Destek ekibi ile iletişime geçin.                |
 | `VET-TENANT-0003`    | Aktif tenant seçilmemiş     | 401  | warning  | server | Aktif tenant seçin veya destek ekibine bildirin. |
+| `VET-TENANT-0004`    | Tenant slug zaten kayıtlı   | 409  | warning  | server | Farklı bir slug seçin.                           |
+| `VET-TENANT-0005`    | Tenant zaten kapatılmış     | 409  | warning  | server | Zaten kapalı; tekrar kapatılamaz.                 |
 
 ## Şube (BRANCH)
 
@@ -75,6 +78,8 @@ bu katalogda yer almasını zorunlu kılar.
 | -------------------- | --------------------------- | ---- | -------- | ------ | ------------------------------------ |
 | `VET-BRANCH-0001`    | Şube bulunamadı             | 404  | warning  | server | Şube kodunuzu kontrol edin.          |
 | `VET-BRANCH-0002`    | Şube pasif                  | 403  | warning  | server | Aktif şube seçin.                    |
+| `VET-BRANCH-0003`    | Şube kodu zaten kayıtlı     | 409  | warning  | server | Farklı bir şube kodu seçin.          |
+| `VET-BRANCH-0004`    | Şube zaten kapatılmış       | 409  | warning  | server | Zaten kapalı; tekrar arşivlenemez.   |
 
 ## Kullanıcı (USER)
 

@@ -55,7 +55,7 @@ export async function scanApiRoutes(appsApiRoot: string): Promise<RouteInfo[]> {
       const method = match[1] as HttpMethod;
       const subPath = match[2] ?? "";
       const fullPath = joinPaths(controllerPrefix, subPath);
-      const docKey = `api.${method.toLowerCase()}.${fullPath.replace(/\//g, "_") || "root"}`;
+      const docKey = `api.${method.toLowerCase()}.${fullPath.replace(/\//g, "_").replace(/:/g, "_") || "root"}`;
       routes.push({
         path: `${method} ${fullPath}`,
         method: method as RouteInfo["method"],
