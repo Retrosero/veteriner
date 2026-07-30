@@ -367,6 +367,32 @@ export class PortalService {
     return this.repo.listForOwner(tenantId, ownerId);
   }
 
+  /**
+   * Davet token'ı ile davet kaydını bulur. Tenant doğrulaması
+   * çağıran tarafa bırakılmıştır. Cross-module davet çözümlemesi
+   * (GOAL-033 PortalAuthService.registerByInvitation) için public
+   * helper.
+   */
+  public findInvitationByToken(token: string): PortalInvitation | null {
+    return this.repo.findByToken(token);
+  }
+
+  /**
+   * Daveti accepted işaretler. Status pending ise accepted
+   * yapılır; aksi durumda no-op (idempotent). Cross-module
+   * kayıt akışı (GOAL-033) için public helper.
+   */
+  public markInvitationAccepted(invitationId: string, at: Date): void {
+    const inv = this.repo.findByIdGlobal(invitationId);
+    if (!inv) return;
+    if (inv.status !== "pending") return;
+    this.repo.update({
+      ...inv,
+      status: "accepted",
+      acceptedAt: at.toISOString(),
+    });
+  }
+
   private requireTenantScope(actor: ActorContext, tenantId: string): void {
     if (actor.role === "SUPERADMIN") return;
     if (actor.tenantId === tenantId) return;

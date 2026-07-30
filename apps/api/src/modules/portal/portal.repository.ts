@@ -54,6 +54,16 @@ export class PortalRepository {
     return this.byId.get(id) ?? null;
   }
 
+  /**
+   * Tenant-agnostic ID araması. Cross-module senkronizasyon
+   * (GOAL-033 PortalAuthService.markInvitationAccepted) için.
+   * Service katmanı bu metodu kullanırken status guard'ı
+   * uygular.
+   */
+  public findByIdGlobal(id: string): PortalInvitation | null {
+    return this.byId.get(id) ?? null;
+  }
+
   public update(record: PortalInvitation): PortalInvitation {
     this.byId.set(record.id, record);
     // Token değişmez; index tutarlı kalır.

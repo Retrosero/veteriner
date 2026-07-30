@@ -44,6 +44,7 @@ import { createHash, randomUUID } from "node:crypto";
 import {
   ACCOUNT_LOCK_SECONDS,
   BCRYPT_COST,
+  EMAIL_VERIFICATION_TTL_SECONDS,
   MAX_FAILED_LOGIN_COUNT,
   PASSWORD_RESET_TTL_SECONDS,
   PORTAL_SESSION_TTL_SECONDS,
@@ -52,12 +53,17 @@ import {
 import { AuditService } from "../../common/audit/audit.service.js";
 import { hashPassword, verifyPassword } from "../../common/auth/password.js";
 import { DomainError } from "../../common/errors/domain-error.js";
+import type { PortalInvitation } from "../../common/portal/portal.types.js";
+
+import { PortalService } from "../portal/portal.service.js";
 
 import { PortalAuthRepository } from "./portal-auth.repository.js";
 import type {
   PortalAttemptContext,
+  PortalEmailVerificationRecord,
   PortalLoginInput,
   PortalPasswordResetRecord,
+  PortalRegisterResult,
   PortalSession,
   PortalUser,
 } from "./portal-auth.types.js";
@@ -69,6 +75,7 @@ export class PortalAuthService {
   public constructor(
     private readonly repo: PortalAuthRepository,
     private readonly audit: AuditService,
+    private readonly portal: PortalService,
   ) {}
 
   // ===========================================================================
@@ -86,7 +93,7 @@ export class PortalAuthService {
       locale?: "tr-TR" | "en-GB";
     },
     ctx: PortalAttemptContext,
-  ): Promise<PortalUser> {
+  ): Promise<PortalRegisterResult> {
     // 1) KVKK consent zorunlu.
     if (input.consentKvkk !== true) {
       throw new DomainError({
@@ -135,9 +142,15 @@ export class PortalAuthService {
       patientIds: [],
       displayName: input.displayName ?? null,
       locale: input.locale ?? "tr-TR",
+      invitationId: null,
+      emailVerified: false,
+      emailVerifiedAt: null,
     });
 
-    // 5) Audit.
+    // 5) Email doğrulama token'ı üret.
+    const emailVerificationToken = this.issueEmailVerification(record.id, tenantId);
+
+    // 6) Audit.
     await this.audit.record({
       eventName: "audit:portal.auth.register",
       tenantId,
@@ -155,11 +168,15 @@ export class PortalAuthService {
         ownerId: input.ownerId,
         locale: record.locale,
         consentKvkkAt: record.consentKvkkAt,
+        emailVerificationIssued: true,
       },
       metadata: { source: "portal_register" },
     });
 
-    return this.toPortalUser(record);
+    // Production'da token response'a eklenmez; FAZ-0'da debug amaçlı
+    // dönülüyor. FAZ-3+'da notification sistemiyle email ile gönderilir.
+    const portalUser = this.toPortalUser(record);
+    return { user: portalUser, emailVerificationToken };
   }
 
   // ===========================================================================
@@ -354,6 +371,37 @@ export class PortalAuthService {
     return this.toPortalUser(user);
   }
 
+  /**
+   * Tenant-scoped portal user lookup. Cross-module bağlantı
+   * (örn. portal-pets `ownerId` çözümlemesi) için public helper.
+   * Bulunamazsa null.
+   */
+  public findById(tenantId: string, portalUserId: string): PortalUser | null {
+    const rec = this.repo.findPortalUserById(tenantId, portalUserId);
+    if (!rec) return null;
+    return this.toPortalUser(rec);
+  }
+
+  /**
+   * Session meta'sını döner. Guard tarafından session token'ın
+   * expiresAt'ını okumak için kullanılır. Süresi geçmişse null.
+   */
+  public async getSessionMeta(
+    token: string,
+  ): Promise<{ expiresAt: string; tenantId: string; portalUserId: string } | null> {
+    const rec = this.repo.findSession(token);
+    if (!rec) return null;
+    if (rec.expiresAt <= Date.now()) {
+      this.repo.deleteSession(token);
+      return null;
+    }
+    return {
+      expiresAt: new Date(rec.expiresAt).toISOString(),
+      tenantId: rec.tenantId,
+      portalUserId: rec.portalUserId,
+    };
+  }
+
   // ===========================================================================
   // LOGOUT
   // ===========================================================================
@@ -515,6 +563,249 @@ export class PortalAuthService {
     return out;
   }
 
+  // ===========================================================================
+  // DAVET ÜZERİNDEN KAYIT (GOAL-033 — invitation-accept sonrası)
+  // ===========================================================================
+
+  /**
+   * Davet token + parola ile yeni portal user oluşturur. Akış:
+   * 1) Davet token doğrula (status pending + expiresAt > now)
+   * 2) Aynı email ile kayıt var mı? Varsa 409 VET-AUTH-0003
+   * 3) Parolayı hash'le
+   * 4) PortalUser oluştur (invitationId bağlı, emailVerified=false)
+   * 5) Davet kaydını accepted işaretle
+   * 6) Email doğrulama token'ı üret
+   * 7) Audit
+   */
+  public async registerByInvitation(
+    token: string,
+    password: string,
+    input: {
+      email: string;
+      consentKvkk: boolean;
+      displayName?: string;
+      locale?: "tr-TR" | "en-GB";
+    },
+    ctx: PortalAttemptContext,
+  ): Promise<{ user: PortalUser; emailVerificationToken: string }> {
+    // 1) KVKK consent zorunlu.
+    if (input.consentKvkk !== true) {
+      throw new DomainError({
+        errorCode: "VET-VALIDATION-0003",
+        message: "KVKK açık rıza onayı zorunludur",
+        httpStatus: 422,
+        severity: "warning",
+        i18nKey: "error.VET-VALIDATION-0003",
+        details: { field: "consentKvkk" },
+      });
+    }
+
+    // 2) Davet token'ı çöz. Tenant-scope kontrolü service sonrası.
+    const invitation = this.resolveInvitationForRegister(token);
+    if (!invitation) {
+      throw new DomainError({
+        errorCode: "VET-PORTAL-0001",
+        message: "Davet bulunamadı, iptal edilmiş veya süresi dolmuş",
+        httpStatus: 410,
+        severity: "warning",
+        i18nKey: "error.VET-PORTAL-0001",
+      });
+    }
+
+    // 3) Email normalize + duplicate kontrolü.
+    const email = input.email.trim().toLowerCase();
+    if (this.repo.findPortalUserByEmail(invitation.tenantId, email)) {
+      throw new DomainError({
+        errorCode: "VET-AUTH-0003",
+        message: "Bu e-posta ile kayıtlı portal hesabı zaten var",
+        httpStatus: 409,
+        severity: "warning",
+        i18nKey: "error.VET-AUTH-0003",
+        details: { email },
+      });
+    }
+
+    // 4) Parolayı hash'le.
+    const passwordHash = await hashPassword(password);
+
+    // 5) PortalUser oluştur (invitationId bağlı).
+    const now = new Date();
+    const id = this.repo.nextPortalUserId(invitation.tenantId);
+    const record = this.repo.insertPortalUser({
+      id,
+      tenantId: invitation.tenantId,
+      ownerId: invitation.ownerId,
+      email,
+      passwordHash,
+      status: "active",
+      consentKvkk: true,
+      consentKvkkAt: now.toISOString(),
+      failedLoginCount: 0,
+      lockedUntil: null,
+      createdAt: now.toISOString(),
+      lastLoginAt: null,
+      patientIds: invitation.patientIds,
+      displayName: input.displayName ?? null,
+      locale: input.locale ?? invitation.locale,
+      invitationId: invitation.id,
+      emailVerified: false,
+      emailVerifiedAt: null,
+    });
+
+    // 6) Davet kaydını accepted işaretle (idempotent çağrı kabul eder).
+    this.markInvitationAccepted(invitation, now);
+
+    // 7) Email doğrulama token'ı üret.
+    const emailVerificationToken = this.issueEmailVerification(
+      record.id,
+      record.tenantId,
+    );
+
+    // 8) Audit (kayıt + davet kabulü ayrı event).
+    await this.audit.record({
+      eventName: "audit:portal.auth.register_by_invitation",
+      tenantId: record.tenantId,
+      actorId: id,
+      actorType: "portal_user",
+      targetType: "portal_user",
+      targetId: id,
+      action: "create",
+      correlationId: ctx.correlationId,
+      country: "TR",
+      severity: "info",
+      ipAddress: ctx.ipAddress,
+      userAgentHash: ctx.userAgentHash,
+      after: {
+        ownerId: invitation.ownerId,
+        invitationId: invitation.id,
+        email,
+        locale: record.locale,
+        patientCount: invitation.patientIds.length,
+      },
+      metadata: { source: "portal_register_by_invitation" },
+    });
+
+    return {
+      user: this.toPortalUser(record),
+      emailVerificationToken,
+    };
+  }
+
+  // ===========================================================================
+  // EMAIL DOĞRULAMA
+  // ===========================================================================
+
+  /**
+   * Email doğrulama token'ı üretir. Mevcut bekleyen token'lar
+   * geçersiz kılınır (tek aktif token politikası). Response'da
+   * plain token döner; FAZ-3+'da email ile gönderilecek.
+   */
+  public async issueEmailVerificationToken(
+    tenantId: string,
+    portalUserId: string,
+    ctx: PortalAttemptContext,
+  ): Promise<{ emailVerificationToken: string }> {
+    const user = this.repo.findPortalUserById(tenantId, portalUserId);
+    if (!user) {
+      throw new DomainError({
+        errorCode: "VET-AUTHZ-0002",
+        message: "Portal kullanıcısı bulunamadı",
+        httpStatus: 404,
+        severity: "info",
+        i18nKey: "error.VET-AUTHZ-0002",
+      });
+    }
+    if (user.emailVerified) {
+      // Zaten doğrulanmış; idempotent 200 + mevcut token dönmüyor.
+      throw new DomainError({
+        errorCode: "VET-VALIDATION-0003",
+        message: "E-posta zaten doğrulanmış",
+        httpStatus: 422,
+        severity: "info",
+        i18nKey: "error.VET-VALIDATION-0003",
+        details: { field: "email", alreadyVerified: true },
+      });
+    }
+    const plain = this.issueEmailVerification(user.id, user.tenantId);
+
+    await this.audit.record({
+      eventName: "audit:portal.auth.email.verification_request",
+      tenantId: user.tenantId,
+      actorId: user.id,
+      actorType: "portal_user",
+      targetType: "portal_user",
+      targetId: user.id,
+      action: "create",
+      correlationId: ctx.correlationId,
+      country: "TR",
+      severity: "info",
+      ipAddress: ctx.ipAddress,
+      userAgentHash: ctx.userAgentHash,
+      after: { email: user.email, expiresInSeconds: EMAIL_VERIFICATION_TTL_SECONDS },
+      metadata: { source: "portal_email_verification" },
+    });
+
+    return { emailVerificationToken: plain };
+  }
+
+  /**
+   * Email doğrulama token'ını tüketir. Geçerli + süresi geçmemiş +
+   * kullanılmamış ise user.emailVerified=true olur. Audit
+   * `audit:portal.auth.email.verified`.
+   */
+  public async verifyEmail(
+    token: string,
+    ctx: PortalAttemptContext,
+  ): Promise<{ message: string; email: string }> {
+    const tokenHash = this.hashToken(token);
+    const rec = this.repo.findEmailVerification(tokenHash);
+    if (!rec || rec.usedAt || rec.expiresAt <= Date.now()) {
+      throw new DomainError({
+        errorCode: "VET-AUTH-0004",
+        message: "Doğrulama token'ı geçersiz veya süresi dolmuş",
+        httpStatus: 400,
+        severity: "warning",
+        i18nKey: "error.VET-AUTH-0004",
+      });
+    }
+    const user = this.repo.findPortalUserById(rec.tenantId, rec.portalUserId);
+    if (!user) {
+      throw new DomainError({
+        errorCode: "VET-AUTHZ-0002",
+        message: "Portal kullanıcısı bulunamadı",
+        httpStatus: 404,
+        severity: "info",
+        i18nKey: "error.VET-AUTHZ-0002",
+      });
+    }
+    const verifiedAt = new Date().toISOString();
+    this.repo.updatePortalUser({
+      ...user,
+      emailVerified: true,
+      emailVerifiedAt: verifiedAt,
+    });
+    this.repo.consumeEmailVerification(tokenHash);
+
+    await this.audit.record({
+      eventName: "audit:portal.auth.email.verified",
+      tenantId: rec.tenantId,
+      actorId: user.id,
+      actorType: "portal_user",
+      targetType: "portal_user",
+      targetId: user.id,
+      action: "complete",
+      correlationId: ctx.correlationId,
+      country: "TR",
+      severity: "info",
+      ipAddress: ctx.ipAddress,
+      userAgentHash: ctx.userAgentHash,
+      after: { email: user.email, verifiedAt },
+      metadata: { source: "portal_email_verification" },
+    });
+
+    return { message: "E-posta doğrulandı", email: user.email };
+  }
+
   private toPortalSession(rec: {
     sessionToken: string;
     portalUserId: string;
@@ -541,6 +832,80 @@ export class PortalAuthService {
 
   private hashToken(plain: string): string {
     return createHash("sha256").update(plain, "utf8").digest("hex");
+  }
+
+  /**
+   * Email doğrulama token'ı üretir. Önce kullanıcının bekleyen
+   * tüm token'larını siler (tek aktif token politikası).
+   */
+  private issueEmailVerification(
+    portalUserId: string,
+    tenantId: string,
+  ): string {
+    this.repo.revokeAllEmailVerifications(portalUserId);
+    const plain = this.generatePlainToken();
+    const tokenHash = this.hashToken(plain);
+    const now = Date.now();
+    const rec: PortalEmailVerificationRecord = {
+      tokenHash,
+      portalUserId,
+      tenantId,
+      createdAt: now,
+      expiresAt: now + EMAIL_VERIFICATION_TTL_SECONDS * 1000,
+      usedAt: null,
+    };
+    this.repo.insertEmailVerification(rec);
+    return plain;
+  }
+
+  /**
+   * Davet token'ını çözümler. Pending + expired değilse kabul
+   * edilir; aksi durumda null döner. Tenant scope kontrolü bu
+   * katmanda yapılır.
+   */
+  private resolveInvitationForRegister(token: string): PortalInvitation | null {
+    let inv: PortalInvitation | null = null;
+    try {
+      // PortalService üzerinden çözümleme: actor olmadan (public
+      // akış) çağrıldığı için anonymous actor inşa edilir.
+      inv = this.findInvitationByTokenSafe(token);
+    } catch {
+      return null;
+    }
+    if (!inv) return null;
+    if (inv.status === "accepted" || inv.status === "revoked") return null;
+    if (inv.status === "expired") return null;
+    if (new Date(inv.expiresAt).getTime() <= Date.now()) return null;
+    return inv;
+  }
+
+  /**
+   * PortalService üzerinden davet araması. PortalService
+   * `acceptInvitation` ile daveti "accepted" işaretler + PortalUser
+   * oluşturur; biz burada yalnızca arama yapıp status doğrulaması
+   * yaparız. Bu metod, register sonrası PortalService'i ikinci kez
+   * çağırmak yerine kullanılır; PortalUser'ı kendimiz oluştururuz
+   * (parola + emailVerified alanları için).
+   *
+   * Not: PortalService'in dahili repository'sine doğrudan erişim
+   * yerine service API'sı kullanılır; bu nedenle burada küçük bir
+   * public helper gerekir. PortalService bu helper'ı export eder.
+   */
+  private findInvitationByTokenSafe(token: string): PortalInvitation | null {
+    return this.portal.findInvitationByToken(token);
+  }
+
+  /**
+   * Davet kaydını accepted işaretler. PortalService.acceptInvitation
+   * daveti kabul eder; burada parolayı set eden PortalUser'ı zaten
+   * oluşturduğumuz için davet kaydını doğrudan PortalService üzerinden
+   * güncelleriz (idempotent: status=accepted zaten ise no-op).
+   */
+  private markInvitationAccepted(
+    invitation: PortalInvitation,
+    now: Date,
+  ): void {
+    this.portal.markInvitationAccepted(invitation.id, now);
   }
 
   private hashUserAgent(ua: string | null): string | null {

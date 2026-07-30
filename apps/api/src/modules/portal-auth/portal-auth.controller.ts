@@ -7,11 +7,14 @@
  * adı `vetniva_portal_session`. Tüm endpoint'ler JSON döner.
  *
  * Endpoint'ler:
- * - POST /api/v1/portal-auth/register     — public (KVKK onayı + parola)
- * - POST /api/v1/portal-auth/login        — public
- * - POST /api/v1/portal-auth/logout       — public (cookie'den token alır)
- * - POST /api/v1/portal-auth/forgot-password — public
- * - POST /api/v1/portal-auth/reset-password  — public (token ile)
+ * - POST /api/v1/portal-auth/register             — public (KVKK + parola)
+ * - POST /api/v1/portal-auth/register-by-invitation — public (davet + parola)
+ * - POST /api/v1/portal-auth/login                — public
+ * - POST /api/v1/portal-auth/logout               — public (cookie'den token alır)
+ * - POST /api/v1/portal-auth/forgot-password      — public
+ * - POST /api/v1/portal-auth/reset-password       — public (token ile)
+ * - POST /api/v1/portal-auth/verify-email         — public (token ile)
+ * - GET  /api/v1/portal-auth/me                   — portal-session guard
  *
  * Tenant bağlamı: pilot tek tenant olduğundan istek header'ından
  * (`x-tenant-slug` veya `x-tenant-id`) okunur. Üretimde
@@ -23,7 +26,8 @@
  *   koruması).
  * - Cookie httpOnly + SameSite=Lax + secure (prod).
  * - Personel AuthGuard kullanılmaz (portal session ayrı path);
- *   logout cookie'den okunan token ile idempotent çalışır.
+ *   `PortalSessionGuard` yalnızca authenticated portal
+ *   endpoint'lerinde (örn. /me) devreye girer.
  *
  * @since GOAL-033 (FAZ-3) hasta sahibi portal hesap kayıt ve giriş
  */
@@ -31,11 +35,13 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
   Req,
   Res,
+  UseGuards,
 } from "@nestjs/common";
 import type { Request, Response } from "express";
 
@@ -48,17 +54,22 @@ import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   portalForgotPasswordRequestSchema,
   portalLoginRequestSchema,
+  portalRegisterByInvitationRequestSchema,
   portalRegisterRequestSchema,
   portalResetPasswordRequestSchema,
+  portalVerifyEmailRequestSchema,
   type PortalForgotPasswordRequest,
   type PortalLoginRequest,
   type PortalMessageResponse,
+  type PortalRegisterByInvitationRequest,
   type PortalRegisterRequest,
   type PortalResetPasswordRequest,
   type PortalSessionResponse,
+  type PortalVerifyEmailRequest,
 } from "@vetniva/contracts";
 
 import { PortalAuthService } from "./portal-auth.service.js";
+import { PortalSessionGuard } from "./portal-session.guard.js";
 import { attemptMetaFromRequest } from "../../common/auth/dto.js";
 
 @Controller("api/v1/portal-auth")
@@ -76,11 +87,11 @@ export class PortalAuthController {
     @Body(new ZodValidationPipe(portalRegisterRequestSchema))
     body: PortalRegisterRequest,
     @Req() request: Request & { requestId?: string },
-  ): Promise<{ user: unknown }> {
+  ): Promise<{ user: unknown; emailVerificationToken: string }> {
     const ctx = attemptMetaFromRequest(request);
     const tenantId = this.resolveTenant(request);
     if (!tenantId) throw this.tenantRequired();
-    const user = await this.service.register(
+    const result = await this.service.register(
       tenantId,
       {
         email: body.email,
@@ -92,7 +103,56 @@ export class PortalAuthController {
       },
       ctx,
     );
-    return { user };
+    return {
+      user: result.user,
+      emailVerificationToken: result.emailVerificationToken,
+    };
+  }
+
+  /**
+   * POST /api/v1/portal-auth/register-by-invitation — public.
+   * Davet üzerinden portal hesabı oluşturur. Davet token'ı
+   * `PortalService` üzerinden doğrulanır; pending + expired değilse
+   * PortalUser oluşturulur ve davet `accepted` işaretlenir.
+   * Body: { token, email, password, consentKvkk, displayName?, locale? }
+   */
+  @Public()
+  @Post("register-by-invitation")
+  @HttpCode(HttpStatus.CREATED)
+  public async registerByInvitation(
+    @Body(new ZodValidationPipe(portalRegisterByInvitationRequestSchema))
+    body: PortalRegisterByInvitationRequest,
+    @Req() request: Request & { requestId?: string },
+  ): Promise<{ user: unknown; emailVerificationToken: string }> {
+    const ctx = attemptMetaFromRequest(request);
+    const result = await this.service.registerByInvitation(
+      body.token,
+      body.password,
+      {
+        email: body.email,
+        consentKvkk: body.consentKvkk,
+        ...(body.displayName !== undefined ? { displayName: body.displayName } : {}),
+        ...(body.locale !== undefined ? { locale: body.locale } : {}),
+      },
+      ctx,
+    );
+    return { user: result.user, emailVerificationToken: result.emailVerificationToken };
+  }
+
+  /**
+   * POST /api/v1/portal-auth/verify-email — public.
+   * Body: { token }
+   */
+  @Public()
+  @Post("verify-email")
+  @HttpCode(HttpStatus.OK)
+  public async verifyEmail(
+    @Body(new ZodValidationPipe(portalVerifyEmailRequestSchema))
+    body: PortalVerifyEmailRequest,
+    @Req() request: Request & { requestId?: string },
+  ): Promise<{ message: string; email: string }> {
+    const ctx = attemptMetaFromRequest(request);
+    return this.service.verifyEmail(body.token, ctx);
   }
 
   /**
@@ -200,6 +260,50 @@ export class PortalAuthController {
       ctx,
     );
     return { message: result.message };
+  }
+
+  /**
+   * GET /api/v1/portal-auth/me — portal-session guard'lı.
+   * Cookie'den portal session token alır; yoksa 401. Authenticated
+   * portal kullanıcısının bilgilerini döner.
+   */
+  @UseGuards(PortalSessionGuard)
+  @Get("me")
+  public async me(
+    @Req()
+    request: Request & {
+      portalSession?: {
+        portalUserId: string;
+        tenantId: string;
+        sessionToken: string;
+        expiresAt: string;
+      };
+    },
+  ): Promise<{
+    portalUserId: string;
+    tenantId: string;
+    email: string;
+    status: string;
+    ownerId: string;
+    expiresAt: string;
+  }> {
+    const session = request.portalSession;
+    if (!session) {
+      // Guard 401 fırlatır; bu satıra ulaşılmaz.
+      throw new Error("Portal session context missing");
+    }
+    const user = await this.service.validateSession(session.sessionToken);
+    if (!user) {
+      throw new Error("Portal session invalid");
+    }
+    return {
+      portalUserId: user.id,
+      tenantId: user.tenantId,
+      email: user.email,
+      status: user.status,
+      ownerId: user.ownerId,
+      expiresAt: session.expiresAt,
+    };
   }
 
   // -------------------------------------------------------------------------

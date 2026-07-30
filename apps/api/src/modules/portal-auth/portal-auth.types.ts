@@ -50,6 +50,13 @@ export interface PortalUserRecord {
   displayName: string | null;
   /** Locale. */
   locale: "tr-TR" | "en-GB";
+  /** Davet üzerinden oluşturulduysa bağlı olduğu davet ID. */
+  invitationId: string | null;
+  /** Email doğrulandı mı? (register sonrası zorunlu; davetten gelen
+   *  kayıtlar için de geçerli). */
+  emailVerified: boolean;
+  /** Email doğrulama zaman damgası. */
+  emailVerifiedAt: string | null;
 }
 
 /** Portal session kaydı (in-memory). */
@@ -82,6 +89,21 @@ export interface PortalPasswordResetRecord {
   usedAt: number | null;
 }
 
+/** Email doğrulama token kaydı. Register veya davet kabulünden
+ *  sonra üretilir; 24 saat geçerli; tek seferlik. */
+export interface PortalEmailVerificationRecord {
+  /** SHA-256 hash. */
+  tokenHash: string;
+  portalUserId: string;
+  tenantId: string;
+  /** epoch ms. */
+  createdAt: number;
+  /** epoch ms; 24 saat. */
+  expiresAt: number;
+  /** Kullanıldı mı? Tek seferlik. */
+  usedAt: number | null;
+}
+
 /** Service-layer public DTO. */
 export interface PortalUser {
   id: string;
@@ -93,6 +115,16 @@ export interface PortalUser {
   lockedUntil?: string;
   createdAt: string;
   lastLoginAt?: string;
+}
+
+/**
+ * Register sonrası dönen genişletilmiş DTO. Email doğrulama
+ * token'ı debug amaçlı FAZ-0'da response'a dahil edilir;
+ * FAZ-3+'da notification sistemi ile email ile gönderilir.
+ */
+export interface PortalRegisterResult {
+  user: PortalUser;
+  emailVerificationToken: string;
 }
 
 export interface PortalSession {

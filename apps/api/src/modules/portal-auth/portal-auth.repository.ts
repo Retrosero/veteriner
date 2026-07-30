@@ -3,22 +3,25 @@
  * @module apps/api/modules/portal-auth/portal-auth.repository
  *
  * @description GOAL-033 portal auth veri erişim katmanı. PortalUser
- * (parola + brute-force sayaç), portal session'ları ve parola
- * sıfırlama token'ları için in-memory store. DB migration'ı
- * sonraya bırakıldı; API sözleşmesi sabit kalır.
+ * (parola + brute-force sayaç), portal session'ları, parola
+ * sıfırlama token'ları ve email doğrulama token'ları için
+ * in-memory store. DB migration'ı sonraya bırakıldı; API sözleşmesi
+ * sabit kalır.
  *
  * Veri yapıları:
- * - `portalUsers`  : tenantId|portalUserId → PortalUserRecord
- * - `byEmail`      : tenantId|email → portalUserId (login lookup)
- * - `sessions`     : sessionToken → PortalSessionRecord
- * - `userSessions` : portalUserId → Set<sessionToken> (logout-all)
- * - `resetTokens`  : tokenHash → PortalPasswordResetRecord
+ * - `portalUsers`        : tenantId|portalUserId → PortalUserRecord
+ * - `byEmail`            : tenantId|email → portalUserId (login lookup)
+ * - `byInvitationId`     : invitationId → portalUserId (GOAL-025 → 033 bağı)
+ * - `sessions`           : sessionToken → PortalSessionRecord
+ * - `userSessions`       : portalUserId → Set<sessionToken> (logout-all)
+ * - `resetTokens`        : tokenHash → PortalPasswordResetRecord
+ * - `emailVerifications` : tokenHash → PortalEmailVerificationRecord
  *
  * @security
  * - Tüm aramalar tenantId ile filtrelenir.
  * - Parola bcrypt ile hash'lenir; plain asla store edilmez.
- * - Session token'ları plain (response'da döner); DB'ye geçildiğinde
- *   SHA-256 hash + plain response prensibi uygulanmalıdır.
+ * - Session/email/reset token'ları plain response prensibiyle çalışır;
+ *   DB'ye geçişte SHA-256 hash + plain response prensibi uygulanmalıdır.
  *
  * @since GOAL-033 (FAZ-3) hasta sahibi portal kayıt ve giriş
  */
@@ -26,6 +29,7 @@
 import { Injectable } from "@nestjs/common";
 
 import type {
+  PortalEmailVerificationRecord,
   PortalPasswordResetRecord,
   PortalSessionRecord,
   PortalUserRecord,
@@ -37,12 +41,19 @@ export class PortalAuthRepository {
   private readonly portalUsers = new Map<string, PortalUserRecord>();
   /** key: tenantId|emailLower → portalUserId. */
   private readonly byEmail = new Map<string, string>();
+  /** key: invitationId → portalUserId (davet kabul → portal user bağı). */
+  private readonly byInvitationId = new Map<string, string>();
   /** key: sessionToken → PortalSessionRecord. */
   private readonly sessions = new Map<string, PortalSessionRecord>();
   /** key: portalUserId → Set<sessionToken>. */
   private readonly userSessions = new Map<string, Set<string>>();
   /** key: tokenHash → reset record. */
   private readonly resetTokens = new Map<string, PortalPasswordResetRecord>();
+  /** key: tokenHash → email verification record. */
+  private readonly emailVerifications = new Map<
+    string,
+    PortalEmailVerificationRecord
+  >();
   /** Her tenant için portalUserId counter. */
   private readonly userCounters = new Map<string, number>();
 
@@ -62,6 +73,9 @@ export class PortalAuthRepository {
       `${record.tenantId}|${record.email.toLowerCase()}`,
       record.id,
     );
+    if (record.invitationId) {
+      this.byInvitationId.set(record.invitationId, record.id);
+    }
     return record;
   }
 
@@ -95,7 +109,22 @@ export class PortalAuthRepository {
       `${record.tenantId}|${record.email.toLowerCase()}`,
       record.id,
     );
+    if (record.invitationId) {
+      this.byInvitationId.set(record.invitationId, record.id);
+    }
     return record;
+  }
+
+  /** Davet ID ile portal user'ı bulur (cross-tenant lookup). */
+  public findPortalUserByInvitationId(
+    invitationId: string,
+  ): PortalUserRecord | null {
+    const id = this.byInvitationId.get(invitationId);
+    if (!id) return null;
+    for (const rec of this.portalUsers.values()) {
+      if (rec.id === id) return rec;
+    }
+    return null;
   }
 
   // ===========================================================================
@@ -138,15 +167,47 @@ export class PortalAuthRepository {
   }
 
   // ===========================================================================
+  // EMAIL VERIFICATION TOKENS
+  // ===========================================================================
+
+  public insertEmailVerification(
+    record: PortalEmailVerificationRecord,
+  ): void {
+    this.emailVerifications.set(record.tokenHash, record);
+  }
+
+  public findEmailVerification(
+    tokenHash: string,
+  ): PortalEmailVerificationRecord | null {
+    return this.emailVerifications.get(tokenHash) ?? null;
+  }
+
+  public consumeEmailVerification(tokenHash: string): void {
+    this.emailVerifications.delete(tokenHash);
+  }
+
+  /** Kullanıcının tüm bekleyen email verification token'larını siler
+   *  (yeni token üretildiğinde eskiyi geçersiz kılmak için). */
+  public revokeAllEmailVerifications(portalUserId: string): void {
+    for (const [hash, rec] of this.emailVerifications.entries()) {
+      if (rec.portalUserId === portalUserId) {
+        this.emailVerifications.delete(hash);
+      }
+    }
+  }
+
+  // ===========================================================================
   // TEST HELPERS
   // ===========================================================================
 
   public clear(): void {
     this.portalUsers.clear();
     this.byEmail.clear();
+    this.byInvitationId.clear();
     this.sessions.clear();
     this.userSessions.clear();
     this.resetTokens.clear();
+    this.emailVerifications.clear();
     this.userCounters.clear();
   }
 }

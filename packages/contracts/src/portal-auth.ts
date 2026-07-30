@@ -38,6 +38,9 @@ export const PORTAL_SESSION_TTL_SECONDS: number = 60 * 60 * 24 * 30;
 /** Portal session idle timeout (saniye). 24 saat. */
 export const PORTAL_SESSION_IDLE_TIMEOUT_SECONDS: number = 60 * 60 * 24;
 
+/** Email doğrulama token TTL (saniye). 24 saat. */
+export const EMAIL_VERIFICATION_TTL_SECONDS: number = 60 * 60 * 24;
+
 /**
  * Portal kayıt isteği. Email + parola + ownerId ile yeni portal
  * hesabı oluşturur. KVKK açık rıza onayı zorunludur.
@@ -57,6 +60,33 @@ export const portalRegisterRequestSchema = z.object({
   locale: z.enum(["tr-TR", "en-GB"]).optional(),
 });
 export type PortalRegisterRequest = z.infer<typeof portalRegisterRequestSchema>;
+
+/**
+ * Davet üzerinden portal kayıt isteği. Davet token'ı zorunlu;
+ * portalService üzerinden doğrulanır. Davet expired veya
+ * revoked ise 410. Aynı email ile kayıt varsa 409.
+ */
+export const portalRegisterByInvitationRequestSchema = z.object({
+  token: z.string().min(32).max(128),
+  email: z.string().email().max(200),
+  password: passwordPolicySchema,
+  consentKvkk: z.literal(true),
+  displayName: z.string().min(1).max(100).optional(),
+  locale: z.enum(["tr-TR", "en-GB"]).optional(),
+});
+export type PortalRegisterByInvitationRequest = z.infer<
+  typeof portalRegisterByInvitationRequestSchema
+>;
+
+/**
+ * Email doğrulama isteği. Token tek seferlik; 24 saat geçerli.
+ */
+export const portalVerifyEmailRequestSchema = z.object({
+  token: z.string().min(32).max(128),
+});
+export type PortalVerifyEmailRequest = z.infer<
+  typeof portalVerifyEmailRequestSchema
+>;
 
 /**
  * Portal login isteği. Email + parola ile giriş. Tenant slug
