@@ -76,7 +76,20 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   (locale, çeviri anahtarı, formatlama, yükleme stratejisi).
 - `docs/i18n/COUNTRY_ADAPTER_CONTRACT.md` — **ülke adaptörü
   sözleşmesi** (TR tam, GB iskelet).
-- `docs/errors/ERROR_CATALOG.md` — hata kataloğu (kod → mesaj → çözüm).
+- `docs/errors/ERROR_CODE_STANDARD.md` — **hata kodu standardı**
+  (`VET-<MODULE>-<NNN>` formatı, 35+ modül, 4 severity, HTTP eşlemesi).
+- `docs/errors/ERROR_CATALOG.md` — hata kataloğu (kod → mesaj → çözüm,
+  VET- formatında).
+- `docs/errors/AUDIT_LOG_STANDARD.md` — audit log sözleşmesi
+  (append-only, 7 yıl retention, PII mask'li).
+- `docs/errors/LOG_STANDARD.md` — sistem/job/entegrasyon/güvenlik
+  log türleri, JSON format, log seviyeleri.
+- `docs/errors/CORRELATION_ID.md` — request ID standardı
+  (`req-<uuidv4>`, AsyncLocalStorage).
+- `docs/errors/PII_MASKING.md` — PII maskeleme kuralları
+  (KVKK / UK GDPR uyumlu).
+- `docs/errors/AUDIT_EVENTS.yaml` — makinece okunabilir audit event
+  kataloğu (clinical / petshop / finance / identity / system / security).
 - `docs/api/`, `docs/pages/`, `docs/user-education/`, `docs/ai/` —
   sayfa, API, eğitim ve AI kaynakları.
 
@@ -87,7 +100,9 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-001 ✅ domain sözlüğü ve pilot klinik iş akışları (tamamlandı)
   - GOAL-002 ✅ rol/yetki matrisi (tamamlandı — 113 permission, 5 rol)
   - GOAL-003 ✅ çoklu dil + ülke adaptörü sözleşmesi (tamamlandı)
-  - GOAL-004 ⏳ log, audit ve hata kodu standardı
+  - GOAL-004 ✅ audit + log + hata kodu standardı (tamamlandı —
+    VET- formatı, audit/log/PII/correlation iskeleti, 121 i18n error
+    anahtarı tr/en parity, 52 unit test geçti)
   - GOAL-005 ⏳ dokümantasyon ve AI bilgi havuzu şeması
 - **Faz 1 — Platform çekirdeği** ⏳ sırada
   - GOAL-010 tenant ve şube

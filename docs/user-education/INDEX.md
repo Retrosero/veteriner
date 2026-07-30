@@ -80,6 +80,43 @@ sırasında, çevirilerden yararlanarak yazılacak. Ülke adaptörü
 sayesinde rehberler TR ve GB için aynı yapıda, farklı
 iş kurallarıyla oluşturulabilir.
 
+## GOAL-004 — Audit, log ve hata kodu standardı (Faz 0 devamı)
+
+GOAL-004 ile birlikte **kullanıcı eğitiminin hata ve audit temeli**
+atıldı. Bu dokümanlar kullanıcıya dönük "hata mesajlarının
+anlamı" ve "audit trail'in ne olduğu" sorularını yanıtlar:
+
+- [`docs/errors/ERROR_CODE_STANDARD.md`](../errors/ERROR_CODE_STANDARD.md) —
+  `VET-<MODULE>-<NNN>` formatındaki hata kodu standardı. Tüm
+  hata kodları bu kataloğa uygun yazılır; format, modül listesi,
+  HTTP eşlemesi ve severity seviyeleri.
+- [`docs/errors/ERROR_CATALOG.md`](../errors/ERROR_CATALOG.md) —
+  hata kodlarının tam listesi (kod → mesaj → çözüm). Tüm
+  kullanıcı-odaklı hata mesajları için tek kaynak.
+- [`docs/errors/AUDIT_LOG_STANDARD.md`](../errors/AUDIT_LOG_STANDARD.md) —
+  audit log sözleşmesi. "Bu kaydı kim, ne zaman değiştirdi?"
+  sorusunu yanıtlar. 7 yıl retention, append-only.
+- [`docs/errors/AUDIT_EVENTS.yaml`](../errors/AUDIT_EVENTS.yaml) —
+  audit event kataloğu. UI'daki her kritik aksiyon bir
+  audit event oluşturur (örn. `audit:owner.erase`, `audit:vaccination.create`).
+- [`docs/errors/LOG_STANDARD.md`](../errors/LOG_STANDARD.md) —
+  sistem log formatı (geliştirici odaklı; kullanıcı eğitiminde
+  doğrudan yer almaz, ancak destek ekibinin "log nasıl okunur?"
+  sorusuna temel oluşturur).
+- [`docs/errors/CORRELATION_ID.md`](../errors/CORRELATION_ID.md) —
+  destek ekibinin "Hata kodu: req-7c9e..." üzerinden kullanıcının
+  talebini izleyebilmesi için temel. **Kullanıcı eğitimlerinde
+  mutlaka yer almalı**: "Hata aldığınızda bize bu kodu verin".
+- [`docs/errors/PII_MASKING.md`](../errors/PII_MASKING.md) —
+  KVKK / UK GDPR uyumu. Kullanıcılara "kişisel verileriniz
+  loglarda nasıl korunuyor" sorusuna cevap.
+
+GOAL-004 sonunda rol-bazlı rehberlerin "Hata Durumunda" bölümleri,
+ERROR_CATALOG'dan doğrudan referans alabilir. Her hata kodu
+`{kod} → {mesaj} → {çözüm}` üçlüsü ile eğitim içeriğine
+eklenebilir. Audit trail'in varlığı, OWNER ve SUPERADMIN
+rehberlerinde "Güvenlik ve Uyum" bölümlerine temel olur.
+
 ## Eğitim doldurma zamanlaması
 
 - **Faz 2 (GOAL-020+):** Hasta sahibi ve hayvan kaydı → `STAFF.md`,

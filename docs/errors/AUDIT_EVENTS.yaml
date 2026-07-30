@@ -1,0 +1,660 @@
+# @file Audit Event Kataloğu.
+# @module docs/errors/AUDIT_EVENTS
+#
+# @description VetNiva'da audit log'a yazılan tüm
+# event'lerin makinece okunabilir kataloğu. Her event
+# action, severity, PII etiketi ve actor tipini taşır.
+# docs:check bu kataloğu koda karşı doğrular.
+#
+# @author GOAL-004 (FAZ-0) audit + log + hata standardı
+# @since 2026-07-30
+# @security PII etiketi: events with pii=true mask'lenir.
+#   severity=critical olan event'ler anlık alert tetikler.
+# =============================================================================
+
+# Audit Event Kataloğu
+#
+# Format: audit:<entity>:<action>
+# CI doğrulama: pnpm docs:check
+# Schema: docs/errors/AUDIT_LOG_STANDARD.md
+
+version: "1.0.0"
+generated_by: "GOAL-004"
+generated_at: "2026-07-30"
+
+# -----------------------------------------------------------------------------
+# COMMON METADATA
+# -----------------------------------------------------------------------------
+metadata:
+  description: >
+    Tüm audit event'ler için ortak meta. Her event
+    aşağıdaki alanları zorunlu taşır: tenant_id,
+    actor_id, correlation_id, country, severity,
+    timestamp.
+  retention_years: 7
+  append_only: true
+  pii_masking_required: true
+
+# -----------------------------------------------------------------------------
+# CLINIC DOMAIN — Owner (Hasta Sahibi)
+# -----------------------------------------------------------------------------
+clinic:
+  owner:
+    - event: "audit:owner.create"
+      action: create
+      severity: info
+      pii: true
+      actor: [user]
+      description: "Yeni hasta sahibi kaydı oluşturuldu."
+
+    - event: "audit:owner.update"
+      action: update
+      severity: info
+      pii: true
+      actor: [user]
+      description: "Hasta sahibi bilgileri güncellendi."
+
+    - event: "audit:owner.read"
+      action: read
+      severity: info
+      pii: true
+      actor: [user, system]
+      description: "Hasta sahibi kaydı görüntülendi (PII erişim)."
+
+    - event: "audit:owner.archive"
+      action: archive
+      severity: warning
+      pii: true
+      actor: [user]
+      description: "Hasta sahibi arşivlendi (soft delete)."
+
+    - event: "audit:owner.restore"
+      action: restore
+      severity: info
+      pii: true
+      actor: [user]
+      description: "Arşivlenmiş hasta sahibi geri alındı."
+
+    - event: "audit:owner.erase"
+      action: erase
+      severity: critical
+      pii: true
+      actor: [user, system]
+      description: "KVKK/GDPR kapsamında PII silindi."
+
+    - event: "audit:owner.export"
+      action: export
+      severity: warning
+      pii: true
+      actor: [user]
+      description: "Hasta sahibi verisi dışa aktarıldı."
+
+  patient:
+    - event: "audit:patient.create"
+      action: create
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Yeni hayvan kaydı oluşturuldu."
+
+    - event: "audit:patient.update"
+      action: update
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Hayvan bilgileri güncellendi."
+
+    - event: "audit:patient.archive"
+      action: archive
+      severity: warning
+      pii: false
+      actor: [user]
+      description: "Hayvan arşivlendi."
+
+    - event: "audit:patient.transfer"
+      action: transfer
+      severity: warning
+      pii: false
+      actor: [user]
+      description: "Hayvan sahiplik devri yapıldı."
+
+    - event: "audit:patient.export"
+      action: export
+      severity: warning
+      pii: false
+      actor: [user]
+      description: "Hayvan kaydı dışa aktarıldı."
+
+  appointment:
+    - event: "audit:appointment.create"
+      action: create
+      severity: info
+      pii: false
+      actor: [user, system]
+      description: "Randevu oluşturuldu."
+
+    - event: "audit:appointment.update"
+      action: update
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Randevu güncellendi."
+
+    - event: "audit:appointment.cancel"
+      action: cancel
+      severity: warning
+      pii: false
+      actor: [user, system]
+      description: "Randevu iptal edildi."
+
+    - event: "audit:appointment.complete"
+      action: complete
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Randevu tamamlandı."
+
+    - event: "audit:appointment.request"
+      action: create
+      severity: info
+      pii: true
+      actor: [system, integration]
+      description: "Portal üzerinden randevu talebi geldi."
+
+  examination:
+    - event: "audit:examination.create"
+      action: create
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Muayene kaydı oluşturuldu."
+
+    - event: "audit:examination.amend"
+      action: amend
+      severity: warning
+      pii: false
+      actor: [user]
+      description: "Muayene kaydı düzeltildi (amendment)."
+
+    - event: "audit:examination.sign"
+      action: sign
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Muayene kaydı imzalandı."
+
+    - event: "audit:examination.export"
+      action: export
+      severity: warning
+      pii: false
+      actor: [user]
+      description: "Muayene kaydı PDF olarak dışa aktarıldı."
+
+  vaccination:
+    - event: "audit:vaccination.create"
+      action: create
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Aşı uygulandı."
+
+    - event: "audit:vaccination.amend"
+      action: amend
+      severity: warning
+      pii: false
+      actor: [user]
+      description: "Aşı kaydı düzeltildi."
+
+    - event: "audit:vaccination.export"
+      action: export
+      severity: warning
+      pii: false
+      actor: [user]
+      description: "Aşı kaydı dışa aktarıldı."
+
+  prescription:
+    - event: "audit:prescription.create"
+      action: create
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Reçete yazıldı."
+
+    - event: "audit:prescription.dispense"
+      action: dispense
+      severity: info
+      pii: false
+      actor: [user, system]
+      description: "Reçete dağıtıldı."
+
+    - event: "audit:prescription.cancel"
+      action: cancel
+      severity: warning
+      pii: false
+      actor: [user]
+      description: "Reçete iptal edildi."
+
+    - event: "audit:prescription.amend"
+      action: amend
+      severity: warning
+      pii: false
+      actor: [user]
+      description: "Reçete düzeltildi."
+
+  surgery:
+    - event: "audit:surgery.create"
+      action: create
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Ameliyat planlandı."
+
+    - event: "audit:surgery.start"
+      action: update
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Ameliyat başlatıldı."
+
+    - event: "audit:surgery.complete"
+      action: complete
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Ameliyat tamamlandı."
+
+    - event: "audit:surgery.cancel"
+      action: cancel
+      severity: warning
+      pii: false
+      actor: [user]
+      description: "Ameliyat iptal edildi."
+
+  consent:
+    - event: "audit:consent.sign"
+      action: sign
+      severity: info
+      pii: false
+      actor: [user, system]
+      description: "Onam formu imzalandı."
+
+  hospitalization:
+    - event: "audit:hospitalization.admit"
+      action: create
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Yatış kabul edildi."
+
+    - event: "audit:hospitalization.discharge"
+      action: complete
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Yatış taburcu edildi."
+
+  lab:
+    - event: "audit:lab.order"
+      action: create
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Lab istemi oluşturuldu."
+
+    - event: "audit:lab.enter_result"
+      action: update
+      severity: info
+      pii: false
+      actor: [user, system]
+      description: "Lab sonucu girildi."
+
+    - event: "audit:lab.amend"
+      action: amend
+      severity: warning
+      pii: false
+      actor: [user]
+      description: "Lab sonucu düzeltildi."
+
+  imaging:
+    - event: "audit:imaging.order"
+      action: create
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Görüntüleme istemi oluşturuldu."
+
+    - event: "audit:imaging.report"
+      action: create
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Görüntüleme raporu yazıldı."
+
+  stock:
+    - event: "audit:stock.receive"
+      action: receive
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Stok tedarik alındı."
+
+    - event: "audit:stock.adjust"
+      action: adjust
+      severity: warning
+      pii: false
+      actor: [user]
+      description: "Stok sayım düzeltmesi yapıldı."
+
+# -----------------------------------------------------------------------------
+# PETSHOP DOMAIN
+# -----------------------------------------------------------------------------
+petshop:
+  sale:
+    - event: "audit:sale.create"
+      action: create
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Satış (POS) oluşturuldu."
+
+    - event: "audit:sale.refund"
+      action: reverse
+      severity: warning
+      pii: false
+      actor: [user]
+      description: "Satış iadesi yapıldı."
+
+    - event: "audit:sale.export"
+      action: export
+      severity: warning
+      pii: false
+      actor: [user]
+      description: "Satış kayıtları dışa aktarıldı."
+
+  product:
+    - event: "audit:product.create"
+      action: create
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Yeni ürün kataloglandı."
+
+    - event: "audit:product.update"
+      action: update
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Ürün bilgileri güncellendi."
+
+    - event: "audit:product.archive"
+      action: archive
+      severity: warning
+      pii: false
+      actor: [user]
+      description: "Ürün arşivlendi."
+
+# -----------------------------------------------------------------------------
+# FINANCE DOMAIN
+# -----------------------------------------------------------------------------
+finance:
+  payment:
+    - event: "audit:payment.create"
+      action: create
+      severity: info
+      pii: false
+      actor: [user, system]
+      description: "Tahsilat kaydı oluşturuldu."
+
+    - event: "audit:payment.reverse"
+      action: reverse
+      severity: warning
+      pii: false
+      actor: [user]
+      description: "Tahsilat iptal/ters kayıt yapıldı."
+
+# -----------------------------------------------------------------------------
+# IDENTITY & ACCESS (user / role / tenant)
+# -----------------------------------------------------------------------------
+identity:
+  user:
+    - event: "audit:user.invite"
+      action: invite
+      severity: info
+      pii: true
+      actor: [user]
+      description: "Kullanıcı davet edildi."
+
+    - event: "audit:user.update"
+      action: update
+      severity: info
+      pii: true
+      actor: [user]
+      description: "Kullanıcı profili güncellendi."
+
+    - event: "audit:user.assign_role"
+      action: assign_role
+      severity: critical
+      pii: true
+      actor: [user]
+      description: "Kullanıcıya rol atandı (yetki değişimi)."
+
+    - event: "audit:user.deactivate"
+      action: archive
+      severity: warning
+      pii: true
+      actor: [user]
+      description: "Kullanıcı pasif edildi."
+
+  tenant:
+    - event: "audit:tenant.create"
+      action: create
+      severity: critical
+      pii: false
+      actor: [user, system]
+      description: "Yeni tenant oluşturuldu."
+
+    - event: "audit:tenant.update"
+      action: update
+      severity: warning
+      pii: false
+      actor: [user]
+      description: "Tenant ayarları değiştirildi."
+
+    - event: "audit:tenant.close"
+      action: archive
+      severity: critical
+      pii: false
+      actor: [user]
+      description: "Tenant kapatıldı."
+
+  branch:
+    - event: "audit:branch.create"
+      action: create
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Yeni şube oluşturuldu."
+
+    - event: "audit:branch.update"
+      action: update
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Şube bilgileri güncellendi."
+
+# -----------------------------------------------------------------------------
+# SYSTEM EVENTS (actor: system)
+# -----------------------------------------------------------------------------
+system:
+  auth:
+    - event: "audit:auth.login"
+      action: create
+      severity: info
+      pii: true
+      actor: [user, system]
+      description: "Kullanıcı giriş yaptı."
+
+    - event: "audit:auth.logout"
+      action: update
+      severity: info
+      pii: true
+      actor: [user, system]
+      description: "Kullanıcı çıkış yaptı."
+
+    - event: "audit:auth.fail"
+      action: create
+      severity: warning
+      pii: true
+      actor: [system]
+      description: "Başarısız giriş denemesi."
+
+  adapter:
+    - event: "audit:adapter.format_currency"
+      action: format_currency
+      severity: info
+      pii: false
+      actor: [system]
+      description: "Ülke adaptörü para formatı uyguladı."
+
+    - event: "audit:adapter.validate_tax_id"
+      action: format_currency
+      severity: info
+      pii: true
+      actor: [system]
+      description: "TCKN/VKN doğrulandı."
+
+    - event: "audit:adapter.validate_iban"
+      action: format_currency
+      severity: info
+      pii: true
+      actor: [system]
+      description: "IBAN doğrulandı."
+
+  integration:
+    - event: "audit:integration.e_invoice_send"
+      action: send
+      severity: info
+      pii: false
+      actor: [integration, system]
+      description: "e-Fatura gönderildi."
+
+    - event: "audit:integration.e_invoice_cancel"
+      action: reverse
+      severity: warning
+      pii: false
+      actor: [integration, system]
+      description: "e-Fatura iptal edildi."
+
+    - event: "audit:integration.sms_send"
+      action: send
+      severity: info
+      pii: true
+      actor: [integration, system]
+      description: "SMS gönderildi."
+
+    - event: "audit:integration.payment_charge"
+      action: create
+      severity: info
+      pii: true
+      actor: [integration, system]
+      description: "Ödeme tahsil edildi."
+
+    - event: "audit:integration.lab_result_pull"
+      action: receive
+      severity: info
+      pii: true
+      actor: [integration, system]
+      description: "Dış laboratuvardan sonuç çekildi."
+
+  job:
+    - event: "audit:job.vaccination_reminder"
+      action: send
+      severity: info
+      pii: true
+      actor: [job]
+      description: "Aşı hatırlatma job'u çalıştı."
+
+    - event: "audit:job.appointment_reminder"
+      action: send
+      severity: info
+      pii: true
+      actor: [job]
+      description: "Randevu hatırlatma job'u çalıştı."
+
+    - event: "audit:job.stock_expiry_check"
+      action: receive
+      severity: info
+      pii: false
+      actor: [job]
+      description: "Stok SKT kontrol job'u çalıştı."
+
+    - event: "audit:job.kvkk_anonymize"
+      action: erase
+      severity: critical
+      pii: true
+      actor: [job, system]
+      description: "KVKK anonimleştirme job'u çalıştı."
+
+# -----------------------------------------------------------------------------
+# SECURITY EVENTS (high-priority alerting)
+# -----------------------------------------------------------------------------
+security:
+  cross_tenant:
+    - event: "audit:security.cross_tenant_attempt"
+      action: read
+      severity: critical
+      pii: false
+      actor: [system]
+      description: "Cross-tenant erişim denemesi (P1 alert)."
+
+  rate_limit:
+    - event: "audit:security.rate_limit_exceeded"
+      action: read
+      severity: warning
+      pii: true
+      actor: [system]
+      description: "Rate limit aşıldı."
+
+  suspicious:
+    - event: "audit:security.session_hijack_suspect"
+      action: update
+      severity: critical
+      pii: true
+      actor: [system]
+      description: "Oturum kaçırma şüphesi (P0 alert)."
+
+# -----------------------------------------------------------------------------
+# SCHEMA
+# -----------------------------------------------------------------------------
+schema:
+  event: string  # format: ^audit:[a-z_]+:[a-z_]+$
+  action:
+    type: enum
+    values: [create, read, update, archive, restore, erase,
+             export, sign, amend, complete, cancel, reverse,
+             transfer, adjust, dispense, admit, discharge,
+             invite, assign_role, format_currency, send, receive]
+  severity:
+    type: enum
+    values: [info, warning, error, critical]
+  pii: boolean
+  actor:
+    type: enum
+    values: [user, system, integration, job]
+    array: true
+  description: string
+
+  common_fields:
+    - event_id: uuid
+    - event_name: string
+    - tenant_id: uuid
+    - branch_id: uuid_null
+    - actor_id: uuid_null
+    - actor_type: enum
+    - target_type: string
+    - target_id: string
+    - correlation_id: string
+    - ip_address: string_masked
+    - user_agent_hash: string
+    - country: enum_TR_GB
+    - timestamp: timestamptz

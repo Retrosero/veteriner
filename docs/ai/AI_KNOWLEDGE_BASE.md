@@ -33,7 +33,16 @@ kullanım asistanı temeli) zenginleştirilecektir.
 - `docs/pages/` — sayfa bilgi kayıtları (YAML).
 - `docs/workflows/` — iş akışları üst katalogu (fazlara göre
   gruplama).
-- `docs/errors/` — hata kataloğu.
+- `docs/errors/` — hata kataloğu ve standartları:
+  - `ERROR_CODE_STANDARD.md` — `VET-<MODULE>-<NNN>` formatı.
+  - `ERROR_CATALOG.md` — kod → mesaj → çözüm listesi.
+  - `AUDIT_LOG_STANDARD.md` — audit log sözleşmesi
+    (GOAL-004'te üretildi).
+  - `AUDIT_EVENTS.yaml` — audit event kataloğu.
+  - `LOG_STANDARD.md` — sistem/job/entegrasyon/güvenlik log
+    türleri.
+  - `CORRELATION_ID.md` — request ID standardı.
+  - `PII_MASKING.md` — PII maskeleme kuralları.
 - `docs/user-education/` — Türkçe kullanıcı eğitimi.
 
 ## AI asistan kapsamı (GOAL-000)
@@ -107,6 +116,9 @@ Ek olarak, `DOMAIN_GLOSSARY.md` ve `CLINICAL_FLOWS.md` dosyaları
 | "Aşı SKT kontrolü" | `FIELD_GLOSSARY.md` | `vaccination-lot` | Alan açıklaması |
 | "Sahiplik nasıl devredilir?" | `CLINICAL_FLOWS.md` | `flow-ownership-transfer` | Uçtan uca akış |
 | "KVKK silme talebi?" | `CLINICAL_FLOWS.md` | `flow-kvkk-erasure` | Akış + uyarılar |
+| "Bu hatayı nasıl çözerim?" | `ERROR_CATALOG.md` | `error-<code>` chunk | Mesaj + çözüm adımları |
+| "Hata kodu ne anlama geliyor?" | `ERROR_CODE_STANDARD.md` | `error-code-<module>` chunk | Modül + HTTP eşlemesi |
+| "Audit log nedir?" | `AUDIT_LOG_STANDARD.md` | `audit-overview` chunk | Amaç + retention + PII |
 
 ## Güncelleme politikası
 

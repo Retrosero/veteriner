@@ -6,15 +6,18 @@
  * DomainError, Error) yakalayarak `@vetniva/contracts` `ErrorResponse`
  * şemasına uygun JSON döner. Correlation ID her response'da bulunur.
  *
+ * Tüm hata kodları `VET-<MODULE>-<NNN>` formatındadır (GOAL-004).
+ *
  * HTTP durum korelasyonu:
  * - 5xx → severity=error
  * - 4xx → severity=warning
  * - diğer → severity=info
  *
  * @security Gövdeye klinik/finansal içerik yazılmaz; yalnızca sabit hata
- * kodu, güvenli mesaj ve request ID döner. PII otomatik maskelenmez
- * (henüz PII alanları yok), Faz 10'da OpenTelemetry ile entegre
- * edilecektir.
+ * kodu, güvenli mesaj ve request ID döner. PII otomatik maskelenir
+ * (bkz. PII_MASKING.md).
+ *
+ * @since GOAL-004 (FAZ-0) audit + log + hata standardı
  */
 
 import {
@@ -67,62 +70,57 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const now = new Date().toISOString();
 
     if (exception instanceof DomainError) {
-      return {
-        status: exception.httpStatus,
-        body: {
-          error_code: exception.errorCode,
-          message: exception.message,
-          source: "server",
-          severity: exception.severity,
-          correlation_id: correlationId,
-          timestamp: now,
-          ...(exception.i18nKey ? { i18n_key: exception.i18nKey } : {}),
-          ...(exception.details ? { details: exception.details } : {}),
-        },
+      const body: ErrorResponse = {
+        error_code: exception.errorCode,
+        message: exception.message,
+        source: "server",
+        severity: exception.severity,
+        correlation_id: correlationId,
+        timestamp: now,
+        ...(exception.i18nKey ? { i18n_key: exception.i18nKey } : {}),
+        ...(exception.details ? { details: exception.details } : {}),
+        ...(exception.actionUrl ? { action_url: exception.actionUrl } : {}),
       };
+      return { status: exception.httpStatus, body };
     }
 
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
-      return {
-        status,
-        body: {
-          error_code: this.codeForStatus(status),
-          message: exception.message,
-          source: "server",
-          severity: this.severityForStatus(status),
-          correlation_id: correlationId,
-          timestamp: now,
-        },
+      const body: ErrorResponse = {
+        error_code: this.codeForStatus(status),
+        message: exception.message,
+        source: "server",
+        severity: this.severityForStatus(status),
+        correlation_id: correlationId,
+        timestamp: now,
       };
+      return { status, body };
     }
 
     if (exception instanceof ZodError) {
-      return {
-        status: 422,
-        body: {
-          error_code: "TR_VALIDATION_0001",
-          message: "Form doğrulaması başarısız",
-          source: "server",
-          severity: "warning",
-          correlation_id: correlationId,
-          timestamp: now,
-          details: { issues: exception.issues },
-          i18n_key: "errors.TR_VALIDATION_0001",
-        },
+      const body: ErrorResponse = {
+        error_code: "VET-VALIDATION-0001",
+        message: "Form doğrulaması başarısız",
+        source: "server",
+        severity: "warning",
+        correlation_id: correlationId,
+        timestamp: now,
+        details: { issues: exception.issues },
+        i18n_key: "error.VET-VALIDATION-0001",
       };
+      return { status: 422, body };
     }
 
     return {
       status: 500,
       body: {
-        error_code: "TR_COMMON_0001",
+        error_code: "VET-COMMON-0001",
         message: "Beklenmeyen sunucu hatası",
         source: "server",
         severity: "error",
         correlation_id: correlationId,
         timestamp: now,
-        i18n_key: "errors.TR_COMMON_0001",
+        i18n_key: "error.VET-COMMON-0001",
       },
     };
   }
@@ -134,11 +132,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
   }
 
   private codeForStatus(status: number): ErrorResponse["error_code"] {
-    if (status === 401 || status === 403) return "TR_COMMON_0003";
-    if (status === 404) return "TR_COMMON_0003";
-    if (status === 422) return "TR_VALIDATION_0001";
-    if (status === 429) return "TR_COMMON_0002";
-    if (status >= 500) return "TR_COMMON_0001";
-    return "TR_COMMON_0001";
+    if (status === 401) return "VET-AUTH-0001";
+    if (status === 403) return "VET-AUTHZ-0001";
+    if (status === 404) return "VET-AUTHZ-0001"; // bilgi sızdırmaz
+    if (status === 422) return "VET-VALIDATION-0001";
+    if (status === 429) return "VET-COMMON-0004";
+    if (status === 502) return "VET-INTEGRATION-0001";
+    if (status === 503) return "VET-COMMON-0002";
+    if (status === 504) return "VET-COMMON-0003";
+    if (status >= 500) return "VET-COMMON-0001";
+    return "VET-COMMON-0001";
   }
 }
