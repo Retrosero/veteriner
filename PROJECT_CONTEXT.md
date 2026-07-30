@@ -121,5 +121,5 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-012 ⏳ RBAC ve izin motoru (core tamamlandı: service + repository + controller + guard'lar + role decorator + audit entegrasyonu; docs/i18n sonraki tick'lerde)
   - GOAL-013 ✅ Modül ve paket feature flag altyapısı (tamamlandı — 2026-07-30)
   - GOAL-014 ⏳ Dosya ve medya servisi (core tamamlandı: FileMeta + RLS migration `20260101000040_init_file_metas`, storage/scan adapter interface + Local/S3/Noop/ClamAV skeleton, FileService upload/get/list/archive/signed-url, FileController + PermissionsGuard, contracts tarafı genişletildi, 23 unit test geçti; eski `modules/files/` + `common/files/` iskeleti temizlenmeli, S3/ClamAV gerçek implementasyon, docs/i18n sonraki tick'lerde)
-  - GOAL-015 bildirim
+  - GOAL-015 ⏳ bildirim altyapısı temeli (core tamamlandı: 2026-07-30 — NotificationsService + queue + provider'lar (SMTP/SMS/InApp/Noop) + template + consent + idempotency + audit + 16 unit test; docs/i18n sonraki tick'lerde)
   - GOAL-016 superadmin tenant görünümü
