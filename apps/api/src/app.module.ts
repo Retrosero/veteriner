@@ -53,6 +53,7 @@ import { PortalAuthModule } from "./modules/portal-auth/portal-auth.module.js";
 import { PortalPetsModule } from "./modules/portal-pets/portal-pets.module.js";
 import { PortalAppointmentsModule } from "./modules/portal-appointments/portal-appointments.module.js";
 import { CalendarModule } from "./modules/calendar/calendar.module.js";
+import { ClinicalRecordsModule } from "./modules/clinical-records/clinical-records.module.js";
 import { ExaminationsModule } from "./modules/examinations/examinations.module.js";
 import { SoapModule } from "./modules/soap/soap.module.js";
 import { WaitlistModule } from "./modules/waitlist/waitlist.module.js";
@@ -97,6 +98,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     OrdersModule,
     PrescriptionsModule,
     FollowupsModule,
+    ClinicalRecordsModule,
   ],
 })
 export class AppModule {}
