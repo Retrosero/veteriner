@@ -229,6 +229,7 @@
     "VET-EXAM-0003": "Bu muayene zaten tamamlanmış.",
     "VET-SOAP-0001": "SOAP notu bulunamadı.",
     "VET-SOAP-0002": "SOAP notu imzalanmış, değiştirilemez. Düzeltme için amendment açın.",
+    "VET-DIAG-0001": "Teşhis durumu geçersiz. Önce aktif olmalı.",
     "VET-VACC-0001": "Aşı kaydı oluşturulamadı. Stok ve lot bilgilerini kontrol edin.",
     "VET-VACC-0002": "Bu lotun son kullanma tarihi geçmiş. Lütfen yeni lotlu aşı seçin.",
     "VET-VACC-0003": "Yetersiz stok. Lütfen stok ekleyin veya farklı bir lot kullanın.",

@@ -166,6 +166,12 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-SOAP-0001`      | SOAP notu bulunamadı        | 404  | warning  | server | SOAP notu ID'sini kontrol edin.    |
 | `VET-SOAP-0002`      | SOAP notu imzalanmış        | 409  | warning  | server | Düzeltme için amendment açın.      |
 
+## Teşhis (DIAG)
+
+| Kod                  | Ad                          | HTTP | Severity | Kaynak | Çözüm                                |
+| -------------------- | --------------------------- | ---- | -------- | ------ | ------------------------------------ |
+| `VET-DIAG-0001`      | Teşhis durumu geçersiz      | 409  | warning  | server | Teşhis durumu geçersiz. Önce aktif olmalı. |
+
 ## Aşı (VACC)
 
 | Kod                  | Ad                          | HTTP | Severity | Kaynak | Çözüm                                |

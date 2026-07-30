@@ -3702,3 +3702,97 @@ generated_at: "2026-07-30"
     - "POST /api/v1/clinic/examinations/{id}/vitals"
     - "GET /api/v1/clinic/examinations/{id}/vitals"
     - "GET /api/v1/clinic/patients/{id}/vitals/latest"
+- chunk_id: flow-diagnosis
+  type: flow
+  source: apps/api/src/modules/diagnoses/diagnoses.service.ts
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Teşhis ve Problem Listesi Akışı"
+  content: |
+    Teşhis kaydı, bir muayeneye (examination) bağlı klinik
+    karar kaydıdır. Kategori (`primary` | `secondary` |
+    `differential` | `rule_out`) ve yaşam döngüsü durumu
+    (`active` | `resolved` | `chronic` | `ruled_out`) birlikte tanımlanır.
+    State machine: `active` -> {`resolved`, `chronic`, `ruled_out`}.
+
+    Akış adımları:
+    1. **Ekle** (`POST /api/v1/clinic/examinations/{id}/diagnoses`,
+       201, yetki `clinic:examination:create`, STAFF/VETERINARIAN):
+       Zod şema `diagnosisCreateInputSchema` enforce eder. Alanlar:
+       `name` (1-500), `category` (primary | secondary | differential |
+       rule_out), `code` (opsiyonel, ICD-10 vet kodu, max 50), `notes`
+       (max 2000). Service önce
+       `ExaminationsService.findById(tenantId, id, actor)` ile muayenenin
+       aynı tenant'ta olduğunu doğrular. Cross-tenant → 404
+       `VET-CLINIC-0001` (bilgi sızdırmaz). `patientId` muayeneden
+       türetilir; client gönderemez. `status = 'active'` olarak
+       başlatılır. `id = diagnosis-<tenant8>-000001` (artan
+       sayaç, tenant başına). Audit `audit:diagnosis.create`
+       (info) — examinationId, patientId, category, status, code.
+    2. **Listele (Muayene)** (`GET
+       /api/v1/clinic/examinations/{id}/diagnoses`, 200, yetki
+       `clinic:examination:read`): tenant-scoped, arşivlenmemiş
+       kayıtlar, oluşturma zamanına göre sıralı.
+       Cross-tenant examinationId için boş dizi (bilgi sızdırmaz;
+       okuma endpoint'i, muayene varlık kontrolü ayrıca yapılmaz).
+    3. **Listele (Hasta)** (`GET
+       /api/v1/clinic/patients/{id}/diagnoses`, 200, yetki
+       `clinic:patient:read`): Hastanın tüm muayenelerinden teşhisleri
+       toplar. Opsiyonel filtreler: `status`, `includeArchived`.
+    4. **Çözümle** (`POST
+       /api/v1/clinic/diagnoses/{id}/resolve`, 200, yetki
+       `clinic:examination:create`): `status='active'` olan teşhisi
+       `'resolved'` yapar, `resolvedAt` set edilir. Aksi durum → 409
+       `VET-DIAG-0001` (state machine kuralı). Audit
+       `audit:diagnosis.resolve` (info).
+    5. **Kronik yap** (`POST /api/v1/clinic/diagnoses/{id}/chronic`,
+       200, yetki `clinic:examination:create`): `status='active'` olan
+       teşhisi `'chronic'` yapar. Aksi durum → 409 `VET-DIAG-0001`.
+       Audit `audit:diagnosis.chronic` (info).
+    6. **Ele (ruled out)** (`POST
+       /api/v1/clinic/diagnoses/{id}/ruled-out`, 200, yetki
+       `clinic:examination:create`): `status='active'` olan teşhisi
+       `'ruled_out'` yapar. `differential` kategorisindeki teşhisler de
+       elenebilir (FAZ-4 istisnası). Aksi durum → 409 `VET-DIAG-0001`.
+       Audit `audit:diagnosis.ruled_out` (info).
+    7. **Arşivle** (`DELETE /api/v1/clinic/diagnoses/{id}`, 200,
+       yetki `clinic:examination:create`): `archivedAt` set edilir;
+       klinik kayıt append-only olduğu için fiziksel silme
+       yapılmaz. Idempotent: zaten arşivliyse no-op (ek audit
+       yazılmaz). Audit `audit:diagnosis.archive` (warning).
+    8. **State machine:** Yalnızca `active` durumundaki teşhisler
+       `resolved`/`chronic`/`ruled_out`'a geçebilir. Geçersiz
+       geçişler 409 `VET-DIAG-0001`. `differential` kategorili
+       teşhisler `ruled_out` ile elenebilir; bu istisnadır.
+    9. **Append-only politika:** Teşhis kaydı klinik kayıttır;
+       mevcut kayıt üzerinde UPDATE/DELETE yok. Yanlış teşhis
+       düzeltmesi yeni teşhis kaydı ile yapılır; önceki
+       kayıt korunur. Soft delete `archivedAt` ile ifade edilir;
+       arşivlenen kayıtlar listeleme yanıtından çıkar.
+    10. **Tenant izolasyonu:** `requireTenantScope(actor, tenantId)` +
+        `add` (examination varlık kontrolü) tümü
+        `actor.tenantId` kapsamında; cross-tenant denemesi → 403
+        `VET-AUTHZ-0001` veya 404 `VET-CLINIC-0001`.
+  keywords: [teşhis, problem listesi, diagnosis, ICD-10,
+             differential, kronik, ruled_out, resolved, chronic,
+             state machine, append-only, soft delete, archivedAt,
+             tenant-scoped, audit:diagnosis.create,
+             audit:diagnosis.resolve, audit:diagnosis.chronic,
+             audit:diagnosis.ruled_out, audit:diagnosis.archive,
+             VET-DIAG-0001]
+  related_chunks: [glossary-examination, glossary-patient,
+                   flow-examination-create, flow-soap-note,
+                   error-VET-CLINIC-0001, error-VET-DIAG-0001,
+                   error-VET-AUTHZ-0001, error-VET-TENANT-0001]
+  related_pages: []
+  related_api:
+    - "POST /api/v1/clinic/examinations/{id}/diagnoses"
+    - "GET /api/v1/clinic/examinations/{id}/diagnoses"
+    - "GET /api/v1/clinic/patients/{id}/diagnoses"
+    - "POST /api/v1/clinic/diagnoses/{id}/resolve"
+    - "POST /api/v1/clinic/diagnoses/{id}/chronic"
+    - "POST /api/v1/clinic/diagnoses/{id}/ruled-out"
+    - "DELETE /api/v1/clinic/diagnoses/{id}"
