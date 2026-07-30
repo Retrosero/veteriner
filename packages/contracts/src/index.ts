@@ -22,3 +22,4 @@ export * from "./rbac.js";
 export * from "./module.js";
 export * from "./file.js";
 export * from "./notification.js";
+export * from "./superadmin.js";

@@ -42,6 +42,7 @@ import { IdentityModule } from "./modules/identity/identity.module.js";
 import { TenantModule } from "./modules/tenant/tenant.module.js";
 import { FeatureFlagModule } from "./modules/feature-flag/feature-flag.module.js";
 import { NotificationsModule } from "./modules/notifications/notifications.module.js";
+import { SuperadminModule } from "./modules/superadmin/superadmin.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 
 @Module({
@@ -62,6 +63,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     FeatureFlagModule,
     FilesModule,
     NotificationsModule,
+    SuperadminModule,
   ],
 })
 export class AppModule {}
