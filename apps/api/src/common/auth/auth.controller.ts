@@ -30,12 +30,15 @@ import {
   Controller,
   HttpCode,
   HttpStatus,
+  Param,
+  ParseUUIDPipe,
   Post,
   Req,
   Res,
   UseGuards,
 } from "@nestjs/common";
 import type { Request, Response } from "express";
+import { z } from "zod";
 import {
   SESSION_COOKIE_NAME,
   SESSION_TTL_SECONDS,
@@ -50,7 +53,8 @@ import {
 
 import type { ActorContext } from "../actor/actor-context.service.js";
 
-import { AuthGuard, Public } from "./auth.guard.js";
+import { AuthGuard } from "./auth.guard.js";
+import { Public } from "../decorators/public.decorator.js";
 import { AuthService } from "./auth.service.js";
 import { attemptMetaFromRequest } from "./dto.js";
 
@@ -214,6 +218,38 @@ export class AuthController {
     const userId = request.actor?.actorId;
     if (!userId) throw new Error("Actor bulunamadı");
     return this.auth.switchTenant(userId, body);
+  }
+
+  /**
+   * POST /auth/switch-branch/:branchId — Aktif branch'ı değiştirir
+   * (multi-branch tenant). GOAL-012 RBAC. Kullanıcı yalnızca kendi
+   * tenant'ının branch'larına geçebilir; SUPERADMIN herhangi bir
+   * tenant'ın branch'ına geçebilir.
+   */
+  @UseGuards(AuthGuard)
+  @Post("switch-branch/:branchId")
+  @HttpCode(HttpStatus.OK)
+  public async switchBranch(
+    @Param("branchId", new ParseUUIDPipe()) branchId: string,
+    @Req() request: Request & {
+      actor?: ActorContext & { isSuperadmin?: boolean };
+      authSession?: { sessionId: string; userId: string };
+    },
+  ): Promise<{ branchId: string }> {
+    const userId = request.actor?.actorId;
+    const session = request.authSession;
+    if (!userId || !session) throw new Error("Actor veya session bulunamadı");
+    const isSuperadmin = request.actor?.isSuperadmin === true;
+    const meta = attemptMetaFromRequest(
+      request as Request & { requestId?: string },
+    );
+    return this.auth.setActiveBranch(
+      userId,
+      session.sessionId,
+      branchId,
+      isSuperadmin,
+      meta,
+    );
   }
 
   // -------------------------------------------------------------------------

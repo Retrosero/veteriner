@@ -1,21 +1,24 @@
-/**
+﻿/**
  * @file Tenant controller.
  * @module apps/api/modules/tenant/tenant.controller
  *
  * @description Tenant REST API. CRUD + close endpoint'leri.
  *
  * Endpoint'ler:
- * - `POST   /api/v1/tenants`                — Yeni tenant (SUPERADMIN)
- * - `GET    /api/v1/tenants`                — Liste
- * - `GET    /api/v1/tenants/:id`            — Detay
- * - `PATCH  /api/v1/tenants/:id`            — Güncelle
- * - `POST   /api/v1/tenants/:id/close`      — Kapat (SUPERADMIN)
+ * - `POST   /api/v1/tenants`                â€” Yeni tenant (SUPERADMIN)
+ * - `GET    /api/v1/tenants`                â€” Liste
+ * - `GET    /api/v1/tenants/:id`            â€” Detay
+ * - `PATCH  /api/v1/tenants/:id`            â€” GÃ¼ncelle
+ * - `POST   /api/v1/tenants/:id/close`      â€” Kapat (SUPERADMIN)
  *
- * @security Tüm endpoint'ler `ActorInterceptor` üzerinden actor
- *   bilgisi alır. Service katmanı SUPERADMIN kontrolü uygular.
- *   Cross-tenant denemesi → 404 (bilgi sızdırmaz).
+ * @security TÃ¼m endpoint'ler `ActorInterceptor` Ã¼zerinden actor
+ *   bilgisi alÄ±r. Service katmanÄ± SUPERADMIN kontrolÃ¼ uygular.
+ *   Cross-tenant denemesi â†’ 404 (bilgi sÄ±zdÄ±rmaz).
+ *   GOAL-012: `@RequirePermissions()` dekoratÃ¶rÃ¼ ile explicit yetki
+ *   kontrolÃ¼; PermissionsGuard RBAC motorunu Ã§alÄ±ÅŸtÄ±rÄ±r.
  *
- * @since GOAL-010 (FAZ-1) tenant ve şube altyapısı
+ * @since GOAL-010 (FAZ-1) tenant ve ÅŸube altyapÄ±sÄ±
+ * @updated GOAL-012 (FAZ-1) RBAC ve izin motoru
  */
 
 import {
@@ -29,12 +32,15 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 
 import { CurrentActor } from "../../common/actor/actor.decorator.js";
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
 import type {
   CloseTenantRequest,
   CreateTenantRequest,
@@ -52,23 +58,25 @@ import {
 import { TenantService } from "./tenant.service.js";
 
 @ApiTags("tenants")
+@UseGuards(PermissionsGuard)
 @Controller("api/v1/tenants")
 export class TenantController {
   public constructor(private readonly service: TenantService) {}
 
   /**
-   * Yeni tenant oluşturur. SUPERADMIN yetkisi gerekir.
+   * Yeni tenant oluÅŸturur. SUPERADMIN yetkisi gerekir.
    */
   @Post()
+  @RequirePermissions("tenant:tenant:create")
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     operationId: "tenantCreate",
-    summary: "Yeni tenant oluşturma (SUPERADMIN)",
+    summary: "Yeni tenant oluÅŸturma (SUPERADMIN)",
     description:
-      "Yeni tenant kaydı oluşturur. Yalnızca SUPERADMIN tarafından çağrılabilir.",
+      "Yeni tenant kaydÄ± oluÅŸturur. YalnÄ±zca SUPERADMIN tarafÄ±ndan Ã§aÄŸrÄ±labilir.",
   })
-  @ApiResponse({ status: 201, description: "Tenant oluşturuldu." })
-  @ApiResponse({ status: 409, description: "Slug zaten kayıtlı." })
+  @ApiResponse({ status: 201, description: "Tenant oluÅŸturuldu." })
+  @ApiResponse({ status: 409, description: "Slug zaten kayÄ±tlÄ±." })
   public async create(
     @Body(new ZodValidationPipe(createTenantRequestSchema))
     body: CreateTenantRequest,
@@ -78,24 +86,25 @@ export class TenantController {
   }
 
   /**
-   * Tenant listesi. SUPERADMIN tüm tenant'ları görür; tenant
-   * kullanıcısı yalnızca kendi tenant'ını.
+   * Tenant listesi. SUPERADMIN tÃ¼m tenant'larÄ± gÃ¶rÃ¼r; tenant
+   * kullanÄ±cÄ±sÄ± yalnÄ±zca kendi tenant'Ä±nÄ±.
    */
   @Get()
+  @RequirePermissions("tenant:tenant:read")
   @ApiOperation({
     operationId: "tenantList",
     summary: "Tenant listesi",
     description:
-      "Sayfalı tenant listesi. SUPERADMIN tüm tenant'ları görür; tenant kullanıcısı yalnızca kendi tenant'ını.",
+      "SayfalÄ± tenant listesi. SUPERADMIN tÃ¼m tenant'larÄ± gÃ¶rÃ¼r; tenant kullanÄ±cÄ±sÄ± yalnÄ±zca kendi tenant'Ä±nÄ±.",
   })
-  @ApiResponse({ status: 200, description: "Liste döner." })
+  @ApiResponse({ status: 200, description: "Liste dÃ¶ner." })
   public async list(
     @Query(new ZodValidationPipe(listTenantsQuerySchema))
     query: ReturnType<typeof listTenantsQuerySchema.parse>,
     @CurrentActor() actor: ActorContext,
   ): Promise<TenantListResponse> {
-    // exactOptionalPropertyTypes uyumu: spread sonrası `undefined` olan
-    // alanları service'e geçirme (listArgs zaten daraltıyor).
+    // exactOptionalPropertyTypes uyumu: spread sonrasÄ± `undefined` olan
+    // alanlarÄ± service'e geÃ§irme (listArgs zaten daraltÄ±yor).
     return this.service.list({
       page: query.page,
       pageSize: query.pageSize,
@@ -107,17 +116,18 @@ export class TenantController {
   }
 
   /**
-   * Tenant detayı. Cross-tenant denemesi → 404.
+   * Tenant detayÄ±. Cross-tenant denemesi â†’ 404.
    */
   @Get(":id")
+  @RequirePermissions("tenant:tenant:read")
   @ApiOperation({
     operationId: "tenantGetById",
-    summary: "Tenant detayı",
+    summary: "Tenant detayÄ±",
     description:
-      "ID'ye göre tenant getirir. Tenant kullanıcısı yalnızca kendi tenant'ını görebilir; aksi 404.",
+      "ID'ye gÃ¶re tenant getirir. Tenant kullanÄ±cÄ±sÄ± yalnÄ±zca kendi tenant'Ä±nÄ± gÃ¶rebilir; aksi 404.",
   })
-  @ApiResponse({ status: 200, description: "Tenant döner." })
-  @ApiResponse({ status: 404, description: "Tenant bulunamadı." })
+  @ApiResponse({ status: 200, description: "Tenant dÃ¶ner." })
+  @ApiResponse({ status: 404, description: "Tenant bulunamadÄ±." })
   public async findById(
     @Param("id", new ParseUUIDPipe()) id: string,
     @CurrentActor() actor: ActorContext,
@@ -126,16 +136,17 @@ export class TenantController {
   }
 
   /**
-   * Tenant güncelleme. SUPERADMIN veya kendi tenant OWNER'ı.
+   * Tenant gÃ¼ncelleme. SUPERADMIN veya kendi tenant OWNER'Ä±.
    */
   @Patch(":id")
+  @RequirePermissions("tenant:tenant:update")
   @ApiOperation({
     operationId: "tenantUpdate",
-    summary: "Tenant güncelleme",
+    summary: "Tenant gÃ¼ncelleme",
     description:
-      "Tenant ad, contactEmail, timezone, status alanlarını günceller. SUPERADMIN tüm tenant'ları, OWNER yalnızca kendi tenant'ını günceller.",
+      "Tenant ad, contactEmail, timezone, status alanlarÄ±nÄ± gÃ¼nceller. SUPERADMIN tÃ¼m tenant'larÄ±, OWNER yalnÄ±zca kendi tenant'Ä±nÄ± gÃ¼nceller.",
   })
-  @ApiResponse({ status: 200, description: "Tenant güncellendi." })
+  @ApiResponse({ status: 200, description: "Tenant gÃ¼ncellendi." })
   public async update(
     @Param("id", new ParseUUIDPipe()) id: string,
     @Body(new ZodValidationPipe(updateTenantRequestSchema))
@@ -146,18 +157,19 @@ export class TenantController {
   }
 
   /**
-   * Tenant kapatma. Yalnızca SUPERADMIN. Fiziksel silme yok;
+   * Tenant kapatma. YalnÄ±zca SUPERADMIN. Fiziksel silme yok;
    * `status = closed` ve `archivedAt` set edilir.
    */
   @Post(":id/close")
+  @RequirePermissions("tenant:tenant:archive")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     operationId: "tenantClose",
     summary: "Tenant kapatma (SUPERADMIN)",
     description:
-      "Tenant'ı kapatır (soft delete). Fiziksel silme yok; audit log korunur.",
+      "Tenant'Ä± kapatÄ±r (soft delete). Fiziksel silme yok; audit log korunur.",
   })
-  @ApiResponse({ status: 200, description: "Tenant kapatıldı." })
+  @ApiResponse({ status: 200, description: "Tenant kapatÄ±ldÄ±." })
   public async close(
     @Param("id", new ParseUUIDPipe()) id: string,
     @Body(new ZodValidationPipe(closeTenantRequestSchema))

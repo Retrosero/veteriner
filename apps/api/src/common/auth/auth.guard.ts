@@ -9,11 +9,12 @@
  * Akış:
  * 1. Cookie veya `Authorization: Bearer <token>` header'dan token al.
  * 2. AuthService.validateSession ile doğrula.
- * 3. userId, sessionId, role, tenantId, branchId'yi çıkar.
+ * 3. userId, sessionId, role, tenantId, branchId, isSuperadmin'i çıkar.
  * 4. SUPERADMIN bypass: rol "SUPERADMIN" ise tenantId=null
- *    (cross-tenant erişim).
+ *    (cross-tenant erişim). isSuperadmin=true döner.
  * 5. Tenant context'i mevcut session'da saklanmaz; her istekte
- *    `UserTenantMembership` üzerinden resolve edilir.
+ *    `UserTenantMembership` üzerinden resolve edilir. Active branch
+ *    session'dan okunur.
  *
  * Davranış:
  * - Public endpoint'ler (`@Public()` dekoratörü ile) kontrol
@@ -21,6 +22,7 @@
  * - Session yoksa veya geçersizse `UnauthorizedException` (401).
  *
  * @since GOAL-011 (FAZ-1) kimlik doğrulama
+ * @updated GOAL-012 (FAZ-1) RBAC ve izin motoru — isSuperadmin + branchId
  */
 
 import {
@@ -28,7 +30,6 @@ import {
   ExecutionContext,
   Injectable,
   Logger,
-  SetMetadata,
   UnauthorizedException,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
@@ -38,13 +39,9 @@ import {
   ActorContext,
   ActorRole,
 } from "../actor/actor-context.service.js";
+import { IS_PUBLIC_KEY } from "../decorators/public.decorator.js";
 import { AuthService } from "./auth.service.js";
 import { SESSION_COOKIE_NAME } from "@vetniva/contracts";
-
-export const IS_PUBLIC_KEY = "auth:isPublic";
-/** Public endpoint işaretleyicisi (auth kontrol dışı). */
-export const Public = (): MethodDecorator & ClassDecorator =>
-  SetMetadata(IS_PUBLIC_KEY, true);
 
 declare module "express-serve-static-core" {
   interface Request {
@@ -104,10 +101,20 @@ export class AuthGuard implements CanActivate {
     };
 
     // Tenant + role context'i her istekte resolve et. SUPERADMIN
-    // değilse ilk aktif üyelikten; SUPERADMIN bypass.
-    const { role, tenantId } = await this.resolveRoleAndTenant(
-      session.userId,
-    );
+    // ise tenantId=null + isSuperadmin=true; aksi halde ilk aktif
+    // üyelikten.
+    const { role, tenantId, isSuperadmin } =
+      await this.resolveRoleAndTenant(session.userId);
+
+    // Branch context: session'daki aktif branch. Header override'ı
+    // (X-Branch-Id) yalnızca SUPERADMIN için kabul edilir (cross-tenant
+    // görünüm). Normal kullanıcılar için session'daki branch bağlamı
+    // değiştirilemez.
+    let branchId: string | null = session.activeBranchId;
+    if (isSuperadmin) {
+      const headerBranch = request.header("x-branch-id");
+      if (headerBranch) branchId = headerBranch;
+    }
 
     const correlationId =
       (request as Request & { requestId?: string }).requestId ??
@@ -126,12 +133,13 @@ export class AuthGuard implements CanActivate {
       actorType: "user",
       role,
       tenantId,
-      branchId: null,
+      branchId,
+      isSuperadmin,
       correlationId,
       ipAddress: ip,
       userAgentHash,
-      source: "header", // kimlik doğrulandı; "header" yerine "session" düşünülebilir
-    };
+      source: "session",
+    } as ActorContext & { isSuperadmin: boolean };
 
     return true;
   }
@@ -150,32 +158,23 @@ export class AuthGuard implements CanActivate {
   /**
    * Kullanıcının rolünü ve aktif tenant'ı çözümler. Birden fazla
    * tenant'a üye ise ilk aktif üyelik döner. SUPERADMIN bypass.
+   *
+   * Memberships verisi AuthService üzerinden çözümlenir (RLS
+   * nedeniyle repository doğrudan erişilmez). GOAL-012 ile birlikte
+   * `isSuperadmin` bayrağı user tablosundan okunur.
    */
   private async resolveRoleAndTenant(
     userId: string,
-  ): Promise<{ role: ActorRole; tenantId: string | null }> {
-    // SUPERADMIN kontrolü: kullanıcının hiç üyeliği yoksa ve sistem
-    // ayarı "isSuperadminUser" ise SUPERADMIN. Şu an için basit
-    // yaklaşım: memberships boşsa SUPERADMIN kabul et (ilk
-    // kurulum/superadmin user için). Prod'da users tablosuna
-    // `is_superadmin` boolean eklenecek (GOAL-012 ile).
-    const memberships = await (
-      this.auth as unknown as {
-        repo?: {
-          listAllSessions: (id: string) => Promise<unknown>;
-        };
-      }
-    ).repo; // no-op; gerçek erişim aşağıda.
-    void memberships;
-
-    // AuthService zaten session+user doğruladı; doğrudan memberships
-    // tablosuna bakamayız (AuthService public API'sında yok). Bu
-    // nedenle resolver'ı AuthService'e ekledik: aşağıdaki çağrı
-    // `resolveActorContext` ile yapılır.
+  ): Promise<{
+    role: ActorRole;
+    tenantId: string | null;
+    isSuperadmin: boolean;
+  }> {
     const resolved = await (this.auth as unknown as {
       resolveActorContext: (id: string) => Promise<{
         role: ActorRole;
         tenantId: string | null;
+        isSuperadmin: boolean;
       }>;
     }).resolveActorContext(userId);
     return resolved;
