@@ -565,3 +565,128 @@ branch.ts) tanımlıdır.
 | `city` | string | Şehir filtresi |
 | `limit` | int | Default 20, max 100 |
 | `offset` | int | Default 0 |
+
+---
+
+## Patient (Hasta / Hayvan) alanları (GOAL-021)
+
+> Şema: `apps/api/src/common/patients/patient.types.ts`.
+> Sözleşme: `packages/contracts/src/patient.ts`
+> (`patientCreateInputSchema`, `patientSearchQuerySchema`,
+> `patientSchema`).
+
+### id (string, zorunlu)
+
+- **Tip:** String, `pat-` prefix + UUID v4
+- **PII:** hayır
+- **Açıklama:** Hasta benzersiz tanımlayıcısı. Service
+  `PatientsRepository.nextId(tenantId)` ile üretir.
+
+### tenantId (UUID, zorunlu)
+
+- **Tip:** UUID
+- **PII:** hayır
+- **Açıklama:** Ait olduğu tenant. Tüm sorgularda tenant
+  izolasyonu zorunlu; service `requireTenantScope` ile
+  `actor.tenantId`'yi doğrular.
+
+### ownerId (UUID, zorunlu)
+
+- **Tip:** UUID
+- **PII:** hayır
+- **Açıklama:** Bağlı olduğu owner. Service
+  `owners.findById(tenantId, ownerId)` ile owner'ın aynı
+  tenant'ta olduğunu doğrular (cross-tenant → 404
+  `VET-AUTHZ-0002`).
+
+### name (string, zorunlu)
+
+- **Tip:** String, 1-100 karakter
+- **PII:** hayır (hayvan adı, kişi tanımlayıcı değil)
+- **Açıklama:** Hayvanın adı (ör. "Boncuk").
+
+### species (enum, zorunlu)
+
+- **Değerler:** `dog` | `cat` | `bird` | `other`
+- **PII:** hayır
+- **Açıklama:** Tür. TR pilot whitelist
+  `TR_ALLOWED_SPECIES = ["dog","cat","bird"]`; `other` henüz
+  aktif değil → 422 `VET-CLINIC-0004`. Genişletme
+  `CountryAdapter.isSpeciesAllowed` ile ülke adaptörüne
+  taşınacak.
+
+### breed (string, opsiyonel)
+
+- **Tip:** String, max 100 karakter
+- **PII:** hayır
+- **Açıklama:** Irk (ör. "Golden Retriever", "Tekir"). Serbest
+  metin; ırk kataloğü FAZ-3+ kapsamında.
+
+### birthDate (date, opsiyonel)
+
+- **Tip:** ISO `YYYY-MM-DD` string
+- **Format:** `ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/`
+- **PII:** hayır
+- **Açıklama:** Doğum tarihi. Gelecekte olamaz → 422
+  `VET-VALIDATION-0009`. Tahmini doğum tarihi için aynı alan
+  kullanılır.
+
+### gender (enum, zorunlu)
+
+- **Değerler:** `male` | `female` | `unknown`
+- **PII:** hayır
+- **Açıklama:** Cinsiyet. `unknown` doğumda belirlenemeyen
+  durumlar içindir.
+
+### microchip (string, opsiyonel)
+
+- **Tip:** String, 15 haneli rakam
+- **Format:** `MICROCHIP_REGEX = /^\d{15}$/` (ISO 11784/11785)
+- **PII:** hayır
+- **Unique:** `(tenantId, microchip)` composite unique
+  (arşivlenen kayıtlar DAHİL değildir).
+- **Açıklama:** Format bozuksa 422 `VET-VALIDATION-0003`.
+  Duplicate aynı tenant'ta → 409 `VET-CLINIC-0003`. Farklı
+  tenant aynı mikroçipi kullanabilir (tenant-scoped).
+
+### color (string, opsiyonel)
+
+- **Tip:** String, max 100 karakter
+- **PII:** hayır
+- **Açıklama:** Renk / görünüş (ör. "Kahverengi", "Beyaz-siyah
+  tekir").
+
+### neutered (boolean, zorunlu)
+
+- **Tip:** boolean
+- **PII:** hayır
+- **Açıklama:** Kısırlaştırma durumu. Veteriner muayenesinde
+  güncellenebilir.
+
+### notes (string, opsiyonel)
+
+- **Tip:** String, max 2000 karakter
+- **PII:** hayır
+- **Açıklama:** Serbest not. Davranış, alışkanlık, özel uyarılar.
+
+### createdAt (timestamptz, otomatik)
+
+- **Tip:** ISO 8601 string (service) / TIMESTAMPTZ (DB)
+
+### archivedAt (timestamptz, opsiyonel)
+
+- **Tip:** ISO 8601 string / TIMESTAMPTZ (nullable)
+- **PII:** hayır
+- **Açıklama:** Soft delete zamanı. `DELETE` endpoint'i set
+  eder; identity gizlenir. Klinik kayıtlar append-only;
+  muayene/aşı etkilenmez. Default arama sonuçlarında DÖNMEZ.
+
+### PatientSearchQuery filtreleri
+
+| Ad | Tip | Açıklama |
+| --- | --- | --- |
+| `ownerId` | UUID | Owner ID filtresi |
+| `species` | enum | Tür filtresi (`dog` \| `cat` \| `bird` \| `other`) |
+| `search` | string | Ad/ırk/mikroçip case-insensitive substring (1-200 karakter) |
+| `limit` | int | Default 20, max 200 |
+| `offset` | int | Default 0, max 10000 |

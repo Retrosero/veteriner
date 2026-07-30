@@ -441,6 +441,40 @@ generated_at: "2026-07-30"
   related_pages: []
   related_api: [POST /api/v1/clinic/owners]
 
+- chunk_id: flow-patient-create
+  type: flow
+  source: docs/api/api.post._api_v1_clinic_patients.md
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Hayvan (Hasta) Oluşturma Akışı"
+  content: |
+    1. Personel (STAFF/VETERINARIAN) hasta oluşturma formunu açar
+       (`POST /api/v1/clinic/patients`). Gerekli alanlar: `ownerId`,
+       `name`, `species`, `gender`, `neutered`. Opsiyonel: `breed`,
+       `birthDate`, `microchip`, `color`, `notes`.
+    2. Service önce `owners.findById(tenantId, ownerId)` ile sahibin
+       aynı tenant'ta olduğunu doğrular. Cross-tenant veya olmayan
+       owner → 404 `VET-AUTHZ-0002` (bilgi sızdırmaz).
+    3. `species` TR pilot whitelist'inde mi (`dog|cat|bird`)? Aksi →
+       422 `VET-CLINIC-0004`. `other` henüz aktif değildir.
+    4. `microchip` 15 haneli rakam olmalı (ISO 11784/11785). Format
+       bozuksa 422 `VET-VALIDATION-0003`. Aynı tenant'ta aktif bir
+       kayıtta bu mikroçip zaten varsa 409 `VET-CLINIC-0003`.
+       Farklı tenant aynı mikroçipi kullanabilir (tenant-scoped).
+    5. `birthDate` ISO `YYYY-MM-DD`; gelecekte olamaz. Geçersiz veya
+       gelecek tarih → 422 `VET-VALIDATION-0009`. Tahmini doğum
+       tarihi için aynı alan kullanılır.
+    6. Kayıt başarılıysa 201 `Patient` döner; audit
+       `audit:patient.create` (info) yazılır (ownerId, name, species,
+       breed, birthDate, gender, microchip, neutered payload).
+  keywords: [hayvan, hasta, pet, patient, kayıt, mikroçip, microchip, tür, species, whitelist, doğum tarihi, birthDate, owner cross-tenant]
+  related_chunks: [glossary-patient, glossary-owner, error-VET-AUTHZ-0002, error-VET-CLINIC-0003, error-VET-CLINIC-0004, error-VET-VALIDATION-0003, error-VET-VALIDATION-0009, flow-owner-create]
+  related_pages: []
+  related_api: [POST /api/v1/clinic/patients]
+
 # -----------------------------------------------------------------------------
 # ERROR — Hata Kodları (her VET- kodu bir chunk)
 # -----------------------------------------------------------------------------
@@ -511,6 +545,35 @@ generated_at: "2026-07-30"
   related_chunks: [glossary-owner, flow-owner-create]
   related_pages: []
   related_api: [POST /api/v1/clinic/owners]
+
+- chunk_id: error-VET-CLINIC-0003
+  type: error
+  source: docs/errors/ERROR_CATALOG.md
+  error_code: VET-CLINIC-0003
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Mikroçip zaten kullanımda"
+  content: |
+    HTTP 409. Aynı tenant içinde bu 15 haneli mikroçip numarası
+    (ISO 11784/11785) ile kayıtlı aktif bir hasta zaten var.
+    Duplicate kontrolü tenant-scoped uygulanır; farklı tenant aynı
+    mikroçipi kullanabilir. Arşivlenen kayıtlar duplicate kontrolünde
+    DAHİL değildir.
+
+    Çözüm: Mevcut hastayı mikroçip veya ad ile arayın
+    (`GET /api/v1/clinic/patients?search=...`). Yanlışlıkla
+    eklendiyse arşivleyin (`DELETE /api/v1/clinic/patients/:id`) ve
+    yeniden deneyin. Gerçek bir duplicate ise mikroçip numarasını
+    kontrol edin (15 hane, başında/sonunda boşluk yok). Yanlış
+    hayvana kaydedildiyse mevcut kaydın arşivlenip yeniden
+    oluşturulması gerekir.
+  keywords: [409, mikroçip, microchip, duplicate, hasta, hayvan, tenant-scoped, ISO 11784]
+  related_chunks: [glossary-patient, flow-patient-create]
+  related_pages: []
+  related_api: [POST /api/v1/clinic/patients]
 
 - chunk_id: error-VET-AUTH-0001
   type: error

@@ -125,7 +125,7 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-016 ✅ Superadmin tenant görünümü (tamamlandı — 2026-07-30)
 - **Faz 2 — Klinik domain** ⏳ sırada
   - GOAL-020 ✅ Hasta sahibi kayıt ve arama (tamamlandı — 2026-07-30)
-  - GOAL-021 hayvan kayıt sistemi
+  - GOAL-021 ✅ Hayvan kayıt sistemi (tamamlandı — 2026-07-30)
   - GOAL-022 sahiplik geçmişi
   - GOAL-023 alerji, kronik durum ve klinik uyarılar
   - GOAL-024 hayvan zaman çizelgesi
