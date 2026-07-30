@@ -3032,3 +3032,83 @@ generated_at: "2026-07-30"
     - "POST /api/v1/clinic/waitlist/{id}/schedule"
     - "POST /api/v1/clinic/waitlist/{id}/cancel"
 
+- chunk_id: flow-portal-auth
+  type: flow
+  source: docs/api/api.post._api_v1_portal-auth_*.md
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: true
+  title: "Portal Hesap Kayıt ve Giriş Akışı"
+  content: |
+    Personel auth'undan ayrı bir path. Cookie adı
+    `vetniva_portal_session` (httpOnly, SameSite=Lax, secure prod);
+    session tipi `portal_session`; actorType `portal_user`.
+
+    1. **Register** (`POST /api/v1/portal-auth/register`, 201):
+       tenant admin önce owner oluşturur (`POST /api/v1/clinic/owners`).
+       Sahip email + parola + `ownerId` + `consentKvkk=true` ile
+       kayıt olur. KVKK consent literal zorunlu
+       (değilse 422 `VET-VALIDATION-0003`). Aynı email
+       tenant-scoped duplicate → 409 `VET-AUTH-0003`. bcrypt
+       cost 12; plain asla loglanmaz. Audit
+       `audit:portal.auth.register` (info).
+
+    2. **Login** (`POST /api/v1/portal-auth/login`, 200): email +
+       parola. Hata mesajı sabit ("E-posta veya parola hatalı")
+       → email enumeration koruması. Bilinmeyen email için decoy
+       bcrypt hash ile timing-equalize. Brute-force: 5 yanlış
+       deneme (`MAX_FAILED_LOGIN_COUNT=5`) → 15 dakika kilit
+       (`ACCOUNT_LOCK_SECONDS=900`); 423 `VET-AUTH-0005` +
+       `remainingSeconds`. Başarıda `failedLoginCount=0`,
+       `lastLoginAt=now`, 30 gün session
+       (`PORTAL_SESSION_TTL_SECONDS=2592000`); audit
+       `audit:portal.auth.login.success|failure`.
+
+    3. **Session doğrulama** (`validateSession`, internal):
+       süresi geçmişse siler, null döner. Cookie httpOnly
+       olduğundan JS erişemez; her istekte cookie ile doğrulanır.
+
+    4. **Logout** (`POST /api/v1/portal-auth/logout`, 200):
+       cookie'den veya `Authorization: Bearer` header'dan token
+       alır. Token yoksa idempotent 200; varsa session silinir
+       + audit `audit:portal.auth.logout` (info). Cookie
+       `Max-Age=0` ile temizlenir.
+
+    5. **Forgot password** (`POST /api/v1/portal-auth/forgot-password`,
+       200): email normalize; kayıtlıysa 64 hex plain token üretir
+       (sha256 hash'lenmiş hali DB'ye yazılır, 1 saat TTL
+       `PASSWORD_RESET_TTL_SECONDS=3600`). Response her durumda
+       generic OK (enumeration koruması). FAZ-0 debug: response'da
+       `resetToken` döner; FAZ-3+'da email ile gönderilecek
+       (GOAL-015). Audit
+       `audit:portal.auth.password.reset_request`.
+
+    6. **Reset password** (`POST /api/v1/portal-auth/reset-password`,
+       200): token + yeni parola. Token hash'lenmiş hali DB'de
+       aranır; geçersiz/süresi dolmuş/kullanılmışsa 400
+       `VET-AUTH-0004` (mesaj sabit). Başarıda bcrypt rehash
+       + brute-force sayacı sıfırla + token consume
+       (`usedAt` set). Audit
+       `audit:portal.auth.password.reset_success`.
+
+    Tenant çözümleme: pilot `x-tenant-slug` veya `x-tenant-id`
+    header. Üretimde TenantResolver (domain-based) FAZ-3+.
+
+    Güvenlik: tüm event'lerde PII mask'li (email); IP + UA sha256
+    hash correlation.
+  keywords: [portal, hasta sahibi, kayıt, login, register, parola sıfırlama,
+    brute-force, KVKK, cookie, session, bcrypt, tenant]
+  related_chunks: [glossary-portal-user, glossary-owner,
+    error-VET-AUTH-0003, error-VET-AUTH-0005, error-VET-AUTH-0002,
+    error-VET-AUTH-0004, error-VET-VALIDATION-0003,
+    error-VET-TENANT-0001]
+  related_pages: []
+  related_api:
+    - "POST /api/v1/portal-auth/register"
+    - "POST /api/v1/portal-auth/login"
+    - "POST /api/v1/portal-auth/logout"
+    - "POST /api/v1/portal-auth/forgot-password"
+    - "POST /api/v1/portal-auth/reset-password"
+
