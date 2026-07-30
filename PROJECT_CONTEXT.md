@@ -115,11 +115,18 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
     (tamamlandı — chunk/page/api/field şemaları, AI_CHUNKS.yaml
     seed, RAG retrieval + AI help endpoint iskeleti,
     docs-check VET- + AI chunks validator, 18 unit test geçti)
-- **Faz 1 — Platform çekirdeği** ⏳ sırada
+- **Faz 1 — Platform çekirdeği** ✅ tamamlandı
   - GOAL-010 ✅ tenant ve şube (tamamlandı — 2026-07-30)
   - GOAL-011 ✅ kimlik doğrulama ve oturum (tamamlandı — 2026-07-30)
-  - GOAL-012 ⏳ RBAC ve izin motoru (core tamamlandı: service + repository + controller + guard'lar + role decorator + audit entegrasyonu; docs/i18n sonraki tick'lerde)
+  - GOAL-012 ✅ RBAC ve izin motoru (tamamlandı — 2026-07-30)
   - GOAL-013 ✅ Modül ve paket feature flag altyapısı (tamamlandı — 2026-07-30)
-  - GOAL-014 ⏳ Dosya ve medya servisi (core tamamlandı: FileMeta + RLS migration `20260101000040_init_file_metas`, storage/scan adapter interface + Local/S3/Noop/ClamAV skeleton, FileService upload/get/list/archive/signed-url, FileController + PermissionsGuard, contracts tarafı genişletildi, 23 unit test geçti; eski `modules/files/` + `common/files/` iskeleti temizlenmeli, S3/ClamAV gerçek implementasyon, docs/i18n sonraki tick'lerde)
+  - GOAL-014 ✅ Dosya ve medya servisi (tamamlandı — 2026-07-30)
   - GOAL-015 ✅ Bildirim altyapısı temeli (tamamlandı — 2026-07-30)
-  - GOAL-016 ⏳ superadmin tenant görünümü (core tamamlandı: SuperadminService + Controller + Module, PermissionsGuard + audit:log:read koruması, contracts tarafı listSuperadminTenantsQuery/Response, TenantOverview + AuditEventSummary, 8 unit test geçti; docs/i18n sonraki tick'lerde)
+  - GOAL-016 ✅ Superadmin tenant görünümü (tamamlandı — 2026-07-30)
+- **Faz 2 — Klinik domain** ⏳ sırada
+  - GOAL-020 hasta sahibi kayıt ve arama
+  - GOAL-021 hayvan kayıt sistemi
+  - GOAL-022 sahiplik geçmişi
+  - GOAL-023 alerji, kronik durum ve klinik uyarılar
+  - GOAL-024 hayvan zaman çizelgesi
+  - GOAL-025 portal erişim daveti

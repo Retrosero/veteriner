@@ -153,6 +153,91 @@ Content-Type: application/json
 **Audit:** `audit:branch.create` (info). RLS actor.tenantId üzerinden
 filtreyi uygular; SUPERADMIN her tenant için branch oluşturabilir.
 
+## GOAL-016 — Superadmin tenant görünümü (FAZ-1)
+
+GOAL-016 ile birlikte SUPERADMIN'in **tüm tenant'lara** hızlı
+bakış atabileceği API tabanlı görünüm devreye girdi. Bu görünüm
+GOAL-010'da açıklanan "tenant oluştur/kapat" aksiyonlarını
+**izleme ve gözlemleme** ile tamamlar.
+
+### Tenant listeleme (özet metriklerle)
+
+**Amaç:** Tüm tenant'ların durumunu ve temel metriklerini tek
+bakışta görmek.
+
+**Ön koşul:** SUPERADMIN yetkisi.
+
+**Adımlar:**
+
+1. **API'ye istek gönder:**
+   ```http
+   GET /api/v1/superadmin/tenants?page=1&pageSize=20
+   X-Actor-Role: SUPERADMIN
+   ```
+
+2. **Yanıtı incele:** Her tenant için
+   - `tenantId`, `name`, `country`, `status`, `createdAt`
+   - `branchCount` (şube sayısı)
+   - `userCount` (kullanıcı sayısı)
+   - `enabledModules` (açık modül listesi)
+   - `lastLoginAt` (en son giriş zamanı; `null` ise hiç giriş yok)
+   - `errorCountLast24h` (FAZ-1'de her zaman `0`; log altyapısı FAZ-3+'da)
+   - `storageUsedMb` (dosya kullanımı, arşivlenenler hariç)
+
+   **Beklenen sonuç:** 200 + `ListSuperadminTenantsResponse`.
+
+   **Hata durumunda:**
+   - `VET-AUTHZ-0001` → SUPERADMIN değilsiniz.
+   - Boş sonuç (`items: []`) → filtreler çok dar; `status` veya
+     `country` parametrelerini gevşetin.
+
+**Filtreler:**
+
+- `status`: `active` | `suspended` | `closed`
+- `country`: `TR` | `GB`
+- `search`: tenant adı veya slug içinde arama (1-100 karakter)
+
+### Tenant detay görüntüleme
+
+**Amaç:** Tek bir tenant'ın tüm metriklerini ve son olaylarını
+görmek.
+
+**Adımlar:**
+
+1. **API'ye istek gönder:**
+   ```http
+   GET /api/v1/superadmin/tenants/{tenantId}
+   X-Actor-Role: SUPERADMIN
+   ```
+2. **Yanıtı incele:** `TenantOverview` + `recentEvents` (son 10
+   audit event).
+   **Beklenen sonuç:** 200 + `TenantDetailResponse`.
+   **Hata durumunda:**
+   - `VET-TENANT-0001` (404) → Tenant ID yanlış veya silinmiş.
+
+### Son olayları inceleme
+
+**Amaç:** Tenant bazlı şüpheli aktivite kontrolü.
+
+**Adımlar:**
+
+1. **API'ye istek gönder:**
+   ```http
+   GET /api/v1/superadmin/tenants/{tenantId}/events
+   X-Actor-Role: SUPERADMIN
+   ```
+2. **Yanıtı incele:** Son 10 `AuditEventSummary` (eventName,
+   actorId, targetType, targetId, createdAt).
+   **Beklenen sonuç:** 200 + `{ items: [...] }`.
+
+### Şüpheli aktivite sinyalleri (FAZ-1'de gözle)
+
+- `errorCountLast24h > 0` → Çok sayıda hata (henüz FAZ-1'de 0).
+- `lastLoginAt` çok eski → Uzun süredir giriş yok (örn. 30 gün+).
+- Çok sayıda `audit:auth.login.failure` event'i → Brute-force
+  denemesi şüphesi.
+- Cross-tenant erişim denemeleri (FAZ-3+ ile UI'da alarm).
+
 ## Sık sorulan sorular
 
 **S: Bir tenant'ı yanlışlıkla sildim, geri alabilir miyim?**

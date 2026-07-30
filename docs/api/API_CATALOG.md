@@ -520,6 +520,93 @@ Belirli bir session'ı iptal et (logout-remote). Başka kullanıcının session'
 
 ---
 
+## Superadmin — Tenant Görünümü (`/api/v1/superadmin/tenants`)
+
+SUPERADMIN paneli için tenant listeleme, detay ve son audit event
+endpoint'leri. Tüm endpoint'ler `audit:log:read` permission'ı
+(+ SUPERADMIN bypass) ile korunur; normal kullanıcılar
+`VET-AUTHZ-0001` (403) alır. FAZ-1'de okuma amaçlıdır; yazma
+(tenant suspend vb.) sonraki goal'lerde.
+
+### GET /api/v1/superadmin/tenants
+
+Tüm tenant'ların özet görünümü (SUPERADMIN).
+
+- **Modül:** audit (superadmin)
+- **Yetki:** `audit:log:read` (SUPERADMIN bypass)
+- **Query:** `page` (default 1), `pageSize` (default 20, max 100),
+  `status?` (`active`|`suspended`|`closed`),
+  `country?` (`TR`|`GB`), `search?` (1-100 karakter)
+- **Response 200:** `ListSuperadminTenantsResponse`
+  (items: `TenantOverview[]`, total, page, pageSize)
+
+**Response 200 (özet):**
+
+```json
+{
+  "items": [
+    {
+      "tenantId": "tnt-uuid",
+      "name": "Pilot Veteriner Kliniği",
+      "country": "TR",
+      "status": "active",
+      "createdAt": "2026-07-30T12:00:00.000Z",
+      "branchCount": 1,
+      "userCount": 4,
+      "enabledModules": ["clinic", "petshop", "file"],
+      "lastLoginAt": "2026-07-30T11:45:12.000Z",
+      "errorCountLast24h": 0,
+      "storageUsedMb": 12.5
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "pageSize": 20
+}
+```
+
+Detay: [`api.get._api_v1_superadmin_tenants.md`](./api.get._api_v1_superadmin_tenants.md)
+
+### GET /api/v1/superadmin/tenants/:id
+
+Tek tenant'ın detay görünümü + son 10 audit event.
+
+- **Modül:** audit (superadmin)
+- **Yetki:** `audit:log:read` (SUPERADMIN bypass)
+- **Path param:** `id` (uuid)
+- **Response 200:** `TenantDetailResponse` (`TenantOverview` +
+  `recentEvents: AuditEventSummary[]`)
+- **Hata kodu:** `VET-TENANT-0001` (404 — tenant bulunamadı)
+
+Detay: [`api.get._api_v1_superadmin_tenants__id.md`](./api.get._api_v1_superadmin_tenants__id.md)
+
+### GET /api/v1/superadmin/tenants/:id/events
+
+Tenant'ın son 10 audit event'i (tarih azalan). Şüpheli
+aktivite tespiti için kullanılır.
+
+- **Modül:** audit (superadmin)
+- **Yetki:** `audit:log:read` (SUPERADMIN bypass)
+- **Path param:** `id` (uuid)
+- **Response 200:** `{ items: AuditEventSummary[] }`
+- **Hata kodu:** `VET-TENANT-0001` (404)
+
+Detay: [`api.get._api_v1_superadmin_tenants__id_events.md`](./api.get._api_v1_superadmin_tenants__id_events.md)
+
+**Tasarım notları:**
+
+- `errorCountLast24h` FAZ-1'de sabit `0` döner (log
+  aggregation altyapısı FAZ-3+'da). UI'da "veri yok" badge'i
+  gösterilebilir.
+- `storageUsedMb` `FileMeta.sizeBytes` (BigInt) toplamı →
+  MB. Arşivlenen dosyalar (`archivedAt != null`) dahil değil.
+- `lastLoginAt` tenant'ın tüm kullanıcıları arasında en yeni
+  `User.lastLoginAt`; hiç login yoksa `null`.
+- In-memory aggregation: DB view katmanı yok, her tenant için
+  4 paralel sorgu. Pilot ölçekte yeterli.
+
+---
+
 ---
 
 ## Ortak hata gövdesi

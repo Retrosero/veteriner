@@ -2211,3 +2211,108 @@ generated_at: "2026-07-30"
                    pii-email-mask, rbac-overview]
   related_pages: []
   related_api: [POST /api/v1/notifications]
+
+# Source: apps/api/src/modules/superadmin/superadmin.service.ts
+# SUPERADMIN tenant listesi ve detay overview endpoint'leri.
+
+- chunk_id: superadmin-tenant-overview
+  type: page
+  source: apps/api/src/modules/superadmin/superadmin.controller.ts
+  page_id: api.superadmin.tenants.list
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Superadmin tenant görünümü (listeleme ve detay)"
+  content: |
+    SUPERADMIN paneli icin tenant listeleme ve detay
+    endpoint'leri. Yalnizca SUPERADMIN (audit:log:read
+    permission'i + bypass) erisebilir; normal kullanicilar
+    VET-AUTHZ-0001 (403) alir.
+
+    Uc endpoint vardir:
+
+    1. `GET /api/v1/superadmin/tenants` — filtreli tenant listesi.
+       Query: `page` (default 1), `pageSize` (default 20, max 100),
+       `status` (active/suspended/closed), `country` (TR/GB),
+       `search` (ad/slug icinde, 1-100 karakter).
+       Response: `ListSuperadminTenantsResponse` (items, total,
+       page, pageSize).
+
+    2. `GET /api/v1/superadmin/tenants/:id` — tek tenant detayi.
+       Response: `TenantDetailResponse` (TenantOverview + son 10
+       audit event). Tenant yoksa VET-TENANT-0001 (404) doner
+       (bilgi sizdirmaz).
+
+    3. `GET /api/v1/superadmin/tenants/:id/events` — son 10
+       audit event'i (tarih azalan).
+
+    Her tenant icin toplanan metrikler: branchCount, userCount,
+    enabledModules (FeatureFlagService uzerinden), lastLoginAt
+    (en yeni User.lastLoginAt), errorCountLast24h (FAZ-1 stub
+    olarak 0, FAZ-3+'da Loki/Prometheus), storageUsedMb
+    (FileMeta.sizeBytes BigInt toplami, arsivlenenler haric).
+
+    In-memory aggregation: DB view katmani yok, her tenant icin
+    4 paralel sorgu. Pilot olcekte (10-100 tenant) yeterli;
+    FAZ-3+'da materialized view + cache gelecek.
+  keywords: [superadmin, tenant, listeleme, detay, metrik,
+             branchCount, userCount, storage, lastLogin, audit,
+             SUPERADMIN, VET-TENANT-0001]
+  related_chunks: [rbac-superadmin, audit-rbac-denied,
+                   error-VET-TENANT-0001, error-VET-AUTHZ-0001,
+                   feature-flag-overview, file-upload-overview]
+  related_pages: []
+  related_api: ["GET /api/v1/superadmin/tenants",
+                "GET /api/v1/superadmin/tenants/{id}",
+                "GET /api/v1/superadmin/tenants/{id}/events"]
+
+# Source: apps/api/src/modules/superadmin/superadmin.controller.ts
+# Supheli aktivite tespiti icin superadmin events endpoint kullanimi.
+
+- chunk_id: superadmin-suspicious-activity
+  type: audit
+  source: apps/api/src/modules/superadmin/superadmin.service.ts
+  page_id: api.superadmin.tenants.events
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: medium
+  pii: false
+  title: "Supheli aktivite tespiti icin superadmin tenant events"
+  content: |
+    SUPERADMIN, tenant bazli supheli aktivite kontrolu icin
+    `GET /api/v1/superadmin/tenants/{id}/events` endpoint'ini
+    kullanir. Son 10 audit event (eventName, actorId, targetType,
+    targetId, createdAt) tarih azalan sirada doner.
+
+    Supheli aktivite sinyalleri:
+
+    - Tekrarlayan `audit:auth.login.failure` eventleri: brute-force
+      denemesi. 5+ art arda denialarda hesap kilitlenir
+      (VET-AUTH-0003, 15 dk).
+    - `audit:security.cross_tenant_attempt` eventleri: tenant
+      izolasyonu ihlali; FAZ-3+ ile UI'da alarm olarak gosterilir.
+    - `audit:rbac.permission_denied` (info) artisi: yetki eskalasyonu
+      denemesi; actor bazli alarm kurallari FAZ-3+'da.
+    - `lastLoginAt` cok eski (30 gun+) + ani aktivite: ele
+      gecirilmis hesap suphesi.
+    - `errorCountLast24h > 0` (FAZ-3+'da gercek deger): yogun hata
+      artisi (500 spike).
+
+    FAZ-1'de bu endpoint okuma yapar, kendisi audit event
+    YAZMAZ (performans). FAZ-3+'da `audit:superadmin.tenant.read`
+    (info) eklenecek.
+
+    Cross-tenant denemesi VET-TENANT-0001 (404) ile reddedilir;
+    bilgi sizdirmaz.
+  keywords: [supheli aktivite, audit, guvenlik, login failure,
+             cross-tenant, brute force, alarm, SUPERADMIN,
+             tenant events]
+  related_chunks: [rbac-superadmin, audit-rbac-denied,
+                   superadmin-tenant-overview, error-VET-TENANT-0001,
+                   error-VET-AUTH-0003]
+  related_pages: []
+  related_api: ["GET /api/v1/superadmin/tenants/{id}/events"]
+
