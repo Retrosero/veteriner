@@ -97,7 +97,7 @@ function makeAudit(): AuditService {
 
 function validInput(overrides: Partial<{
   examinationId: string;
-  type: "medication" | "procedure" | "lab" | "imaging" | "vaccination" | "follow_up";
+  type: "medication" | "application" | "procedure" | "lab" | "imaging" | "vaccination" | "follow_up" | "instruction";
   description: string;
   notes?: string;
   dueDate?: string;
@@ -404,6 +404,62 @@ describe("OrdersService", () => {
       expect(actions).toContain("start");
       expect(actions).toContain("complete");
       expect(actions).toContain("cancel");
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // GOAL-044 yeni tipler — application, instruction
+  // -------------------------------------------------------------------------
+
+  describe("plan öğesi tipleri (GOAL-044)", () => {
+    it("application (uygulama) order oluşturma + tamamlama", async () => {
+      const o = await service.create(
+        TENANT_A,
+        validInput({ type: "application", description: "Pansuman 2x1 5 gün" }),
+        VET_A,
+      );
+      expect(o.type).toBe("application");
+      expect(o.status).toBe("pending");
+      await service.start(TENANT_A, o.id, VET_A);
+      const done = await service.complete(TENANT_A, o.id, VET_A);
+      expect(done.status).toBe("completed");
+    });
+
+    it("instruction (genel talimat) order oluşturma + iptal", async () => {
+      const o = await service.create(
+        TENANT_A,
+        validInput({ type: "instruction", description: "Düşük yağlı diyet 14 gün" }),
+        VET_A,
+      );
+      expect(o.type).toBe("instruction");
+      const cancelled = await service.cancel(
+        TENANT_A,
+        o.id,
+        { reason: "Sahibi karşı çıktı" },
+        VET_A,
+      );
+      expect(cancelled.status).toBe("cancelled");
+      expect(cancelled.cancellationReason).toBe("Sahibi karşı çıktı");
+    });
+
+    it("type=application filter doğru çalışır", async () => {
+      await service.create(
+        TENANT_A,
+        validInput({ type: "application", description: "Pansuman" }),
+        VET_A,
+      );
+      await service.create(
+        TENANT_A,
+        validInput({ type: "instruction", description: "Diyet" }),
+        VET_A,
+      );
+      const r = await service.list(
+        TENANT_A,
+        { type: "application", limit: 20, offset: 0 },
+        VET_A,
+      );
+      expect(r.total).toBe(1);
+      expect(r.items[0]?.type).toBe("application");
     });
   });
 });

@@ -7,9 +7,21 @@
  * frontend (form/typing) aynı kaynaktan tüketir.
  *
  * Order, bir muayeneye (examination) bağlı klinik iş kalemi
- * (ilaç, prosedür, lab, görüntüleme, aşı, kontrol) entity'sidir.
- * Tedavi planı, bir hasta (patient) için tüm order'ların aktif /
- * tamamlanmış ayrımıyla gruplanmış görünümüdür.
+ * (ilaç, uygulama, prosedür, lab, görüntüleme, aşı, kontrol,
+ * genel talimat) entity'sidir. Tedavi planı, bir hasta (patient)
+ * için tüm order'ların aktif / tamamlanmış ayrımıyla gruplanmış
+ * görünümüdür. Bu sözleşme aynı zamanda yatış (hospitalization)
+ * gibi gelecekteki order sistemleri için ortak contract köküdür.
+ *
+ * Plan öğesi tipleri (7 + 1):
+ * - `medication`   — İlaç orderı
+ * - `application`  — Uygulama (pansuman, enjeksiyon, serum)
+ * - `procedure`    — Prosedür / cerrahi müdahale
+ * - `lab`          — Laboratuvar testi
+ * - `imaging`      — Görüntüleme (röntgen, USG vb.)
+ * - `vaccination`  — Aşı (aşı akışı için ayrılmış)
+ * - `follow_up`    — Kontrol randevusu (GOAL-046 köprüsü)
+ * - `instruction`  — Genel talimat (diyet, egzersiz vb.)
  *
  * Yaşam döngüsü:
  *   `pending` (create) → `in_progress` (start) → `completed`
@@ -22,14 +34,16 @@
 
 import { z } from "zod";
 
-/** Order türü. Klinik pilot kapsamı. */
+/** Order türü. Klinik pilot kapsamı (7 + 1 tip). */
 export const orderTypeSchema = z.enum([
   "medication",
+  "application",
   "procedure",
   "lab",
   "imaging",
   "vaccination",
   "follow_up",
+  "instruction",
 ]);
 export type OrderType = z.infer<typeof orderTypeSchema>;
 
