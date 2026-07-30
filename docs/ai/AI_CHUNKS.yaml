@@ -3281,3 +3281,129 @@ generated_at: "2026-07-30"
     - "POST /api/v1/portal-appointments/requests/{id}/cancel"
     - "POST /api/v1/clinic/portal-appointments/requests/{id}/approve"
     - "POST /api/v1/clinic/portal-appointments/requests/{id}/reject"
+
+# -----------------------------------------------------------------------------
+# GOAL-036 — Randevu hatırlatma sistemi (FAZ-3)
+# -----------------------------------------------------------------------------
+# Source: apps/api/src/modules/appointment-reminders/* (GOAL-036 core)
+# Hook mimarisi: schedule/cancel/reschedule AppointmentsService lifecycle
+# üzerinden otomatik tetiklenir; REST sadece liste + admin process.
+
+- chunk_id: reminder-overview
+  type: page
+  source: docs/api/api.get._api_v1_clinic_appointments__id_reminders.md
+  page_id: api.appointment-reminders.list
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Randevu Hatırlatma Sistemi Genel Bakış"
+  content: |
+    VetNiva randevu hatırlatma sistemi, oluşturulan bir randevu için
+    hasta sahibine otomatik hatırlatma gönderir. Sistem tamamen
+    **hook tabanlıdır** — istemci "hatırlatma kur" demek zorunda
+    kalmaz; randevu lifecycle'ı (create / cancel / update) hatırlatmayı
+    otomatik yönetir.
+
+    **Mimari**: `AppointmentRemindersService` (5 public metot) +
+    `AppointmentRemindersRepository` (in-memory pilot, dedupe key ile
+    idempotent) + `AppointmentRemindersController` (2 REST endpoint).
+    `AppointmentsService` modülü `forwardRef` ile bağlanır; circular
+    dependency kaçınılır.
+
+    **Akış**:
+
+    1. **Schedule** (randevu oluşturulunca otomatik,
+       `AppointmentsService.create` → `scheduleForAppointment`):
+       Default config — **24 saat önce**, kanallar **`sms` + `in_app`**
+       (tenant override altyapısı `reminderConfigInputSchema` ile
+       hazır; FAZ-3+'da UI). `scheduledFor = appointment.start − 24h`.
+       Geçmişe düşen `scheduledFor` → skip. Aynı
+       `(appointmentId, channel, scheduledFor)` için mevcut kayıt
+       döner (idempotent). Owner marketing consent yoksa sms atlanır,
+       `in_app`'e düşülür. Tenant locale (`tr-TR` / `en-GB`)
+       çözümlenir. Appointment snapshot repository'ye kopyalanır
+       (processDueReminders anında AppointmentsService'e bağımlılık
+       oluşturmamak için). Audit
+       `audit:appointment_reminder.schedule` (info).
+
+    2. **Cancel** (randevu iptal edilince otomatik,
+       `AppointmentsService.cancel` → `cancelForAppointment`):
+       Tüm `status='scheduled'` kayıtlar `cancelled` olur. Zaten
+       `sent/failed/cancelled` olanlara dokunulmaz. Audit
+       `audit:appointment_reminder.cancel` (info).
+
+    3. **Reschedule** (randevu güncellenince otomatik,
+       `AppointmentsService.update` → `rescheduleForAppointment`):
+       Delta hesabıyla tüm `scheduled` reminder'ların
+       `scheduledFor`'u kaydırılır. Yeni zaman geçmişe düşenler
+       `cancelled` yapılır. Audit
+       `audit:appointment_reminder.reschedule` (info).
+
+    4. **Process due** (admin job endpoint'i,
+       `POST /api/v1/clinic/appointment-reminders/process`): Tüm
+       tenant'lardan `now >= scheduledFor && status='scheduled'`
+       olanları dispatch eder (batch üst sınır 100). Sırasıyla:
+       snapshot → appointment status guard (`cancelled|completed|
+       no_show` → skip) → patient/owner çözümü → tenant locale →
+       `ConsentService.canSend` (opt-out → cancelled) →
+       `NotificationsService.send(idempotencyKey="appt-reminder|{id}")`.
+       Sonuca göre `sent/failed/cancelled`. SYSTEM audit
+       `audit:appointment_reminder.process_due` (failed>0 ise
+       warning). Faz 11+ BullMQ worker bu endpoint'i
+       `*/5 * * * *` cron ile periyodik çağıracak.
+
+    5. **List** (`GET /api/v1/clinic/appointments/:id/reminders`):
+       Tenant-scoped. Query `status? | limit (1-200, default 50) |
+       offset (default 0)`. Yetki `clinic:appointment:read`. Audit
+       yok (read-only).
+
+    **Tasarım kararları**:
+    - **Hook mimarisi**: Schedule/cancel/reschedule REST değil;
+      randevu lifecycle'ına bağlı. UI "kur" butonu göstermez; iş
+      otomatik.
+    - **24h default + sms + in_app**: Klinik başına override
+      altyapısı mevcut (`hoursBeforeAppointment` 1-168,
+      `channels[]`). FAZ-3+'da tenant settings UI.
+    - **Idempotency 2 katmanlı**: (a) `dedupeKey` (appointmentId +
+      channel + scheduledFor) → repository insert çakışmasında
+      `existing` döner. (b) `NotificationsService.send`
+      `idempotencyKey="appt-reminder|{id}"` → notification
+      tarafında çift dispatch önlenir.
+    - **Snapshot**: processDueReminders anında `Appointment`'a
+      bağımlı kalmamak için schedule sırasında repository'ye
+      kopyalanır. Cross-tenant bilgi sızdırmaz (rec.tenantId altında
+      izole).
+    - **Consent öncelikli**: `ConsentService.canSend(userId, channel,
+      "appointment_reminder")` — opt-out → `cancelled` (yeniden
+      denenmez, `opted_out` audit metadata).
+    - **Appointment status korelasyonu**: `cancelled/completed/no_show`
+      randevuya hatırlatma gitmez; snapshot üzerinden kontrol,
+      reminder `cancelled` yapılır.
+    - **System actor**: processDueReminders SYSTEM audit üretir
+      (`actorId: "system"`, `actorType: "system"`, correlation
+      `system-job`).
+    - **PII**: Audit metadata'da hasta sahibi adı/telefon yer almaz;
+      yalnızca `appointmentId`, `channel`, `scheduledFor`.
+
+    **Idempotency**: Schedule 2 katmanlı. Cancel idempotent (zaten
+    cancelled no-op). Reschedule delta=0 → no-op. Process
+    `status='scheduled'` filtresi sayesinde tekrar-çalışma güvenli.
+    **Audit**: 4 olay (`schedule | cancel | reschedule |
+    process_due`). **Tenant scope**:
+    `AppointmentRemindersService.requireTenantScope` her çağrıda;
+    SUPERADMIN bypass.
+  keywords: [hatırlatma, reminder, randevu, appointment, sms, in_app,
+    notification, schedule, cancel, reschedule, dispatch, due,
+    idempotency, consent, snapshot, audit, system, 24 saat, 24h,
+    otomatik bildirim, hook, lifecycle]
+  related_chunks: [glossary-appointment, glossary-owner,
+    glossary-patient, glossary-notification, error-VET-AUTH-0001,
+    error-VET-AUTHZ-0001, error-VET-TENANT-0001,
+    error-VET-VALIDATION-0001, flow-appointment-create,
+    flow-appointment-cancel, flow-portal-appointment-request]
+  related_pages: []
+  related_api:
+    - "GET /api/v1/clinic/appointments/{id}/reminders"
+    - "POST /api/v1/clinic/appointment-reminders/process"

@@ -130,7 +130,7 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-023 ✅ Alerji, kronik durum, klinik uyarılar (tamamlandı — 2026-07-30)
   - GOAL-024 ✅ Hayvan zaman çizelgesi (tamamlandı — 2026-07-30)
   - GOAL-025 ✅ Portal erişim daveti (tamamlandı — 2026-07-30)
-- **Faz 3 — Randevu + portal** ⏳ sırada
+- **Faz 3 — Randevu + portal** ✅ tamamlandı
   - GOAL-030 ✅ Klinik takvimi (tamamlandı — 2026-07-30)
   - GOAL-031 ✅ Randevu oluşturma ve yönetim (tamamlandı — 2026-07-30)
   - GOAL-032 ✅ Bekleme listesi ve resepsiyon akışı (tamamlandı — 2026-07-30)
@@ -141,10 +141,13 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
     DB migration.
   - GOAL-034 ✅ Portal hayvan listesi ve detayı (tamamlandı — 2026-07-30)
   - GOAL-035 ✅ Online randevu talebi (tamamlandı — 2026-07-30)
-  - GOAL-036 ⏳ partial — core: AppointmentRemindersService
-    (schedule/cancel/reschedule/processDue/listForAppointment) +
-    Repository (idempotency key, snapshot) + Controller +
-    Module + AppointmentsService hook entegrasyonu. 23/23
-    reminder unit test + 427/427 api testi geçti.
-    Sonraki tick: docs/RAG chunk/i18n key parity + DB
-    migration + BullMQ worker (Faz 11+).
+  - GOAL-036 ✅ Randevu hatırlatma sistemi (tamamlandı — 2026-07-30)
+- **Faz 4 — Klinik muayene/aşı/reçete** ⏳ sırada
+  - GOAL-040 ⏳ Muayene başlatma ve yaşam döngüsü
+  - GOAL-041 ⏳ SOAP klinik kaydı
+  - GOAL-042 ⏳ Vital bulgular
+  - GOAL-043 ⏳ Teşhis ve problem listesi
+  - GOAL-044 ⏳ Tedavi planı ve klinik order
+  - GOAL-045 ⏳ Reçete oluşturma
+  - GOAL-046 ⏳ Kontrol randevusu oluşturma
+  - GOAL-047 ⏳ Klinik kayıt PDF ve paylaşım
