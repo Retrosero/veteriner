@@ -50,6 +50,7 @@ import { SuperadminModule } from "./modules/superadmin/superadmin.module.js";
 import { TimelineModule } from "./modules/timeline/timeline.module.js";
 import { PortalModule } from "./modules/portal/portal.module.js";
 import { CalendarModule } from "./modules/calendar/calendar.module.js";
+import { WaitlistModule } from "./modules/waitlist/waitlist.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 
 @Module({
@@ -78,6 +79,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     TimelineModule,
     PortalModule,
     CalendarModule,
+    WaitlistModule,
   ],
 })
 export class AppModule {}
