@@ -3537,3 +3537,96 @@ generated_at: "2026-07-30"
   related_api:
     - "POST /api/v1/clinic/examinations/{id}/sign"
     - "POST /api/v1/clinic/examinations/{id}/amend"
+- chunk_id: flow-soap-note
+  type: flow
+  source: apps/api/src/modules/soap/soap.service.ts
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "SOAP (S/O/A/P) Klinik Kaydı Akışı"
+  content: |
+    1. **Oluştur** (`POST /api/v1/clinic/examinations/{id}/soap`, 201,
+       yetki `clinic:examination:create`, STAFF/VETERINARIAN): Zod
+       şema `soapUpdateInputSchema` enforce eder; S/O/A/P bölümlerinin
+       tamamı **opsiyoneldir** (draft aşamasında boş olabilir; autosave).
+       Service önce `ExaminationsService.findById(tenantId, id,
+       actor)` ile muayenenin aynı tenant'ta olduğunu doğrular.
+       Cross-tenant → 404 `VET-CLINIC-0001` (bilgi sızdırmaz).
+    2. Examination `status="in_progress"` guard: completed / signed /
+       amended exam için SOAP create → 409 `VET-SOAP-0001`
+       (details'te `examStatus`).
+    3. Repository insert: `id = soap-<tenant8>-<uuid8>`, `status =
+       "draft"`, `createdAt = now`, `createdBy = actor.actorId`,
+       `signedAt = null`, `signedBy = null`, `amendedAt = null`.
+       Opsiyonel bölümler boş bırakılırsa `""` olarak saklanır.
+       `tenantId` her zaman actor.tenantId'den alınır. Audit
+       `audit:soap.create` (info) — examinationId, status.
+    4. **Detay** (`GET /api/v1/clinic/examinations/{id}/soap`, 200,
+       yetki `clinic:examination:read`): tenant-scoped; cross-tenant
+       veya yok → null (controller 404 `VET-CLINIC-0001`). Bir
+       muayeneye en fazla 1 SOAP kaydı bağlanır.
+    5. **Güncelle** (`PATCH .../soap`, 200, `clinic:examination:create`):
+       yalnızca `status="draft"` SOAP güncellenebilir; signed /
+       amended → 409 `VET-SOAP-0001` (details'te `status`). Tüm
+       alanlar opsiyonel; sadece gönderilen alanlar değişir. Audit
+       `audit:soap.update` (info) — before/after S/O/A/P tam metin
+       payload (klinik kayıt denetim izi).
+    6. **İmzala** (`POST .../soap/sign`, 200, `clinic:examination:sign`,
+       VETERINARIAN): yalnızca `status="draft"` → `signed`.
+       `signedAt=now`, `signedBy=actor.actorId`. **Cross-service:**
+       `ExaminationsService.sign(tenantId, examinationId, actor)`
+       çağrılır; muayene de imzalanır (muayene `status="completed"`
+       olmalı; aksi 409 `VET-EXAM-0002` propagation — SOAP imzası
+       yarım kalmaz; ya ikisi de imzalanır ya hiçbiri). İmza sonrası
+       UPDATE/DELETE trigger (FAZ-0 no-op flag, sadece log; production
+       migration'da DB trigger `signed → immutable`). Audit
+       `audit:soap.sign` (info) — signedAt, signedBy, previousStatus.
+    7. **Düzelt (Amend)** (`POST .../soap/amend`, 200, yetki
+       `clinic:examination:sign`, VETERINARIAN): yalnızca
+       `status="signed"` SOAP amend edilebilir; draft → 409
+       `VET-SOAP-0001` (draft için PATCH kullanın). Body
+       `SoapAmendInput { reason: string (1-2000) + S + O + A + P
+       (tümü zorunlu) }`. Zod şema enforce eder. `reason` zorunlu
+       (klinik + hukuki denetim için).
+    8. Yeni `SoapAmendRecord` kaydı oluşturulur (`id = soap-amend-
+       <tenant8>-<uuid8>`): tenantId, originalSoapId, examinationId,
+       reason, S/O/A/P (yeni içerik snapshot), amendedBy=actor.actorId,
+       amendedAt=now, **`previousSignedAt` + `previousSignedBy`**
+       orijinal SOAP'tan immutable referans olarak kopyalanır.
+    9. `SoapNote.status = "amended"`, `amendedAt=now`. **Append-only:**
+       orijinal S/O/A/P bölümleri KORUNUR, değiştirilmez; yeni
+       içerik amend kaydında saklanır. Audit `audit:soap.amend`
+       (**warning**) — amendId, reason, previousStatus,
+       previousSignedAt, previousSignedBy payload. Amend işlemi
+       denetim açısından hassas → warning severity.
+    10. Multi-amend desteklenir: bir SOAP'a birden fazla amend
+        zincirlenebilir; her biri ayrı `SoapAmendRecord` + audit
+        warning. Orijinal S/O/A/P hâlâ değiştirilemez.
+    11. **State machine:** draft → signed → amended. draft → updated
+        (autosave, PATCH); signed → updated ❌ (409); amended →
+        updated ❌ (409). draft → amended ❌ (409; önce sign). signed
+        → signed ❌ (409). amended → signed ❌ (409).
+    12. **Tenant izolasyonu:** `requireTenantScope(actor, tenantId)`
+        + `findByExamination/update` + `amends.insert/findByExaminationId`
+        tümü `actor.tenantId` kapsamında; cross-tenant denemesi →
+        403 `VET-AUTHZ-0001` veya 404 `VET-CLINIC-0001`.
+  keywords: [SOAP, S/O/A/P, subjective, objective, assessment, plan,
+             klinik kayıt, draft, signed, amended, autosave, sign,
+             amend, append-only, immutability, önceki imza referansı,
+             previousSignedAt, previousSignedBy, immutability trigger,
+             audit warning, cross-service, ExaminationService.sign,
+             VET-EXAM-0002 propagation]
+  related_chunks: [glossary-examination, flow-examination-create,
+                   flow-examination-sign, error-VET-CLINIC-0001,
+                   error-VET-SOAP-0001, error-VET-EXAM-0002,
+                   error-VET-AUTHZ-0001, error-VET-TENANT-0001,
+                   error-VET-VALIDATION-0001]
+  related_pages: []
+  related_api:
+    - "POST /api/v1/clinic/examinations/{id}/soap"
+    - "GET /api/v1/clinic/examinations/{id}/soap"
+    - "PATCH /api/v1/clinic/examinations/{id}/soap"
+    - "POST /api/v1/clinic/examinations/{id}/soap/sign"
+    - "POST /api/v1/clinic/examinations/{id}/soap/amend"
