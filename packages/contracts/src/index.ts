@@ -23,3 +23,4 @@ export * from "./module.js";
 export * from "./file.js";
 export * from "./notification.js";
 export * from "./superadmin.js";
+export * from "./owner.js";
