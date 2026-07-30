@@ -2498,3 +2498,83 @@ generated_at: "2026-07-30"
   related_pages: []
   related_api: ["POST /api/v1/clinic/patients/{id}/transfer"]
 
+- chunk_id: flow-allergy-warning
+  type: flow
+  source: docs/ai/AI_CHUNKS.yaml
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Alerji / Kronik Durum Uyarısı Görüntüleme Akışı"
+  content: |
+    1. Veteriner veya personel, hayvanın klinik kartını açar
+       (`GET /api/v1/clinic/patients/{id}`).
+    2. UI uyarıları çekmek için
+       `GET /api/v1/clinic/patients/{id}/alerts?activeOnly=true` çağrısı
+       yapar; `clinic:patient:read` izni gerekir.
+    3. Backend `AlertsService.getActiveAlertsForPatient` aktif kayıtları
+       döner: `archivedAt=null` VE (`expiresAt=null` VEYA
+       `expiresAt>now`); severity ağırlığına göre azalan
+       (critical > warning > info).
+    4. UI en üstte severity'ye göre sıralı uyarı banner'ları gösterir:
+       - `critical`: kırmızı zorunlu dikkat (ör. anafilaksi).
+       - `warning`: sarı uyarı (ör. penisilin alerjisi, böbrek
+         yetmezliği).
+       - `info`: gri bilgi (ör. davranış notu).
+    5. Yeni uyarı için personel `POST /api/v1/clinic/patients/{id}/alerts`
+       (`clinic:examination:create`) ile ekler. Severity `critical` ise
+       audit `audit:alert.create` (info) otomatik yayınlanır.
+    6. Süresi dolmuş (`expiresAt<now`) veya arşivlenmiş (`archivedAt`)
+       uyarılar UI'da pasif bölümde gösterilir; muayene sırası dikkat
+       akışında gizlenir.
+  keywords: [alerji, kronik, uyarı, allergy, chronic, alert, banner,
+             severity, info, warning, critical, KVKK]
+  related_chunks: [glossary-patient, medication-conflict-check,
+                   error-VET-CLINIC-0010, error-VET-AUTHZ-0002]
+  related_pages: []
+  related_api:
+    - "POST /api/v1/clinic/patients/{patientId}/alerts"
+    - "GET /api/v1/clinic/patients/{patientId}/alerts"
+    - "DELETE /api/v1/clinic/alerts/{id}"
+
+- chunk_id: medication-conflict-check
+  type: glossary
+  source: docs/ai/AI_CHUNKS.yaml
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "İlaç Çakışma Kontrolü"
+  content: |
+    İlaç çakışma kontrolü, reçete oluşturma sırasında hastanın bilinen
+    alerji (`allergy`) veya kronik durum (`chronic_condition`)
+    uyarılarını ilaç adıyla eşleştirir.
+
+    Çalışma şekli (`AlertsService.checkMedicationConflict`):
+    - Yalnızca aktif uyarılar değerlendirilir (`archivedAt=null`
+      VE `expiresAt>now` veya null).
+    - Yalnızca `allergy` ve `chronic_condition` kategorileri
+      değerlendirilir; `behavior` ve `medication_conflict` hariç.
+    - Case-insensitive substring match: ilaç adı, uyarının
+      `title` veya `description` alanında geçiyorsa eşleşme sayılır.
+    - Sonuç: eşleşen uyarıların listesi (boş olabilir).
+
+    Kullanım: reçete oluşturma formunda ilaç adı girildiğinde veya
+    mevcut reçeteye yeni ilaç eklendiğinde arka planda çağrılır. UI
+    eşleşme varsa açık uyarı gösterir; onay mekanizması klinik
+    kararına bırakılır (override edilebilir, audit edilmez).
+
+    Sınırlamalar: basit substring match nedeniyle yanlış pozitif
+    mümkündür; ör. "Penisilin" eşleşmesi "Penisilinaz" içeren
+    kayıtlarda da tetiklenir. Daha gelişmiş eşleşme (ilaç
+    sözlüğü/RxNorm) FAZ-3+'da değerlendirilir.
+  keywords: [ilaç, çakışma, alerji, kronik, reçete, medication,
+             conflict, allergy, chronic_condition, substring]
+  related_chunks: [glossary-prescription, flow-allergy-warning,
+                   error-VET-CLINIC-0010]
+  related_pages: []
+  related_api:
+    - "GET /api/v1/clinic/patients/{patientId}/alerts"
+

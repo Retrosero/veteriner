@@ -212,6 +212,7 @@
     "VET-CLINIC-0004": "This species is not supported. Only cat, dog and bird are supported.",
     "VET-CLINIC-0005": "Ownership transfer failed. Please check the new owner details.",
     "VET-CLINIC-0007": "This animal already belongs to this owner.",
+    "VET-CLINIC-0010": "Alert not found or belongs to a different tenant.",
     "VET-CLINIC-0099": "Clinic general error. Please try again.",
     "VET-APPT-0001": "Appointment not found.",
     "VET-APPT-0002": "This time slot is already booked. Please choose another time.",

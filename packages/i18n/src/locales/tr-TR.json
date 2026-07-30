@@ -212,6 +212,7 @@
     "VET-CLINIC-0004": "Bu tür henüz desteklenmiyor. Yalnızca kedi, köpek ve kuş desteklenir.",
     "VET-CLINIC-0005": "Sahiplik devri başarısız. Yeni sahip bilgilerini kontrol edin.",
     "VET-CLINIC-0007": "Bu hayvan zaten bu sahibe ait.",
+    "VET-CLINIC-0010": "Uyarı bulunamadı veya farklı bir tenant'a ait.",
     "VET-CLINIC-0099": "Klinik genel hata. Lütfen tekrar deneyin.",
     "VET-APPT-0001": "Randevu bulunamadı.",
     "VET-APPT-0002": "Bu saat diliminde başka bir randevu var. Lütfen başka bir saat seçin.",
