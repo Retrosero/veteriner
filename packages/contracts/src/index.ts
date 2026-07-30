@@ -34,4 +34,5 @@ export * from "./portal-pet.js";
 export * from "./portal-appointment-request.js";
 export * from "./calendar.js";
 export * from "./appointment.js";
+export * from "./appointment-reminder.js";
 export * from "./waitlist.js";
