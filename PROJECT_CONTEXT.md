@@ -134,7 +134,11 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-030 ✅ Klinik takvimi (tamamlandı — 2026-07-30)
   - GOAL-031 ✅ Randevu oluşturma ve yönetim (tamamlandı — 2026-07-30)
   - GOAL-032 ✅ Bekleme listesi ve resepsiyon akışı (tamamlandı — 2026-07-30)
-  - GOAL-033 ✅ Hasta sahibi portal kayıt ve giriş (tamamlandı — 2026-07-30)
+  - GOAL-033 ⏳ partial — core: davet üzerinden kayıt + email doğrulama +
+    PortalSessionGuard; register/login/logout/forgot/reset brute-force
+    ile. 24/24 portal-auth testi + 385/385 api testi geçti. Sonraki
+    tick: docs/RAG chunk/i18n key parity + telefon doğrulama stub +
+    DB migration.
   - GOAL-034 Portal hayvan listesi ve detay
   - GOAL-035 Online randevu talebi
   - GOAL-036 Randevu hatırlatma sistemi
