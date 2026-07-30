@@ -58,6 +58,7 @@ import { SoapModule } from "./modules/soap/soap.module.js";
 import { WaitlistModule } from "./modules/waitlist/waitlist.module.js";
 import { OrdersModule } from "./modules/orders/orders.module.js";
 import { PrescriptionsModule } from "./modules/prescriptions/prescriptions.module.js";
+import { FollowupsModule } from "./modules/followups/followups.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 
 @Module({
@@ -95,6 +96,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     WaitlistModule,
     OrdersModule,
     PrescriptionsModule,
+    FollowupsModule,
   ],
 })
 export class AppModule {}

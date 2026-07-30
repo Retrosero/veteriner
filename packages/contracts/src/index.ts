@@ -42,3 +42,4 @@ export * from "./soap.js";
 export * from "./waitlist.js";
 export * from "./order.js";
 export * from "./prescription.js";
+export * from "./followup.js";
