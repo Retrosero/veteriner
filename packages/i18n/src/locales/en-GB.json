@@ -222,6 +222,8 @@
     "VET-APPT-0002": "Blocked slot not found or belongs to a different tenant.",
     "VET-APPT-0003": "Invalid working hours definition (duplicate day or endTime <= startTime).",
     "VET-APPT-0004": "Invalid date (YYYY-MM-DD expected).",
+    "VET-APPT-0005": "This slot is already booked or blocked (break/leave). Please select another time.",
+    "VET-APPT-0006": "This operation is not allowed on a cancelled or completed appointment.",
     "VET-EXAM-0001": "Examination record not found.",
     "VET-EXAM-0002": "This examination is signed and cannot be modified. Open an amendment instead.",
     "VET-EXAM-0003": "This examination is already completed.",

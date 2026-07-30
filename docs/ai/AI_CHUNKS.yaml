@@ -2865,3 +2865,97 @@ generated_at: "2026-07-30"
     - "POST /api/v1/calendar/block"
     - "DELETE /api/v1/calendar/block/{id}"
 
+# -----------------------------------------------------------------------------
+# RANDEVU (GOAL-031) — FAZ-3
+# -----------------------------------------------------------------------------
+# Source: apps/api/src/modules/appointments/* (GOAL-031)
+# CalendarService.checkAvailability üzerinden booked/blocked slot
+# çakışma kontrolü; patient cross-tenant guard; state machine
+# (scheduled/confirmed/arrived/in_progress/completed/cancelled/no_show).
+
+- chunk_id: flow-appointment-create
+  type: flow
+  source: apps/api/src/modules/appointments/appointments.service.ts
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Randevu Oluşturma Akışı"
+  content: |
+    1. Personel (STAFF/VETERINARIAN) randevu formunu açar
+       (`POST /api/v1/clinic/appointments`).
+    2. Zod şema enforce eder: `patientId` (UUID), `veterinarianId`
+       (non-empty), `type` (consultation | vaccination | surgery |
+       follow_up | lab_visit | grooming), `start` (ISO 8601, gelecekte),
+       `durationMin` (1-240), opsiyonel `branchId` / `notes`.
+    3. Service önce `patients.findById(tenantId, patientId)` ile
+       hastanın aynı tenant'ta olduğunu doğrular. Cross-tenant veya
+       olmayan patient → 404 `VET-CLINIC-0001`.
+    4. `start` gelecekte olmalı; geçmiş → 422 `VET-VALIDATION-0009`.
+       `durationMin <= 0` → 422 `VET-VALIDATION-0009`.
+    5. `CalendarService.checkAvailability(vet, start, end, branchId)`
+       ile booked/blocked çakışma kontrolü. Çakışma → 409
+       `VET-APPT-0005` (`details.reason = booked | blocked`,
+       `conflictId` payload).
+    6. `end = start + durationMin * 60_000` hesaplanır; repository'ye
+       eklenir; `CalendarService.bookSlot` ile booked slot kaydı
+       oluşturulur (tenantId/branchId/veterinarianId/appointmentId/
+       start/end).
+    7. Audit event yazılır: `audit:appointment.create` (info) —
+       patientId, ownerId, veterinarianId, type, start, end,
+       durationMin payload.
+  keywords: [randevu, appointment, oluştur, slot çakışması, booked,
+             blocked, takvim, calendar, patient cross-tenant]
+  related_chunks: [glossary-appointment, calendar-overview,
+                   error-VET-CLINIC-0001, error-VET-VALIDATION-0009,
+                   error-VET-APPT-0005, error-VET-AUTHZ-0001]
+  related_pages: []
+  related_api:
+    - "POST /api/v1/clinic/appointments"
+    - "GET /api/v1/clinic/appointments"
+    - "GET /api/v1/clinic/appointments/{id}"
+
+- chunk_id: flow-appointment-cancel
+  type: flow
+  source: apps/api/src/modules/appointments/appointments.service.ts
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Randevu İptal Akışı"
+  content: |
+    1. Personel randevu detayında "İptal" butonuna tıklar
+       (`POST /api/v1/clinic/appointments/{id}/cancel`).
+    2. Body: `{"reason": "string"}` (1-200 karakter). Zod şema
+       `appointmentCancelInputSchema` enforce eder.
+    3. Service `repo.findById(tenantId, id)` ile randevuyu bulur;
+       bulunamazsa → 404 `VET-CLINIC-0001` (bilgi sızdırmaz).
+    4. Status `cancelled` ise **idempotent**: ikinci kez iptal
+       hata vermez, no-op döner.
+    5. Status `completed` ise → 422 `VET-APPT-0006` (tamamlanmış
+       randevu iptal edilemez).
+    6. `repo.update(status: "cancelled")` ile durum güncellenir.
+       `CalendarService.releaseSlot` ile booked slot serbest
+       bırakılır → aynı saat için yeni randevu oluşturulabilir.
+    7. Audit event yazılır: `audit:appointment.cancel` (severity:
+       **warning**) — start, end, veterinarianId, previousStatus,
+       reason payload. Neden zorunlu olduğu için reason audit'a
+       eklenir; bu alan kişisel olabilir ancak audit'te plain
+       text tutulur (KVKK kapsamında erişim yetkisi sınırlı).
+    8. Durum makinesi: scheduled | confirmed | arrived |
+       in_progress → cancelled geçişi serbest; cancelled | completed
+       → cancelled YASAK.
+  keywords: [randevu, iptal, cancel, reason, idempotent, state
+             machine, booked slot release, takvim]
+  related_chunks: [glossary-appointment, calendar-overview,
+                   flow-appointment-create, error-VET-CLINIC-0001,
+                   error-VET-APPT-0006, error-VET-AUTHZ-0001]
+  related_pages: []
+  related_api:
+    - "POST /api/v1/clinic/appointments/{id}/cancel"
+    - "POST /api/v1/clinic/appointments/{id}/complete"
+    - "POST /api/v1/clinic/appointments/{id}/no-show"
+    - "PATCH /api/v1/clinic/appointments/{id}"
+

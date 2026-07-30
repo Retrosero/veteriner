@@ -222,6 +222,8 @@
     "VET-APPT-0002": "Engellenen slot bulunamadı veya farklı bir tenant'a ait.",
     "VET-APPT-0003": "Geçersiz çalışma saati tanımı (aynı gün için birden fazla blok veya endTime <= startTime).",
     "VET-APPT-0004": "Geçersiz tarih (YYYY-MM-DD bekleniyor).",
+    "VET-APPT-0005": "Bu slot zaten rezerve edilmiş veya bloklu (mola/izin). Lütfen başka bir saat seçin.",
+    "VET-APPT-0006": "İptal edilmiş veya tamamlanmış randevu üzerinde bu işlem yapılamaz.",
     "VET-EXAM-0001": "Muayene kaydı bulunamadı.",
     "VET-EXAM-0002": "Muayene kaydı imzalanmış, değiştirilemez. Düzeltme için amendment açın.",
     "VET-EXAM-0003": "Bu muayene zaten tamamlanmış.",

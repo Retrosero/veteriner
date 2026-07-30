@@ -148,6 +148,8 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-APPT-0002`      | Engellenen slot bulunamadı      | 404  | warning  | server | Block ID'yi kontrol edin (cross-tenant dahil). |
 | `VET-APPT-0003`      | Geçersiz çalışma saati tanımı   | 422  | warning  | server | Aynı gün için tek saat bloğu ve endTime > startTime olmalı. |
 | `VET-APPT-0004`      | Geçersiz tarih                  | 422  | warning  | server | Tarih `YYYY-MM-DD` formatında olmalı. |
+| `VET-APPT-0005`      | Randevu slot çakışması          | 409  | warning  | server | Slot zaten rezerve edilmiş (booked) veya bloklu (blocked/mola/izin). Başka bir saat seçin. |
+| `VET-APPT-0006`      | Geçersiz randevu durum geçişi   | 422  | warning  | server | İptal edilmiş veya tamamlanmış randevu güncellenemez / iptal edilemez / tamamlanamaz. |
 
 ## Muayene (EXAM)
 
