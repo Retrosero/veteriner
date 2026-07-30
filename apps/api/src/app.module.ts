@@ -43,6 +43,7 @@ import { TenantModule } from "./modules/tenant/tenant.module.js";
 import { FeatureFlagModule } from "./modules/feature-flag/feature-flag.module.js";
 import { NotificationsModule } from "./modules/notifications/notifications.module.js";
 import { OwnersModule } from "./modules/owners/owners.module.js";
+import { PatientsModule } from "./modules/patients/patients.module.js";
 import { SuperadminModule } from "./modules/superadmin/superadmin.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 
@@ -65,6 +66,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     FilesModule,
     NotificationsModule,
     OwnersModule,
+    PatientsModule,
     SuperadminModule,
   ],
 })
