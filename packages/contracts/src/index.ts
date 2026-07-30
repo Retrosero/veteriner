@@ -26,3 +26,4 @@ export * from "./superadmin.js";
 export * from "./owner.js";
 export * from "./patient.js";
 export * from "./ownership.js";
+export * from "./alert.js";

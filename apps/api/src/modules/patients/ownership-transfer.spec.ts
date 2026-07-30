@@ -145,7 +145,10 @@ describe("PatientsService.transferOwnership", () => {
     owners = makeOwners();
     audit = makeAudit();
     ownership = makeOwnership();
-    service = new PatientsService(owners, repo, audit, ownership);
+    const alerts = {
+      getActiveAlertsForPatient: vi.fn().mockResolvedValue([]),
+    } as unknown as import("../alerts/alerts.service.js").AlertsService;
+    service = new PatientsService(owners, repo, audit, ownership, alerts);
 
     // Hasta oluştur (createInitial mock'lu, audit çağrısı ayrı).
     await service.create(TENANT_A, validInput(), STAFF_A);

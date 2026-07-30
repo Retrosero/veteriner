@@ -49,9 +49,11 @@ import {
   type PatientCreateInput,
   type PatientFilters,
 } from "../../common/patients/patient.types.js";
+import type { AlertRecord } from "../../common/alerts/alert.types.js";
 
 import { OwnersService } from "../owners/owners.service.js";
 import { OwnershipHistoryService } from "../ownership-history/ownership-history.service.js";
+import { AlertsService } from "../alerts/alerts.service.js";
 import {
   PatientsRepository,
   type PatientRecord,
@@ -103,6 +105,8 @@ export class PatientsService {
     private readonly audit: AuditService,
     @Inject(forwardRef(() => OwnershipHistoryService))
     private readonly ownership: OwnershipHistoryService,
+    @Inject(forwardRef(() => AlertsService))
+    private readonly alerts: AlertsService,
   ) {}
 
   /**
@@ -259,6 +263,23 @@ export class PatientsService {
     this.requireTenantScope(actor, tenantId);
     const rec = this.repo.findById(tenantId, id);
     return rec ? this.toPatient(rec) : null;
+  }
+
+  /**
+   * Hastanın aktif klinik uyarılarını döner. Muayene/reçete
+   * oluşturma sırasında UI tarafından çağrılır (GOAL-023).
+   * Cross-tenant → null. Arşivli hasta uyarıları da döner
+   * (UI flag'a göre filtreler).
+   */
+  public async listActiveAlertsForPatient(
+    tenantId: string,
+    patientId: string,
+    actor: ActorContext,
+  ): Promise<AlertRecord[]> {
+    this.requireTenantScope(actor, tenantId);
+    const patient = this.repo.findById(tenantId, patientId);
+    if (!patient) return [];
+    return this.alerts.getActiveAlertsForPatient(tenantId, patientId, actor);
   }
 
   /**

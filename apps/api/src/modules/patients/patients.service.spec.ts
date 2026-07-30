@@ -17,6 +17,7 @@ import type { Owner } from "../../common/owners/owner.types.js";
 import type { Ownership } from "../../common/ownership/ownership.types.js";
 import type { OwnersService } from "../owners/owners.service.js";
 import type { OwnershipHistoryService } from "../ownership-history/ownership-history.service.js";
+import type { AlertsService } from "../alerts/alerts.service.js";
 
 import { PatientsService } from "./patients.service.js";
 import { PatientsRepository } from "./patients.repository.js";
@@ -90,6 +91,13 @@ function makeAudit(): AuditService {
   } as unknown as AuditService;
 }
 
+/** GOAL-023: AlertsService mock (forwardRef inject). */
+function makeAlerts(): AlertsService {
+  return {
+    getActiveAlertsForPatient: vi.fn().mockResolvedValue([]),
+  } as unknown as AlertsService;
+}
+
 /**
  * GOAL-022: Patient oluşturma sırasında ilk sahiplik kaydı
  * otomatik açılır. Testlerde bunu minimal mock ile sağlıyoruz.
@@ -158,7 +166,8 @@ describe("PatientsService", () => {
     owners = makeOwners();
     audit = makeAudit();
     ownership = makeOwnership();
-    service = new PatientsService(owners, repo, audit, ownership);
+    const alerts = makeAlerts();
+    service = new PatientsService(owners, repo, audit, ownership, alerts);
   });
 
   describe("create — başarı", () => {
