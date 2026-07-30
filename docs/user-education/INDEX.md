@@ -56,6 +56,30 @@ her rolün sorumluluk haritası bu dokümanla kesinleşti. Rehberler
 Faz 2+ sırasında, ilgili UI sayfaları uygulandıkça
 `{ROL}.md` dosyaları olarak eklenecek.
 
+## GOAL-003 — Çoklu dil + ülke adaptörü sözleşmesi (Faz 0 devamı)
+
+GOAL-003 ile birlikte **kullanıcı eğitiminin i18n temeli** atıldı:
+
+- [`docs/i18n/I18N_CONTRACT.md`](../i18n/I18N_CONTRACT.md) —
+  çoklu dil sözleşmesi. Locale yapısı, çeviri anahtarı formatı,
+  formatlama (tarih/saat/para/sayı), pluralization, yeni
+  çeviri ekleme süreci.
+- [`docs/i18n/COUNTRY_ADAPTER_CONTRACT.md`](../i18n/COUNTRY_ADAPTER_CONTRACT.md) —
+  ülke adaptörü sözleşmesi. TR için tam, GB için iskelet
+  implementasyon. Para, telefon, vergi (VKN/TCKN), KDV,
+  fiş/reçete formatı, bildirim kuralları (KVKK).
+- `apps/api/src/common/adapters/` — adapter kodu (interface +
+  TR tam + GB iskelet + registry + testler).
+- `packages/i18n/src/locales/{tr-TR,en-GB}.json` — genişletilmiş
+  çeviri dosyaları (yeni: role, permission, error, country,
+  currency, a11y).
+
+GOAL-003 sonunda çeviriler yeni kavramları (role, permission,
+error) içeriyor. Rol bazlı rehberler (`{ROL}.md`) Faz 2+
+sırasında, çevirilerden yararlanarak yazılacak. Ülke adaptörü
+sayesinde rehberler TR ve GB için aynı yapıda, farklı
+iş kurallarıyla oluşturulabilir.
+
 ## Eğitim doldurma zamanlaması
 
 - **Faz 2 (GOAL-020+):** Hasta sahibi ve hayvan kaydı → `STAFF.md`,

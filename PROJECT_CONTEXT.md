@@ -72,6 +72,10 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   yetki matrisi (modül bazlı tablolar).
 - `docs/permissions/ROLE_DESCRIPTIONS.md` — 5 rol için detaylı
   sorumluluk açıklamaları.
+- `docs/i18n/I18N_CONTRACT.md` — **çoklu dil sözleşmesi**
+  (locale, çeviri anahtarı, formatlama, yükleme stratejisi).
+- `docs/i18n/COUNTRY_ADAPTER_CONTRACT.md` — **ülke adaptörü
+  sözleşmesi** (TR tam, GB iskelet).
 - `docs/errors/ERROR_CATALOG.md` — hata kataloğu (kod → mesaj → çözüm).
 - `docs/api/`, `docs/pages/`, `docs/user-education/`, `docs/ai/` —
   sayfa, API, eğitim ve AI kaynakları.
@@ -82,7 +86,7 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-000 ✅ repository, monorepo, kalite kapıları (tamamlandı)
   - GOAL-001 ✅ domain sözlüğü ve pilot klinik iş akışları (tamamlandı)
   - GOAL-002 ✅ rol/yetki matrisi (tamamlandı — 113 permission, 5 rol)
-  - GOAL-003 ⏳ çoklu dil ve ülke adaptörü sözleşmesi
+  - GOAL-003 ✅ çoklu dil + ülke adaptörü sözleşmesi (tamamlandı)
   - GOAL-004 ⏳ log, audit ve hata kodu standardı
   - GOAL-005 ⏳ dokümantasyon ve AI bilgi havuzu şeması
 - **Faz 1 — Platform çekirdeği** ⏳ sırada

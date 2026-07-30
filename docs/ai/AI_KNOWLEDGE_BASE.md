@@ -22,6 +22,12 @@ kullanım asistanı temeli) zenginleştirilecektir.
   yetki matrisi.
 - `docs/permissions/ROLE_DESCRIPTIONS.md` — 5 rol için sorumluluk
   açıklamaları.
+- `docs/i18n/I18N_CONTRACT.md` — **çoklu dil sözleşmesi**
+  (GOAL-003'te üretildi). AI asistanı çeviri anahtarlarını ve
+  locale'leri buradan referans alır.
+- `docs/i18n/COUNTRY_ADAPTER_CONTRACT.md` — **ülke adaptörü
+  sözleşmesi** (GOAL-003'te üretildi). AI asistanı tarih, para,
+  telefon formatı sorularını buradan yanıtlar.
 - `docs/fields/FIELD_GLOSSARY.md` — alan düzeyinde sözlük (alan
   adı, tip, kısıt). Form alanlarını açıklamak için.
 - `docs/pages/` — sayfa bilgi kayıtları (YAML).
