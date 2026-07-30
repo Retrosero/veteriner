@@ -141,4 +141,10 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
     DB migration.
   - GOAL-034 ✅ Portal hayvan listesi ve detayı (tamamlandı — 2026-07-30)
   - GOAL-035 ✅ Online randevu talebi (tamamlandı — 2026-07-30)
-  - GOAL-036 Randevu hatırlatma sistemi
+  - GOAL-036 ⏳ partial — core: AppointmentRemindersService
+    (schedule/cancel/reschedule/processDue/listForAppointment) +
+    Repository (idempotency key, snapshot) + Controller +
+    Module + AppointmentsService hook entegrasyonu. 23/23
+    reminder unit test + 427/427 api testi geçti.
+    Sonraki tick: docs/RAG chunk/i18n key parity + DB
+    migration + BullMQ worker (Faz 11+).
