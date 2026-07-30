@@ -1901,3 +1901,138 @@ generated_at: "2026-07-30"
                    glossary-rls]
   related_pages: []
   related_api: []
+
+# -----------------------------------------------------------------------------
+# FEATURE FLAG — FAZ-1 GOAL-013 (Modül/feature flag altyapısı)
+# -----------------------------------------------------------------------------
+# Source: apps/api/src/common/modules/module.types.ts,
+#         apps/api/src/common/guards/module-enabled.guard.ts,
+#         apps/api/src/modules/feature-flag/* (GOAL-013)
+
+- chunk_id: feature-flag-overview
+  type: page
+  source: docs/api/api.get._api_v1_modules.md
+  page_id: api.modules.list
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Modül / Feature Flag genel bakış"
+  content: |
+    VetNiva'da her tenant için 10 iş modülü (clinic, appointments,
+    vaccinations, inventory, petshop, billing, hospitalization,
+    laboratory, imaging, portal) bağımsız olarak açılıp
+    kapatılabilir. Bu mekanizma "feature flag" olarak adlandırılır.
+
+    Feature flag nasıl çalışır:
+
+    1. **Tenant default = açık.** `FeatureFlagService` Map'inde
+       bilinçli bir disable kaydı yoksa modül `enabled: true`
+       döner. Bu sayede yeni tenant onboarding bloklanmaz.
+
+    2. **Controller-level toggle.** `PATCH /api/v1/modules/:key`
+       endpoint'i ile OWNER veya SUPERADMIN modülü açıp
+       kapatabilir. `{ "enabled": false }` gönderilirse
+       `FeatureFlagService.disableModule()` çalışır ve
+       `audit:feature_flag.disable` (warning) yazılır.
+
+    3. **Guard-level enforcement.** Bir endpoint
+       `@RequireModule("appointments")` ile işaretlendiğinde
+       `ModuleEnabledGuard` her istekte `FeatureFlagService`'i
+       sorgular. Modül kapalıysa 403 `VET-MODULE-0001` döner.
+
+    4. **SUPERADMIN bypass (master switch).** `ModuleEnabledGuard`,
+       `actor.isSuperadmin === true` ise modül kontrolünü atlar.
+       Bu operasyonel müdahale için tasarlanmıştır; bypass
+       `audit:feature_flag.*` event'lerinde **yoktur** (her
+       değişiklik loglanır).
+
+    5. **Persistence.** GOAL-013 aşamasında in-memory `Map`
+       kullanılır (process-local). Çok-instance deployment'ta
+       eventual consistency kabul edilir. GOAL-020+ ile
+       `TenantModule` Prisma tablosuna taşınacak; API imzaları
+       sabit kalacak.
+
+    Endpoint'ler:
+    - `GET /api/v1/modules` — tüm modüllerin durumu
+      (yetki: `tenant:tenant:read`).
+    - `PATCH /api/v1/modules/:key` — modül enable/disable
+      (yetki: `tenant:tenant:update`).
+
+    Modül listesi: `apps/api/src/common/modules/module.types.ts`
+    içindeki `ALL_MODULE_KEYS` sabitinden gelir. Yeni modül
+    eklenirken yalnızca bu liste güncellenir; schema otomatik
+    senkronize olur.
+  keywords: [feature flag, modül, module, tenant, toggle,
+             enable, disable, guard, superadmin, bypass]
+  related_chunks: [rbac-overview, error-VET-MODULE-0001,
+                   audit-rbac-denied, glossary-tenant]
+  related_pages: []
+  related_api: [GET /api/v1/modules, PATCH /api/v1/modules/:key]
+
+- chunk_id: module-appointments-disabled
+  type: page
+  source: docs/api/api.patch._api_v1_modules__key.md
+  page_id: api.modules.patch
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Örnek use case: Appointments modülü devre dışı"
+  content: |
+    Senaryo: Bir klinik tenant'ı deneysel olarak "appointments"
+    modülünü kapatmak istiyor. Sebep: pilot sürümde randevu
+    modülü henüz aktif kullanılmıyor; stok ve fatura modülleri
+    yeterli. Klinik yöneticisi (OWNER) modülü kapatır.
+
+    Adımlar:
+
+    1. OWNER rolündeki kullanıcı `PATCH /api/v1/modules/appointments`
+       isteğini gönderir:
+
+       ```
+       PATCH /api/v1/modules/appointments
+       { "enabled": false }
+       ```
+
+    2. Controller `FeatureFlagService.disableModule(tenantId,
+       "appointments", actor)` çağırır. Service in-memory Map'i
+       günceller ve `audit:feature_flag.disable` (severity:
+       warning) yazar. Metadata: `module: "appointments"`,
+       `previous: true`, `enabled: false`.
+
+    3. Sonraki isteklerde appointments modülünü kullanan
+       controller (ör. `AppointmentsController.list`) artık
+       `ModuleEnabledGuard` tarafından engellenir. Kullanıcı
+       `GET /api/v1/appointments` yaptığında 403 `VET-MODULE-0001`
+       alır.
+
+    4. UI tarafında: Klinik ekranı appointment listesini
+       göstermez; bunun yerine pasif/gri bir placeholder
+       gösterir ve "Bu modül tenant için devre dışı" mesajı
+       verir (`error.VET-MODULE-0001` i18n anahtarı).
+
+    5. SUPERADMIN bu kontrolden bağımsız geçer. Bir SUPERADMIN
+       tenant'a girip modülü tekrar açabilir; bu işlem
+       `audit:feature_flag.enable` (info) olarak loglanır.
+
+    6. Modül tekrar açıldığında (`{ "enabled": true }`) in-memory
+       Map güncellenir ve sonraki istekler normal şekilde
+       çalışır. DB taşıması sonrası bu adım atomik transaction
+       içinde yapılacak.
+
+    Davranış notları:
+    - Pasif modüle yapılan erişim denemeleri audit EDİLMEZ
+      (sinyal/şüphe ayrımı için ileride eklenebilir).
+    - Diğer modüller (clinic, inventory vb.) etkilenmez;
+      feature flag'ler bağımsızdır.
+    - Çok-instance deployment'ta in-memory cache her instance'da
+      ayrı tutulur; eventual consistency kabul edilir.
+  keywords: [appointments, devre dışı, use case, senaryo,
+             disable, örnek, owner, superadmin]
+  related_chunks: [feature-flag-overview, error-VET-MODULE-0001,
+                   rbac-overview]
+  related_pages: []
+  related_api: [PATCH /api/v1/modules/:key, GET /api/v1/modules]

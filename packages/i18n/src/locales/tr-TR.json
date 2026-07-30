@@ -183,6 +183,7 @@
     "VET-AUTHZ-0004": "Yalnızca kendi şubenizdeki kayıtlara erişebilirsiniz.",
     "VET-AUTHZ-0005": "Bu işlem için belirli bir rol gerekli. Lütfen yönetici ile iletişime geçin.",
     "VET-AUTHZ-0006": "Bu işlem için aktif bir tenant üyeliği gerekli. Lütfen yönetici ile iletişime geçin.",
+    "VET-MODULE-0001": "Bu modül tenant için devre dışı. Yönetici ile iletişime geçin.",
     "VET-RBAC-0001": "Tenant bulunamadı veya kapalı.",
     "VET-RBAC-0002": "Kullanıcı bulunamadı veya arşivlenmiş.",
     "VET-RBAC-0003": "Kendi rolünüzü veya üyeliğinizi değiştiremezsiniz. Lütfen başka bir yönetici yapmalı.",

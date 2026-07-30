@@ -75,6 +75,12 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-RBAC-0004`      | Son aktif OWNER iptal edilemez    | 409  | warning  | server | Önce başka bir aktif OWNER atayın.                |
 | `VET-RBAC-0005`      | Branch hedef tenant'a ait değil   | 409  | warning  | server | Doğru branch seçin.                                |
 
+## Modül / Feature Flag (MODULE)
+
+| Kod                  | Ad                                | HTTP | Severity | Kaynak | Çözüm                                              |
+| -------------------- | --------------------------------- | ---- | -------- | ------ | -------------------------------------------------- |
+| `VET-MODULE-0001`    | Bu modül tenant için devre dışı   | 403  | warning  | server | Yönetici ile iletişime geçin veya SUPERADMIN'den modülü açmasını isteyin. |
+
 ## Tenant (TENANT)
 
 | Kod                  | Ad                          | HTTP | Severity | Kaynak | Çözüm                                            |

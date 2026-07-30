@@ -530,6 +530,21 @@ system:
       actor: [user, system]
       description: "RBAC permission reddedildi. Red sebebi (no_role_match, tenant_scope_required, branch_scope_required, self_only_mismatch, system_actor) metadata'da bulunur."
 
+  feature_flag:
+    - event: "audit:feature_flag.enable"
+      action: update
+      severity: info
+      pii: false
+      actor: [user, system]
+      description: "Tenant için modül/feature flag açıldı. Metadata: module, previous (önceki enabled durumu), enabled=true."
+
+    - event: "audit:feature_flag.disable"
+      action: update
+      severity: warning
+      pii: false
+      actor: [user, system]
+      description: "Tenant için modül/feature flag kapatıldı (operasyonel risk). Metadata: module, previous, enabled=false. SUPERADMIN bypass uygulamaz; her değişiklik loglanır."
+
   adapter:
     - event: "audit:adapter.format_currency"
       action: format_currency

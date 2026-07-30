@@ -338,6 +338,52 @@ herhangi bir tenant'ın branch'ına geçebilir (cross-tenant).
 
 ---
 
+## Modül / Feature Flag (`/api/v1/modules`)
+
+> **GOAL-013 — Modül/feature flag altyapısı.** Tenant bazında 10
+> iş modülünün (clinic, appointments, vaccinations, inventory,
+> petshop, billing, hospitalization, laboratory, imaging, portal)
+> enable/disable yönetimi. Persistence: in-memory Map (process-local);
+> DB taşıması ileride.
+
+### GET /api/v1/modules
+
+Aktif tenant için tüm modüllerin enable/disable durumunu listeler.
+Bilinçli bir disable yoksa `enabled: true` döner.
+
+- **Modül:** feature-flag
+- **Yetki:** `tenant:tenant:read` (SUPERADMIN, OWNER)
+- **Audit:** yok (salt okunur; PII taşımaz)
+
+**Response 200:** `{ items: Array<{ key: ModuleKey, enabled: boolean }> }`
+
+### PATCH /api/v1/modules/:key
+
+Aktif tenant için verilen modülü açar veya kapatır. Her değişiklik
+audit log'a yansır.
+
+- **Modül:** feature-flag
+- **Yetki:** `tenant:tenant:update` (SUPERADMIN, OWNER)
+- **Audit:** `audit:feature_flag.enable` (info) veya
+  `audit:feature_flag.disable` (warning)
+- **Parametre:** `key` ∈ `clinic | appointments | vaccinations |
+  inventory | petshop | billing | hospitalization | laboratory |
+  imaging | portal`
+
+**Request body:** `{ "enabled": boolean }`
+
+**Response 200:** `{ key: ModuleKey, enabled: boolean }`
+
+**Hata kodları:** `VET-AUTHZ-0001` (403 — permission yok),
+`VET-AUTHZ-0006` (403 — tenant bağlamı yok),
+`VET-VALIDATION-0001` (422 — body şeması hatalı).
+
+Disable edilen bir modüle yapılan sonraki erişim denemeleri
+`VET-MODULE-0001` (403) ile reddedilir. SUPERADMIN bu kontrolden
+bağımsız geçer (master switch).
+
+---
+
 ## Self-Service (`/api/v1/me`)
 
 > Oturum açmış kullanıcının kendi bilgileri. Tümü auth gerektirir.

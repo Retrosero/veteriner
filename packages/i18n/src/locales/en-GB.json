@@ -183,6 +183,7 @@
     "VET-AUTHZ-0004": "You can only access records in your own branch.",
     "VET-AUTHZ-0005": "A specific role is required for this operation. Please contact your administrator.",
     "VET-AUTHZ-0006": "An active tenant membership is required for this operation. Please contact your administrator.",
+    "VET-MODULE-0001": "This module is disabled for the tenant. Please contact the administrator.",
     "VET-RBAC-0001": "Tenant not found or closed.",
     "VET-RBAC-0002": "User not found or archived.",
     "VET-RBAC-0003": "You cannot modify your own role or membership. Another administrator must do this.",

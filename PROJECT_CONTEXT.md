@@ -119,7 +119,7 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-010 ✅ tenant ve şube (tamamlandı — 2026-07-30)
   - GOAL-011 ✅ kimlik doğrulama ve oturum (tamamlandı — 2026-07-30)
   - GOAL-012 ⏳ RBAC ve izin motoru (core tamamlandı: service + repository + controller + guard'lar + role decorator + audit entegrasyonu; docs/i18n sonraki tick'lerde)
-  - GOAL-013 feature flag
+  - GOAL-013 ✅ Modül ve paket feature flag altyapısı (tamamlandı — 2026-07-30)
   - GOAL-014 dosya servisi
   - GOAL-015 bildirim
   - GOAL-016 superadmin tenant görünümü
