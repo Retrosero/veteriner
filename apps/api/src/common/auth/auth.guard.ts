@@ -30,6 +30,7 @@ import {
   ExecutionContext,
   Injectable,
   Logger,
+  SetMetadata,
   UnauthorizedException,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
@@ -39,9 +40,13 @@ import {
   ActorContext,
   ActorRole,
 } from "../actor/actor-context.service.js";
-import { IS_PUBLIC_KEY } from "../decorators/public.decorator.js";
 import { AuthService } from "./auth.service.js";
 import { SESSION_COOKIE_NAME } from "@vetniva/contracts";
+
+export const IS_PUBLIC_KEY = "auth:isPublic";
+/** Public endpoint işaretleyicisi (auth kontrol dışı). */
+export const Public = (): MethodDecorator & ClassDecorator =>
+  SetMetadata(IS_PUBLIC_KEY, true);
 
 declare module "express-serve-static-core" {
   interface Request {

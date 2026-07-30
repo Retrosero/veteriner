@@ -63,6 +63,17 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-AUTHZ-0003`     | Bu kaynağa erişim yetkiniz yok    | 403  | warning  | server | İlgili modüle erişim yetkisi talep edin.           |
 | `VET-AUTHZ-0004`     | Branches arası erişim reddedildi  | 403  | warning  | server | Yalnızca kendi şubenizdeki kayıtlara erişebilirsiniz. |
 | `VET-AUTHZ-0005`     | Belirli rol gerekli               | 403  | warning  | server | Bu işlem için SUPERADMIN veya OWNER rolü gerekli.   |
+| `VET-AUTHZ-0006`     | Tenant bağlamı zorunlu            | 403  | warning  | server | Bu işlem için aktif bir tenant üyeliği gerekli.   |
+
+## RBAC (RBAC)
+
+| Kod                  | Ad                                | HTTP | Severity | Kaynak | Çözüm                                              |
+| -------------------- | --------------------------------- | ---- | -------- | ------ | -------------------------------------------------- |
+| `VET-RBAC-0001`      | Tenant bulunamadı / kapalı        | 404  | warning  | server | Tenant kodunuzu kontrol edin.                      |
+| `VET-RBAC-0002`      | Kullanıcı bulunamadı / arşivlenmiş | 404 | warning  | server | Kullanıcıyı yönetici üzerinden kontrol edin.       |
+| `VET-RBAC-0003`      | Kendi rolünüze/üyeliğinize işlem yapamazsınız | 409 | warning | server | Başka bir yönetici bu işlemi yapmalı. |
+| `VET-RBAC-0004`      | Son aktif OWNER iptal edilemez    | 409  | warning  | server | Önce başka bir aktif OWNER atayın.                |
+| `VET-RBAC-0005`      | Branch hedef tenant'a ait değil   | 409  | warning  | server | Doğru branch seçin.                                |
 
 ## Tenant (TENANT)
 

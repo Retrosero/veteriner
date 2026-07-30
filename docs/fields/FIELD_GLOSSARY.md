@@ -216,6 +216,18 @@ branch.ts) tanımlıdır.
 - **Açıklama:** Soft delete zamanı. `status=disabled` ile birlikte set
   edilir. Veri korunur (append-only audit ile).
 
+### isSuperadmin (boolean, zorunlu, default: false) — GOAL-012
+
+- **Tip:** BOOLEAN (default `false`)
+- **PII:** hayır
+- **Açıklama:** SUPERADMIN bypass bayrağı. `true` ise kullanıcı
+  tüm permission'lara sahiptir (tenant üyeliği olmadan çalışır;
+  cross-tenant görünüm). Yalnızca DB seeder/admin tarafından set
+  edilir; normal API'den değiştirilemez (audit iziyle birlikte
+  GOAL-016 superadmin paneli yönetir). AuthGuard her istekte
+  bu bayrağı `ActorContext.isSuperadmin`'e yazar; RbacService
+  bypass kontrolünde kullanır.
+
 ---
 
 ## UserSession alanları (GOAL-011)
@@ -284,6 +296,19 @@ branch.ts) tanımlıdır.
 - **Tip:** TIMESTAMPTZ
 - **PII:** hayır
 - **Açıklama:** Session iptal zamanı. Set edilmişse session geçersizdir.
+
+### activeBranchId (UUID, opsiyonel, FK → branches.id) — GOAL-012
+
+- **Tip:** UUID
+- **PII:** hayır
+- **Açıklama:** Oturumun aktif branch bağlamı (multi-branch tenant).
+  Login sırasında tenant'ın ilk aktif branch'ı atanır
+  (`prisma.branch.findFirst({ status: 'active' })`). Kullanıcı
+  `POST /api/v1/auth/switch-branch/:branchId` ile branch'ı
+  değiştirir. `branch_scope: required` permission'lar için
+  AuthGuard bu alanı `ActorContext.branchId` olarak taşır.
+  Branch silinirse `ON DELETE SET NULL` ile null yapılır;
+  session açık kalır ama branch context'i kaybolur.
 
 ### revokedReason (string, opsiyonel)
 

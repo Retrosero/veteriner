@@ -1,12 +1,13 @@
 // GOAL-010 — Tenant ve şube veri modeli.
 // GOAL-011 — Kimlik doğrulama ve oturum yönetimi (User, Session, Invitation,
 // PasswordResetToken).
+// GOAL-012 — RBAC ve izin motoru (User.isSuperadmin, UserSession.activeBranchId).
 //
 // Bu şema Faz 1 platform çekirdeğinin temelidir:
 // - `tenants` kök tablosudur (multi-tenant kök).
 // - `branches` tenant'a bağlı şubelerdir (pilot tek şube ile başlar).
-// - `users` platform kullanıcılarıdır (parola, oturum, kilit).
-// - `user_sessions` aktif oturumlardır (cookie token).
+// - `users` platform kullanıcılarıdır (parola, oturum, kilit, isSuperadmin).
+// - `user_sessions` aktif oturumlardır (cookie token + aktif branch).
 // - `user_invitations` tenant'a kullanıcı davetleridir.
 // - `password_reset_tokens` parola sıfırlama token'larıdır.
 // - `audit_events` append-only olay tablosudur (klinik/finansal kayıt
@@ -233,6 +234,13 @@ model User {
   updatedAt          DateTime  @updatedAt @db.Timestamptz(6) @map("updated_at")
   /// Soft delete zamanı (kullanıcı pasif edildi; veri korunur).
   archivedAt         DateTime? @db.Timestamptz(6) @map("archived_at")
+  /// SUPERADMIN bayrağı (GOAL-012 RBAC). Sistem düzeyinde tenant
+  /// dışı görünüm ve platform yönetimi için ayrıcalıklı erişim
+  /// tanımlar. Tenant üyeliği olmadan çalışır. Bu bayrak yalnızca
+  /// veritabanı seeder/admin tarafından set edilir; normal API'den
+  /// değiştirilemez (audit iziyle birlikte GOAL-016 superadmin
+  /// paneliyle yönetilecek).
+  isSuperadmin       Boolean   @default(false) @map("is_superadmin")
 
   sessions           UserSession[]
   passwordResets     PasswordResetToken[]
@@ -240,6 +248,7 @@ model User {
 
   @@index([status])
   @@index([lockedUntil])
+  @@index([isSuperadmin])
   @@map("users")
 }
 
@@ -273,6 +282,11 @@ model UserSession {
   revokedAt       DateTime? @db.Timestamptz(6) @map("revoked_at")
   /// Revoke sebebi (logout, rotation, admin_action).
   revokedReason   String?  @db.VarChar(50) @map("revoked_reason")
+  /// Aktif branch (GOAL-012 RBAC — branch scope). Login sırasında
+  /// tenant'ın varsayılan branch'ı set edilir; kullanıcı daha sonra
+  /// branch değiştirirse bu alan güncellenir (multi-branch tenant
+  /// senaryosu). Null ise branch context yoktur (sistem düzeyi).
+  activeBranchId  String?  @db.Uuid @map("active_branch_id")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 

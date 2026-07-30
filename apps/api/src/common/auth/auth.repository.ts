@@ -122,6 +122,7 @@ export class AuthRepository {
     expiresAt: Date;
     ipAddress: string | null;
     userAgentHash: string | null;
+    activeBranchId?: string | null;
   }): Promise<UserSession> {
     return this.prisma.userSession.create({
       data: {
@@ -130,7 +131,24 @@ export class AuthRepository {
         expiresAt: data.expiresAt,
         ipAddress: data.ipAddress,
         userAgentHash: data.userAgentHash,
+        ...(data.activeBranchId !== undefined
+          ? { activeBranchId: data.activeBranchId }
+          : {}),
       },
+    });
+  }
+
+  /**
+   * Session'ın aktif branch context'ini günceller. Multi-branch
+   * tenant senaryosu için kullanıcı branch değiştirdiğinde çağrılır.
+   */
+  public async setSessionActiveBranch(
+    sessionId: string,
+    branchId: string | null,
+  ): Promise<void> {
+    await this.prisma.userSession.update({
+      where: { id: sessionId },
+      data: { activeBranchId: branchId },
     });
   }
 

@@ -48,14 +48,18 @@ export interface ActorContext {
   tenantId: string | null;
   /** Aktif şube (opsiyonel; bazı endpoint'lerde zorunlu olacak). */
   branchId: string | null;
+  /** SUPERADMIN bayrağı (GOAL-012 RBAC). Sistem düzeyinde bypass
+   *  yetkisi. Tenant üyeliği olmadan çalışır. */
+  isSuperadmin: boolean;
   /** Request ID (correlation). */
   correlationId: string;
   /** Mask'li IP (opsiyonel). */
   ipAddress: string | null;
   /** User agent hash (opsiyonel). */
   userAgentHash: string | null;
-  /** Actor'un menşei (auth placeholder'da `header` veya `default`). */
-  source: "header" | "default" | "system";
+  /** Actor'un menşei (auth placeholder'da `header`/`default`,
+   *  gerçek auth sonrası `session`, sistem event'lerde `system`). */
+  source: "header" | "default" | "session" | "system";
 }
 
 const ACTOR_ID_HEADER = "x-actor-id";
@@ -103,6 +107,7 @@ export class ActorContextService {
         role: role ?? "STAFF",
         tenantId: tenantId ?? null,
         branchId: branchId ?? null,
+        isSuperadmin: false,
         correlationId,
         ipAddress: ip ? maskIp(ip) : null,
         userAgentHash: ua ? hashUserAgent(ua) : null,
@@ -125,6 +130,7 @@ export class ActorContextService {
       role: "STAFF",
       tenantId: tenantId ?? null,
       branchId: branchId ?? null,
+      isSuperadmin: false,
       correlationId,
       ipAddress: ip ? maskIp(ip) : null,
       userAgentHash: ua ? hashUserAgent(ua) : null,
@@ -143,6 +149,7 @@ export class ActorContextService {
       role: "SYSTEM",
       tenantId: null,
       branchId: null,
+      isSuperadmin: false,
       correlationId,
       ipAddress: null,
       userAgentHash: null,

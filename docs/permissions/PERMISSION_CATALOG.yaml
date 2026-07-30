@@ -1965,31 +1965,108 @@ permissions:
     system_only: false
     applies_to_roles: [OWNER, VETERINARIAN]
 
+  # ----------------------------------------------------------------
+  # AUTH — Kimlik doğrulama ve oturum yönetimi (GOAL-011)
+  # ----------------------------------------------------------------
+  # Not: Login/logout/forgot/reset/accept invitation endpointleri
+  # public'tir (AuthGuard dışı); permission gerektirmez. Bu bölümdeki
+  # permission'lar oturum açıkken yapılan işlemler içindir.
+  # ----------------------------------------------------------------
+  - permission: "auth:session:read"
+    description: "Kendi aktif oturumlarını listeleme (/me/sessions)."
+    resource_type: session
+    action: read
+    tenant_scope: not_applicable
+    branch_scope: not_applicable
+    self_only: true
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF, SUPERADMIN, PET_OWNER_PORTAL]
+    notes: "Sadece kendi userId'sine ait oturumları gösterir; RLS self policy."
+
+  - permission: "auth:session:revoke"
+    description: "Kendi aktif oturumunu sona erdirme (logout, diğer cihazları kapatma)."
+    resource_type: session
+    action: archive
+    tenant_scope: not_applicable
+    branch_scope: not_applicable
+    self_only: true
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF, SUPERADMIN, PET_OWNER_PORTAL]
+    notes: "Kendi session'ı dışındakileri revoke edemez. revoke_all opsiyonel parametre."
+
+  - permission: "auth:password:change"
+    description: "Oturum açıkken kendi parolasını değiştirme."
+    resource_type: password
+    action: update
+    tenant_scope: not_applicable
+    branch_scope: not_applicable
+    self_only: true
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF, SUPERADMIN, PET_OWNER_PORTAL]
+    notes: "Mevcut parola doğrulanmalı; 12+ karakter, büyük/küçük harf ve rakam politikası."
+
+  - permission: "auth:invitation:create"
+    description: "Tenant'a yeni kullanıcı davet etme (auth invitation endpoint'i)."
+    resource_type: invitation
+    action: create
+    tenant_scope: required
+    branch_scope: not_applicable
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+    notes: "Davet 7 gün geçerli; tek kullanımlık. user:user:invite ile aynı iş kuralları."
+
+  - permission: "auth:invitation:read"
+    description: "Tenant'ın bekleyen/geçmiş davetlerini listeleme."
+    resource_type: invitation
+    action: read
+    tenant_scope: required
+    branch_scope: not_applicable
+    self_only: false
+    audit: false
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, SUPERADMIN]
+
 # =============================================================================
 # TOPLAMLAR (otomatik hesaplanır, referans için)
 # =============================================================================
 summary:
-  total_permissions: 113
+  total_permissions: 118
   by_action:
-    read: 31
-    create: 25
-    update: 27
-    archive: 14
+    read: 32
+    create: 26
+    update: 28
+    archive: 15
     export: 13
     amend: 9
     manage: 2
   by_role:
-    SUPERADMIN: 11
-    OWNER: 78
-    VETERINARIAN: 75
-    STAFF: 50
-    PET_OWNER_PORTAL: 17
+    SUPERADMIN: 12
+    OWNER: 83
+    VETERINARIAN: 78
+    STAFF: 53
+    PET_OWNER_PORTAL: 20
   by_module:
     common: 6
     tenant: 4
     branch: 4
     user: 5
     role: 3
+    auth: 5
     clinic_owner: 6
     clinic_patient: 6
     clinic_appointment: 7

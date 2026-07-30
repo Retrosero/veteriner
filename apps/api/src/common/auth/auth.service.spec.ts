@@ -113,6 +113,19 @@ function makePrismaStub() {
     userInvitation: {
       findFirst: vi.fn(),
     },
+    branch: {
+      findFirst: vi.fn().mockResolvedValue({ id: "branch-1" }),
+    },
+    tenant: {
+      findUnique: vi.fn().mockResolvedValue({
+        id: "tenant-1",
+        slug: "pilot",
+        name: "Pilot",
+        country: "TR",
+        defaultLocale: "tr-TR",
+        timezone: "Europe/Istanbul",
+      }),
+    },
   } as unknown as PrismaService;
 }
 
@@ -644,6 +657,7 @@ describe("AuthService", () => {
         replacedById: null,
         revokedAt: null,
         revokedReason: null,
+        activeBranchId: null,
       });
       const result = await service.validateSession("anytoken");
       expect(result).toBeNull();
@@ -662,12 +676,13 @@ describe("AuthService", () => {
         replacedById: null,
         revokedAt: new Date(),
         revokedReason: "logout",
+        activeBranchId: null,
       });
       const result = await service.validateSession("anytoken");
       expect(result).toBeNull();
     });
 
-    it("aktif session userId + sessionId döner", async () => {
+    it("aktif session userId + sessionId + activeBranchId döner", async () => {
       (repo.findSessionByTokenHash as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: "session-1",
         userId: "user-1",
@@ -680,11 +695,46 @@ describe("AuthService", () => {
         replacedById: null,
         revokedAt: null,
         revokedReason: null,
+        activeBranchId: "branch-42",
+      });
+      (repo.findUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "user-1",
+        status: "active",
+        isSuperadmin: false,
       });
       const result = await service.validateSession("anytoken");
       expect(result).not.toBeNull();
       expect(result?.userId).toBe("user-1");
       expect(result?.sessionId).toBe("session-1");
+      expect(result?.activeBranchId).toBe("branch-42");
+    });
+
+    it("kullanıcı suspend edilmişse session null döner + revoke edilir", async () => {
+      (repo.findSessionByTokenHash as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "session-1",
+        userId: "user-1",
+        tokenHash: "h",
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60),
+        lastUsedAt: new Date(),
+        ipAddress: null,
+        userAgentHash: null,
+        createdAt: new Date(),
+        replacedById: null,
+        revokedAt: null,
+        revokedReason: null,
+        activeBranchId: null,
+      });
+      (repo.findUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "user-1",
+        status: "suspended",
+        isSuperadmin: false,
+      });
+      const result = await service.validateSession("anytoken");
+      expect(result).toBeNull();
+      expect(repo.revokeSession).toHaveBeenCalledWith(
+        "session-1",
+        "user_inactive",
+      );
     });
   });
 
@@ -786,14 +836,23 @@ describe("AuthService", () => {
   // ===========================================================================
 
   describe("resolveActorContext", () => {
-    it("üyelik yoksa STAFF + null tenant döner", async () => {
+    it("üyelik yoksa STAFF + null tenant + isSuperadmin=false döner", async () => {
+      (repo.findUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "user-1",
+        isSuperadmin: false,
+      });
       (prisma.userTenantMembership.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
       const result = await service.resolveActorContext("user-1");
       expect(result.role).toBe("STAFF");
       expect(result.tenantId).toBeNull();
+      expect(result.isSuperadmin).toBe(false);
     });
 
-    it("ilk aktif üyeliği döner", async () => {
+    it("ilk aktif üyeliği döner (normal kullanıcı)", async () => {
+      (repo.findUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "user-1",
+        isSuperadmin: false,
+      });
       (prisma.userTenantMembership.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
         tenantId: "tenant-1",
         role: "OWNER",
@@ -802,6 +861,18 @@ describe("AuthService", () => {
       const result = await service.resolveActorContext("user-1");
       expect(result.role).toBe("OWNER");
       expect(result.tenantId).toBe("tenant-1");
+      expect(result.isSuperadmin).toBe(false);
+    });
+
+    it("SUPERADMIN kullanıcıda tenantId=null + role=SUPERADMIN döner", async () => {
+      (repo.findUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "admin-1",
+        isSuperadmin: true,
+      });
+      const result = await service.resolveActorContext("admin-1");
+      expect(result.role).toBe("SUPERADMIN");
+      expect(result.tenantId).toBeNull();
+      expect(result.isSuperadmin).toBe(true);
     });
   });
 });

@@ -54,7 +54,7 @@ import {
 import type { ActorContext } from "../actor/actor-context.service.js";
 
 import { AuthGuard } from "./auth.guard.js";
-import { Public } from "../decorators/public.decorator.js";
+import { Public } from "./auth.guard.js";
 import { AuthService } from "./auth.service.js";
 import { attemptMetaFromRequest } from "./dto.js";
 

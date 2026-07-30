@@ -320,6 +320,22 @@ Multi-tenant üye kullanıcı için aktif tenant değişimi. Yeni session üretm
 **Request body:** `{ "tenantSlug": "..." }`
 **Response 200:** `{ "tenantId": "...", "role": "VETERINARIAN" }`
 
+### POST /api/v1/auth/switch-branch/:branchId
+
+Aktif branch'ı değiştirir (multi-branch tenant). Normal kullanıcı
+yalnızca kendi tenant'ının branch'larına geçebilir; SUPERADMIN
+herhangi bir tenant'ın branch'ına geçebilir (cross-tenant).
+
+- **Modül:** auth
+- **Yetki:** authenticated
+- **Audit:** `audit:auth.branch.switch` (info)
+- **GOAL:** GOAL-012 (RBAC ve izin motoru)
+
+**Response 200:** `{ "branchId": "uuid" }`
+
+**Hata kodları:** `VET-BRANCH-0001` (404 — şube yok), `VET-AUTHZ-0004`
+(403 — farklı tenant branch'ı).
+
 ---
 
 ## Self-Service (`/api/v1/me`)

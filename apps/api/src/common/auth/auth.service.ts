@@ -215,7 +215,45 @@ export class AuthService {
     // Tenant bağlamı çözümle.
     const tenantCtx = await this.resolveTenantContext(userId, input.tenantSlug);
 
-    const session = await this.createSessionForUserById(userId, ctx);
+    // SUPERADMIN ise ve tenantSlug verilmemişse tenant bağlamı null kalır
+    // (cross-tenant erişim için tenant başka endpoint'te set edilir).
+    // Normal kullanıcılar için tenant bağlamı zorunlu; yoksa login reddedilir.
+    if (!tenantCtx && !userRecord.isSuperadmin) {
+      await this.auditAuthEvent("audit:auth.login.failure", {
+        userId,
+        tenantId: null,
+        email,
+        reason: "no_active_membership",
+        correlationId: ctx.correlationId,
+        ipAddress: ctx.ipAddress,
+        userAgentHash: ctx.userAgentHash,
+        severity: "warning",
+      });
+      throw new DomainError({
+        errorCode: "VET-AUTH-0001",
+        message: "Hesabınız için aktif bir tenant üyeliği bulunamadı",
+        httpStatus: 403,
+        severity: "warning",
+        i18nKey: "error.VET-AUTH-0001",
+      });
+    }
+
+    // Tenant'ın varsayılan branch'ını çözümle (pilot tek şube).
+    let defaultBranchId: string | null = null;
+    if (tenantCtx) {
+      const def = await this.prisma.branch.findFirst({
+        where: { tenantId: tenantCtx.tenantId, status: "active" },
+        orderBy: { createdAt: "asc" },
+        select: { id: true },
+      });
+      defaultBranchId = def?.id ?? null;
+    }
+
+    const session = await this.createSessionForUserById(
+      userId,
+      ctx,
+      defaultBranchId,
+    );
 
     await this.auditAuthEvent("audit:auth.login.success", {
       userId,
@@ -245,7 +283,7 @@ export class AuthService {
           }
         : null,
       role: tenantCtx?.role ?? null,
-      branchId: null,
+      branchId: defaultBranchId,
     };
   }
 
@@ -637,6 +675,28 @@ export class AuthService {
       where: { userId, status: "active" },
       include: { tenant: { select: { id: true, slug: true, name: true } } },
     });
+    // İlk aktif üyelik varsa tenant + role + branch çözümle.
+    const first = memberships[0];
+    let tenant: MeResponse["tenant"] = null;
+    let role: MeResponse["role"] = null;
+    if (first) {
+      const t = await this.prisma.tenant.findUnique({
+        where: { id: first.tenantId },
+      });
+      if (t) {
+        tenant = {
+          id: t.id,
+          slug: t.slug,
+          name: t.name,
+          country: t.country,
+          defaultLocale: t.defaultLocale,
+          timezone: t.timezone,
+        };
+        role = actorRoleSchema.parse(first.role);
+      }
+    } else if (user.isSuperadmin) {
+      role = "SUPERADMIN";
+    }
     return {
       user: {
         id: user.id,
@@ -653,9 +713,9 @@ export class AuthService {
         lastUsedAt: session.lastUsedAt.toISOString(),
         ipAddress: session.ipAddress,
       },
-      tenant: null,
-      role: null,
-      branchId: null,
+      tenant,
+      role,
+      branchId: session.activeBranchId ?? null,
       memberships: memberships.map((m) => ({
         tenantId: m.tenantId,
         tenantSlug: m.tenant.slug,
@@ -666,6 +726,62 @@ export class AuthService {
     };
   }
 
+  /**
+   * Aktif branch'ı değiştirir (multi-branch tenant senaryosu). Kullanıcı
+   * yalnızca kendi tenant'ının branch'larına geçebilir. Branch
+   * değişikliği audit log'a yazılır.
+   *
+   * SUPERADMIN kullanıcılar için herhangi bir tenant'ın branch'ına
+   * geçiş kabul edilir (cross-tenant görünüm).
+   */
+  public async setActiveBranch(
+    userId: string,
+    sessionId: string,
+    branchId: string,
+    isSuperadmin: boolean,
+    ctx: AttemptContext,
+  ): Promise<{ branchId: string }> {
+    const branch = await this.prisma.branch.findUnique({
+      where: { id: branchId },
+    });
+    if (!branch || branch.archivedAt) {
+      throw new DomainError({
+        errorCode: "VET-BRANCH-0001",
+        message: "Şube bulunamadı",
+        httpStatus: 404,
+        severity: "warning",
+        i18nKey: "error.VET-BRANCH-0001",
+      });
+    }
+    if (!isSuperadmin) {
+      // Normal kullanıcı: kendi tenant'ının branch'ı mı?
+      const membership = await this.prisma.userTenantMembership.findFirst({
+        where: { userId, status: "active", tenantId: branch.tenantId },
+      });
+      if (!membership) {
+        throw new DomainError({
+          errorCode: "VET-AUTHZ-0004",
+          message: "Bu şubeye erişim yetkiniz yok",
+          httpStatus: 403,
+          severity: "warning",
+          i18nKey: "error.VET-AUTHZ-0004",
+        });
+      }
+    }
+    await this.repo.setSessionActiveBranch(sessionId, branchId);
+    await this.auditAuthEvent("audit:auth.branch.switch", {
+      userId,
+      tenantId: branch.tenantId,
+      sessionId,
+      branchId,
+      correlationId: ctx.correlationId,
+      ipAddress: ctx.ipAddress,
+      userAgentHash: ctx.userAgentHash,
+      severity: "info",
+    });
+    return { branchId };
+  }
+
   // ===========================================================================
   // SESSION MANAGEMENT
   // ===========================================================================
@@ -674,6 +790,7 @@ export class AuthService {
     userId: string;
     sessionId: string;
     expiresAt: Date;
+    activeBranchId: string | null;
   } | null> {
     const tokenHash = hashToken(token);
     const session = await this.repo.findSessionByTokenHash(tokenHash);
@@ -687,6 +804,13 @@ export class AuthService {
       return null;
     }
 
+    // Hesap hâlâ aktif mi? (kullanıcı suspend edilmiş olabilir).
+    const user = await this.repo.findUserById(session.userId);
+    if (!user || user.status !== "active") {
+      await this.repo.revokeSession(session.id, "user_inactive");
+      return null;
+    }
+
     // lastUsedAt güncelle (fire-and-forget).
     void this.repo.touchSession(session.id, new Date());
 
@@ -694,6 +818,7 @@ export class AuthService {
       userId: session.userId,
       sessionId: session.id,
       expiresAt: session.expiresAt,
+      activeBranchId: session.activeBranchId ?? null,
     };
   }
 
@@ -784,19 +909,40 @@ export class AuthService {
   // ACTOR CONTEXT (AuthGuard)
   // ===========================================================================
 
+  /**
+   * AuthGuard tarafından her istek başında çağrılır; actor bilgisini
+   * çözer. SUPERADMIN kullanıcılar için tenantId null döner (cross-tenant
+   * erişim). Normal kullanıcılar için ilk aktif üyeliğin tenant'ı
+   * kullanılır.
+   *
+   * `isSuperadmin` bayrağı user tablosundan okunur; tenant üyeliği
+   * gerektirmez. GOAL-012 ile birlikte.
+   */
   public async resolveActorContext(
     userId: string,
-  ): Promise<{ role: ActorRole; tenantId: string | null }> {
+  ): Promise<{
+    role: ActorRole;
+    tenantId: string | null;
+    isSuperadmin: boolean;
+  }> {
+    const user = await this.repo.findUserById(userId);
+    if (!user) {
+      return { role: "STAFF", tenantId: null, isSuperadmin: false };
+    }
+    if (user.isSuperadmin) {
+      return { role: "SUPERADMIN", tenantId: null, isSuperadmin: true };
+    }
     const first = await this.prisma.userTenantMembership.findFirst({
       where: { userId, status: "active" },
       orderBy: { assignedAt: "asc" },
     });
     if (!first) {
-      return { role: "STAFF", tenantId: null };
+      return { role: "STAFF", tenantId: null, isSuperadmin: false };
     }
     return {
       role: first.role as ActorRole,
       tenantId: first.tenantId,
+      isSuperadmin: false,
     };
   }
 
@@ -807,10 +953,14 @@ export class AuthService {
   /**
    * Yeni session oluşturur; plain token'ı da döner. DB'ye
    * tokenHash yazılır; caller plain token'ı response'a koyar.
+   * GOAL-012: `activeBranchId` opsiyonel olarak set edilir; pilot
+   * tenant tek şube ile başladığı için login sırasında default
+   * branch atanır.
    */
   private async createSessionForUserById(
     userId: string,
     ctx: AttemptContext,
+    activeBranchId: string | null = null,
   ): Promise<{
     id: string;
     plainToken: string;
@@ -825,6 +975,7 @@ export class AuthService {
       expiresAt,
       ipAddress: ctx.ipAddress,
       userAgentHash: ctx.userAgentHash,
+      activeBranchId,
     });
     return {
       id: session.id,
@@ -916,9 +1067,12 @@ export class AuthService {
         (details["userId"] as string) ??
         (details["invitationId"] as string) ??
         "auth",
-      action: eventName.endsWith("create") || eventName.endsWith("success")
-        ? "create"
-        : "update",
+      action:
+        eventName.endsWith("create") || eventName.endsWith("success")
+          ? "create"
+          : eventName.endsWith("update")
+            ? "update"
+            : "read",
       correlationId,
       country: "TR",
       severity,
@@ -943,6 +1097,7 @@ export class AuthService {
       role: "SYSTEM",
       tenantId: null,
       branchId: null,
+      isSuperadmin: false,
       correlationId,
       ipAddress: null,
       userAgentHash: null,

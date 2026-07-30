@@ -92,6 +92,54 @@ kendi hayvanlarına ait.
 
 ---
 
+## Kimlik Doğrulama (AUTH — GOAL-011)
+
+| Permission                   | OWN | VET | STF | ADM | POR |
+| ---------------------------- | :-: | :-: | :-: | :-: | :-: |
+| `auth:session:read`          |  ✓  |  ✓  |  ✓  |  ✓  |  ✓  |
+| `auth:session:revoke`        |  ✓  |  ✓  |  ✓  |  ✓  |  ✓  |
+| `auth:password:change`       |  ✓  |  ✓  |  ✓  |  ✓  |  ✓  |
+| `auth:invitation:create`     |  ✓  |  —  |  —  |  —  |  —  |
+| `auth:invitation:read`       |  ✓  |  —  |  —  |  ✓  |  —  |
+
+> **Not:** Login, logout, forgot-password, reset-password, accept-invitation
+> endpointleri `Public()` dekoratörü ile AuthGuard dışıdır; permission
+> gerektirmez. Bu tablodaki permission'lar yalnızca oturum açıkken
+> kullanıcının kendi oturum/parola/davet yönetimini kapsar.
+>
+> **Akış:**
+> 1. `POST /api/v1/auth/login` (public) — cookie + session
+> 2. `GET /api/v1/me` (auth) — oturum + üyelikler
+> 3. `GET /api/v1/me/sessions` (auth, self) — aktif oturumlar
+> 4. `POST /api/v1/auth/invitations` (auth, OWNER) — davet oluştur
+> 5. `POST /api/v1/auth/invitations/accept` (public) — davet kabul
+>
+> **Brute-force koruması:** 5 başarısız deneme sonrası hesap 15 dakika
+> kilitlenir. Tüm başarısız girişler `audit:auth.login.failure` event'i
+> ile audit log'a yazılır.
+
+---
+
+## Yetkilendirme (RBAC — GOAL-012)
+
+| Permission             | OWN | VET | STF | ADM | POR |
+| ---------------------- | :-: | :-: | :-: | :-: | :-: |
+| `rbac:permissions:read` |  ✓  |  ✓  |  ✓  |  ✓  |  —  |
+| `rbac:roles:read`       |  ✓  |  ✓  |  ✓  |  ✓  |  —  |
+
+> **Not:** Tüm RBAC kararları backend'de `RbacService` tarafından
+> otomatik değerlendirilir; controller `@RequirePermission()`
+> dekoratörü ile declarative kontrol uygular. SUPERADMIN tüm
+> permission'ları bypass eder (`User.isSuperadmin=true`). Her
+> red kararı `audit:rbac.permission_denied` event'i ile loglanır.
+>
+> **Branch scope:** `branch_scope: required` permission'lar için
+> `actor.branchId` zorunlu. Kullanıcı
+> `POST /api/v1/auth/switch-branch/:branchId` ile aktif branch'ı
+> değiştirebilir.
+
+---
+
 ## Klinik: Hasta Sahibi (CLINIC:OWNER)
 
 | Permission                 | OWN | VET | STF | ADM | POR |

@@ -1584,3 +1584,320 @@ generated_at: "2026-07-30"
   related_chunks: [glossary-user-session]
   related_pages: []
   related_api: [GET /api/v1/me, GET /api/v1/me/sessions, DELETE /api/v1/me/sessions/:id]
+
+# -----------------------------------------------------------------------------
+# RBAC (FAZ-1 GOAL-012) — yeni chunk türü
+# -----------------------------------------------------------------------------
+
+- chunk_id: rbac-engine
+  type: permission
+  source: docs/permissions/PERMISSION_CATALOG.yaml
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "RBAC motoru (RbacService)"
+  content: |
+    VetNiva RBAC motoru `docs/permissions/PERMISSION_CATALOG.yaml`
+    dosyasını runtime'a yükler. Her permission anahtarı
+    `<domain>:<resource>:<action>` formatında olup bir veya birden
+    fazla role atanmıştır. Değerlendirme sırası: SUPERADMIN
+    bypass → system actor → rol kontrolü → tenant_scope →
+    branch_scope → self_only. Tüm red kararları audit
+    `audit:rbac.permission_denied` event'i ile loglanır.
+  keywords: [rbac, permission, role, superadmin, scope, bypass]
+  related_chunks: [rbac-require-permission, rbac-superadmin,
+                   rbac-branch-scope, rbac-permission-denied]
+  related_pages: []
+  related_api: []
+
+- chunk_id: rbac-require-permission
+  type: permission
+  source: apps/api/src/common/rbac/require-permission.decorator.ts
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "RequirePermission dekoratörü + PermissionsGuard"
+  content: |
+    `@RequirePermission('clinic:appointment:create')` controller
+    metodu veya sınıfına eklenebilen metadata dekoratörüdür.
+    Birden fazla permission AND semantiği ile değerlendirilir.
+    `PermissionsGuard` Reflector üzerinden metadata okur;
+    RbacService ile karar verir. Red kararında VET-AUTHZ-0001
+    (yetki yok), VET-AUTHZ-0003 (kaynağa erişim yok) veya
+    VET-AUTHZ-0004 (branch scope gerekli) hatası döner.
+  keywords: [rbac, decorator, guard, permission, controller, require]
+  related_chunks: [rbac-engine, rbac-permission-denied]
+  related_pages: []
+  related_api: []
+
+- chunk_id: rbac-permission-denied
+  type: permission
+  source: apps/api/src/common/rbac/rbac.service.ts
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Permission red kararı + audit log"
+  content: |
+    Bir permission reddedildiğinde `RbacService` şu bilgileri
+    `audit:rbac.permission_denied` event'inde yazar: permission
+    anahtarı, red sebebi (no_role_match, tenant_scope_required,
+    branch_scope_required, self_only_mismatch, system_actor),
+    actor rolü ve isSuperadmin bayrağı. Severity `warning`.
+    Audit log 7 yıl retention; süperadmin panelinde
+    yetkisiz erişim denemeleri görünür.
+  keywords: [rbac, audit, denied, log, security, monitoring]
+  related_chunks: [rbac-engine, audit-rbac-denied]
+  related_pages: []
+  related_api: []
+
+- chunk_id: rbac-superadmin
+  type: permission
+  source: apps/api/src/common/auth/auth.guard.ts
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "SUPERADMIN bypass ve cross-tenant erişim"
+  content: |
+    SUPERADMIN kullanıcılar `User.isSuperadmin=true` bayrağı ile
+    işaretlenir (yalnızca DB seeder/admin tarafından set edilir;
+    audit iziyle birlikte GOAL-016 superadmin paneli yönetir).
+    Bu kullanıcılar tüm permission'ları bypass eder, tenant üyeliği
+    olmadan çalışır ve `X-Branch-Id` header'ı ile cross-tenant
+    görünüm sağlar. SUPERADMIN tüm permission'lara sahip
+    sayılır; PermissionsGuard öncesi `isSuperadmin` bayrağı
+    ActorContext'e yazılır.
+  keywords: [rbac, superadmin, bypass, cross-tenant, branch]
+  related_chunks: [rbac-engine, rbac-branch-scope, glossary-user]
+  related_pages: []
+  related_api: []
+
+- chunk_id: rbac-branch-scope
+  type: permission
+  source: apps/api/src/common/auth/auth.service.ts
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Branch scope (multi-branch tenant)"
+  content: |
+    Her session `UserSession.activeBranchId` alanı ile aktif
+    branch bağlamını taşır. Login sırasında tenant'ın varsayılan
+    (ilk aktif) branch'ı atanır. Kullanıcı
+    `POST /api/v1/auth/switch-branch/:branchId` ile aktif branch'ı
+    değiştirir; SUPERADMIN için header override kabul edilir.
+    Permission'lar `branch_scope: required` ise actor.branchId
+    zorunlu; aksi hâlde VET-AUTHZ-0004.
+  keywords: [rbac, branch, scope, switch, multi-branch]
+  related_chunks: [rbac-engine, rbac-superadmin, glossary-branch]
+  related_pages: []
+  related_api: [POST /api/v1/auth/switch-branch/:branchId]
+
+- chunk_id: audit-rbac-denied
+  type: audit
+  source: apps/api/src/common/rbac/rbac.service.ts
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "audit:rbac.permission_denied event"
+  content: |
+    `audit:rbac.permission_denied` event'i reddedilen her RBAC
+    kararında yazılır. Severity: warning. Metadata: permission
+    anahtarı, red sebebi, actor rolü, isSuperadmin. targetType:
+    `permission`. targetId: permission anahtarı. Bu event
+    süperadmin panelinde güvenlik alarmı olarak gösterilir.
+    Audit log append-only; DB trigger'ı UPDATE/DELETE engeller.
+  keywords: [audit, rbac, denied, security, log, append-only]
+  related_chunks: [rbac-engine, rbac-permission-denied,
+                   glossary-audit-event]
+  related_pages: []
+  related_api: []
+
+- chunk_id: audit-rbac-granted
+  type: audit
+  source: apps/api/src/common/rbac/rbac.service.ts
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "audit:rbac.permission_granted event"
+  content: |
+    `audit:rbac.permission_granted` event'i yalnızca `audit: true`
+    işaretli permission'lar için yazılır (gereksiz log şişmesini
+    önler). Severity: info. Metadata: permission, red sebebi
+    yerine `role_match` veya `superadmin_bypass`. SUPERADMIN
+    bypass'ı bile audit log'a yansır (yetki kullanımının kanıtı).
+  keywords: [audit, rbac, granted, security, log, info]
+  related_chunks: [rbac-engine, rbac-superadmin,
+                   glossary-audit-event]
+  related_pages: []
+  related_api: []
+
+- chunk_id: api-post-auth-switch-branch
+  type: api
+  source: docs/api/POST /api/v1/auth/switch-branch/:branchId
+  endpoint: POST /api/v1/auth/switch-branch/:branchId
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "POST /api/v1/auth/switch-branch/:branchId"
+  content: |
+    Authenticated. Aktif branch'ı değiştirir (multi-branch tenant).
+    Normal kullanıcı yalnızca kendi tenant'ının branch'larına
+    geçebilir; SUPERADMIN herhangi bir tenant'ın branch'ına
+    geçebilir. Branch değişikliği `audit:auth.branch.switch`
+    event'i ile loglanır. 403 durumunda VET-AUTHZ-0004.
+  keywords: [api, auth, branch, switch, multi-branch, rbac]
+  related_chunks: [rbac-branch-scope, rbac-superadmin]
+  related_pages: []
+  related_api: [POST /api/v1/auth/switch-branch/:branchId]
+
+# -----------------------------------------------------------------------------
+# RBAC — FAZ-1 GOAL-012 (FAZ-1 RBAC ve izin motoru)
+# -----------------------------------------------------------------------------
+# Source: apps/api/src/common/rbac/* (GOAL-012)
+# rbac-engine chunk'ı motorun teknik detaylarını anlatır; bu özet
+# üst-düzey "RBAC nasıl çalışır?" sorusuna cevap verir.
+
+- chunk_id: rbac-overview
+  type: permission
+  source: docs/permissions/PERMISSION_CATALOG.yaml
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "RBAC genel bakış"
+  content: |
+    VetNiva RBAC mimarisi dört katmandan oluşur:
+
+    1. Katalog — `docs/permissions/PERMISSION_CATALOG.yaml`
+       dosyasında 143 permission `<domain>:<resource>:<action>`
+       formatında tanımlıdır. Her satırda resource_type, action,
+       tenant_scope, branch_scope, self_only, audit, pii, system_only
+       ve applies_to_roles alanları yer alır.
+    2. Dekoratörler — Endpoint'ler `@RequirePermission()` (rbac/) veya
+       `@RequirePermissions()` (decorators/) ile gereken permission
+       anahtarlarını işaretler. `@RequireRoles()` ile rol bazlı
+       kısıtlama, `@Public()` ile muafiyet tanımlanır.
+    3. Guard'lar — `PermissionsGuard` permission metadata'sını,
+       `RolesGuard` ise rol metadata'sını okur. Her ikisi de
+       `RbacService`'e karar için danışır.
+    4. Servis — `RbacService` katalog yükleyicisinden definition'ları
+       alır, SUPERADMIN bypass + tenant + branch + self kontrolünü
+       uygular, kararı `PermissionDecision` olarak döner.
+
+    Akış: HTTP isteği → AuthGuard (oturum) → PermissionsGuard /
+    RolesGuard → RbacService.evaluate() → grant | deny (VET-AUTHZ-*
+    veya audit event).
+
+    Tüm deny kararları `audit:rbac.denied`, grant kararları
+    `audit:rbac.granted` event'i ile loglanır. SUPERADMIN bypass
+    loglanır (yetki kullanımının kanıtı).
+  keywords: [rbac, izin, motor, guard, decorator, service, mimari]
+  related_chunks: [rbac-engine, rbac-require-permission,
+                   rbac-superadmin, rbac-branch-scope, audit-rbac-denied,
+                   audit-rbac-granted]
+  related_pages: []
+  related_api: []
+
+- chunk_id: permission-clinic-owner-read
+  type: permission
+  source: docs/permissions/PERMISSION_CATALOG.yaml
+  permission: "clinic:owner:read"
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: true
+  title: "clinic:owner:read — Hasta sahibi okuma"
+  content: |
+    Hasta sahiplerini listeleme ve tekil görüntüleme yetkisi.
+    `resource_type: owner`, `action: read`.
+
+    - tenant_scope: required — yalnızca aktif tenant içindeki
+      sahipler görüntülenebilir. Cross-tenant deneme
+      VET-AUTHZ-0002 ile 404 döner (bilgi sızdırmaz).
+    - branch_scope: optional — branch_id filtre olarak kabul
+      edilir; kullanıcının kendi branch'ı dışındaki kayıtlar
+      VET-AUTHZ-0004 ile 403 döner.
+    - self_only: false — başkalarının kayıtları da
+      okunabilir (örn. resepsiyon tüm sahipleri görür).
+    - audit: false — okuma işlemi audit üretmez (sadece
+      yazma/silme audit üretir).
+    - pii: true — owner.first_name, owner.last_name, owner.email,
+      owner.phone, owner.tax_id PII alanlarıdır; listeleme
+      response'unda PII_MASKING kuralları uygulanır.
+
+    Tipik kullanım: `@RequirePermission("clinic:owner:read")`
+    (frontend'de `useCan("clinic:owner:read")` ile gizleme).
+
+    Sahip arama ekranı, hayvan kayıt formundaki "sahip seç"
+    combobox'ı, hasta sahibi portal davet akışı bu permission'a
+    bağlıdır.
+  keywords: [permission, owner, read, hasta sahibi, pii, clinic]
+  related_chunks: [rbac-overview, rbac-require-permission,
+                   glossary-owner, error-VET-AUTHZ-0002,
+                   error-VET-AUTHZ-0004, pii-phone-mask]
+  related_pages: []
+  related_api: [GET /api/v1/clinic/owners, GET /api/v1/clinic/owners/:id]
+
+- chunk_id: branch-scope-info-leak
+  type: security
+  source: docs/permissions/PERMISSION_CATALOG.yaml
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Branch scope'ta bilgi sızdırmazlık kuralı"
+  content: |
+    Bir permission `branch_scope: required` işaretlendiğinde,
+    PermissionsGuard + RbacService birlikte üç aşamalı kontrol
+    uygular:
+
+    1. Aktörün aktif branch_id'si var mı? Yoksa VET-AUTHZ-0006
+       (tenant bağlamı zorunlu) ile 403.
+    2. Hedef kaydın branch_id'si aktörün branch_id'siyle
+       eşleşiyor mu? Eşleşmiyorsa VET-AUTHZ-0004 (branches
+       arası erişim reddedildi) ile 403.
+    3. Aynı hata kodunun tekrar denemelerde varlık/yokluk
+       sinyali vermemesi için, "kayıt bulunamadı" durumunda da
+       404 döner; 403 ile 404 aynı kod bloğunda maple edilir
+       (bilgi sızdırmaz).
+
+    Kurallar:
+
+    - SUPERADMIN bypass uygular (her branch'ı görebilir); bypass
+      bile `audit:rbac.granted` loglanır.
+    - `branch_scope: optional` ise branch filtresi opsiyoneldir;
+      aktör kendi branch'ı dışındaki kayıtları göremez
+      (VET-AUTHZ-0004).
+    - `self_only: true` ise ek olarak kaydın owner_user_id'si
+      aktörle aynı mı kontrol edilir; değilse VET-AUTHZ-0003.
+    - Frontend'de branch filtresi UI'da gizlenir; backend hatası
+      yetki gizlemenin tek başına güvenli olmadığını vurgular.
+
+    Sızıntı testi: `security-cross-tenant` chunk'ında yer alan
+    negatif senaryolar branch senaryolarıyla bire bir aynıdır.
+  keywords: [branch, scope, bilgi sızdırmaz, info-leak, isolation,
+             rbac, security]
+  related_chunks: [rbac-branch-scope, rbac-overview,
+                   error-VET-AUTHZ-0003, error-VET-AUTHZ-0004,
+                   error-VET-AUTHZ-0006, security-cross-tenant,
+                   glossary-rls]
+  related_pages: []
+  related_api: []

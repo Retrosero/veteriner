@@ -501,12 +501,34 @@ system:
       actor: [user, system]
       description: "Kullanıcı çıkış yaptı."
 
+    - event: "audit:auth.branch.switch"
+      action: update
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Kullanıcı aktif branch'ı değiştirdi (multi-branch tenant)."
+
     - event: "audit:auth.fail"
       action: create
       severity: warning
       pii: true
       actor: [system]
       description: "Başarısız giriş denemesi."
+
+  rbac:
+    - event: "audit:rbac.permission_granted"
+      action: read
+      severity: info
+      pii: false
+      actor: [user, system]
+      description: "RBAC permission onaylandı. Yalnızca audit: true işaretli permission'lar için yazılır."
+
+    - event: "audit:rbac.permission_denied"
+      action: read
+      severity: warning
+      pii: false
+      actor: [user, system]
+      description: "RBAC permission reddedildi. Red sebebi (no_role_match, tenant_scope_required, branch_scope_required, self_only_mismatch, system_actor) metadata'da bulunur."
 
   adapter:
     - event: "audit:adapter.format_currency"

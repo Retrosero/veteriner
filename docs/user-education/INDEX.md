@@ -11,6 +11,7 @@ içeriğini barındırır. Her rol için ayrı bir rehber bulunur.
 - **Süper admin (SUPERADMIN)** — `SUPERADMIN.md`
 - **Hasta sahibi (Portal)** — `PATIENT_OWNER.md`
 - **Personel paneli giriş + parola yönetimi (tüm roller)** — `AUTH.md`
+- **Yetkilendirme ve roller (tüm personel)** — `RBAC.md`
 
 ## GOAL-000 kapsamı
 
@@ -117,6 +118,59 @@ ERROR_CATALOG'dan doğrudan referans alabilir. Her hata kodu
 `{kod} → {mesaj} → {çözüm}` üçlüsü ile eğitim içeriğine
 eklenebilir. Audit trail'in varlığı, OWNER ve SUPERADMIN
 rehberlerinde "Güvenlik ve Uyum" bölümlerine temel olur.
+
+## GOAL-010 — Tenant ve şube altyapısı (FAZ-1)
+
+GOAL-010 ile birlikte platform çok kiracılı (multi-tenant) katmanı
+devreye girdi. SUPERADMIN rehberi bu dönemde dolduruldu:
+
+- [`SUPERADMIN.md`](./SUPERADMIN.md) — Tenant onboarding (yeni klinik
+  oluşturma), tenant kapatma, ülke adaptörü seçimi, audit log
+  görüntüleme. **Pilot kabul testleri için referans doküman.**
+
+## GOAL-011 — Kimlik doğrulama ve oturum yönetimi (FAZ-1)
+
+GOAL-011 ile birlikte personel paneli **güvenli kimlik doğrulama**
+altyapısı kuruldu. Tüm personel rolleri (OWNER, VETERINARIAN, STAFF,
+SUPERADMIN) için ortak rehber yazıldı:
+
+- [`AUTH.md`](./AUTH.md) — Kapsamlı rehber. Şu bölümleri içerir:
+  1. İlk kez giriş (davet yoluyla veya geçici parola ile)
+  2. Günlük giriş ve oturum süresi (30 gün, 24 saat idle timeout)
+  3. Çoklu cihazda oturum ve uzaktan oturum kapatma
+  4. Parola sıfırlama (forgot/reset, 1 saat TTL token)
+  5. Oturum açıkken parola değiştirme (12+ karakter politika)
+  6. Kullanıcı davet etme (OWNER/SUPERADMIN; 7 gün TTL)
+  7. Çıkış (logout) ve tüm cihazlardan çıkış
+  8. Oturum yönetimi (aktif oturumlar listesi, IP mask)
+  9. Hesap kilidi (5 başarısız deneme → 15 dakika)
+  10. SSS (parolamı unuttum, davet süresi doldu, vb.)
+  11. İlgili dokümanlar (API, hata kodları, alan sözlüğü, AI chunks)
+
+### Parola politikası özet
+
+- Minimum 12 karakter; en az 1 büyük harf, 1 küçük harf, 1 rakam.
+- bcrypt cost 12 ile hash'lenir; plain parola asla loglanmaz.
+- Mevcut parolayla aynı yeni parola kabul edilmez (VET-AUTH-0008).
+- Parola sıfırlama sonrası tüm diğer oturumlar güvenlik nedeniyle
+  kapatılır.
+
+### Brute-force koruması
+
+- 5 ardışık başarısız login → 15 dakika hesap kilidi (VET-AUTH-0003).
+- Tüm başarısız denemeler `audit:auth.login.failure` event'i ile
+  audit log'a yazılır; SuperAdmin panelinde izlenebilir.
+- Email enumeration saldırılarına karşı login response mesajı
+  her zaman genel ("E-posta veya parola hatalı").
+
+### Tenant yönetimi ile ilişki
+
+- SUPERADMIN tenant oluşturduktan sonra ilk OWNER'ı davet eder
+  (`POST /api/v1/auth/invitations`).
+- Davet kabul edilince User oluşturulur + UserTenantMembership atanır
+  + session açılır.
+- Bir kullanıcı birden fazla tenant'a üye olabilir; login sonrası
+  `tenantSlug` ile aktif tenant seçilebilir.
 
 ## Eğitim doldurma zamanlaması
 

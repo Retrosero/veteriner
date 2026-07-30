@@ -44,6 +44,7 @@ describe("ActorContextService", () => {
     expect(actor.actorId).toBe("usr-1");
     expect(actor.role).toBe("SUPERADMIN");
     expect(actor.tenantId).toBe("tnt-1");
+    expect(actor.isSuperadmin).toBe(false);
     expect(actor.source).toBe("header");
   });
 
@@ -52,6 +53,7 @@ describe("ActorContextService", () => {
     const req = makeReq({});
     const actor = service.fromRequest(req, "req-1");
     expect(actor.role).toBe("STAFF");
+    expect(actor.isSuperadmin).toBe(false);
     expect(actor.source).toBe("default");
   });
 
@@ -66,6 +68,7 @@ describe("ActorContextService", () => {
     expect(actor.actorType).toBe("system");
     expect(actor.actorId).toBeNull();
     expect(actor.role).toBe("SYSTEM");
+    expect(actor.isSuperadmin).toBe(false);
     expect(actor.source).toBe("system");
   });
 
