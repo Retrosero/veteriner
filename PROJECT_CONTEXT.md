@@ -123,10 +123,18 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-014 ✅ Dosya ve medya servisi (tamamlandı — 2026-07-30)
   - GOAL-015 ✅ Bildirim altyapısı temeli (tamamlandı — 2026-07-30)
   - GOAL-016 ✅ Superadmin tenant görünümü (tamamlandı — 2026-07-30)
-- **Faz 2 — Klinik domain** ⏳ sırada
+- **Faz 2 — Klinik domain** ✅ tamamlandı
   - GOAL-020 ✅ Hasta sahibi kayıt ve arama (tamamlandı — 2026-07-30)
   - GOAL-021 ✅ Hayvan kayıt sistemi (tamamlandı — 2026-07-30)
   - GOAL-022 ✅ Sahiplik geçmişi (tamamlandı — 2026-07-30)
   - GOAL-023 ✅ Alerji, kronik durum, klinik uyarılar (tamamlandı — 2026-07-30)
   - GOAL-024 ✅ Hayvan zaman çizelgesi (tamamlandı — 2026-07-30)
-  - GOAL-025 portal erişim daveti
+  - GOAL-025 ✅ Portal erişim daveti (tamamlandı — 2026-07-30)
+- **Faz 3 — Randevu + portal** ⏳ sırada
+  - GOAL-030 Klinik takvimi
+  - GOAL-031 Randevu oluşturma ve yönetim
+  - GOAL-032 Bekleme listesi ve resepsiyon akışı
+  - GOAL-033 Hasta sahibi portal kayıt ve giriş
+  - GOAL-034 Portal hayvan listesi ve detay
+  - GOAL-035 Online randevu talebi
+  - GOAL-036 Randevu hatırlatma sistemi

@@ -2642,3 +2642,140 @@ generated_at: "2026-07-30"
   related_api:
     - "GET /api/v1/clinic/patients/{patientId}/timeline"
 
+# -----------------------------------------------------------------------------
+# PORTAL — Hasta sahibi portal erişim daveti (GOAL-025)
+# -----------------------------------------------------------------------------
+# Source: apps/api/src/modules/portal/ (GOAL-025 core)
+
+- chunk_id: flow-portal-invite
+  type: flow
+  source: docs/ai/AI_CHUNKS.yaml
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Portal Erişim Daveti Akışı"
+  content: |
+    Portal erişim daveti, hasta sahibinin (owner) klinik tarafından
+    kendisine gönderilen süreli tek kullanımlık token ile
+    VetNiva portalına kayıt olup kendi hayvanlarını
+    görüntüleyebildiği akıştır. Hedef kitle: klinik personeli
+    (davet oluşturur) + hasta sahibi (daveti kabul eder, GOAL-033
+    ile birlikte).
+
+    Akış adımları:
+    1. Klinik personeli owner'ın kayıtlı olduğunu doğrular
+       (`GET /api/v1/clinic/owners?search=...`, GOAL-020).
+    2. Davet oluşturur:
+       `POST /api/v1/portal/invitations`
+       (`user:user:invite` yetkisi, STAFF/VETERINARIAN/OWNER).
+       Body: `{ ownerId, email, patientIds[], expiresInDays: 1-30,
+       locale: tr-TR | en-GB }`. Backend owner + her patientId
+       için cross-tenant kontrolü yapar (404 `VET-AUTHZ-0002`).
+       Token `randomUUID()` (URL-safe); email `trim().toLowerCase()`.
+       Audit `audit:portal.invite.create` (info).
+    3. Klinik e-posta ile token'lı bağlantıyı owner'a gönderir
+       (FAZ-3+ notification altyapısı ile; bu commit'te link UI
+       tarafından gösterilir).
+    4. Owner bağlantıyı açar
+       (`/portal/accept?token=<uuid>`), frontend form submit
+       eder: `POST /api/v1/portal/invitations/accept` (public,
+       guard YOK).
+    5. Backend token'ı bulur; status pending + expired değilse
+       kabul edilir → `PortalUser` oluşturulur, session token
+       (UUID) httpOnly cookie'ye bağlanır. Audit
+       `audit:portal.invite.accept` (info).
+    6. Kabul sonrası owner portal login ekranına yönlendirilir
+       (GOAL-033, FAZ-3).
+    7. Personel davet iptal etmek isterse:
+       `DELETE /api/v1/portal/invitations/:id`
+       (`user:user:invite`). Pending durumda → `revoked` +
+       audit warning. Diğer durumlar idempotent no-op.
+
+    Durum makinesi: `pending → (accepted | expired | revoked)`.
+    - `pending`: oluşturuldu, henüz kabul/iptal edilmedi.
+    - `accepted`: token kullanıldı, PortalUser + session
+      oluşturuldu (tek seferlik).
+    - `expired`: `expiresAt<now` (otomatik veya kabul anında
+      işaretlenir).
+    - `revoked`: personel tarafından iptal edildi.
+
+    Hata durumları:
+    - Token yoksa 404 `VET-PORTAL-0001`.
+    - Zaten kabul edilmiş ise 409 `VET-PORTAL-0002`.
+    - Expired veya revoked ise 410 `VET-PORTAL-0001`.
+
+    Güvenlik:
+    - Tenant bilgisi yalnızca `actor.tenantId`'den alınır;
+      cross-tenant IDOR koruması.
+    - Accept endpoint public; ancak davet zaten tenant-scoped
+      ve tek kullanımlık token taşır; ek guard gerekmez.
+    - Rate-limiting FAZ-3+'da (GOAL-105).
+    - Email PII; audit'te mask'lenir, response'da görünür.
+  keywords: [portal, davet, daveti, invitation, token, kabul,
+             accept, hasta sahibi, owner, session, süreli,
+             tek kullanımlık, UUID, public]
+  related_chunks: [glossary-owner, glossary-patient,
+                   error-VET-PORTAL-0001, error-VET-PORTAL-0002,
+                   error-VET-AUTHZ-0002]
+  related_pages: []
+  related_api:
+    - "POST /api/v1/portal/invitations"
+    - "GET /api/v1/portal/invitations"
+    - "DELETE /api/v1/portal/invitations/{id}"
+    - "POST /api/v1/portal/invitations/accept"
+
+- chunk_id: error-VET-PORTAL-0001
+  type: error
+  source: docs/ai/AI_CHUNKS.yaml
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "VET-PORTAL-0001 — Portal davet token'ı geçersiz"
+  content: |
+    VET-PORTAL-0001, portal davet token'ı geçerli olmadığında
+    (bulunamadı, süresi dolmuş veya iptal edilmiş) döndürülen
+    hata kodudur. HTTP durum kodu bağlama göre değişir:
+    - 404: token repository'de yok.
+    - 410: token var ancak `status=expired` veya
+      `status=revoked` (kabul anında `pending+expired` ise
+      otomatik `expired` işaretlenir).
+    - 400: revoke endpoint'inde davet ID bulunamadı.
+
+    Severity: warning. Kaynak: server.
+
+    Kullanıcıya mesaj (tr-TR): "Portal davet bağlantısı
+    geçersiz. Lütfen yenileyin." Kullanıcı klinikle iletişime
+    geçmeli; yeni davet oluşturulur ve yeni token e-posta ile
+    gönderilir (GOAL-025, `POST /api/v1/portal/invitations`).
+
+    Yayınlandığı yer:
+    - `PortalService.acceptInvitation` (token yoksa veya
+      expired/revoked ise)
+    - `PortalService.revoke` (davet ID bulunamadığında)
+
+    İlgili audit: revoke durumunda `audit:portal.invite.revoke`
+    (warning); accept'te reddedilen denemeler için audit
+    yayınlanmaz (gürültü kontrolü).
+
+    Sık karşılaşılan sebepler:
+    - Owner 30 günden eski davet bağlantısını kullanmaya
+      çalışmış.
+    - Klinik personeli daveti iptal etmiş, owner eski linki
+      kullanmaya çalışmış.
+    - Token URL'de kopyalanırken bozulmuş (URL encoding
+      hatası).
+    - Manuel test sırasında aynı token iki kez denenmiş
+      (zaten accepted → 409 VET-PORTAL-0002, ayrı kod).
+  keywords: [VET-PORTAL-0001, portal, davet, token, geçersiz,
+             expired, revoked, 404, 410, yenile]
+  related_chunks: [flow-portal-invite, error-VET-PORTAL-0002,
+                   error-VET-AUTHZ-0002]
+  related_pages: []
+  related_api:
+    - "POST /api/v1/portal/invitations/accept"
+    - "DELETE /api/v1/portal/invitations/{id}"
+
