@@ -36,6 +36,7 @@ export * from "./calendar.js";
 export * from "./appointment.js";
 export * from "./appointment-reminder.js";
 export * from "./examination.js";
+export * from "./diagnosis.js";
 export * from "./vitals.js";
 export * from "./soap.js";
 export * from "./waitlist.js";
