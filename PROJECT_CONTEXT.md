@@ -144,7 +144,18 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-036 ✅ Randevu hatırlatma sistemi (tamamlandı — 2026-07-30)
 - **Faz 4 — Klinik muayene/aşı/reçete** ⏳ sırada
   - GOAL-040 ✅ Muayene başlatma ve yaşam döngüsü (tamamlandı — 2026-07-30)
-  - GOAL-041 ⏳ SOAP klinik kaydı
+  - GOAL-041 ⏳ partial — core: SoapService (create/findByExamination/
+    update/sign/amend) + SoapController (5 endpoint) +
+    SoapNotesRepository + SoapAmendsRepository (append-only) +
+    sözleşme (`@vetniva/contracts/soap`) + `common/soap/soap.types`
+    + `app.module.ts` SoapModule wiring. 11/11 unit testi geçti.
+    Cross-service: SOAP imzası ExaminationService.sign çağırır
+    (muayene de imzalanır; tamamlanmamış muayene → 409
+    VET-EXAM-0002). state machine: draft → signed → amended; draft
+    iken update (autosave), signed sonrası yalnızca amend
+    (append-only). Audit: create/update/sign info, amend warning.
+    Sonraki tick: docs/api/* + RAG chunk (flow-soap-*) + i18n
+    key parity + DB migration.
   - GOAL-042 ⏳ Vital bulgular
   - GOAL-043 ⏳ Teşhis ve problem listesi
   - GOAL-044 ⏳ Tedavi planı ve klinik order
