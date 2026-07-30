@@ -2036,3 +2036,80 @@ generated_at: "2026-07-30"
                    rbac-overview]
   related_pages: []
   related_api: [PATCH /api/v1/modules/:key, GET /api/v1/modules]
+
+# -----------------------------------------------------------------------------
+# DOSYA SERVİSİ (GOAL-014)
+# -----------------------------------------------------------------------------
+# Source: docs/api/api.post._api_v1_files.md
+# Upload flow + tenant izolasyonu + MIME/boyut/antivirus pipeline.
+
+- chunk_id: file-upload-overview
+  type: page
+  source: docs/api/api.post._api_v1_files.md
+  page_id: api.files.upload
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Dosya yükleme nasıl çalışır"
+  content: |
+    VetNiva dosya servisi (GOAL-014) hasta fotoğrafı, laboratuvar
+    raporu, görüntüleme (DICOM), onam formu ve fatura gibi varlıkları
+    güvenli şekilde depolar. Upload akışı `POST /api/v1/files` üzerinden
+    multipart/form-data olarak alınır; sırasıyla şu kontroller uygulanır:
+
+    1. MIME whitelist (image/jpeg, image/png, application/pdf,
+       application/dicom) — dışı MIME → `VET-FILE-0002` (415).
+    2. Boyut sınırı (10 MB / dosya) — aşılırsa `VET-FILE-0001` (413).
+    3. Antivirus tarama (ClamAV stub) — temiz değilse
+       `VET-FILE-0004` (422).
+    4. Storage driver seçimi (`STORAGE_DRIVER` env) → `local` veya `s3`.
+    5. Audit: `audit:file.upload` (info) + tenant izolasyonu kaydı.
+
+    Tenant bilgisi oturumdan alınır; request body'den güvenilmez.
+    Cross-tenant erişim denemeleri 404 (`VET-FILE-0003`) ile sessizce
+    reddedilir; bilgi sızdırmazlık için detay verilmez.
+  keywords: [dosya, upload, MIME, antivirus, tenant, KVKK, dosya servisi,
+             imzalı url, multipart]
+  related_chunks: [error-VET-FILE-0001, error-VET-FILE-0002,
+                   error-VET-FILE-0003, error-VET-FILE-0004,
+                   rbac-overview, audit-event-file]
+  related_pages: []
+  related_api: [POST /api/v1/files, GET /api/v1/files/:id,
+                GET /api/v1/files/:id/download,
+                DELETE /api/v1/files/:id]
+
+# Source: docs/api/api.delete._api_v1_files__id.md (arşivleme)
+# Soft-delete / arşivleme politikası: fiziksel silme yok.
+
+- chunk_id: file-archive-policy
+  type: audit
+  source: docs/api/api.delete._api_v1_files__id.md
+  page_id: api.files.archive
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Dosya arşivleme politikası (silme yok)"
+  content: |
+    VetNiva dosya servisinde fiziksel silme YASAKTIR. `DELETE
+    /api/v1/files/:id` çağrısı dosyayı "arşivle" durumuna alır
+    (soft delete): metadata'da `archivedAt` set edilir, storage'da
+    dosya KALIR. Erişim denemeleri 404 (`VET-FILE-0003`) ile
+    reddedilir.
+
+    Gerekçe: KVKK, klinik kayıt bütünlüğü ve yasal ibraz
+    yükümlülüğü. 90 gün sonra arşivlenen dosyalar retention job
+    ile gerçekten silinebilir (ileride, audit ile).
+
+    Audit: `audit:file.archive` (warning) — `metadata: { fileId,
+    category, reason? }`. Arşivleme operasyonel risk taşıdığı için
+    warning seviyesinde loglanır; upload/download info seviyesindedir.
+  keywords: [dosya, arşiv, soft delete, retention, KVKK, klinik
+             kayıt, fiziksel silme yasak]
+  related_chunks: [file-upload-overview, error-VET-FILE-0003,
+                   audit-event-file, pii-masking]
+  related_pages: []
+  related_api: [DELETE /api/v1/files/:id]

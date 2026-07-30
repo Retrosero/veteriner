@@ -384,6 +384,59 @@ bağımsız geçer (master switch).
 
 ---
 
+## Dosya ve Medya (`/api/v1/files`)
+
+> **GOAL-014 — Dosya ve medya servisi.** Hasta fotoğrafı, laboratuvar
+> raporu, DICOM, onam formu ve fatura gibi varlıklar için upload,
+> meta, download ve arşiv endpoint'leri. MIME whitelist (4 tip) +
+> 10 MB boyut sınırı + antivirus pipeline uygulanır. Storage
+> `STORAGE_DRIVER` env ile seçilir (`local` veya `s3`). Şu an
+> in-memory Map; DB persistence ileride eklenecek.
+
+### POST /api/v1/files
+
+Multipart upload. Body: `file` (binary), `category`,
+`relatedEntityType?`, `relatedEntityId?`. Auth + `file:file:upload`.
+
+**Hata kodları:** `VET-FILE-0001` (413 — boyut), `VET-FILE-0002`
+(415 — MIME), `VET-FILE-0004` (422 — antivirus),
+`VET-AUTHZ-0001` (403 — permission yok),
+`VET-AUTHZ-0006` (403 — tenant yok).
+
+**Response 201:** `FileMeta` (id, tenantId, category, mimeType,
+sizeBytes, storageKey, uploadedBy, uploadedAt).
+
+**Audit:** `audit:file.upload` (info).
+
+### GET /api/v1/files/:id
+
+Dosya meta verisi. Auth + `file:file:read`.
+
+**Hata kodları:** `VET-FILE-0003` (404 — bulunamadı veya farklı
+tenant; ayrım dışarıya sızdırılmaz).
+
+**Response 200:** `FileMeta`.
+
+### GET /api/v1/files/:id/download
+
+Binary stream. Auth + `file:file:read`. Response header'larında
+`Content-Type` + `Content-Disposition: attachment; filename=...`.
+
+### DELETE /api/v1/files/:id
+
+Arşivleme (soft delete; fiziksel silme yok). Auth + `file:file:delete`.
+
+**Response:** 204 No Content.
+
+**Audit:** `audit:file.archive` (warning).
+
+### POST /api/v1/files/:id/signed-url
+
+S3 driver seçiliyse geçici imzalı URL (üretimde); stub. Auth +
+`file:file:read`.
+
+---
+
 ## Self-Service (`/api/v1/me`)
 
 > Oturum açmış kullanıcının kendi bilgileri. Tümü auth gerektirir.
