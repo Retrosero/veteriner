@@ -126,7 +126,7 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
 - **Faz 2 — Klinik domain** ⏳ sırada
   - GOAL-020 ✅ Hasta sahibi kayıt ve arama (tamamlandı — 2026-07-30)
   - GOAL-021 ✅ Hayvan kayıt sistemi (tamamlandı — 2026-07-30)
-  - GOAL-022 ⏳ sahiplik geçmişi (core tamamlandı; docs/i18n sonraki tick)
+  - GOAL-022 ✅ Sahiplik geçmişi (tamamlandı — 2026-07-30)
   - GOAL-023 alerji, kronik durum ve klinik uyarılar
   - GOAL-024 hayvan zaman çizelgesi
   - GOAL-025 portal erişim daveti

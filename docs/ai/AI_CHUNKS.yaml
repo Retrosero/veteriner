@@ -386,9 +386,9 @@ generated_at: "2026-07-30"
     5. Yeni sahip ile ilişki `active` yapılır.
     6. Audit event yazılır: `audit:patient.transfer`.
   keywords: [sahiplik, transfer, ownership, KVKK]
-  related_chunks: [glossary-owner, glossary-patient]
+  related_chunks: [glossary-owner, glossary-patient, error-VET-CLINIC-0005, error-VET-CLINIC-0007]
   related_pages: []
-  related_api: []
+  related_api: ["POST /api/v1/clinic/patients/{id}/transfer"]
 
 - chunk_id: flow-kvkk-erasure
   type: flow
@@ -2469,4 +2469,32 @@ generated_at: "2026-07-30"
                    error-VET-AUTH-0003]
   related_pages: []
   related_api: ["GET /api/v1/superadmin/tenants/{id}/events"]
+
+- chunk_id: error-VET-CLINIC-0005
+  type: error
+  source: docs/errors/ERROR_CATALOG.md
+  error_code: VET-CLINIC-0005
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Sahiplik devri başarısız (arşivli hasta)"
+  content: |
+    HTTP 422. Sahiplik devri (`POST /api/v1/clinic/patients/{id}/transfer`)
+    hedef hayvan arşivli (soft-delete) olduğu için reddedildi. Arşivli
+    hayvanlar aktif kayıt akışından çıkar; devir için önce hayvan
+    arşivden çıkarılmalı veya yeni bir hasta kaydı açılmalıdır.
+
+    Çözüm: İlgili hastanın `archivedAt` alanını kontrol edin.
+    `DELETE /api/v1/clinic/patients/{id}` arşivler (idempotent);
+    arşivi geri alma henüz desteklenmiyor — yeni hasta kaydı
+    (`POST /api/v1/clinic/patients`) önerilir. KVKK uyumu için
+    eski kayıt append-only korunur.
+  keywords: [422, sahiplik devri, ownership, transfer, arşiv,
+             archived, soft-delete, hasta, hayvan]
+  related_chunks: [flow-ownership-transfer, glossary-patient,
+                   error-VET-CLINIC-0001, error-VET-CLINIC-0007]
+  related_pages: []
+  related_api: ["POST /api/v1/clinic/patients/{id}/transfer"]
 
