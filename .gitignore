@@ -69,3 +69,7 @@ docker-compose.override.yml
 
 # OpenAPI generated snapshots (keep schema authoritative in source)
 apps/api/openapi.generated.json
+
+# Temporary tsc isolation backups (do not commit)
+.tsc-isolation-backup/
+.tsc-isolation-backup2/
