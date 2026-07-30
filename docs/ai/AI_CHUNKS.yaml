@@ -4105,3 +4105,70 @@ generated_at: "2026-07-30"
     - "POST /api/v1/clinic/examinations/{id}/followup"
     - "POST /api/v1/clinic/prescriptions/{id}/followup"
     - "GET /api/v1/clinic/patients/{id}/followups"
+
+# -----------------------------------------------------------------------------
+# CLINICAL RECORD SHARE — FAZ-4 GOAL-047
+# -----------------------------------------------------------------------------
+# Source: apps/api/src/modules/clinical-records/clinical-records.service.ts
+# Birleşik klinik kayıt PDF render + çok kanallı paylaşım + iptal akışı.
+
+- chunk_id: clinical-record-share
+  type: page
+  source: apps/api/src/modules/clinical-records/clinical-records.service.ts
+  page_id: api.clinical-record-share
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Klinik Kayıt PDF ve Paylaşım Akışı"
+  content: |
+    Klinik kayıt, bir muayenenin tüm alt kayıtlarının (SOAP + Vitals +
+    Diagnoses + Prescriptions + Orders + Followups) birleşik çıktısıdır.
+    `ClinicalRecordsService` dört aksiyon sunar:
+
+    1. **PDF render** — `GET /api/v1/clinic/examinations/{id}/pdf`.
+       Examination aynı tenant'ta mı (cross-tenant → 404
+       `VET-CLINIC-0001`). Alt kayıtlar `Promise.all` ile paralel
+       çekilir. FAZ-0'da `text/plain` placeholder buffer döner; gerçek
+       PDF (pdfkit/puppeteer + header/footer/logo + imza + watermark)
+       FAZ-10+'da. Audit `audit:clinical-record.generate` (info).
+    2. **Paylaşım** — `POST /api/v1/clinic/examinations/{id}/share`.
+       `channels` en az 1 öğe (boş → 422 `VET-VALIDATION-0010`).
+       PDF → `FileService.upload` (FAZ-0 in-memory stub,
+       `category: "lab_report"`, `visibility: "portal"`) →
+       `NotificationService.send` her kanal için
+       (email/sms/in_app, idempotencyKey=`crshare:<pdfId>:<channel>`)
+       → 7 gün geçerli share kaydı. Kanal bazında hata olursa diğer
+       kanallar devam eder (kısmi başarı, error log). Audit
+       `audit:clinical-record.share` (info).
+    3. **Paylaşım listesi** — `GET /api/v1/clinic/examinations/{id}/shares`.
+       `createdAt` desc; aktif ve iptal edilmiş kayıtlar birlikte
+       döner. Cross-tenant → 404. Okuma audit üretmez.
+    4. **Paylaşım iptal** — `DELETE /api/v1/clinic/shares/{shareId}`.
+       Soft delete (`revokedAt` set). **İdempotent**: zaten iptal
+       edilmiş kayıt no-op. Audit `audit:clinical-record.revoke`
+       (warning). İlişkili dosya silinmez; `visibility: "portal"`
+       kapsamında arşivde kalır.
+
+    Permission: `clinic:examination:read` (render/list),
+    `clinic:report:export` (share/revoke). Kanal eşlemesi: email →
+    email, sms → sms, portal → in_app. 7 günlük `expiresAt` response
+    ile UI'a geri sayım için sunulur; gerçek signed URL FAZ-10+'da.
+    Cross-tenant → 404 `VET-CLINIC-0001` (bilgi sızdırmaz); tüm
+    aksiyonlar `requireTenantScope` ile tenant-scoped.
+  keywords: [klinik kayıt, PDF, paylaşım, share, e-posta, SMS, portal,
+             signed URL, 7 gün, soft delete, idempotent,
+             audit:clinical-record.generate, audit:clinical-record.share,
+             audit:clinical-record.revoke, VET-CLINIC-0001,
+             VET-VALIDATION-0010]
+  related_chunks: [glossary-examination, glossary-soap, flow-examination-create,
+                   flow-prescription-create, error-VET-CLINIC-0001,
+                   error-VET-VALIDATION-0010, error-VET-AUTHZ-0001,
+                   error-VET-TENANT-0001]
+  related_pages: []
+  related_api:
+    - "GET /api/v1/clinic/examinations/{id}/pdf"
+    - "POST /api/v1/clinic/examinations/{id}/share"
+    - "GET /api/v1/clinic/examinations/{id}/shares"
+    - "DELETE /api/v1/clinic/shares/{shareId}"

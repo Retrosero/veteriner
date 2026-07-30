@@ -142,7 +142,7 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-034 ✅ Portal hayvan listesi ve detayı (tamamlandı — 2026-07-30)
   - GOAL-035 ✅ Online randevu talebi (tamamlandı — 2026-07-30)
   - GOAL-036 ✅ Randevu hatırlatma sistemi (tamamlandı — 2026-07-30)
-- **Faz 4 — Klinik muayene/aşı/reçete** ⏳ sırada
+- **Faz 4 — Klinik muayene/aşı/reçete** ✅ tamamlandı
   - GOAL-040 ✅ Muayene başlatma ve yaşam döngüsü (tamamlandı — 2026-07-30)
   - GOAL-041 ✅ SOAP klinik kaydı (tamamlandı — 2026-07-30)
   - GOAL-042 ✅ Vital bulgular (tamamlandı — 2026-07-30)
@@ -150,9 +150,6 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-044 ✅ Tedavi planı ve klinik order (tamamlandı — 2026-07-30)
   - GOAL-045 ✅ Reçete oluşturma (tamamlandı — 2026-07-30)
   - GOAL-046 ✅ Kontrol randevusu oluşturma (tamamlandı — 2026-07-30)
-  - GOAL-047 ⏳ partial — core: generatePdf (placeholder text) +
-    shareWithPatient (channels + 7 gün TTL + audit) + listShares +
-    revokeShare (soft delete). 10/10 clinical-records testi + 526/526 api
-    testi geçti. Cross-tenant 404 VET-CLINIC-0001 doğrulandı. Sonraki
-    tick: docs/RAG chunk/i18n key parity + gerçek PDF render (FAZ-10+)
-    + DB migration.
+  - GOAL-047 ✅ Klinik kayıt PDF ve paylaşım (tamamlandı — 2026-07-30)
+- **Faz 5 — Aşı + stok** ⏳ sırada
+  - GOAL-050 ⏳ Aşı kaydı ve stok düşümü

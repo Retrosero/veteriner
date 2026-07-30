@@ -190,6 +190,28 @@ clinic:
       actor: [user]
       description: "Muayene kaydı PDF olarak dışa aktarıldı."
 
+  clinical_record:
+    - event: "audit:clinical-record.generate"
+      action: read
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Klinik kayıt PDF render (birleşik SOAP + Vitals + Diagnoses + Prescriptions + Orders + Followups)."
+
+    - event: "audit:clinical-record.share"
+      action: create
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Klinik kayıt paylaşım kaydı oluşturuldu (7 gün geçerli)."
+
+    - event: "audit:clinical-record.revoke"
+      action: archive
+      severity: warning
+      pii: false
+      actor: [user]
+      description: "Klinik kayıt paylaşımı iptal edildi (soft delete)."
+
   vaccination:
     - event: "audit:vaccination.create"
       action: create
