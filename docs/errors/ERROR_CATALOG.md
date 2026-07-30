@@ -144,10 +144,10 @@ bu katalogda yer almasını zorunlu kılar.
 
 | Kod                  | Ad                              | HTTP | Severity | Kaynak | Çözüm                                |
 | -------------------- | ------------------------------- | ---- | -------- | ------ | ------------------------------------ |
-| `VET-APPT-0001`      | Randevu bulunamadı              | 404  | warning  | server | Randevu ID'sini kontrol edin.        |
-| `VET-APPT-0002`      | Randevu saati dolu              | 409  | warning  | server | Başka bir saat seçin.                |
-| `VET-APPT-0003`      | Randevu iptal edilemez          | 422  | warning  | server | Geçmiş randevular iptal edilemez.    |
-| `VET-APPT-0004`      | Randevu tamamlanamaz            | 422  | warning  | server | Muayene başlatın veya iptal edin.    |
+| `VET-APPT-0001`      | Geçersiz zaman aralığı          | 422  | warning  | server | Bitiş zamanı başlangıçtan sonra olmalı. |
+| `VET-APPT-0002`      | Engellenen slot bulunamadı      | 404  | warning  | server | Block ID'yi kontrol edin (cross-tenant dahil). |
+| `VET-APPT-0003`      | Geçersiz çalışma saati tanımı   | 422  | warning  | server | Aynı gün için tek saat bloğu ve endTime > startTime olmalı. |
+| `VET-APPT-0004`      | Geçersiz tarih                  | 422  | warning  | server | Tarih `YYYY-MM-DD` formatında olmalı. |
 
 ## Muayene (EXAM)
 

@@ -73,6 +73,8 @@ const DEFAULT_WORKING_HOURS: ReadonlyArray<WorkingHours> = [
 /** Booked slot kaydı (GOAL-031 Appointment modeli yerine). */
 interface BookedSlotRecord {
   tenantId: string;
+  /** Şube (branch) filtresi. NULL = tenant-wide. */
+  branchId: string | null;
   veterinarianId: string;
   appointmentId: string;
   start: string;
@@ -104,7 +106,9 @@ export class CalendarService {
   /**
    * Bir günün tam takvimini döner: working hours'tan üretilen
    * slot'lar, mevcut booked slot'lar ve blocked slot'lar ile
-   * birlikte.
+   * birlikte. `branchId` filtresi verildiğinde yalnızca o
+   * şubenin booked/blocked slot'ları dikkate alınır; tenant-wide
+   * (branchId=null) kayıtlar HER şubede görünür.
    */
   public async getDay(
     tenantId: string,
@@ -126,7 +130,7 @@ export class CalendarService {
     const slots: CalendarSlot[] = [];
     for (const block of dayHours) {
       slots.push(
-        ...this.generateSlots(tenantId, veterinarianId, date, block),
+        ...this.generateSlots(tenantId, veterinarianId, date, block, query.branchId),
       );
     }
 
@@ -194,6 +198,7 @@ export class CalendarService {
     const record: BlockedSlotRecord = {
       id,
       tenantId,
+      branchId: input.branchId ?? null,
       veterinarianId: input.veterinarianId,
       start: input.start,
       end: input.end,
@@ -212,6 +217,7 @@ export class CalendarService {
       "info",
       {
         veterinarianId: input.veterinarianId,
+        branchId: input.branchId ?? null,
         start: input.start,
         end: input.end,
         reason: input.reason,
@@ -291,6 +297,7 @@ export class CalendarService {
     veterinarianId: string,
     date: string,
     block: WorkingHours,
+    branchId: string | undefined,
   ): CalendarSlot[] {
     const slots: CalendarSlot[] = [];
     const [startH, startM] = this.parseHhMm(block.startTime);
@@ -307,12 +314,11 @@ export class CalendarService {
       const startIso = slotStart.toISOString();
       const endIso = slotEnd.toISOString();
 
-      // 1) Booked mı?
-      const bookedKey = this.bookedKey(tenantId, veterinarianId, startIso);
-      const booked = this.bookedSlots.get(bookedKey);
+      // 1) Booked mı? — branch filtresine uygun entry ara
+      const booked = this.findBookedSlot(tenantId, veterinarianId, startIso, branchId);
 
-      // 2) Blocked mı?
-      const blocked = this.isBlocked(tenantId, veterinarianId, startIso, endIso);
+      // 2) Blocked mı? — branch filtresine uygun entry ara
+      const blocked = this.isBlocked(tenantId, veterinarianId, startIso, endIso, branchId);
 
       let status: CalendarSlot["status"] = "available";
       let appointmentId: string | undefined;
@@ -336,17 +342,48 @@ export class CalendarService {
     return slots;
   }
 
+  /**
+   * Branch filtresine uygun booked slot arar. `branchId` verildiğinde
+   * yalnızca o şubenin booked slot'ları eşleşir; tenant-wide
+   * (branchId=null) booked slot'lar her şubede görünür.
+   */
+  private findBookedSlot(
+    tenantId: string,
+    veterinarianId: string,
+    startIso: string,
+    branchId: string | undefined,
+  ): BookedSlotRecord | undefined {
+    for (const rec of this.bookedSlots.values()) {
+      if (rec.tenantId !== tenantId) continue;
+      if (rec.veterinarianId !== veterinarianId) continue;
+      if (rec.start !== startIso) continue;
+      // Branch filtresi: branchId=null (tenant-wide) tüm şubelerde
+      // görünür; branchId=<X> yalnızca o şubede görünür.
+      if (branchId !== undefined && rec.branchId !== null && rec.branchId !== branchId) {
+        continue;
+      }
+      return rec;
+    }
+    return undefined;
+  }
+
   private isBlocked(
     tenantId: string,
     veterinarianId: string,
     startIso: string,
     endIso: string,
+    branchId: string | undefined,
   ): boolean {
     const start = new Date(startIso).getTime();
     const end = new Date(endIso).getTime();
     for (const rec of this.blockedById.values()) {
       if (rec.tenantId !== tenantId) continue;
       if (rec.veterinarianId !== veterinarianId) continue;
+      // Branch filtresi: branchId=null (tenant-wide) tüm şubelerde
+      // görünür; branchId=<X> yalnızca o şubede görünür.
+      if (branchId !== undefined && rec.branchId !== null && rec.branchId !== branchId) {
+        continue;
+      }
       const bs = new Date(rec.start).getTime();
       const be = new Date(rec.end).getTime();
       // Overlap kontrolü: [start,end) ∩ [bs,be) ≠ ∅

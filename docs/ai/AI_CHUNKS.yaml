@@ -2779,3 +2779,89 @@ generated_at: "2026-07-30"
     - "POST /api/v1/portal/invitations/accept"
     - "DELETE /api/v1/portal/invitations/{id}"
 
+# -----------------------------------------------------------------------------
+# KLINIK TAKVIMI (GOAL-030) — FAZ-3
+# -----------------------------------------------------------------------------
+# Source: apps/api/src/modules/calendar/* (GOAL-030)
+# Working hours + slot üretimi + block (mola/izin) yönetimi.
+# Appointment oluşturma (GOAL-031) bu chunk'ın ürettiği slot'lara
+# bağlanır.
+
+- chunk_id: calendar-overview
+  type: page
+  source: docs/ai/AI_CHUNKS.yaml
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Klinik Takvimi nasıl çalışır"
+  content: |
+    VetNiva klinik takvimi (GOAL-030, FAZ-3) veterinarian başına
+    haftalık çalışma saatlerinden slot üretir, müsait/dolu/engelli
+    durumlarını takip eder ve appointment oluşturma için temel
+    hazırlar.
+
+    Çalışma modeli:
+    1. Klinik yöneticisi (OWNER) her veteriner için haftalık
+       çalışma saatlerini tanımlar
+       (`PUT /api/v1/calendar/working-hours` — `tenant:tenant:update`
+       izni). Tanım yoksa default: Pazartesi-Cuma 09:00-17:00,
+       30 dakikalık slot'lar.
+    2. Frontend günlük takvimi açar
+       (`GET /api/v1/calendar/days/{date}?veterinarianId=...` —
+       `clinic:appointment:read` izni). Backend `WorkingHours`
+       kaydından `slotDurationMin` aralıklarla slot'ları üretir
+       (UTC ISO datetime, ascending).
+    3. Her slot `available | booked | blocked` durumu taşır.
+       - `available`: müsait, appointment atanabilir.
+       - `booked`: GOAL-031 Appointment modeli bu slot'a bağlı
+         (in-memory Map, FAZ-3+'da Appointment tablosu).
+       - `blocked`: mola/izin aralığına denk geliyor
+         (`POST /api/v1/calendar/block` ile eklenir,
+         interval overlap kontrolü).
+    4. Mola/izin/planlı tatil gibi aralıklar `POST /api/v1/calendar/block`
+       ile eklenir; `DELETE /api/v1/calendar/block/{id}` ile kaldırılır
+       (cross-tenant ID → 404 `VET-APPT-0002`).
+
+    Önemli iş kuralları:
+    - Çalışma saati değişiklikleri (`setWorkingHours`) mevcut
+      booked/blocked slot'ları ETKİLEMEZ. Yalnızca gelecekte
+      üretilecek slot'lar yeni kuralla hesaplanır.
+    - Audit: `audit:calendar.hours.update` (info), `audit:calendar.block`
+      (info), `audit:calendar.unblock` (info). Takvim okuması
+      (`getDay`) audit YAYINLAMAZ (gürültü kontrolü).
+    - Tenant izolasyonu: working hours ve block kayıtları
+      `actor.tenantId` ile birlikte saklanır. Cross-tenant blockId
+      ile silme denemesi 404 döner (bilgi sızdırmaz).
+    - Slot durum önceliği: booked > blocked > available. Bir slot
+      hem booked hem blocked aralıkla kesişirse booked kabul edilir.
+    - Pazar (dayOfWeek=0) default çalışılmaz; 0 slot döner.
+      Klinik tanımda Pazar'ı açıkça eklerse slot üretilir.
+
+    Hata kodları (calendar modülü):
+    - `VET-APPT-0001` (422) — `blockSlot`'ta `end <= start`.
+    - `VET-APPT-0002` (404) — `unblockSlot`'ta blockId yok veya
+      farklı tenant'a ait.
+    - `VET-APPT-0003` (422) — `setWorkingHours`'ta aynı gün 2 kez
+      veya `endTime <= startTime`.
+    - `VET-APPT-0004` (422) — `getDay`'de `date` `YYYY-MM-DD`
+      formatında değil.
+
+    Sonraki adımlar: GOAL-031 Appointment oluşturma bu takvimin
+    `booked` slot'larına yazacak; GOAL-032 bekleme listesi
+    `available` slot değişimine tepki verecek; GOAL-035 portal online
+    randevu talebi `getDay` üzerinden müsait slot'ları gösterecek.
+  keywords: [takvim, calendar, slot, çalışma saati, working hours,
+             mola, izin, block, veterinarian, randevu altyapısı,
+             appointment altyapısı, FAZ-3]
+  related_chunks: [glossary-appointment, error-VET-APPT-0001,
+                   error-VET-APPT-0002, error-VET-APPT-0003,
+                   error-VET-APPT-0004, audit-overview]
+  related_pages: []
+  related_api:
+    - "GET /api/v1/calendar/days/{date}"
+    - "PUT /api/v1/calendar/working-hours"
+    - "POST /api/v1/calendar/block"
+    - "DELETE /api/v1/calendar/block/{id}"
+

@@ -85,6 +85,7 @@ model Tenant {
   branches      Branch[]
   memberships   UserTenantMembership[]
   invitations   UserInvitation[]
+  files         FileMeta[]
 
   @@index([status, createdAt])
   @@index([country])
@@ -134,6 +135,7 @@ model Branch {
   archivedAt  DateTime?    @db.Timestamptz(6) @map("archived_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  files  FileMeta[]
 
   /// Tenant içinde şube kodu benzersizdir.
   @@unique([tenantId, code])
@@ -245,6 +247,7 @@ model User {
   sessions           UserSession[]
   passwordResets     PasswordResetToken[]
   memberships        UserTenantMembership[]
+  uploadedFiles      FileMeta[] @relation("FileUploader")
 
   @@index([status])
   @@index([lockedUntil])
@@ -428,4 +431,66 @@ model AuditEvent {
   @@index([correlationId])
   @@index([severity, createdAt])
   @@map("audit_events")
+}
+
+// -----------------------------------------------------------------------------
+// FILE_META — GOAL-014 dosya ve medya servisi (metadata + audit + erişim).
+// Storage (S3-uyumlu) ayrı backend'te; bu tablo yalnızca metadata + audit +
+// erişim kontrolü. Fiziksel silme yerine arşivleme (archivedAt).
+// -----------------------------------------------------------------------------
+
+enum FileScanStatus {
+  pending
+  clean
+  infected
+  skipped
+  error
+
+  @@map("file_scan_status")
+}
+
+enum FileVisibility {
+  private
+  branch
+  tenant
+  portal
+
+  @@map("file_visibility")
+}
+
+model FileMeta {
+  id                String          @id @default(uuid()) @db.Uuid
+  tenantId          String          @db.Uuid @map("tenant_id")
+  branchId          String?         @db.Uuid @map("branch_id")
+  uploaderId        String          @db.Uuid @map("uploader_id")
+  storageKey        String          @unique @db.VarChar(512) @map("storage_key")
+  originalName      String          @db.VarChar(255) @map("original_name")
+  mimeType          String          @db.VarChar(100) @map("mime_type")
+  sizeBytes         BigInt          @map("size_bytes")
+  checksumSha256    String          @db.VarChar(64) @map("checksum_sha256")
+  scanStatus        FileScanStatus  @default(pending) @map("scan_status")
+  scanResult        String?         @db.VarChar(255) @map("scan_result")
+  scannedAt         DateTime?       @db.Timestamptz(6) @map("scanned_at")
+  visibility        FileVisibility  @default(branch)
+  relatedEntityType String?         @db.VarChar(50) @map("related_entity_type")
+  relatedEntityId   String?         @db.VarChar(100) @map("related_entity_id")
+  description       String?         @db.VarChar(500)
+  archivedAt        DateTime?       @db.Timestamptz(6) @map("archived_at")
+  archivedBy        String?         @db.Uuid @map("archived_by")
+  archiveReason     String?         @db.VarChar(500) @map("archive_reason")
+  createdAt         DateTime        @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt         DateTime        @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  tenant   Tenant  @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  branch   Branch? @relation(fields: [branchId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  uploader User    @relation("FileUploader", fields: [uploaderId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([tenantId, checksumSha256], name: "file_meta_tenant_checksum_unique")
+  @@index([tenantId, createdAt])
+  @@index([tenantId, relatedEntityType, relatedEntityId])
+  @@index([branchId, createdAt])
+  @@index([uploaderId])
+  @@index([scanStatus])
+  @@index([archivedAt])
+  @@map("file_metas")
 }

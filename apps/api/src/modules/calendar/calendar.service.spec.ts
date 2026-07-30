@@ -105,6 +105,7 @@ describe("CalendarService", () => {
     // 10:00-10:30 slot'unu booked yap
     service.seedBookedSlot({
       tenantId: TENANT_A,
+      branchId: null,
       veterinarianId: "vet-default",
       appointmentId: "appt-1",
       start: "2025-03-17T10:00:00.000Z",
@@ -377,5 +378,80 @@ describe("CalendarService", () => {
       errorCode: "VET-APPT-0002",
       httpStatus: 404,
     });
+  });
+
+  // ---------------------------------------------------------------------
+  // Branch filtresi
+  // ---------------------------------------------------------------------
+
+  it("getDay: branch filtresi — şube-scoped block yalnızca o şubede görünür", async () => {
+    // Şube 1'in 12:00-13:00 aralığını blocked yap
+    await service.blockSlot(
+      TENANT_A,
+      {
+        veterinarianId: "vet-default",
+        branchId: "brc-1111",
+        start: "2025-03-17T12:00:00.000Z",
+        end: "2025-03-17T13:00:00.000Z",
+        reason: "Şube-1 öğle molası",
+      },
+      STAFF_A,
+    );
+
+    // Şube 1 takvimi: 12:00-12:30 + 12:30-13:00 blocked
+    const dayB1 = await service.getDay(
+      TENANT_A,
+      "2025-03-17",
+      { branchId: "brc-1111" },
+      STAFF_A,
+    );
+    const s1 = dayB1.slots.find((s) => s.start === "2025-03-17T12:00:00.000Z");
+    const s2 = dayB1.slots.find((s) => s.start === "2025-03-17T12:30:00.000Z");
+    expect(s1?.status).toBe("blocked");
+    expect(s2?.status).toBe("blocked");
+
+    // Şube 2 takvimi: aynı saatler available
+    const dayB2 = await service.getDay(
+      TENANT_A,
+      "2025-03-17",
+      { branchId: "brc-2222" },
+      STAFF_A,
+    );
+    const s1b = dayB2.slots.find((s) => s.start === "2025-03-17T12:00:00.000Z");
+    expect(s1b?.status).toBe("available");
+  });
+
+  it("getDay: tenant-wide block (branchId=null) HER şubede görünür", async () => {
+    // branchId olmadan blokla → tenant-wide
+    await service.blockSlot(
+      TENANT_A,
+      {
+        veterinarianId: "vet-default",
+        start: "2025-03-17T15:00:00.000Z",
+        end: "2025-03-17T16:00:00.000Z",
+        reason: "Tatil",
+      },
+      STAFF_A,
+    );
+
+    // Şube 1
+    const dayB1 = await service.getDay(
+      TENANT_A,
+      "2025-03-17",
+      { branchId: "brc-1111" },
+      STAFF_A,
+    );
+    const slot1 = dayB1.slots.find((s) => s.start === "2025-03-17T15:00:00.000Z");
+    expect(slot1?.status).toBe("blocked");
+
+    // Şube 2 — farklı branchId olsa bile tenant-wide olduğu için blocked
+    const dayB2 = await service.getDay(
+      TENANT_A,
+      "2025-03-17",
+      { branchId: "brc-2222" },
+      STAFF_A,
+    );
+    const slot2 = dayB2.slots.find((s) => s.start === "2025-03-17T15:00:00.000Z");
+    expect(slot2?.status).toBe("blocked");
   });
 });

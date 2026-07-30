@@ -39,6 +39,8 @@ export interface WorkingHoursEntry {
 export interface BlockedSlotRecord {
   id: string;
   tenantId: string;
+  /** Şube (branch) filtresi. NULL = tenant-wide (tüm şubeler). */
+  branchId: string | null;
   veterinarianId: string;
   /** ISO 8601 datetime (UTC). */
   start: string;

@@ -78,6 +78,9 @@ export type SetWorkingHoursInput = z.infer<typeof setWorkingHoursInputSchema>;
 /** Slot bloklama isteği (POST body). */
 export const blockSlotInputSchema = z.object({
   veterinarianId: z.string(),
+  /** Belirtilirse yalnızca bu şubede bloklanır. NULL/atlanırsa
+   *  tenant-wide blok olarak işlenir (tüm şubelerde görünür). */
+  branchId: z.string().optional(),
   /** ISO 8601 datetime. */
   start: z.string().datetime(),
   /** ISO 8601 datetime. */
@@ -90,6 +93,9 @@ export type BlockSlotInput = z.infer<typeof blockSlotInputSchema>;
 export const getDayQuerySchema = z.object({
   /** Belirtilirse yalnızca bu veterinarian'ın slot'ları. */
   veterinarianId: z.string().optional(),
+  /** Belirtilirse yalnızca bu şubenin takvimi döner. Boş bırakılırsa
+   *  tenant altındaki tüm şubelerin slot'ları birleşik döner. */
+  branchId: z.string().optional(),
 });
 export type GetDayQuery = z.infer<typeof getDayQuerySchema>;
 
