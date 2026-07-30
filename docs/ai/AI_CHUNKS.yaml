@@ -4047,3 +4047,61 @@ generated_at: "2026-07-30"
     - "POST /api/v1/clinic/prescriptions/{id}/dispense"
     - "POST /api/v1/clinic/prescriptions/{id}/cancel"
     - "GET /api/v1/clinic/prescriptions/{id}/pdf"
+
+- chunk_id: flow-followup
+  type: flow
+  source: apps/api/src/modules/followups/followups.service.ts
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Kontrol Randevusu Oluşturma Akışı"
+  content: |
+    Kontrol randevusu (follow-up), muayene veya reçeteden türetilen
+    `type='follow_up'` appointment'tır. Ayrı bir entity değildir;
+    normal randevu modeli üzerinden materialize edilir. Böylece
+    takvim/uygunluk/hatırlatma akışları tek randevu sözleşmesinden
+    geçer.
+
+    Tetikleyici kaynaklar:
+    (a) Muayene: `POST /api/v1/clinic/examinations/{id}/followup`.
+        Examination aynı tenant'ta mı (cross-tenant → 404
+        `VET-CLINIC-0001`). `followUpDate` gelecekte mi
+        (geçmiş/invalid → 422 `VET-VALIDATION-0009`).
+        `veterinarianId` opsiyonel override; verilmezse
+        `examination.veterinarianId`, ikisi de yoksa 422.
+    (b) Reçete: `POST /api/v1/clinic/prescriptions/{id}/followup`.
+        Prescription aynı tenant'ta mı (cross-tenant → 404).
+        `followUpDate` gelecekte mi (422). Hasta ve veteriner
+        reçeteden türetilir; override yoktur.
+
+    Her iki akış da `AppointmentsService.create` ile
+    `type='follow_up'`, `durationMin=30`,
+    `notes='[Kontrol Randevusu] {notes}'` randevu oluşturur.
+    Calendar uygunluk kontrolü, idempotency, status yönetimi
+    AppointmentsService üzerinden gelir. Slot çakışması
+    `VET-APPT-0005` (409) ile sonuçlanır.
+
+    Hasta bazlı bekleyen kontrol listesi:
+    `GET /api/v1/clinic/patients/{id}/followups` →
+    `status='scheduled'`, `type='follow_up'`, `start > now` filtresi.
+
+    Audit: her başarılı schedule için `audit:followup.create` (info);
+    `source: 'examination' | 'prescription'`, ilgili source ID,
+    patientId, veterinarianId, start, end, type. `listPending` okuma
+    audit üretmez. Tenant kapsamı `requireTenantScope` ile
+    enforce edilir; uyuşmazlık → 403 `VET-AUTHZ-0001`.
+  keywords: [kontrol randevusu, follow-up, follow_up, muayene takip,
+             reçete takip, appointment, hatırlatma]
+  entities: [appointment, examination, prescription, patient]
+  related_chunks: [glossary-appointment, glossary-examination,
+                   glossary-prescription, flow-prescription-create,
+                   flow-examination-create, error-VET-CLINIC-0001,
+                   error-VET-VALIDATION-0009, error-VET-AUTHZ-0001,
+                   error-VET-APPT-0005, error-VET-TENANT-0001]
+  related_pages: []
+  related_api:
+    - "POST /api/v1/clinic/examinations/{id}/followup"
+    - "POST /api/v1/clinic/prescriptions/{id}/followup"
+    - "GET /api/v1/clinic/patients/{id}/followups"
