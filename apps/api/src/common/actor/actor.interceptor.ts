@@ -46,6 +46,11 @@ export class ActorInterceptor implements NestInterceptor {
     const http = context.switchToHttp();
     const request = http.getRequest<Request & { requestId?: string }>();
     const correlationId = request.requestId ?? "req-unknown";
+    // GOAL-011: AuthGuard daha önce çalıştıysa request.actor zaten
+    // session-tabanlı set edilmiştir; header fallback'e düşmeyiz.
+    if (request.actor) {
+      return next.handle();
+    }
     const req: {
       header(name: string): string | undefined;
       ip?: string;

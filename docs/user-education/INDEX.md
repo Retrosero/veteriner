@@ -10,6 +10,7 @@ içeriğini barındırır. Her rol için ayrı bir rehber bulunur.
 - **Klinik personeli (STAFF)** — `STAFF.md`
 - **Süper admin (SUPERADMIN)** — `SUPERADMIN.md`
 - **Hasta sahibi (Portal)** — `PATIENT_OWNER.md`
+- **Personel paneli giriş + parola yönetimi (tüm roller)** — `AUTH.md`
 
 ## GOAL-000 kapsamı
 
@@ -122,6 +123,10 @@ rehberlerinde "Güvenlik ve Uyum" bölümlerine temel olur.
 - **Faz 1 (GOAL-010+):** Tenant ve şube yönetimi → `SUPERADMIN.md`
   ilk bölümleri (pilot onboarding akışı). `OWNER.md` da şube
   yönetimi bölümünü içerecek.
+- **Faz 1 (GOAL-011+):** Personel paneli kimlik doğrulama →
+  `AUTH.md`. Giriş, parola sıfırlama, davet, oturum yönetimi.
+  Tüm personel rolleri (OWNER, VETERINARIAN, STAFF, SUPERADMIN)
+  için ortak rehber.
 - **Faz 2 (GOAL-020+):** Hasta sahibi ve hayvan kaydı → `STAFF.md`,
   `VETERINARIAN.md` ve `PATIENT_OWNER.md` ilk bölümleri.
 - **Faz 3 (GOAL-030+):** Randevu ve portal → `STAFF.md` (kabul),

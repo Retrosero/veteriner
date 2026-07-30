@@ -117,6 +117,264 @@ branch.ts) tanımlıdır.
 
 ---
 
+## User alanları (GOAL-011)
+
+> Şema: `apps/api/prisma/schema.prisma` (`model User`).
+> Sözleşme: `packages/contracts/src/auth.ts` (`userStatusSchema`,
+> `userEmailSchema`, `userDisplayNameSchema`, `passwordPolicySchema`).
+
+### id (UUID, zorunlu)
+
+- **Tip:** UUID v4
+- **Kaynak:** DB üretir (`gen_random_uuid()`)
+- **PII:** hayır
+- **Açıklama:** Kullanıcı benzersiz tanımlayıcısı. UserTenantMembership
+  ve UserSession için FK.
+
+### email (string, zorunlu, unique)
+
+- **Tip:** String, 5-200 karakter
+- **Format:** E-posta regex
+- **PII:** evet (KVKK / UK GDPR)
+- **Mask'leme:** Audit log'da `email` alanı mask'lenir; orijinal değer
+  loglanmaz. UI'da SUPERADMIN görebilir, tenant kullanıcıları kendi
+  email'lerini görür.
+- **Açıklama:** Sistem genelinde unique (cross-tenant davet için
+  aynı email kullanılabilir; tenant bazlı değil).
+
+### passwordHash (string, zorunlu)
+
+- **Tip:** String, max 200 karakter (bcrypt formatı)
+- **PII:** kritik (parola türevi)
+- **Mask'leme:** ASLA dönülmez. Service katmanı yalnızca `verifyPassword`
+  için kullanır. Loglanmaz, audit payload'ına dahil edilmez, response'a
+  yansımaz. DB'de bile okuma sonrası memory'de minimum süre tutulur.
+- **Açıklama:** bcrypt cost 12 ile hash'lenmiş parola. Format:
+  `$2a$12$...`. Plain parola yalnızca hash üretimi + doğrulama sırasında
+  bellekte bulunur.
+
+### status (enum, zorunlu)
+
+- **Tip:** `user_status`: `active` | `suspended` | `disabled`
+- **Varsayılan:** `active`
+- **PII:** hayır
+- **Açıklama:** Hesap durumu. `suspended` admin tarafından geçici devre
+  dışı; `disabled` yumuşak silme (audit trail korunur). Login yalnızca
+  `active` için başarılı olur.
+
+### displayName (string, zorunlu)
+
+- **Tip:** String, 2-200 karakter
+- **PII:** evet (kişi tanımlayıcı)
+- **Mask'leme:** Audit log'da `displayName` mask'lenir.
+
+### locale (string, varsayılan tr-TR)
+
+- **Tip:** String, max 10 karakter
+- **Varsayılan:** `tr-TR`
+- **PII:** hayır
+- **Açıklama:** Kullanıcının tercih ettiği locale. UI ve i18n için.
+
+### passwordChangedAt (timestamptz, opsiyonel)
+
+- **Tip:** TIMESTAMPTZ
+- **PII:** hayır
+- **Açıklama:** Parolanın son değişiklik zamanı. Parola expiration
+  policy (GOAL-012+) tarafından kontrol edilir.
+
+### failedLoginCount (integer, varsayılan 0)
+
+- **Tip:** Integer, >= 0
+- **PII:** hayır
+- **Açıklama:** Üst üste başarısız login sayacı. `MAX_FAILED_LOGIN_COUNT`
+  (5) aşıldığında hesap `lockedUntil` ile kilitlenir.
+
+### lockedUntil (timestamptz, opsiyonel)
+
+- **Tip:** TIMESTAMPTZ
+- **PII:** hayır
+- **Açıklama:** Hesap kilit bitiş zamanı. Bu tarihe kadar login
+  denemeleri VET-AUTH-0003 ile reddedilir. Başarılı login'de null olur.
+
+### lastLoginAt (timestamptz, opsiyonel)
+
+- **Tip:** TIMESTAMPTZ
+- **PII:** hayır
+- **Açıklama:** Son başarılı login zamanı.
+
+### createdAt / updatedAt (timestamptz, zorunlu)
+
+- **Tip:** TIMESTAMPTZ
+- **PII:** hayır
+- **Açıklama:** `updatedAt` `touch_updated_at` trigger ile otomatik
+  güncellenir.
+
+### archivedAt (timestamptz, opsiyonel)
+
+- **Tip:** TIMESTAMPTZ
+- **PII:** hayır
+- **Açıklama:** Soft delete zamanı. `status=disabled` ile birlikte set
+  edilir. Veri korunur (append-only audit ile).
+
+---
+
+## UserSession alanları (GOAL-011)
+
+> Şema: `apps/api/prisma/schema.prisma` (`model UserSession`).
+> Sözleşme: `packages/contracts/src/auth.ts` (`sessionListItemSchema`).
+
+### id (UUID, zorunlu)
+
+- **Tip:** UUID v4
+- **PII:** hayır
+
+### userId (UUID, zorunlu, FK → users.id)
+
+- **Tip:** UUID
+- **PII:** hayır (ancak session üzerinden user'a erişim sağladığı için
+  audit'te loglanır)
+- **Açıklama:** Ait olduğu kullanıcı. `ON DELETE CASCADE`.
+
+### tokenHash (string, zorunlu, unique)
+
+- **Tip:** String, 64 hex karakter (SHA-256)
+- **PII:** kritik (oturum türevi)
+- **Mask'leme:** ASLA dönülmez. Login/reset response'unda plain token
+  döner; DB'ye plain yazılmaz.
+- **Açıklama:** Plain bearer token'ın SHA-256 hash'i. Doğrulama
+  `hashToken(plain) === tokenHash` ile yapılır.
+
+### expiresAt (timestamptz, zorunlu)
+
+- **Tip:** TIMESTAMPTZ
+- **PII:** hayır
+- **Açıklama:** Oturum son kullanma zamanı. Default 30 gün
+  (`SESSION_TTL_SECONDS`).
+
+### lastUsedAt (timestamptz, varsayılan NOW)
+
+- **Tip:** TIMESTAMPTZ
+- **PII:** hayır
+- **Açıklama:** Son kullanım zamanı. Idle timeout (24 saat) aşılırsa
+  session `revokedReason=idle_timeout` ile iptal edilir.
+
+### ipAddress (string, opsiyonel)
+
+- **Tip:** String, max 50 karakter
+- **PII:** kısmi (IP adresi)
+- **Mask'leme:** Son oktet `***` yapılır (örn. `192.168.1.***`).
+- **Açıklama:** Session'ı oluşturan / son kullanan mask'li IP.
+
+### userAgentHash (string, opsiyonel)
+
+- **Tip:** String, max 64 karakter (hex)
+- **PII:** kısmi
+- **Mask'leme:** SHA-256 hash, plain user-agent saklanmaz.
+- **Açıklama:** User agent kısa hash'i (16 hex).
+
+### replacedById (UUID, opsiyonel)
+
+- **Tip:** UUID
+- **PII:** hayır
+- **Açıklama:** Token rotation sırasında eski session'ın yerini alan
+  yeni session ID. Audit trail için.
+
+### revokedAt (timestamptz, opsiyonel)
+
+- **Tip:** TIMESTAMPTZ
+- **PII:** hayır
+- **Açıklama:** Session iptal zamanı. Set edilmişse session geçersizdir.
+
+### revokedReason (string, opsiyonel)
+
+- **Tip:** String, max 50 karakter
+- **PII:** hayır
+- **Değerler:** `logout` | `rotated` | `user_revoked` | `password_reset` | `logout_all` | `idle_timeout`
+- **Açıklama:** İptal sebebi. Audit log + UI'da gösterilebilir.
+
+---
+
+## UserInvitation alanları (GOAL-011)
+
+> Şema: `apps/api/prisma/schema.prisma` (`model UserInvitation`).
+> Sözleşme: `packages/contracts/src/auth.ts` (`inviteUserRequestSchema`).
+
+### id (UUID, zorunlu)
+
+- **Tip:** UUID v4
+
+### tenantId (UUID, zorunlu, FK → tenants.id)
+
+- **Tip:** UUID
+- **PII:** hayır
+- **Açıklama:** Davet edilen tenant. `ON DELETE CASCADE`.
+
+### email (string, zorunlu)
+
+- **Tip:** String, max 200 karakter
+- **PII:** evet
+- **Mask'leme:** Audit log'da mask'lenir.
+
+### role (string, zorunlu)
+
+- **Tip:** String, 32 karakter
+- **Değerler:** `OWNER` | `VETERINARIAN` | `STAFF`
+- **Açıklama:** Davet sonrası atanacak tenant rolü. SUPERADMIN
+  davet üzerinden atanamaz (sistem genelinde).
+
+### tokenHash (string, zorunlu, unique)
+
+- **Tip:** String, 64 hex (SHA-256)
+- **PII:** kritik
+- **Açıklama:** Davet token SHA-256 hash. Plain token davet
+  e-postasında gönderilir.
+
+### invitedBy (UUID, opsiyonel)
+
+- **Tip:** UUID
+- **PII:** hayır
+- **Açıklama:** Davet gönderen kullanıcı (admin). Audit trail için.
+
+### status (enum, varsayılan pending)
+
+- **Tip:** `invitation_status`: `pending` | `accepted` | `expired` | `cancelled`
+- **Açıklama:** Davet durumu.
+
+### expiresAt (timestamptz, zorunlu)
+
+- **Tip:** TIMESTAMPTZ
+- **Açıklama:** Davet son kullanma zamanı. 7 gün.
+
+### acceptedAt (timestamptz, opsiyonel)
+
+- **Tip:** TIMESTAMPTZ
+- **Açıklama:** Kabul zamanı.
+
+---
+
+## PasswordResetToken alanları (GOAL-011)
+
+### id (UUID, zorunlu)
+
+### userId (UUID, zorunlu, FK → users.id)
+
+- **Açıklama:** Token talep eden kullanıcı. `ON DELETE CASCADE`.
+
+### tokenHash (string, zorunlu, unique)
+
+- **Açıklama:** SHA-256 hash. Plain token e-posta ile gönderilir.
+
+### expiresAt (timestamptz, zorunlu)
+
+- **Açıklama:** 1 saat geçerli.
+
+### usedAt (timestamptz, opsiyonel)
+
+- **Açıklama:** Kullanım zamanı. Rotation'da eski token'lar
+  `usedAt=now()` ile iptal edilir.
+
+---
+
 ## Branch alanları
 
 ### id (UUID, zorunlu)

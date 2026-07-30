@@ -463,18 +463,21 @@ generated_at: "2026-07-30"
   source: docs/errors/ERROR_CATALOG.md
   error_code: VET-AUTH-0001
   locale: tr-TR
-  version: "1.0.0"
+  version: "1.1.0"
   last_verified_at: 2026-07-30
   confidence: high
   pii: false
-  title: "Oturum geçersiz veya süresi dolmuş"
+  title: "Oturum geçersiz / kimlik doğrulama gerekli"
   content: |
-    HTTP 401. Yeniden giriş yapın. Token süresi dolmuş veya
-    iptal edilmiş olabilir.
-  keywords: [401, auth, session, oturum]
-  related_chunks: [correlation-req-prefix]
+    HTTP 401. Oturum cookie/bearer eksik, geçersiz veya süresi
+    dolmuş. Çözüm: tekrar login. AuthGuard her istek başında
+    session doğrular; başarısızsa 401. Login response cookie
+    `vetniva_session` set edilir; Authorization Bearer header da
+    desteklenir.
+  keywords: [401, auth, session, invalid, login, cookie, bearer]
+  related_chunks: [glossary-user-session, correlation-req-prefix]
   related_pages: []
-  related_api: []
+  related_api: [POST /api/v1/auth/login]
 
 - chunk_id: error-VET-AUTHZ-0001
   type: error
@@ -1132,3 +1135,452 @@ generated_at: "2026-07-30"
   related_chunks: [glossary-tenant]
   related_pages: []
   related_api: []
+
+# -----------------------------------------------------------------------------
+# GOAL-011 — Kimlik doğrulama ve oturum yönetimi
+# -----------------------------------------------------------------------------
+
+- chunk_id: glossary-user
+  type: glossary
+  source: docs/domain/DOMAIN_GLOSSARY.md
+  entity: user
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "User (Kullanıcı) varlık tanımı"
+  content: |
+    Platform kullanıcısı. Email benzersiz; parola bcrypt cost 12
+    ile hash'lenir. Tenant bağlamı UserTenantMembership üzerinden
+    sağlanır. Durum: active, suspended, disabled. PII: email,
+    displayName mask'lenir; passwordHash hiç loglanmaz.
+  keywords: [user, kullanıcı, parola, bcrypt, hash]
+  related_chunks: [glossary-tenant, glossary-membership]
+  related_pages: []
+  related_api: [POST /api/v1/auth/login]
+
+- chunk_id: glossary-user-session
+  type: glossary
+  source: apps/api/prisma/schema.prisma
+  entity: user_session
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "UserSession (Kullanıcı Oturumu)"
+  content: |
+    Aktif kullanıcı oturumu. Cookie bearer token; SHA-256 hash
+    DB'de, plain token sadece response'da. Default 30 gün TTL,
+    24 saat idle timeout. Token rotation: eski session
+    replacedById ile yeni session'a bağlanır. RLS: kullanıcı
+    yalnızca kendi session'larını görür.
+  keywords: [session, oturum, token, rotation, idle]
+  related_chunks: [glossary-user, glossary-rls]
+  related_pages: []
+  related_api: [POST /api/v1/auth/login, POST /api/v1/auth/refresh]
+
+- chunk_id: glossary-invitation
+  type: glossary
+  source: apps/api/prisma/schema.prisma
+  entity: user_invitation
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "UserInvitation (Kullanıcı Daveti)"
+  content: |
+    Tenant'a kullanıcı davet kaydı. Tek kullanımlık token; 7 gün
+    geçerli. Kabul edilince User oluşturulur + membership atanır
+    + otomatik login. Pending davet çakışması VET-AUTH-0005 ile
+    engellenir.
+  keywords: [invitation, davet, accept, token, tek-kullanımlık]
+  related_chunks: [glossary-user, glossary-membership]
+  related_pages: []
+  related_api: [POST /api/v1/auth/invitations, POST /api/v1/auth/invitations/accept]
+
+- chunk_id: glossary-password-reset
+  type: glossary
+  source: apps/api/prisma/schema.prisma
+  entity: password_reset_token
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "PasswordResetToken"
+  content: |
+    Parola sıfırlama token'ı. Tek kullanımlık; 1 saat geçerli.
+    Rotation: yeni talep gelince eski token'lar usedAt ile
+    iptal edilir. Başarılı reset'te tüm aktif session'lar
+    iptal edilir (compromise koruması).
+  keywords: [reset, sıfırlama, parola, token, rotation]
+  related_chunks: [glossary-user, glossary-user-session]
+  related_pages: []
+  related_api: [POST /api/v1/auth/forgot, POST /api/v1/auth/reset]
+
+- chunk_id: audit-auth-login-success
+  type: audit
+  source: apps/api/src/common/auth/auth.service.ts
+  event_name: audit:auth.login.success
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Başarılı giriş audit event"
+  content: |
+    Kullanıcı login olduğunda yazılır. severity: info.
+    Metadata: email, correlationId, ipAddress, userAgentHash.
+    PII mask'leme uygulanır.
+  keywords: [audit, login, success, info, severity]
+  related_chunks: [glossary-user]
+  related_pages: []
+  related_api: []
+
+- chunk_id: audit-auth-login-failure
+  type: audit
+  source: apps/api/src/common/auth/auth.service.ts
+  event_name: audit:auth.login.failure
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Başarısız giriş audit event"
+  content: |
+    Geçersiz parola, kilitli hesap, suspended kullanıcı veya
+    bilinmeyen email için yazılır. severity: warning (4 başarısız
+    deneme) veya error (5. deneme = lock). Metadata: email,
+    reason, failedCount, locked. PII mask'leme.
+  keywords: [audit, login, failure, warning, error, brute-force]
+  related_chunks: [glossary-user, audit-auth-login-success]
+  related_pages: []
+  related_api: []
+
+- chunk_id: audit-auth-password-reset
+  type: audit
+  source: apps/api/src/common/auth/auth.service.ts
+  event_name: audit:auth.password.reset_request
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Parola sıfırlama audit event"
+  content: |
+    reset_request (info) ve reset_success (warning) yazılır.
+    reset_success'te metadata: sessionsRevoked (compromise
+    koruması). PII mask'leme.
+  keywords: [audit, password, reset, request, success]
+  related_chunks: [glossary-password-reset]
+  related_pages: []
+  related_api: [POST /api/v1/auth/forgot, POST /api/v1/auth/reset]
+
+- chunk_id: audit-auth-session-rotate
+  type: audit
+  source: apps/api/src/common/auth/auth.service.ts
+  event_name: audit:auth.session.rotate
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Session rotation audit event"
+  content: |
+    Token rotation sırasında yazılır. Eski session
+    replacedById ile yeni session'a bağlanır. severity: info.
+  keywords: [audit, session, rotate, token, replacedById]
+  related_chunks: [glossary-user-session]
+  related_pages: []
+  related_api: [POST /api/v1/auth/refresh]
+
+- chunk_id: audit-auth-invitation
+  type: audit
+  source: apps/api/src/common/auth/auth.service.ts
+  event_name: audit:auth.invitation.create
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Davet oluşturma + kabul audit event"
+  content: |
+    create (info) ve accept (info) yazılır. create'de
+    invitedBy, email, role metadata'da. accept'te userId +
+    invitationId.
+  keywords: [audit, invitation, create, accept, info]
+  related_chunks: [glossary-invitation]
+  related_pages: []
+  related_api: [POST /api/v1/auth/invitations, POST /api/v1/auth/invitations/accept]
+
+- chunk_id: pii-password-hash
+  type: pii-rule
+  source: apps/api/src/common/auth/password.ts
+  rule_id: pii-password-hash
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "passwordHash mask'leme kuralı"
+  content: |
+    passwordHash alanı ASLA dönülmez. Login response'da plain
+    token döner, hash değil. Audit payload'da passwordHash
+    yer almaz. PII masker'da bu alan mask'lenir; tüm diğer
+    loglama yolları da kapsar.
+  keywords: [pii, password, hash, mask, asla-dönme]
+  related_chunks: [glossary-user]
+  related_pages: []
+  related_api: []
+
+- chunk_id: pii-token-hash
+  type: pii-rule
+  source: apps/api/src/common/auth/token.ts
+  rule_id: pii-token-hash
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Token hash + plain token kuralları"
+  content: |
+    Plain token (32 byte hex, 64 karakter) sadece login/reset
+    response'ında kullanıcıya döner. DB'de SHA-256 hash
+    saklanır. Audit log'da plain token ASLA yer almaz. Safe-equal
+    ile constant-time karşılaştırma yapılır.
+  keywords: [pii, token, hash, sha256, constant-time]
+  related_chunks: [glossary-user-session, glossary-password-reset, glossary-invitation]
+  related_pages: []
+  related_api: []
+
+- chunk_id: error-VET-AUTH-0001-deprecated
+  type: error
+  source: docs/errors/ERROR_CATALOG.md
+  error_code: VET-AUTH-0001
+  locale: tr-TR
+  version: "1.0.0-deprecated"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "VET-AUTH-0001 (üst seviye açıklama)"
+  content: |
+    HTTP 401. Yeniden giriş yapın. Token süresi dolmuş veya
+    iptal edilmiş olabilir. Detaylı bilgi için ana
+    `error-VET-AUTH-0001` chunk'ına bakın.
+  keywords: [401, auth, session, oturum, legacy]
+  related_chunks: [error-VET-AUTH-0001]
+
+- chunk_id: error-VET-AUTH-0002
+  type: error
+  source: docs/errors/ERROR_CATALOG.md
+  error_code: VET-AUTH-0002
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "E-posta veya parola hatalı (genel)"
+  content: |
+    HTTP 401. Login başarısız; bilinmeyen email, yanlış parola
+    veya suspended/disabled kullanıcı. Mesaj her zaman genel —
+    kullanıcı var/yok bilgisi sızdırılmaz (email enumeration
+    koruması). Detaylar audit/security log'a yazılır.
+  keywords: [401, login, invalid, enumeration, security]
+  related_chunks: [glossary-user, audit-auth-login-failure]
+  related_pages: []
+  related_api: [POST /api/v1/auth/login]
+
+- chunk_id: error-VET-AUTH-0003
+  type: error
+  source: docs/errors/ERROR_CATALOG.md
+  error_code: VET-AUTH-0003
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Hesap geçici olarak kilitlendi"
+  content: |
+    HTTP 423. 5 başarısız login denemesi sonrası hesap 15 dakika
+    kilitlenir. Brute-force koruması. lockedUntil alanı ile DB
+    tarafında, in-memory sayaç ile de uygulama katmanında
+    denetlenir.
+  keywords: [423, lockout, brute-force, locked, security]
+  related_chunks: [glossary-user, audit-auth-login-failure]
+  related_pages: []
+  related_api: [POST /api/v1/auth/login]
+
+- chunk_id: error-VET-AUTH-0004
+  type: error
+  source: docs/errors/ERROR_CATALOG.md
+  error_code: VET-AUTH-0004
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Sıfırlama token'ı geçersiz"
+  content: |
+    HTTP 400. Parola sıfırlama token'ı bulunamadı, süresi dolmuş
+    (1 saat) veya zaten kullanılmış. Çözüm: yeni forgot-password
+    talebi gönderin.
+  keywords: [400, reset, token, expired, used]
+  related_chunks: [glossary-password-reset]
+  related_pages: []
+  related_api: [POST /api/v1/auth/reset]
+
+- chunk_id: error-VET-AUTH-0005
+  type: error
+  source: docs/errors/ERROR_CATALOG.md
+  error_code: VET-AUTH-0005
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Davet geçersiz / çakışma"
+  content: |
+    HTTP 400 (geçersiz/süresi dolmuş) veya 409 (pending davet
+    zaten var). Davet token hash'lenerek doğrulanır; süresi
+    dolmuş davetler expired yaparak kapatılır.
+  keywords: [400, 409, invitation, invalid, conflict]
+  related_chunks: [glossary-invitation]
+  related_pages: []
+  related_api: [POST /api/v1/auth/invitations, POST /api/v1/auth/invitations/accept]
+
+- chunk_id: error-VET-AUTH-0007
+  type: error
+  source: docs/errors/ERROR_CATALOG.md
+  error_code: VET-AUTH-0007
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Parola politikasına uyumsuz"
+  content: |
+    HTTP 422. Parola en az 12 karakter olmalı, büyük/küçük harf
+    ve rakam içermeli. Zod schema tarafından enforce edilir.
+  keywords: [422, password, policy, validation, strength]
+  related_chunks: [glossary-user]
+  related_pages: []
+  related_api: [POST /api/v1/auth/reset, POST /api/v1/auth/change-password, POST /api/v1/auth/invitations/accept]
+
+- chunk_id: api-post-auth-login
+  type: api
+  source: docs/api/POST /api/v1/auth/login
+  endpoint: POST /api/v1/auth/login
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "POST /api/v1/auth/login"
+  content: |
+    Public. Email + parola ile giriş. Brute-force korumalı
+    (5 deneme / 15 dakika kilit). Response'da sessionToken +
+    cookie set edilir. Hata: VET-AUTH-0002 (genel), 0003
+    (kilit), 0007 (parola policy).
+  keywords: [auth, login, public, brute-force, cookie]
+  related_chunks: [glossary-user, error-VET-AUTH-0002]
+  related_pages: [page-web.app.auth.login]
+  related_api: [POST /api/v1/auth/login]
+
+- chunk_id: api-post-auth-logout
+  type: api
+  source: docs/api/POST /api/v1/auth/logout
+  endpoint: POST /api/v1/auth/logout
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "POST /api/v1/auth/logout"
+  content: |
+    Authenticated. Mevcut oturumu iptal eder. Cookie temizlenir.
+    Audit: audit:auth.logout (info).
+  keywords: [auth, logout, revoke, session]
+  related_chunks: [glossary-user-session]
+  related_pages: []
+  related_api: [POST /api/v1/auth/logout]
+
+- chunk_id: api-post-auth-refresh
+  type: api
+  source: docs/api/POST /api/v1/auth/refresh
+  endpoint: POST /api/v1/auth/refresh
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "POST /api/v1/auth/refresh (Token rotation)"
+  content: |
+    Authenticated. Sliding session yenileme. Eski session
+    replacedById ile yeni session'a bağlanır. Audit:
+    audit:auth.session.rotate (info).
+  keywords: [auth, refresh, rotate, session, sliding]
+  related_chunks: [glossary-user-session, audit-auth-session-rotate]
+  related_pages: []
+  related_api: [POST /api/v1/auth/refresh]
+
+- chunk_id: api-post-auth-forgot-reset
+  type: api
+  source: docs/api/POST /api/v1/auth/forgot
+  endpoint: POST /api/v1/auth/forgot
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "POST /api/v1/auth/forgot + /reset"
+  content: |
+    Public. Parola sıfırlama. forgot her durumda 200 (enumeration
+    koruması); reset token ile yeni parola. Token 1 saat geçerli,
+    tek kullanımlık. Başarılı reset'te tüm session'lar iptal
+    (compromise koruması).
+  keywords: [auth, forgot, reset, password, enumeration]
+  related_chunks: [glossary-password-reset, audit-auth-password-reset]
+  related_pages: []
+  related_api: [POST /api/v1/auth/forgot, POST /api/v1/auth/reset]
+
+- chunk_id: api-post-auth-invitations
+  type: api
+  source: docs/api/POST /api/v1/auth/invitations
+  endpoint: POST /api/v1/auth/invitations
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "POST /api/v1/auth/invitations + /accept"
+  content: |
+    Tenant admin yeni kullanıcıyı davet eder. Davet token
+    e-posta ile gönderilir (GOAL-015 entegrasyonu). Accept
+    eden kullanıcı parola oluşturur + User oluşturulur +
+    membership atanır + otomatik login.
+  keywords: [auth, invitation, accept, tenant, onboarding]
+  related_chunks: [glossary-invitation, audit-auth-invitation]
+  related_pages: []
+  related_api: [POST /api/v1/auth/invitations, POST /api/v1/auth/invitations/accept]
+
+- chunk_id: api-get-me
+  type: api
+  source: docs/api/GET /api/v1/me
+  endpoint: GET /api/v1/me
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "GET /api/v1/me + /me/sessions"
+  content: |
+    Authenticated. Aktif kullanıcı + session + üyelikler.
+    /me/sessions tüm session'ları listeler; /me/sessions/:id
+    ile logout-remote yapılabilir. Mevcut oturum isCurrent=true.
+  keywords: [identity, me, session, list, self-service]
+  related_chunks: [glossary-user-session]
+  related_pages: []
+  related_api: [GET /api/v1/me, GET /api/v1/me/sessions, DELETE /api/v1/me/sessions/:id]

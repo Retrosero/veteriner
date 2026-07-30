@@ -45,12 +45,14 @@ bu katalogda yer almasını zorunlu kılar.
 
 | Kod                  | Ad                                    | HTTP | Severity | Kaynak | Çözüm                                            |
 | -------------------- | ------------------------------------- | ---- | -------- | ------ | ------------------------------------------------ |
-| `VET-AUTH-0001`      | Oturum geçersiz veya süresi dolmuş    | 401  | warning  | server | Yeniden giriş yapın.                             |
-| `VET-AUTH-0002`      | Davet kodu geçersiz veya süresi dolmuş | 400  | warning  | server | Davet bağlantısını yeniden talep edin.           |
-| `VET-AUTH-0003`      | E-posta veya şifre hatalı             | 401  | warning  | server | Bilgileri kontrol edip tekrar deneyin.           |
-| `VET-AUTH-0004`      | Çok fazla başarısız deneme            | 429  | warning  | server | 15 dakika sonra tekrar deneyin.                  |
-| `VET-AUTH-0005`      | Hesap kilitlendi                      | 423  | error    | server | Yönetici ile iletişime geçin.                    |
-| `VET-AUTH-0006`      | Şifre süresi dolmuş                   | 401  | info     | server | Şifre yenileme talebi gönderin.                  |
+| `VET-AUTH-0001`      | Oturum geçersiz / kimlik doğrulama gerekli | 401  | warning  | server | Yeniden giriş yapın.                             |
+| `VET-AUTH-0002`      | E-posta veya parola hatalı (genel)    | 401  | warning  | server | Bilgileri kontrol edip tekrar deneyin.           |
+| `VET-AUTH-0003`      | Hesap geçici olarak kilitlendi        | 423  | error    | server | 15 dakika bekleyip tekrar deneyin.               |
+| `VET-AUTH-0004`      | Sıfırlama token'ı geçersiz / süresi dolmuş | 400  | warning  | server | Yeni sıfırlama talebi gönderin.                  |
+| `VET-AUTH-0005`      | Davet geçersiz / süresi dolmuş / çakışma | 400/409 | warning  | server | Davet bağlantısını yeniden talep edin.           |
+| `VET-AUTH-0006`      | Şifre süresi dolmuş                   | 401  | info     | server | Şifre yenileme talebi gönderin (GOAL-012+).      |
+| `VET-AUTH-0007`      | Parola politikasına uyumsuz           | 422  | warning  | server | En az 12 karakter; büyük/küçük harf ve rakam içermeli. |
+| `VET-AUTH-0008`      | Yeni parola eskisiyle aynı            | 400  | warning  | server | Farklı bir parola seçin.                         |
 
 ## Yetkilendirme (AUTHZ)
 

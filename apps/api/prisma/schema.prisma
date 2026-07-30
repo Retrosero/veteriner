@@ -1,17 +1,23 @@
 // GOAL-010 — Tenant ve şube veri modeli.
+// GOAL-011 — Kimlik doğrulama ve oturum yönetimi (User, Session, Invitation,
+// PasswordResetToken).
+//
 // Bu şema Faz 1 platform çekirdeğinin temelidir:
 // - `tenants` kök tablosudur (multi-tenant kök).
 // - `branches` tenant'a bağlı şubelerdir (pilot tek şube ile başlar).
+// - `users` platform kullanıcılarıdır (parola, oturum, kilit).
+// - `user_sessions` aktif oturumlardır (cookie token).
+// - `user_invitations` tenant'a kullanıcı davetleridir.
+// - `password_reset_tokens` parola sıfırlama token'larıdır.
 // - `audit_events` append-only olay tablosudur (klinik/finansal kayıt
 //   koruması).
-// - `user_tenant_memberships` GOAL-011 ile birlikte doldurulacak; şema
-//   burada GOAL-010 kapsamında hazırlanır (cross-tenant negatif testlerde
-//   kullanılır).
+// - `user_tenant_memberships` kullanıcı ↔ tenant ilişkisidir; bu goal
+//   kapsamında `User` FK ile sıkılaştırılır.
 //
 // RLS (Row Level Security) migration dosyasında etkinleştirilir:
 // apps/api/prisma/migrations/<timestamp>_init/migration.sql
 //
-// @see docs/domain/DOMAIN_GLOSSARY.md — tenant, branch varlık tanımları.
+// @see docs/domain/DOMAIN_GLOSSARY.md — tenant, branch, user varlık tanımları.
 // @see docs/errors/AUDIT_LOG_STANDARD.md — audit event şeması.
 // @see skills/DATABASE_MULTITENANCY.md — multi-tenant veri kuralları.
 
@@ -77,6 +83,7 @@ model Tenant {
 
   branches      Branch[]
   memberships   UserTenantMembership[]
+  invitations   UserInvitation[]
 
   @@index([status, createdAt])
   @@index([country])
@@ -135,9 +142,9 @@ model Branch {
 }
 
 // -----------------------------------------------------------------------------
-// USER_TENANT_MEMBERSHIP — Tenant-scoped kullanıcı üyeliği (GOAL-011
-// tarafından doldurulacak). Şema bu goal'da hazırlanır; auth modülü
-// eklenince kullanıcılar burada tenant + rol ile eşleşir.
+// USER_TENANT_MEMBERSHIP — Tenant-scoped kullanıcı üyeliği.
+// GOAL-011 ile birlikte `User` FK bağlantısı kurulur; tenant kapsamında
+// rol ataması bu tablo üzerinden yapılır.
 // -----------------------------------------------------------------------------
 
 /// Tenant üyelik durumu.
@@ -153,7 +160,7 @@ enum MembershipStatus {
 /// olabilir (örn. SUPERADMIN). Üyelik aktifse o tenant'ta çalışabilir.
 model UserTenantMembership {
   id         String           @id @default(uuid()) @db.Uuid
-  /// Kullanıcı ID (string; GOAL-011 ile gerçek `User` modeline FK).
+  /// Kullanıcı ID (`User.id` FK).
   userId     String           @db.Uuid @map("user_id")
   /// Ait olduğu tenant.
   tenantId   String           @db.Uuid @map("tenant_id")
@@ -168,11 +175,189 @@ model UserTenantMembership {
   revokedAt  DateTime?        @db.Timestamptz(6) @map("revoked_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@unique([userId, tenantId])
   @@index([tenantId, status])
   @@index([userId])
   @@map("user_tenant_memberships")
+}
+
+// -----------------------------------------------------------------------------
+// USER — Platform kullanıcısı. Personel paneli için kimlik doğrulama
+// temel taşı. SUPERADMIN de bu tabloda yaşar; `memberships` üzerinden
+// tenant bağlamı kazanır. Parola bcrypt ile hash'lenir (cost 12).
+// -----------------------------------------------------------------------------
+
+/// Kullanıcı hesap durumu.
+enum UserStatus {
+  /// Hesap aktif; giriş yapabilir.
+  active
+  /// Yönetici tarafından geçici olarak devre dışı.
+  suspended
+  /// Hesap silinmiş (soft delete; audit trail korunur).
+  disabled
+
+  @@map("user_status")
+}
+
+/// Platform kullanıcısı. Email benzersizdir; tenant bağlamı
+/// `UserTenantMembership` üzerinden sağlanır. Bir kullanıcı birden
+/// fazla tenant'a üye olabilir (örn. SUPERADMIN, danışman).
+model User {
+  id                 String    @id @default(uuid()) @db.Uuid
+  /// Benzersiz e-posta (giriş anahtarı). Sistem genelinde unique;
+  /// tenant bazlı değil (cross-tenant davet için de aynı email
+  /// kullanılabilir).
+  email              String    @unique @db.VarChar(200)
+  /// bcrypt parola hash (cost 12). Asla plain text loglanmaz.
+  passwordHash       String    @db.VarChar(200) @map("password_hash")
+  /// Hesap durumu.
+  status             UserStatus @default(active)
+  /// Görünen ad (operatör panelinde). PII; mask'leme uygulanır.
+  displayName        String    @db.VarChar(200) @map("display_name")
+  /// Kullanıcının tercih ettiği locale.
+  locale             String    @default("tr-TR") @db.VarChar(10)
+  /// Parolanın son değiştirilme zamanı. Eski parolaların süresi
+  /// politika ile takip edilir.
+  passwordChangedAt  DateTime? @db.Timestamptz(6) @map("password_changed_at")
+  /// Başarısız login denemesi sayacı. Brute-force koruması için.
+  failedLoginCount   Int       @default(0) @map("failed_login_count")
+  /// Hesap kilit bitiş zamanı. Bu tarihe kadar giriş reddedilir.
+  lockedUntil        DateTime? @db.Timestamptz(6) @map("locked_until")
+  /// Son başarılı login zamanı.
+  lastLoginAt        DateTime? @db.Timestamptz(6) @map("last_login_at")
+  /// Hesap oluşturulma zamanı.
+  createdAt          DateTime  @default(now()) @db.Timestamptz(6) @map("created_at")
+  /// Son güncelleme zamanı.
+  updatedAt          DateTime  @updatedAt @db.Timestamptz(6) @map("updated_at")
+  /// Soft delete zamanı (kullanıcı pasif edildi; veri korunur).
+  archivedAt         DateTime? @db.Timestamptz(6) @map("archived_at")
+
+  sessions           UserSession[]
+  passwordResets     PasswordResetToken[]
+  memberships        UserTenantMembership[]
+
+  @@index([status])
+  @@index([lockedUntil])
+  @@map("users")
+}
+
+// -----------------------------------------------------------------------------
+// USER_SESSION — Aktif kullanıcı oturumu. Cookie tabanlı bearer token
+// (sha256 hash). Süre dolunca veya `revokedAt` set edilince geçersiz
+// olur. Token rotation için yeni session insert + eski revoke.
+// -----------------------------------------------------------------------------
+
+/// Kullanıcı oturumu.
+model UserSession {
+  id              String   @id @default(uuid()) @db.Uuid
+  /// Ait olduğu kullanıcı.
+  userId          String   @db.Uuid @map("user_id")
+  /// SHA-256 hash'lenmiş bearer token. Plain token sadece login/logout
+  /// response'unda döner; DB'de asla plain yok.
+  tokenHash       String   @unique @db.VarChar(128) @map("token_hash")
+  /// Oturumun son kullanma zamanı. Default 30 gün.
+  expiresAt       DateTime @db.Timestamptz(6) @map("expires_at")
+  /// Son kullanım zamanı (idle timeout hesabı).
+  lastUsedAt      DateTime @default(now()) @db.Timestamptz(6) @map("last_used_at")
+  /// Mask'li IP (son oktet `***`).
+  ipAddress       String?  @db.VarChar(50) @map("ip_address")
+  /// User agent SHA-256 hash (PII koruması).
+  userAgentHash   String?  @db.VarChar(64) @map("user_agent_hash")
+  /// Oluşturulma zamanı.
+  createdAt       DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  /// Rotation sırasında set edilir: eski session'ın yerini alan session.
+  replacedById    String?  @db.Uuid @map("replaced_by_id")
+  /// Manuel/logout ile sona erme zamanı.
+  revokedAt       DateTime? @db.Timestamptz(6) @map("revoked_at")
+  /// Revoke sebebi (logout, rotation, admin_action).
+  revokedReason   String?  @db.VarChar(50) @map("revoked_reason")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+  @@map("user_sessions")
+}
+
+// -----------------------------------------------------------------------------
+// USER_INVITATION — Tenant'a kullanıcı davet akışı. Davet link'i
+// tek kullanımlıktır; kabul edilince User oluşturulur + membership
+// atanır. Süresi 7 gün.
+// -----------------------------------------------------------------------------
+
+/// Kullanıcı davet durumu.
+enum InvitationStatus {
+  /// Davet gönderildi, henüz cevap yok.
+  pending
+  /// Davet kabul edildi, User oluşturuldu.
+  accepted
+  /// Davet süresi doldu.
+  expired
+  /// Davet iptal edildi (admin tarafından).
+  cancelled
+
+  @@map("invitation_status")
+}
+
+/// Tenant'a kullanıcı davet kaydı. Token tek kullanımlık ve süreli.
+model UserInvitation {
+  id            String           @id @default(uuid()) @db.Uuid
+  /// Davet edilen tenant.
+  tenantId      String           @db.Uuid @map("tenant_id")
+  /// Davet edilen e-posta.
+  email         String           @db.VarChar(200)
+  /// Davet sonrası atanacak tenant rolü.
+  role          String           @db.VarChar(32)
+  /// SHA-256 hash'lenmiş davet token.
+  tokenHash     String           @unique @db.VarChar(128) @map("token_hash")
+  /// Daveti gönderen kullanıcı (audit için).
+  invitedBy     String?          @db.Uuid @map("invited_by")
+  /// Davet durumu.
+  status        InvitationStatus @default(pending)
+  /// Davet son kullanma zamanı (7 gün).
+  expiresAt     DateTime         @db.Timestamptz(6) @map("expires_at")
+  /// Kabul zamanı (başarılı davet).
+  acceptedAt    DateTime?        @db.Timestamptz(6) @map("accepted_at")
+  /// Oluşturulma zamanı.
+  createdAt     DateTime         @default(now()) @db.Timestamptz(6) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([tenantId, status])
+  @@index([email])
+  @@index([expiresAt])
+  @@map("user_invitations")
+}
+
+// -----------------------------------------------------------------------------
+// PASSWORD_RESET_TOKEN — Parola sıfırlama akışı. Kullanıcı e-posta ile
+// sıfırlama talep eder; token link ile gelir; tek kullanımlık ve süreli
+// (1 saat). Kullanılınca veya yeni token üretilince eskiler geçersiz
+/// sayılır (rotation).
+// -----------------------------------------------------------------------------
+
+/// Parola sıfırlama token'ı. Tek kullanımlık; 1 saat geçerli.
+model PasswordResetToken {
+  id          String    @id @default(uuid()) @db.Uuid
+  /// Token talep eden kullanıcı.
+  userId      String    @db.Uuid @map("user_id")
+  /// SHA-256 hash'lenmiş token.
+  tokenHash   String    @unique @db.VarChar(128) @map("token_hash")
+  /// Token son kullanma zamanı (1 saat).
+  expiresAt   DateTime  @db.Timestamptz(6) @map("expires_at")
+  /// Kullanım zamanı (null = henüz kullanılmadı).
+  usedAt      DateTime? @db.Timestamptz(6) @map("used_at")
+  /// Oluşturulma zamanı.
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
 }
 
 // -----------------------------------------------------------------------------

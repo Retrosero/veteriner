@@ -117,7 +117,7 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
     docs-check VET- + AI chunks validator, 18 unit test geçti)
 - **Faz 1 — Platform çekirdeği** ⏳ sırada
   - GOAL-010 ✅ tenant ve şube (tamamlandı — 2026-07-30)
-  - GOAL-011 kimlik doğrulama ve oturum
+  - GOAL-011 ✅ kimlik doğrulama ve oturum (tamamlandı — 2026-07-30)
   - GOAL-012 RBAC ve izin motoru
   - GOAL-013 feature flag
   - GOAL-014 dosya servisi

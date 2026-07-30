@@ -5,16 +5,20 @@
  * @description NestJS uygulamasını başlatır:
  * - Global exception filter (AllExceptionsFilter)
  * - Global request ID interceptor
- * - Global actor interceptor (GOAL-010 auth placeholder)
+ * - Global actor interceptor (AuthGuard session varsa override eder;
+ *   aksi halde header placeholder fallback — GOAL-010 uyumu)
  * - Helmet (güvenlik başlıkları)
- * - CORS (WEB_BASE_URL'den)
+ * - CORS (WEB_BASE_URL'den, credentials=true)
+ * - Cookie parser (GOAL-011 session cookie)
  * - Compression
- * - Swagger UI (/api/docs) ve JSON (/api/docs-json)
+ * - Swagger UI (/api/docs)
  * - Shutdown hooks
  *
- * @security Şu an tenant bağlamı header'lardan geliyor (GOAL-010).
- *   Production'da reverse proxy (nginx) tarafında TLS, rate limit ve
- *   IP filtreleme uygulanır. GOAL-011 ile gerçek auth gelecek.
+ * @security Production'da reverse proxy (nginx) TLS, rate limit ve
+ *   IP filtreleme uygular. Session cookie httpOnly + secure (prod)
+ *   + SameSite=Lax.
+ *
+ * @since GOAL-011 (FAZ-1) cookie tabanlı session
  */
 
 import "reflect-metadata";
@@ -23,6 +27,7 @@ import { Logger, ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import compression from "compression";
+import cookieParser from "cookie-parser";
 import helmet from "helmet";
 
 import { AppModule } from "./app.module.js";
@@ -42,6 +47,7 @@ async function bootstrap(): Promise<void> {
 
   app.use(helmet({ contentSecurityPolicy: false }));
   app.use(compression());
+  app.use(cookieParser());
   app.enableCors({
     origin: env.WEB_BASE_URL,
     credentials: true,
@@ -65,13 +71,18 @@ async function bootstrap(): Promise<void> {
     .setTitle("VetNiva API")
     .setDescription(
       "VetNiva çok kiracılı veteriner klinik + petshop SaaS API. " +
-        "GOAL-010: tenant + branch altyapısı (auth placeholder). " +
+        "GOAL-011: kimlik doğrulama (cookie session) + GOAL-010 tenant altyapısı. " +
         "Detaylı sözleşme için packages/contracts.",
     )
     .setVersion(env.APP_VERSION)
     .addApiKey(
       { type: "apiKey", name: REQUEST_ID_HEADER, in: "header" },
       "request-id",
+    )
+    .addCookieAuth(
+      "vetniva_session",
+      undefined,
+      "Session cookie (GOAL-011)",
     )
     .addApiKey(
       { type: "apiKey", name: "x-actor-id", in: "header" },
@@ -99,7 +110,7 @@ async function bootstrap(): Promise<void> {
   logger.log(`Swagger UI: http://localhost:${env.PORT_API}/api/docs`);
   logger.log(`Request ID header: ${REQUEST_ID_HEADER}`);
   logger.log(
-    "Actor headers (GOAL-010 placeholder): x-actor-id, x-actor-role, x-tenant-id",
+    "Auth: cookie tabanlı (vetniva_session, httpOnly, SameSite=Lax). Login: POST /api/v1/auth/login",
   );
 }
 

@@ -181,14 +181,177 @@ JWT/session tabanlı kimlik doğrulama devreye girer.
 
 | Header          | Açıklama                                | Zorunlu (dev) | Zorunlu (prod) |
 | --------------- | --------------------------------------- | ------------- | -------------- |
-| `X-Actor-Id`    | Kullanıcı UUID                          | hayır         | evet (auth sonra) |
-| `X-Actor-Role`  | SUPERADMIN / OWNER / VETERINARIAN / STAFF | hayır       | evet            |
-| `X-Tenant-Id`   | Aktif tenant UUID                        | hayır         | evet            |
-| `X-Branch-Id`   | Aktif şube UUID                          | hayır         | hayır           |
+| `X-Actor-Id`    | Kullanıcı UUID (GOAL-010 placeholder)   | hayır         | hayır (auth zorunlu) |
+| `X-Actor-Role`  | SUPERADMIN / OWNER / VETERINARIAN / STAFF (placeholder) | hayır | hayır |
+| `X-Tenant-Id`   | Aktif tenant UUID (placeholder)         | hayır         | hayır |
+| `X-Branch-Id`   | Aktif şube UUID (placeholder)           | hayır         | hayır |
 | `X-Request-Id`  | Correlation ID (UUID v4)                | hayır         | önerilir        |
+| `Cookie: vetniva_session=<token>` | GOAL-011 session cookie | hayır | evet |
+| `Authorization: Bearer <token>`   | Alternatif: header tabanlı | hayır | evet |
 
-**Güvenlik notu:** Production'da bu header'lar yoksa `VET-AUTH-0001`
-(401) döner. GOAL-011 sonrası bu header'lar yoksayılır.
+**Güvenlik notu (GOAL-011):** Production'da session cookie / bearer
+token zorunlu. `X-Actor-*` header'ları test/dev ortamında fallback
+olarak çalışır; production'da yoksayılır. Public endpoint'ler (login,
+forgot, reset, accept) için auth gerekmez.
+
+---
+
+## Kimlik Doğrulama (`/api/v1/auth`)
+
+> **GOAL-011 — Kimlik doğrulama ve oturum yönetimi.**
+> Session cookie (`vetniva_session`, httpOnly, SameSite=Lax) veya
+> `Authorization: Bearer <token>` header ile çalışır. Token DB'de
+> SHA-256 hash olarak saklanır; plain token sadece login/reset
+> response'unda döner.
+
+### POST /api/v1/auth/login
+
+Personel paneli girişi. Email + parola ile session oluşturur.
+
+- **Modül:** auth
+- **Yetki:** public
+- **Idempotency:** Hayır
+- **Audit:** `audit:auth.login.success` (info) veya `audit:auth.login.failure` (warning/error)
+- **Rate limit:** Brute-force koruması (5 deneme / 15 dakika kilit)
+
+**Request body:**
+
+```json
+{
+  "email": "vet@pilot.com",
+  "password": "StrongPass123",
+  "tenantSlug": "pilot-vet-kadikoy"
+}
+```
+
+**Response 200:** `LoginResponse` (sessionToken, expiresAt, user, tenant, role, branchId). Cookie `vetniva_session` set edilir.
+
+**Hata kodları:** `VET-AUTH-0002` (401 — e-posta/parola hatalı, genel mesaj), `VET-AUTH-0003` (423 — kilitli), `VET-VALIDATION-0001` (422).
+
+### POST /api/v1/auth/logout
+
+Mevcut oturumu sona erdirir. Cookie temizlenir.
+
+- **Modül:** auth
+- **Yetki:** authenticated
+- **Audit:** `audit:auth.logout` (info)
+
+**Response 200:** `{ revokedAt: ISO8601 }`. Cookie silinir.
+
+### POST /api/v1/auth/refresh
+
+Token rotation. Eski session `replacedById` ile yeni session'a bağlanır.
+
+- **Modül:** auth
+- **Yetki:** authenticated
+- **Audit:** `audit:auth.session.rotate` (info)
+
+**Response 200:** `RefreshResponse` (yeni sessionToken, expiresAt). Cookie güncellenir.
+
+### POST /api/v1/auth/forgot
+
+Parola sıfırlama talebi. Email var/yok bilgisi sızdırılmaz (her zaman 200).
+
+- **Modül:** auth
+- **Yetki:** public
+- **Audit:** `audit:auth.password.reset_request` (info) — kullanıcı varsa.
+
+**Request body:** `{ "email": "vet@pilot.com" }`
+**Response 200:** `{ "message": "Eğer bu e-posta kayıtlıysa sıfırlama linki gönderildi" }`
+
+### POST /api/v1/auth/reset
+
+Parola sıfırlama (token + yeni parola). Token tek kullanımlık; başarılı işlemde tüm aktif session'lar iptal edilir.
+
+- **Modül:** auth
+- **Yetki:** public
+- **Audit:** `audit:auth.password.reset_success` (warning)
+
+**Request body:** `{ "token": "<plain-token-from-email>", "newPassword": "NewPass123" }`
+**Response 200:** `ResetPasswordResponse` (message + opsiyonel yeni sessionToken). Yeni cookie set edilir.
+
+**Hata kodları:** `VET-AUTH-0004` (400 — token invalid/kullanılmış/süresi dolmuş), `VET-AUTH-0007` (422 — parola policy), `VET-AUTH-0008` (400 — eski parolayla aynı).
+
+### POST /api/v1/auth/change-password
+
+Oturum açıkken parola değişimi. Eski parola doğrulanır.
+
+- **Modül:** auth
+- **Yetki:** authenticated
+- **Audit:** `audit:auth.password.change` (info)
+
+**Request body:** `{ "currentPassword": "...", "newPassword": "..." }`
+**Response 200:** `{ "message": "Parola güncellendi" }`
+
+### POST /api/v1/auth/invitations
+
+Tenant admin yeni kullanıcıyı tenant'a davet eder. Davet token üretilir; e-posta gönderimi GOAL-015 ile entegre olur (şu an log).
+
+- **Modül:** auth
+- **Yetki:** `tenant:tenant:invite` (OWNER / SUPERADMIN)
+- **Audit:** `audit:auth.invitation.create` (info)
+
+**Request body:** `{ "email": "...", "role": "STAFF", "message": "opsiyonel" }`
+**Response 201:** `InviteUserResponse` (invitationId, email, role, expiresAt, invitationUrl).
+
+**Hata kodları:** `VET-AUTH-0005` (409 — bekleyen davet var), `VET-VALIDATION-0001` (422).
+
+### POST /api/v1/auth/invitations/accept
+
+Davet kabul. Yeni parola oluşturur + User oluşturur + membership atar + otomatik login.
+
+- **Modül:** auth
+- **Yetki:** public
+- **Audit:** `audit:auth.invitation.accept` (info)
+
+**Request body:** `{ "token": "...", "displayName": "...", "password": "...", "locale": "tr-TR" }`
+**Response 200:** `AcceptInvitationResponse` (LoginResponse şeması). Cookie set edilir.
+
+**Hata kodları:** `VET-AUTH-0005` (400 — geçersiz/süresi dolmuş davet).
+
+### POST /api/v1/auth/switch-tenant
+
+Multi-tenant üye kullanıcı için aktif tenant değişimi. Yeni session üretmez.
+
+- **Modül:** auth
+- **Yetki:** authenticated
+- **Audit:** log'a düşer (actor context değişimi)
+
+**Request body:** `{ "tenantSlug": "..." }`
+**Response 200:** `{ "tenantId": "...", "role": "VETERINARIAN" }`
+
+---
+
+## Self-Service (`/api/v1/me`)
+
+> Oturum açmış kullanıcının kendi bilgileri. Tümü auth gerektirir.
+
+### GET /api/v1/me
+
+Aktif kullanıcı + session + üyelikler.
+
+- **Modül:** identity
+- **Yetki:** authenticated
+- **Response:** `MeResponse` (user, session, tenant, role, branchId, memberships[])
+
+### GET /api/v1/me/sessions
+
+Kullanıcının tüm session'ları (aktif + iptal edilmiş). `isCurrent` bayrağı mevcut oturumu işaretler.
+
+- **Modül:** identity
+- **Yetki:** authenticated
+- **Response:** `SessionListResponse` (items[])
+
+### DELETE /api/v1/me/sessions/:id
+
+Belirli bir session'ı iptal et (logout-remote). Başka kullanıcının session'ı iptal edilemez (404).
+
+- **Modül:** identity
+- **Yetki:** authenticated
+- **Audit:** `audit:auth.session.revoke` (info)
+- **Response:** `{ "revoked": true }`
+
+---
 
 ---
 
