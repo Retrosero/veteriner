@@ -3112,3 +3112,70 @@ generated_at: "2026-07-30"
     - "POST /api/v1/portal-auth/forgot-password"
     - "POST /api/v1/portal-auth/reset-password"
 
+- chunk_id: flow-portal-pet-list
+  type: flow
+  source: docs/api/api.get._api_v1_portal-pets*.md
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Portal Hayvan Listesi ve Detayı Akışı"
+  content: |
+    Personel `PatientsService`'nden ayrı, sadece `actorType: "portal_user"`
+    için çalışan bir okuma yüzeyi. Personel hastası ile portal
+    hayvanı aynı `Patient` tablosunu okur; fark sadece filtre ve
+    PII maskesinde.
+
+    1. **Liste** (`GET /api/v1/portal-pets`, 200): Auth
+       `PortalSessionGuard` (cookie `vetniva_portal_session` veya
+       `Authorization: Bearer`). `tenantId` + `portalUserId` session'dan.
+       `PortalUser.findById` ile `ownerId` çözülür;
+       `PatientsService.search({ ownerId, limit: 200, offset: 0 })`
+       aktif (`archivedAt=null`) hastaları döner. Sıralama
+       `createdAt` desc. Her hasta için
+       `AppointmentsService.list({ patientId, status: "completed" })`
+       sonucu `start` desc sıralanır; ilk eleman `lastVisitAt`
+       olarak eklenir (yoksa `undefined`). Portal user silinmişse
+       idempotent boş liste. `requireTenantScope`:
+       `actor.tenantId !== tenantId` ise 403 `VET-AUTHZ-0001`
+       (SUPERADMIN bypass).
+
+    2. **Detay** (`GET /api/v1/portal-pets/:id`, 200): 4 katmanlı
+       kontrol. (a) `PortalUser` yoksa 404 `VET-CLINIC-0001`.
+       (b) `PatientsService.findById` cross-tenant veya
+       `archivedAt !== null` ise 404 (sabit kod, bilgi sızdırmaz).
+       (c) `patient.ownerId !== portalUser.ownerId` ise 404
+       (yine `VET-CLINIC-0001`; 403 KULLANILMAZ). (d) Hepsi geçerse
+       `alertsCount = AlertsService.getActiveAlertsForPatient(...).length`.
+       `nextVaccinationDate` FAZ-0'da `undefined` (vaccination
+       modülü yok); ileride `VaccinationService.getNextScheduledForPatient`.
+
+    3. **Response şeması**: `PortalPetListResponse = { items:
+       PortalPetSummary[], total }`. `PortalPetSummary = { id,
+       name, species, breed?, birthDate?, photoUrl?, lastVisitAt? }`.
+       `PortalPetDetail = { ...summary, gender, microchip, color,
+       neutered, notes, ownerId, alertsCount, nextVaccinationDate? }`.
+       PII alanları (muayene, fatura, reçete) **dönmez** — owner
+       yalnızca temel kimlik + aktif uyarı sayısı görür.
+
+    4. **Auth farkı**: Personel `PatientsService` `clinic:patient:read`
+       yetkisi ister; portal bu guard'ı kullanmaz. `PortalSessionGuard`
+       + `role: "PET_OWNER_PORTAL"` + `source: "portal_session"`
+       ile ayrılır. `actorType: "portal_user"` audit/correlation
+       için farklı.
+
+    **Idempotency**: GET → N/A. **Audit**: read-only, audit yok.
+    **Tenant scope**: `actor.tenantId === tenantId`; SUPERADMIN
+    bypass.
+  keywords: [portal, hasta sahibi, hayvan, pet, list, detay,
+    owner filtresi, archived, alertsCount, lastVisitAt,
+    nextVaccinationDate, photoUrl, bilgi sızdırmaz]
+  related_chunks: [glossary-portal-user, glossary-owner, glossary-patient,
+    error-VET-CLINIC-0001, error-VET-AUTHZ-0001,
+    error-VET-VALIDATION-0001, flow-portal-auth]
+  related_pages: []
+  related_api:
+    - "GET /api/v1/portal-pets"
+    - "GET /api/v1/portal-pets/{id}"
+

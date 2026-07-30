@@ -139,6 +139,6 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
     ile. 24/24 portal-auth testi + 385/385 api testi geçti. Sonraki
     tick: docs/RAG chunk/i18n key parity + telefon doğrulama stub +
     DB migration.
-  - GOAL-034 Portal hayvan listesi ve detay
+  - GOAL-034 ✅ Portal hayvan listesi ve detayı (tamamlandı — 2026-07-30)
   - GOAL-035 Online randevu talebi
   - GOAL-036 Randevu hatırlatma sistemi
