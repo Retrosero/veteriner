@@ -128,5 +128,9 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-021 ✅ Hayvan kayıt sistemi (tamamlandı — 2026-07-30)
   - GOAL-022 ✅ Sahiplik geçmişi (tamamlandı — 2026-07-30)
   - GOAL-023 ✅ Alerji, kronik durum, klinik uyarılar (tamamlandı — 2026-07-30)
-  - GOAL-024 hayvan zaman çizelgesi
+  - GOAL-024 ⏳ partial — hayvan zaman çizelgesi (core tamamlandı:
+    TimelineService + AlertTimelineSource + OwnershipTimelineSource +
+    FileTimelineSource; 6 unit test geçti. Doküman/i18n/RAG/cross-ref
+    sonraki tick'lerde eklenecek. Diğer FAZ-3+ event source'ları ilgili
+    modüller hazır olduğunda kayıt edilecek; event contract hazır.)
   - GOAL-025 portal erişim daveti
