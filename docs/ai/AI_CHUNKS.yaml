@@ -3630,3 +3630,75 @@ generated_at: "2026-07-30"
     - "PATCH /api/v1/clinic/examinations/{id}/soap"
     - "POST /api/v1/clinic/examinations/{id}/soap/sign"
     - "POST /api/v1/clinic/examinations/{id}/soap/amend"
+- chunk_id: flow-vitals
+  type: flow
+  source: apps/api/src/modules/vitals/vitals.service.ts
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Vital Bulgular Kayıt Akışı"
+  content: |
+    1. **Kaydet** (`POST /api/v1/clinic/examinations/{id}/vitals`, 201,
+       yetki `clinic:examination:create`, STAFF/VETERINARIAN): Zod
+       şema `vitalSignsCreateInputSchema` enforce eder. `vitalSigns`
+       alanları: `temperatureC` (35-42°C), `heartRateBpm` (30-300
+       int), `respiratoryRateBpm` (8-100 int), `weightKg` (0-200),
+       `bodyConditionScore` (1-9 int), `temperatureMethod` (rectal
+       | ear | axillary), `bloodPressureSystolic` (60-250 int),
+       `bloodPressureDiastolic` (40-150 int), `capillaryRefillTime`
+       (0-5 sn), `mucousMembraneColor` (pink | pale | cyanotic |
+       icteric | congested), `notes` (max 2000). Tüm alanlar
+       opsiyoneldir; service `hasAnyMeasurement()` ile en az bir
+       ölçüm alanı dolu olmalı kontrolü yapar (`notes` tek başına
+       yetmez) → aksi 422 `VET-VALIDATION-0010`. Range aşımı →
+       422 `VET-VALIDATION-0001` (Zod parse).
+    2. Service önce `ExaminationsService.findById(tenantId, id,
+       actor)` ile muayenenin aynı tenant'ta olduğunu doğrular.
+       Cross-tenant → 404 `VET-CLINIC-0001` (bilgi sızdırmaz).
+       `patientId` + `veterinarianId` muayeneden türetilir; client
+       gönderemez (tutarlılık garantisi).
+    3. Repository insert: `id = vitals-<tenant8>-000001` (artan
+       sayaç, tenant başına), `takenAt = input.takenAt ?? now`,
+       `recordedBy = actor.actorId`. Audit `audit:vitals.record`
+       (info) — examinationId, patientId, veterinarianId, takenAt,
+       fields (hangi ölçüm alanları dolduruldu).
+    4. **Listele (Muayene)** (`GET
+       /api/v1/clinic/examinations/{id}/vitals`, 200, yetki
+       `clinic:examination:read`): tenant-scoped, `takenAt` desc.
+       Cross-tenant examinationId için boş dizi (bilgi sızdırmaz;
+       okuma endpoint'i, muayene varlık kontrolü ayrıca yapılmaz).
+    5. **En Yeni (Hasta)** (`GET
+       /api/v1/clinic/patients/{id}/vitals/latest`, 200, yetki
+       `clinic:patient:read`): Patient `PatientsService.findById`
+       ile aynı tenant'ta mı doğrulanır; cross-tenant → 404
+       `VET-CLINIC-0001`. Tenant-scoped tüm vital kayıtları
+       arasında en yeni `takenAt` döner; hiç kayıt yoksa `null`.
+    6. **Append-only politika:** Mevcut vital kaydı üzerinde
+       UPDATE/DELETE yok. Yanlış ölçüm düzeltmesi yeni vital
+       kaydı yazımı ile yapılır (önceki kayıt korunur; muayene
+       zaman çizelgesinde tüm ölçümler görünür kalır). Production
+       migration'da DB trigger (`update`/`delete` → reddet) FAZ-0'da
+       no-op flag.
+    7. **Tenant izolasyonu:** `requireTenantScope(actor, tenantId)`
+       + `record` (examination varlık kontrolü) + `latestForPatient`
+       (patient varlık kontrolü) tümü `actor.tenantId` kapsamında;
+       cross-tenant denemesi → 403 `VET-AUTHZ-0001` veya 404
+       `VET-CLINIC-0001`.
+  keywords: [vital, vital bulgular, vital signs, ateş, nabız, solunum,
+             ağırlık, BCS, kan basıncı, CRT, mukoza, temperatureC,
+             heartRateBpm, respiratoryRateBpm, weightKg,
+             bodyConditionScore, bloodPressure, capillaryRefillTime,
+             mucousMembraneColor, range validation, append-only,
+             tenant-scoped, audit:vitals.record, takenAt desc, latest,
+             VET-VALIDATION-0010 boş vital seti]
+  related_chunks: [glossary-examination, glossary-patient,
+                   flow-examination-create, error-VET-CLINIC-0001,
+                   error-VET-VALIDATION-0001, error-VET-VALIDATION-0010,
+                   error-VET-AUTHZ-0001, error-VET-TENANT-0001]
+  related_pages: []
+  related_api:
+    - "POST /api/v1/clinic/examinations/{id}/vitals"
+    - "GET /api/v1/clinic/examinations/{id}/vitals"
+    - "GET /api/v1/clinic/patients/{id}/vitals/latest"
