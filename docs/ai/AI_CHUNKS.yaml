@@ -3407,3 +3407,133 @@ generated_at: "2026-07-30"
   related_api:
     - "GET /api/v1/clinic/appointments/{id}/reminders"
     - "POST /api/v1/clinic/appointment-reminders/process"
+
+# -----------------------------------------------------------------------------
+# EXAMINATION (GOAL-040 / FAZ-4) — muayene başlatma ve yaşam döngüsü
+# -----------------------------------------------------------------------------
+# Source: apps/api/src/modules/examinations/{service,controller}.ts
+#   + packages/contracts/src/examination.ts
+# State machine: in_progress → completed → (sign: signedAt/signedBy)
+#   → amended (append-only ExaminationAmend kaydı ile).
+# Append-only klinik kayıt politikası; imza sonrası UPDATE/DELETE
+#   tetiklenir (FAZ-0 no-op flag, sadece log).
+
+- chunk_id: flow-examination-create
+  type: flow
+  source: apps/api/src/modules/examinations/examinations.service.ts
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Muayene Başlatma ve Tamamlama Akışı"
+  content: |
+    1. **Başlat** (`POST /api/v1/clinic/examinations`, 201, yetki
+       `clinic:examination:create`): Zod şema `examinationCreateInputSchema`
+       enforce eder: `appointmentId` (non-empty), `type` (consultation
+       | follow_up | emergency | routine_check), `chiefComplaint`
+       (1-2000 karakter). Body'de `patientId` / `veterinarianId`
+       KABUL EDİLMEZ; appointment'tan türetilir.
+    2. Service önce `AppointmentsService.findById(tenantId,
+       appointmentId, actor)` ile appointment'ın aynı tenant'ta
+       olduğunu doğrular. Cross-tenant veya yok → 404
+       `VET-CLINIC-0001` (bilgi sızdırmaz).
+    3. `PatientsService.findById(tenantId, appt.patientId, actor)` ile
+       patient record'unun silinmemiş/arşivsiz olduğunu garanti eder.
+       Cross-tenant veya yok → 404 `VET-CLINIC-0001`.
+    4. Repository insert: `id = exam-<tenant8>-<uuid8>`, `status =
+       "in_progress"`, `startedAt = now`, `completedAt = null`,
+       `signedAt = null`, `signedBy = null`. `tenantId` her zaman
+       actor.tenantId'den alınır (request body'den güvenilmez).
+    5. Audit `audit:examination.create` (info) — appointmentId,
+       patientId, veterinarianId, type, status payload.
+    6. **Detay** (`GET /api/v1/clinic/examinations/{id}`, 200): tenant-
+       scoped; cross-tenant → null (controller 404 `VET-CLINIC-0001`).
+    7. **Liste** (`GET /api/v1/clinic/examinations`, 200): filtreler
+       `patientId | veterinarianId | status | from | to | limit (1-200,
+       default 20) | offset (0-10000, default 0)`. Sıralama
+       `startedAt desc`. Yetki `clinic:examination:read`.
+    8. **Tamamla** (`POST /api/v1/clinic/examinations/{id}/complete`,
+       200): mevcut `status !== "in_progress"` → 409
+       `VET-EXAM-0001` (details'te mevcut status). Status
+       `completed`, `completedAt = now`. Audit
+       `audit:examination.update` (info) — before/after
+       status+completedAt. Status makinesi:
+       in_progress → completed ✅; completed | amended → completed
+       ❌ (409).
+  keywords: [muayene, examination, başlat, start, complete, tamamla,
+             in_progress, completed, status makinesi, state machine,
+             cross-tenant guard, patientId türetme, append-only]
+  related_chunks: [glossary-examination, glossary-appointment,
+                   glossary-patient, error-VET-CLINIC-0001,
+                   error-VET-EXAM-0001, error-VET-AUTHZ-0001,
+                   error-VET-TENANT-0001, error-VET-VALIDATION-0001,
+                   flow-appointment-create]
+  related_pages: []
+  related_api:
+    - "POST /api/v1/clinic/examinations"
+    - "GET /api/v1/clinic/examinations"
+    - "GET /api/v1/clinic/examinations/{id}"
+    - "POST /api/v1/clinic/examinations/{id}/complete"
+
+- chunk_id: flow-examination-sign
+  type: flow
+  source: apps/api/src/modules/examinations/examinations.service.ts
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Muayene İmzalama ve Düzeltme (Amend) Akışı"
+  content: |
+    1. **İmzala** (`POST /api/v1/clinic/examinations/{id}/sign`, 200,
+       yetki `clinic:examination:sign`, VETERINARIAN): mevcut `status
+       !== "completed"` → 409 `VET-EXAM-0002`. Zaten imzalanmış
+       (`signedAt != null`) → 409 `VET-EXAM-0002` (details'te
+       mevcut signedAt).
+    2. Status `completed` korunur; `signedAt = now`, `signedBy =
+       actor.actorId` set. İmza sonrası **UPDATE/DELETE trigger**
+       aktifleşir (FAZ-0 no-op flag; production migration'da DB
+       trigger `signed → immutable`). Bu noktada service
+       `logger.log({msg: "examination.signed.lock_immutable",
+       examinationId, tenantId, signedBy})` logu bırakır.
+    3. Audit `audit:examination.sign` (info) — signedAt, signedBy,
+       previousStatus payload.
+    4. **Düzelt (Amend)** (`POST /api/v1/clinic/examinations/{id}/
+       amend`, 200, yetki `clinic:examination:amend`, VETERINARIAN):
+       body `ExaminationAmendInput { reason: string (1-2000) }`.
+       Zod şema enforce eder. `reason` zorunlu — klinik + hukuki
+       denetim için.
+    5. Yeni `ExaminationAmend` kaydı oluşturulur
+       (`id = exam-amend-<tenant8>-<uuid8>`): `tenantId`,
+       `examinationId`, `reason`, `amendedBy = actor.actorId`,
+       `amendedAt = now`, **`previousSignedAt` + `previousSignedBy`**
+       mevcut examination'dan immutable referans olarak kopyalanır.
+    6. Examination `status = "amended"` yapılır; muayene kaydının
+       kendisi DEĞİŞTİRİLMEZ (append-only). Yalnızca status + updatedAt
+       güncellenir; önceki imza referansı amendment'te saklanır.
+    7. Audit `audit:examination.amend` (**warning**) — amendId, reason,
+       previousStatus, previousSignedAt, previousSignedBy payload.
+       Amend işlemi denetim açısından hassas → warning severity.
+    8. Controller response: `{ examination, amend: last }` — amend
+       listesi service `listAmends` ile çekilir; son kayıt dönmezse
+       500 `VET-CLINIC-0001` (amend kaydı oluşturulamadı).
+    9. Status makinesi (imzalama): completed (signedAt=null) → imzala
+       ✅; in_progress → imzala ❌ (409); amended → imzala ❌ (409);
+       completed (signedAt set) → imzala ❌ (409). Amend zincin
+       multi-amend destekler; her biri ayrı append-only kayıt.
+    10. **Tenant izolasyonu**: `findById/update` + `amends.insert` +
+        `listAmends` tümü `actor.tenantId` kapsamında; cross-tenant
+        amendment denemesi → 404 `VET-CLINIC-0001`.
+  keywords: [muayene, imza, sign, amend, düzeltme, append-only,
+             immutability, klinik kayıt, signed, signedAt, signedBy,
+             previousSignedAt, immutability trigger, audit warning,
+             ExaminationAmend]
+  related_chunks: [glossary-examination, flow-examination-create,
+                   error-VET-CLINIC-0001, error-VET-EXAM-0002,
+                   error-VET-AUTHZ-0001, error-VET-TENANT-0001,
+                   error-VET-VALIDATION-0001]
+  related_pages: []
+  related_api:
+    - "POST /api/v1/clinic/examinations/{id}/sign"
+    - "POST /api/v1/clinic/examinations/{id}/amend"

@@ -143,7 +143,7 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-035 ✅ Online randevu talebi (tamamlandı — 2026-07-30)
   - GOAL-036 ✅ Randevu hatırlatma sistemi (tamamlandı — 2026-07-30)
 - **Faz 4 — Klinik muayene/aşı/reçete** ⏳ sırada
-  - GOAL-040 ⏳ Muayene başlatma ve yaşam döngüsü
+  - GOAL-040 ✅ Muayene başlatma ve yaşam döngüsü (tamamlandı — 2026-07-30)
   - GOAL-041 ⏳ SOAP klinik kaydı
   - GOAL-042 ⏳ Vital bulgular
   - GOAL-043 ⏳ Teşhis ve problem listesi
