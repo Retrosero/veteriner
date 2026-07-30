@@ -143,7 +143,7 @@ describe("SuperadminService", () => {
       expect(result.total).toBe(3);
       expect(result.page).toBe(1);
       expect(result.pageSize).toBe(20);
-      const first = result.items[0];
+      const first = result.items[0]!;
       expect(first.branchCount).toBe(2);
       expect(first.userCount).toBe(5);
       expect(first.enabledModules).toEqual(["clinic", "billing"]);
