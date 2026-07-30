@@ -150,4 +150,9 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-044 ✅ Tedavi planı ve klinik order (tamamlandı — 2026-07-30)
   - GOAL-045 ✅ Reçete oluşturma (tamamlandı — 2026-07-30)
   - GOAL-046 ✅ Kontrol randevusu oluşturma (tamamlandı — 2026-07-30)
-  - GOAL-047 ⏳ Klinik kayıt PDF ve paylaşım
+  - GOAL-047 ⏳ partial — core: generatePdf (placeholder text) +
+    shareWithPatient (channels + 7 gün TTL + audit) + listShares +
+    revokeShare (soft delete). 10/10 clinical-records testi + 526/526 api
+    testi geçti. Cross-tenant 404 VET-CLINIC-0001 doğrulandı. Sonraki
+    tick: docs/RAG chunk/i18n key parity + gerçek PDF render (FAZ-10+)
+    + DB migration.
