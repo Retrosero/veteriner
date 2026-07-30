@@ -4,6 +4,12 @@ VetNiva'daki tüm alanların anlamı, tipi, kısıtları ve tenant/güvenlik
 etkisi. Yeni alan eklenirken bu sözlüğe satır eklenir; `pnpm docs:check`
 form alanlarını bu sözlükle karşılaştırır (Faz 2+).
 
+**Not:** Bu sözlük **alan düzeyindedir** (alan adı + tip + kısıt).
+**Varlık/kavram düzeyinde** sözlük için
+[`docs/domain/DOMAIN_GLOSSARY.md`](../domain/DOMAIN_GLOSSARY.md)
+dosyasına bakın (GOAL-001 ile birlikte üretildi). İlişkiler,
+yaşam döngüsü ve silme/düzeltme kuralları orada tanımlıdır.
+
 ## Genel (Common)
 
 | Alan         | Tip         | Açıklama                            | Kısıt                                 |

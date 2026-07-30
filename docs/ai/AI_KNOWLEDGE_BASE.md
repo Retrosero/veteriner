@@ -4,26 +4,41 @@ Bu doküman, VetNiva AI asistanının kullanıcı sorularını yanıtlarken
 başvurduğu bilgi kaynağını oluşturur. Faz 11'de (Dokümantasyon ve AI
 kullanım asistanı temeli) zenginleştirilecektir.
 
+## Bilgi kaynakları (klasör yapısı)
+
+- `docs/domain/DOMAIN_GLOSSARY.md` — **varlık/kavram sözlüğü** (18
+  kavram, GOAL-001'de üretildi). AI asistanı "X nedir?" sorularını
+  bu kaynaktan yanıtlar.
+- `docs/domain/CLINICAL_FLOWS.md` — **uçtan uca iş akışları** (16
+  akış, GOAL-001'de üretildi). AI asistanı "X nasıl yapılır?"
+  sorularını bu kaynaktan yanıtlar.
+- `docs/domain/PILOT_SCOPE.md` — pilot kapsamı ve MVP dışı konular.
+  AI asistanı "bu özellik var mı?" sorularını buradan yanıtlar.
+- `docs/fields/FIELD_GLOSSARY.md` — alan düzeyinde sözlük (alan
+  adı, tip, kısıt). Form alanlarını açıklamak için.
+- `docs/pages/` — sayfa bilgi kayıtları (YAML).
+- `docs/workflows/` — iş akışları üst katalogu (fazlara göre
+  gruplama).
+- `docs/errors/` — hata kataloğu.
+- `docs/permissions/` — yetki matrisi.
+- `docs/user-education/` — Türkçe kullanıcı eğitimi.
+
 ## AI asistan kapsamı (GOAL-000)
 
-İlk sürümde AI asistan **yoktur**. Sadece altyapı hazırlanır:
-
-- `docs/pages/` — sayfa bilgi kayıtları (YAML)
-- `docs/workflows/` — iş akışları
-- `docs/errors/` — hata kataloğu
-- `docs/permissions/` — yetki matrisi
-- `docs/fields/` — alan sözlüğü
-- `docs/user-education/` — Türkçe kullanıcı eğitimi
+İlk sürümde AI asistan **yoktur**. Sadece altyapı hazırlanır.
 
 ## İlk sürüm AI asistanının kuralları (Faz 11+)
 
 Asistan **tıbbi teşhis vermez**. Yalnızca:
 
-1. Uygulama kullanımını anlatır.
-2. Doğru menüye yönlendirir.
-3. Alanları açıklar.
-4. Hata çözüm adımlarını gösterir.
-5. Kullanıcının yetki durumunu açıklar.
+1. Uygulama kullanımını anlatır (CLINICAL_FLOWS.md).
+2. Kavramları açıklar (DOMAIN_GLOSSARY.md).
+3. Doğru menüye yönlendirir.
+4. Alanları açıklar (FIELD_GLOSSARY.md).
+5. Hata çözüm adımlarını gösterir (ERROR_CATALOG.md).
+6. Kullanıcının yetki durumunu açıklar (PERMISSION_MATRIX.md).
+7. Pilot kapsamı dışındaki konular için "MVP dışı" yönlendirmesi
+   yapar (PILOT_SCOPE.md).
 
 Cevaplamadan önce:
 
@@ -40,20 +55,50 @@ değerlendirilir.
 Her sayfa kaydı (`docs/pages/...yaml`) `keywords` alanı içerir. AI
 asistanı kullanıcı sorusunun niyetini bu anahtarlarla eşleştirir.
 
-Örnek:
+Ek olarak, `DOMAIN_GLOSSARY.md` ve `CLINICAL_FLOWS.md` dosyaları
+"RAG chunk"larına bölünür; her chunk'ın metadata'sı:
 
-- Soru: "Aşı kaydı nasıl yapılır?"
-- Eşleşen sayfa: `web.clinic.vaccination.create`
-- Yönlendirme: `/{locale}/clinic/patients/{id}/vaccinations/new`
+```yaml
+- chunk_id: glossary-patient-owner
+  source: docs/domain/DOMAIN_GLOSSARY.md
+  type: glossary
+  entity: patient_owner
+  locale: tr-TR
+  last_verified_at: 2026-07-30
+  keywords:
+    - hasta sahibi
+    - patient owner
+    - hayvan sahibi
+    - müşteri
+    - KVKK
+```
 
 ## Chunk/metadata planı (Faz 11+)
 
-- Her sayfa kaydı RAG chunk'ına dönüştürülür.
-- Metadata: `page_id`, `module`, `locale`, `version`, `last_verified_at`.
+- `DOMAIN_GLOSSARY.md` → 18 chunk (her kavram).
+- `CLINICAL_FLOWS.md` → 16 chunk (her akış).
+- `FIELD_GLOSSARY.md` → alan başına chunk.
+- Sayfa kayıtları → sayfa başına chunk.
+- Metadata: `chunk_id`, `source`, `type`, `entity/page_id`,
+  `locale`, `version`, `last_verified_at`.
 - Türkçe anahtarlar öncelikli; İngilizce iskeleti korunur.
+
+## Örnek eşleştirmeler
+
+| Kullanıcı sorusu | Kaynak | Chunk | Yanıt tipi |
+| --- | --- | --- | --- |
+| "Aşı nasıl uygulanır?" | `CLINICAL_FLOWS.md` | `flow-vaccination` | Adım adım akış |
+| "Hasta sahibi ne demek?" | `DOMAIN_GLOSSARY.md` | `glossary-patient-owner` | Tanım + ilişkiler |
+| "Stok düşümü nasıl olur?" | `CLINICAL_FLOWS.md` | `flow-vaccination` (stok düşüm adımı) | Akış + teknik not |
+| "e-SMM var mı?" | `PILOT_SCOPE.md` | `pilot-scope-mvp-out` | "MVP dışı" notu |
+| "Aşı SKT kontrolü" | `FIELD_GLOSSARY.md` | `vaccination-lot` | Alan açıklaması |
+| "Sahiplik nasıl devredilir?" | `CLINICAL_FLOWS.md` | `flow-ownership-transfer` | Uçtan uca akış |
+| "KVKK silme talebi?" | `CLINICAL_FLOWS.md` | `flow-kvkk-erasure` | Akış + uyarılar |
 
 ## Güncelleme politikası
 
-- `docs/pages/` değiştiğinde AI asistan bilgi tabanı otomatik güncellenir.
+- `docs/pages/`, `docs/domain/`, `docs/fields/`, `docs/errors/`,
+  `docs/permissions/` değiştiğinde AI asistan bilgi tabanı otomatik
+  güncellenir.
 - `pnpm docs:check` geçmeden PR merge edilmez.
-- `last_verified_at` 90 günü geçen sayfalar `degraded` flag'i alır.
+- `last_verified_at` 90 günü geçen chunk'lar `degraded` flag'i alır.

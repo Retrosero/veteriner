@@ -51,3 +51,41 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
 - Her sayfanın kullanım açıklaması AI bilgi havuzuna eklenmelidir.
 - Çoklu dil, sonradan eklenen bir özellik değil sistem çekirdeğidir.
 - Türkiye ve İngiltere kuralları ülke adaptörleriyle ayrılmalıdır.
+
+## Doküman haritası
+
+- `docs/domain/DOMAIN_GLOSSARY.md` — **varlık/kavram** sözlüğü (18
+  kavram; tanım + ilişkiler + alanlar + yaşam döngüsü + silme/düzeltme).
+  Sonraki tüm goal'ların ortak ürün sözleşmesi.
+- `docs/domain/CLINICAL_FLOWS.md` — **uçtan uca iş akışları** (16
+  akış; randevu, muayene, aşı, reçete, ameliyat, yatış, lab,
+  görüntüleme, transfer, petshop, stok, tahsilat, KVKK, amendment).
+- `docs/domain/PILOT_SCOPE.md` — pilot kapsamı, MVP dışı bırakılan
+  konular, karar kriterleri.
+- `docs/fields/FIELD_GLOSSARY.md` — alan düzeyinde sözlük (alan adı,
+  tip, kısıt).
+- `docs/workflows/OVERVIEW.md` — üst düzey akış kataloğu (fazlara
+  göre).
+- `docs/permissions/PERMISSION_MATRIX.md` — yetki matrisi (rol
+  başına permission'lar).
+- `docs/errors/ERROR_CATALOG.md` — hata kataloğu (kod → mesaj → çözüm).
+- `docs/api/`, `docs/pages/`, `docs/user-education/`, `docs/ai/` —
+  sayfa, API, eğitim ve AI kaynakları.
+
+## Faz durumu
+
+- **Faz 0 — Keşif, ürün kuralları ve proje iskeleti**
+  - GOAL-000 ✅ repository, monorepo, kalite kapıları (tamamlandı)
+  - GOAL-001 ✅ domain sözlüğü ve pilot klinik iş akışları (tamamlandı)
+  - GOAL-002 ⏳ rol/yetki matrisi (Faz 0 devamı)
+  - GOAL-003 ⏳ çoklu dil ve ülke adaptörü sözleşmesi
+  - GOAL-004 ⏳ log, audit ve hata kodu standardı
+  - GOAL-005 ⏳ dokümantasyon ve AI bilgi havuzu şeması
+- **Faz 1 — Platform çekirdeği** ⏳ sırada
+  - GOAL-010 tenant ve şube
+  - GOAL-011 kimlik doğrulama ve oturum
+  - GOAL-012 RBAC ve izin motoru
+  - GOAL-013 feature flag
+  - GOAL-014 dosya servisi
+  - GOAL-015 bildirim
+  - GOAL-016 superadmin tenant görünümü
