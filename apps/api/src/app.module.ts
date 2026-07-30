@@ -48,6 +48,7 @@ import { AlertsModule } from "./modules/alerts/alerts.module.js";
 import { OwnershipHistoryModule } from "./modules/ownership-history/ownership-history.module.js";
 import { SuperadminModule } from "./modules/superadmin/superadmin.module.js";
 import { TimelineModule } from "./modules/timeline/timeline.module.js";
+import { PortalModule } from "./modules/portal/portal.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 
 @Module({
@@ -74,6 +75,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     OwnershipHistoryModule,
     SuperadminModule,
     TimelineModule,
+    PortalModule,
   ],
 })
 export class AppModule {}

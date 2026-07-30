@@ -28,3 +28,4 @@ export * from "./patient.js";
 export * from "./ownership.js";
 export * from "./alert.js";
 export * from "./timeline.js";
+export * from "./portal.js";
