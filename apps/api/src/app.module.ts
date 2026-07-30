@@ -51,6 +51,7 @@ import { TimelineModule } from "./modules/timeline/timeline.module.js";
 import { PortalModule } from "./modules/portal/portal.module.js";
 import { PortalAuthModule } from "./modules/portal-auth/portal-auth.module.js";
 import { PortalPetsModule } from "./modules/portal-pets/portal-pets.module.js";
+import { PortalAppointmentsModule } from "./modules/portal-appointments/portal-appointments.module.js";
 import { CalendarModule } from "./modules/calendar/calendar.module.js";
 import { WaitlistModule } from "./modules/waitlist/waitlist.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
@@ -83,6 +84,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     PortalAuthModule,
     PortalAuthModule,
     PortalPetsModule,
+    PortalAppointmentsModule,
     CalendarModule,
     WaitlistModule,
   ],
