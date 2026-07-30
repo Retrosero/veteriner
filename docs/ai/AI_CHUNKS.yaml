@@ -2113,3 +2113,101 @@ generated_at: "2026-07-30"
                    audit-event-file, pii-masking]
   related_pages: []
   related_api: [DELETE /api/v1/files/:id]
+
+# -----------------------------------------------------------------------------
+# BILDIRIM SERVISI (GOAL-015)
+# -----------------------------------------------------------------------------
+# Source: docs/api/api.post._api_v1_notifications.md
+# Provider mimarisi + queue + retry + tenant izolasyonu.
+
+- chunk_id: notification-channel-overview
+  type: page
+  source: docs/api/api.post._api_v1_notifications.md
+  page_id: api.notifications.send
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Bildirim kanallari nasil calisir"
+  content: |
+    VetNiva bildirim altyapisi (GOAL-015) SMS, e-posta, in-app
+    ve (ileride) WhatsApp kanallarini ortak bir soyutlama
+    uzerinden yonetir. Su an 4 provider implemente:
+
+    1. `SmtpEmailProvider` -- e-posta (SMTP stub; uretimde
+       Nodemailer/Postmark).
+    2. `IletimerkeziSmsProvider` -- TR icin SMS saglayici stub'i.
+    3. `InAppProvider` + `InboxStore` -- kullanicinin uygulama
+       ici inbox'i (`GET /api/v1/notifications/inbox`).
+    4. `NoopProvider` -- test/fallback (whatsapp dahil).
+
+    Gonderim akisi: consent check -> template render (tr-TR/en-GB)
+    -> queue'ya al -> provider dispatch -> retry (exponential
+    backoff, max 3) -> audit kaydi. Ayni `Idempotency-Key` ile
+    24 saat icinde tekrar istek gelirse ilk response doner,
+    provider yeniden cagrilmaz.
+
+    Tenant bilgisi oturumdan alinir; `channel` ve `userId` request
+    body'den gelir ama tenant scope'u actor uzerinden zorlanir.
+    Cross-tenant send denemesi `VET-NOTIF-0001` (502) ile
+    reddedilir; inbox sorgusu kendi tenant'i disini goremez.
+
+    Hata kodlari: `VET-NOTIF-0001` (502, provider hatasi),
+    `VET-NOTIF-0002` (404, sablon bulunamadi), `VET-NOTIF-0003`
+    (403, consent reddi).
+  keywords: [bildirim, notification, SMS, e-posta, in-app, WhatsApp,
+             provider, queue, retry, idempotency, tenant, KVKK]
+  related_chunks: [notification-consent-policy,
+                   error-VET-NOTIF-0001, error-VET-NOTIF-0002,
+                   rbac-overview, audit-event-notification]
+  related_pages: []
+  related_api: [POST /api/v1/notifications,
+                GET /api/v1/notifications/inbox]
+
+# Source: apps/api/src/common/notifications/consent.service.ts
+# Tenant bazli iletisim izinleri (consent) politikasi.
+
+- chunk_id: notification-consent-policy
+  type: audit
+  source: apps/api/src/common/notifications/consent.service.ts
+  page_id: api.notifications.consent
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Kullanici iletisim izinleri (consent) politikasi"
+  content: |
+    VetNiva bildirim gonderiminde kullanici iletisim izinleri
+    zorunludur. `ConsentService` her tenant icin
+    `(user, channel, category)` matrisini tutar; izinsiz
+    kombinasyonda gonderim `VET-NOTIF-0003` (403, warning) ile
+    reddedilir ve `audit:notification.denied` loglanir.
+
+    Varsayilan izin politikasi:
+
+    - `transactional` kategorileri (appointment, vaccination, lab,
+      invoice, portal) tenant acilisinda otomatik opt-in sayilir;
+      kullanici ayrica kapatabilir.
+    - `marketing` kategorisi icin acik opt-in zorunludur;
+      varsayilan kapalidir.
+    - `system` kategorisi (guvenlik alarmlari, audit uyari'lari)
+      consent gerektirmez, her zaman gider.
+
+    KVKK (TR) ve UK GDPR (GB) uyumu icin consent degisimleri
+    audit'e kaydedilir; geri cekme (opt-out) anindan itibaren
+    30 gun icinde yapilan tum bildirimler `marketing` icin
+    retrospektif olarak da maskelenebilir (Faz 11+ delete-by-user
+    job).
+
+    Pazarlama mesajlarinda her zaman "abonelligi iptal et"
+    linki bulunmalidir (provider adapter'larinin sorumlulugu,
+    FAZ-1'de sozlesme seviyesinde).
+  keywords: [bildirim, consent, KVKK, UK GDPR, opt-in, opt-out,
+             marketing, transactional, izin, iletisim]
+  related_chunks: [notification-channel-overview,
+                   error-VET-NOTIF-0003, pii-phone-mask,
+                   pii-email-mask, rbac-overview]
+  related_pages: []
+  related_api: [POST /api/v1/notifications]

@@ -437,6 +437,58 @@ S3 driver seçiliyse geçici imzalı URL (üretimde); stub. Auth +
 
 ---
 
+## Bildirim (`/api/v1/notifications`)
+
+> GOAL-015 (Bildirim altyapısı temeli) kapsamında eklenen
+> bildirim endpoint'leri. Manuel gönderim + in-app inbox
+> sorgusu. Tenant scope zorunlu; cross-tenant denemeler
+> reddedilir.
+
+### POST /api/v1/notifications
+
+Manuel bildirim gönderir. Template render + provider dispatch
++ idempotency. Auth + `common:notification:manage`.
+
+- **Modül:** notifications
+- **Yetki:** `common:notification:manage`
+- **Idempotency:** Önerilir (`Idempotency-Key` header, 24 saat TTL)
+- **Audit:** `audit:notification.sent` (info) veya
+  `audit:notification.failed` (warning) veya
+  `audit:notification.denied` (warning — consent reddi)
+
+**Request body (NotificationRequest):**
+
+```json
+{
+  "userId": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "channel": "sms",
+  "category": "appointment",
+  "templateKey": "appointment_reminder",
+  "locale": "tr-TR",
+  "data": {
+    "ownerName": "Ayşe Yılmaz",
+    "petName": "Karabaş",
+    "clinicName": "Kadıköy Veteriner",
+    "date": "2026-08-01",
+    "time": "14:30"
+  },
+  "idempotencyKey": "appt-rem-2026-08-01-karabas"
+}
+```
+
+**Response 200 (NotificationRecord):** Provider dispatch sonucu
+(status: `sent` / `queued` / `failed`). Hata durumunda
+`VET-NOTIF-0001` (502 — provider hatası) veya
+`VET-NOTIF-0002` (404 — şablon bulunamadı).
+
+### GET /api/v1/notifications/inbox
+
+Aktif kullanıcının in-app bildirim listesi. `userId` query
+opsiyonel; default `actor.actorId`. Auth +
+`common:notification:read`. Detay: `docs/api/api.get._api_v1_notifications_inbox.md`.
+
+---
+
 ## Self-Service (`/api/v1/me`)
 
 > Oturum açmış kullanıcının kendi bilgileri. Tümü auth gerektirir.
