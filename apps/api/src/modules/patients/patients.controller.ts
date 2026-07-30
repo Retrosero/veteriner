@@ -10,8 +10,11 @@
  * - `GET    /api/v1/clinic/patients/:id`     — Detay
  * - `GET    /api/v1/clinic/patients`         — Arama + pagination
  * - `DELETE /api/v1/clinic/patients/:id`     — Arşivle (soft delete)
+ * - `POST   /api/v1/clinic/patients/:id/transfer` — Sahiplik devri
+ *   (kimlik seviyesi; `clinic:patient:transfer` izni gerekir)
  *
  * @since GOAL-021 (FAZ-2) hayvan kayıt core
+ * @updated GOAL-022 (FAZ-2) sahiplik devri core
  */
 
 import {
@@ -37,10 +40,12 @@ import { RequirePermissions } from "../../common/decorators/require-permissions.
 import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   patientCreateInputSchema,
+  patientOwnershipTransferInputSchema,
   patientSearchQuerySchema,
+  type PatientOwnershipTransferInput,
 } from "@vetniva/contracts";
 
-import { PatientsService } from "./patients.service.js";
+import { PatientsService, type TransferResult } from "./patients.service.js";
 import type { Patient } from "../../common/patients/patient.types.js";
 
 @ApiTags("patients")
@@ -127,6 +132,37 @@ export class PatientsController {
   ): Promise<Patient> {
     const tenantId = this.requireTenant(actor);
     return this.service.archive(tenantId, id, actor);
+  }
+
+  @Post(":id/transfer")
+  @RequirePermissions("clinic:patient:transfer")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    operationId: "patientTransferOwnership",
+    summary: "Hasta sahiplik devri",
+    description:
+      "Patient.ownerId yeni sahibe güncellenir (kimlik seviyesi). " +
+      "Cross-tenant patient/new owner → 404; arşivli hasta → 422; " +
+      "aynı kişiye transfer → 422. Audit `audit:patient.transfer` " +
+      "yayınlanır (warning); PII alanları mask'lenir.",
+  })
+  @ApiResponse({ status: 200, description: "Devir tamamlandı." })
+  @ApiResponse({ status: 404, description: "Hasta veya yeni sahip bulunamadı." })
+  @ApiResponse({ status: 422, description: "Arşivli hasta veya aynı sahip." })
+  public async transfer(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Body(new ZodValidationPipe(patientOwnershipTransferInputSchema))
+    body: PatientOwnershipTransferInput,
+    @CurrentActor() actor: ActorContext,
+  ): Promise<TransferResult> {
+    const tenantId = this.requireTenant(actor);
+    return this.service.transferOwnership(
+      tenantId,
+      id,
+      body.newOwnerId,
+      body.reason,
+      actor,
+    );
   }
 
   private requireTenant(actor: ActorContext): string {

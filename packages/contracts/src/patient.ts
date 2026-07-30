@@ -76,3 +76,35 @@ export const patientListResponseSchema = z.object({
   total: z.number().int().nonnegative(),
 });
 export type PatientListResponse = z.infer<typeof patientListResponseSchema>;
+
+/**
+ * Hasta sahiplik devri (kimlik seviyesi) istek şeması.
+ *
+ * `OwnershipHistoryService.transfer`'dan farklıdır: burada yalnızca
+ * `Patient.ownerId` güncellenir ve `audit:patient.transfer` event'i
+ * yayınlanır. Tarihsel ownership kaydı (audit, append-only) bu akışa
+ * dahil değildir; FAZ-0 in-memory Map kullanılır.
+ *
+ * Klinik/finansal kayıtlar (muayene, aşı vb.) değişmez; yalnızca
+ * patient kimliğindeki ownerId alanı güncellenir.
+ *
+ * @since GOAL-022 (FAZ-2) hayvan sahiplik devri core
+ */
+export const patientOwnershipTransferInputSchema = z.object({
+  /** Yeni sahip (owner) ID. */
+  newOwnerId: z.string().uuid(),
+  /**
+   * Serbest neden. Log/audit metadata'da saklanır; zorunlu
+   * ama sınırsız (max 500). `OwnershipHistoryService.transfer`'daki
+   * enum `OwnershipReason`'dan farklıdır — buradaki alan
+   * klinik-dışı/serbest metin kabul eder.
+   */
+  reason: z.string().min(1).max(500),
+});
+export type PatientOwnershipTransferInput = z.infer<
+  typeof patientOwnershipTransferInputSchema
+>;
+
+/** Re-export: ownership sözleşmesindeki zengin transfer şeması. */
+export { ownershipTransferInputSchema } from "./ownership.js";
+export type { OwnershipTransferInput } from "./ownership.js";
