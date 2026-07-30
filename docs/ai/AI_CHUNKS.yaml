@@ -3902,3 +3902,148 @@ generated_at: "2026-07-30"
     - "POST /api/v1/clinic/orders/{id}/complete"
     - "POST /api/v1/clinic/orders/{id}/cancel"
     - "GET /api/v1/clinic/patients/{id}/treatment-plan"
+- chunk_id: flow-prescription-create
+  type: flow
+  source: apps/api/src/modules/prescriptions/prescriptions.service.ts
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Reçete Oluşturma Akışı"
+  content: |
+    Reçete, bir muayeneye (examination) bağlı klinik kayıt entity'sidir.
+    Bir reçete en az 1 ilaç/ürün kalemi (`items`) içerir; her kalem
+    `drugName`, `dosage`, `frequency` (7 enum + custom), `durationDays`
+    (1-365 kalem başı), `route` (oral/topical/injection_im/iv/sc/
+    inhalation/other), `instructions` taşır.
+
+    Reçete seviyesinde `durationDays` 1-30 gün ile son kullanma
+    (`expiresAt = now + durationDays`) hesaplanır. `items` boş → 422
+    `VET-VALIDATION-0010`; `durationDays` 0 veya >30 → 422
+    `VET-VALIDATION-0010`. `status='active'` başlatılır; fiziksel silme
+    yok (iptal `cancelled` durumu ile).
+
+    Akış adımları:
+    1. **Oluştur** (`POST /api/v1/clinic/examinations/{id}/prescriptions`,
+       201, yetki `clinic:prescription:create`, STAFF/VETERINARIAN):
+       Zod `prescriptionCreateInputSchema` enforce eder. Alanlar:
+       `items` (≥1 kalem, zorunlu), `notes` (max 2000, opsiyonel),
+       `durationDays` (1-30, zorunlu). Service önce
+       `ExaminationsService.findById(tenantId, id, actor)` ile
+       muayenenin aynı tenant'ta olduğunu doğrular. Cross-tenant → 404
+       `VET-CLINIC-0001` (bilgi sızdırmaz). `expiresAt = now +
+       durationDays` gün olarak set edilir. `id =
+       prsc-<tenant8>-000001` (artan sayaç, tenant başına). Audit
+       `audit:prescription.create` (info) — examinationId, patientId,
+       items, status, expiresAt.
+    2. **Listele** (`GET /api/v1/clinic/prescriptions`, 200, yetki
+       `clinic:prescription:read`): tenant-scoped; opsiyonel filtreler
+       `patientId`, `status`, `from`, `to`; pagination `limit`
+       (1-200, default 20) + `offset` (0-10000, default 0).
+    3. **Detay** (`GET /api/v1/clinic/prescriptions/{id}`, 200,
+       yetki `clinic:prescription:read`): tenant-scoped; cross-tenant
+       → 404 `VET-CLINIC-0001`.
+    4. **State machine:** `active` -> `dispensed` (dispense) |
+       `cancelled` (cancel) | `expired` (expireOverdue job) |
+       `completed` (ileride, manual). Geçersiz dağıtım → 409
+       `VET-PRESC-0003`; geçersiz iptal → 409 `VET-PRESC-0004`.
+    5. **Append-only politika:** Reçete klinik kayıttır; mevcut
+       kayıt üzerinde UPDATE/DELETE yok (state transition'lar
+       append-only audit event'i ile birlikte yapılır). Yanlış
+       reçete düzeltmesi `cancel` + yeni reçete ile; önceki kayıt
+       korunur.
+    6. **Tenant izolasyonu:** `requireTenantScope(actor, tenantId)` +
+       `create` (examination varlık kontrolü) tümü `actor.tenantId`
+       kapsamında; cross-tenant denemesi → 403 `VET-AUTHZ-0001` veya
+       404 `VET-CLINIC-0001`.
+    7. **Köprüler:** `medication` order (GOAL-044) reçete ile
+       bağlanabilir; `dispense` aksiyonu stok düşümü (GOAL-066)
+       tetikler. PDF render FAZ-10+'da; FAZ-0'da text placeholder.
+  keywords: [reçete, prescription, items, drug, dosage, frequency,
+             route, durationDays, expiresAt, active, dispensed,
+             cancelled, expired, completed, append-only, tenant-scoped,
+             audit:prescription.create, VET-PRESC-0001, VET-PRESC-0003,
+             VET-PRESC-0004, VET-VALIDATION-0010, VET-CLINIC-0001]
+  related_chunks: [glossary-examination, glossary-patient,
+                   flow-examination-create, flow-diagnosis,
+                   flow-treatment-plan, error-VET-CLINIC-0001,
+                   error-VET-PRESC-0001, error-VET-VALIDATION-0010,
+                   error-VET-AUTHZ-0001, error-VET-TENANT-0001]
+  related_pages: []
+  related_api:
+    - "POST /api/v1/clinic/examinations/{id}/prescriptions"
+    - "GET /api/v1/clinic/prescriptions"
+    - "GET /api/v1/clinic/prescriptions/{id}"
+- chunk_id: flow-prescription-dispense
+  type: flow
+  source: apps/api/src/modules/prescriptions/prescriptions.service.ts
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Reçete Dağıtımı ve İptali Akışı"
+  content: |
+    Reçete `active` durumdan iki terminal aksiyonla çıkar: `dispense`
+    (eczane/stok dağıtımı) ve `cancel` (iptal + sebep). Bir de periyodik
+    `expireOverdue` job'ı `active && expiresAt < now` olan reçeteleri
+    `expired` yapar. `completed` durumu FAZ-0'da reserve.
+
+    State machine: `active` -> `dispensed` | `cancelled` | `expired` |
+    `completed`. Dispense ve cancel yalnızca `active` durumda mümkün;
+    aksi → 409 (`VET-PRESC-0003` dağıtım için, `VET-PRESC-0004` iptal
+    için).
+
+    Akış adımları:
+    1. **Dağıt** (`POST /api/v1/clinic/prescriptions/{id}/dispense`,
+       200, yetki `clinic:prescription:dispense`, STAFF): `active`
+       reçeteyi `dispensed` yapar; `dispensedAt` + `dispensedBy` set
+       edilir. `active` değilse → 409 `VET-PRESC-0003`. Audit
+       `audit:prescription.dispense` (info) — id, dispensedBy,
+       items snapshot. Stok düşümü (GOAL-066) bu aksiyonla köprü
+       kurar.
+    2. **İptal** (`POST /api/v1/clinic/prescriptions/{id}/cancel`,
+       200, yetki `clinic:prescription:cancel`, VETERINARIAN):
+       `active` reçeteyi `cancelled` yapar; `cancelReason` (1-2000,
+       zorunlu) kaydedilir. Zaten iptal edilmiş / `expired` /
+       `completed` → 409 `VET-PRESC-0004`. Audit
+       `audit:prescription.cancel` (warning) — id, cancelReason.
+    3. **Süresi dolmuşları expire et** (`expireOverdue()` periyodik
+       job, sistem internal): tüm tenant'larda `active && expiresAt
+       < now` olan reçeteleri `expired` yapar. Dönüş: güncellenen
+       kayıt sayısı. Audit her expire edilen kayıt için
+       `audit:prescription.expire` (info). Periyodik job cron'u
+       Worker (FAZ-7) tarafından zamanlanır.
+    4. **PDF (placeholder)** (`GET
+       /api/v1/clinic/prescriptions/{id}/pdf`, 200, yetki
+       `clinic:prescription:read`): FAZ-0'da `text/plain` buffer
+       döner (id, items, expiresAt, dispensed bilgisi). Gerçek PDF
+       render FAZ-10+'da. `Content-Disposition: attachment;
+       filename="prescription-<id>.txt"`. Cross-tenant → 404
+       `VET-CLINIC-0001`. Audit `audit:prescription.pdf` (info).
+    5. **Append-only politika:** Reçete klinik kayıttır; dispense/
+       cancel/expire yalnızca state transition + audit; alanlar
+       immutable. Yanlış dağıtım sonrası düzeltme `cancel` + yeni
+       reçete (iptal `dispensed` durumdan yapılamaz → 409
+       `VET-PRESC-0004`).
+    6. **Tenant izolasyonu:** Tüm aksiyonlar tenant-scoped;
+       cross-tenant denemesi → 404 `VET-CLINIC-0001` veya 403
+       `VET-AUTHZ-0001`. `expireOverdue` sistem internal — actor
+       yok, tüm tenant'ları tarar.
+  keywords: [reçete dağıtımı, prescription dispense, prescription
+             cancel, dispense, cancel, expired, completed,
+             expireOverdue, periodic job, cron, append-only,
+             tenant-scoped, audit:prescription.dispense,
+             audit:prescription.cancel, audit:prescription.expire,
+             audit:prescription.pdf, VET-PRESC-0003, VET-PRESC-0004]
+  related_chunks: [glossary-examination, glossary-patient,
+                   flow-prescription-create, flow-treatment-plan,
+                   error-VET-CLINIC-0001, error-VET-PRESC-0003,
+                   error-VET-PRESC-0004, error-VET-AUTHZ-0001,
+                   error-VET-TENANT-0001]
+  related_pages: []
+  related_api:
+    - "POST /api/v1/clinic/prescriptions/{id}/dispense"
+    - "POST /api/v1/clinic/prescriptions/{id}/cancel"
+    - "GET /api/v1/clinic/prescriptions/{id}/pdf"
