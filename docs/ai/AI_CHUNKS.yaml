@@ -412,6 +412,35 @@ generated_at: "2026-07-30"
   related_pages: []
   related_api: []
 
+- chunk_id: flow-owner-create
+  type: flow
+  source: docs/api/api.post._api_v1_clinic_owners.md
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: true
+  title: "Hasta Sahibi Oluşturma Akışı"
+  content: |
+    1. Personel (STAFF/VETERINARIAN) owner create formunu açar
+       (`POST /api/v1/clinic/owners`).
+    2. KVKK açık rızası (`consentKvkk=true`) zorunlu; yoksa
+       422 `VET-VALIDATION-0002` döner.
+    3. Telefon ham olarak girilir; service E.164 (+90XXXXXXXXXX)
+       formatına normalize eder. TR mobil 5XX ile başlamalı; aksi
+       → 422 `VET-VALIDATION-0003`.
+    4. taxId opsiyonel; girilirse 11 hane → TCKN, 10 hane → VKN
+       olarak ülke adaptörü ile algoritmik doğrulanır. Başarısızsa
+       422 `VET-VALIDATION-0006`.
+    5. Aynı tenant'ta aynı telefon zaten kayıtlıysa
+       409 `VET-CLINIC-0002` döner.
+    6. Kayıt başarılıysa 201 `Owner` döner; audit
+       `audit:owner.create` (info) yazılır (KVKK + telefon payload).
+  keywords: [hasta sahibi, owner, kayıt, KVKK, telefon, E.164, TCKN, VKN, duplicate]
+  related_chunks: [glossary-owner, error-VET-VALIDATION-0002, error-VET-VALIDATION-0003, error-VET-VALIDATION-0006, error-VET-CLINIC-0002, kvkk-consent-owner-create]
+  related_pages: []
+  related_api: [POST /api/v1/clinic/owners]
+
 # -----------------------------------------------------------------------------
 # ERROR — Hata Kodları (her VET- kodu bir chunk)
 # -----------------------------------------------------------------------------
@@ -457,6 +486,31 @@ generated_at: "2026-07-30"
   related_chunks: [glossary-patient]
   related_pages: []
   related_api: []
+
+- chunk_id: error-VET-CLINIC-0002
+  type: error
+  source: docs/errors/ERROR_CATALOG.md
+  error_code: VET-CLINIC-0002
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Sahip zaten kayıtlı"
+  content: |
+    HTTP 409. Aynı tenant içinde bu telefonla (E.164 normalize)
+    kayıtlı bir hasta sahibi zaten var. Duplicate kontrolü
+    tenant-scoped uygulanır; farklı tenant aynı telefonu
+    kullanabilir.
+
+    Çözüm: Mevcut owner'ı arama ile bulun (`GET /api/v1/clinic/owners?search=...`
+    veya `?phone=...`). Yinelenen kayıt değilse telefonu kontrol
+    edin. Yanlışlıkla eklendiyse arşivleyin
+    (`DELETE /api/v1/clinic/owners/:id`) ve yeniden deneyin.
+  keywords: [409, owner, duplicate, telefon, tenant-scoped]
+  related_chunks: [glossary-owner, flow-owner-create]
+  related_pages: []
+  related_api: [POST /api/v1/clinic/owners]
 
 - chunk_id: error-VET-AUTH-0001
   type: error
@@ -687,6 +741,43 @@ generated_at: "2026-07-30"
   related_chunks: [pii-phone-mask]
   related_pages: []
   related_api: []
+
+- chunk_id: kvkk-consent-owner-create
+  type: pii-rule
+  source: docs/api/api.post._api_v1_clinic_owners.md
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: true
+  title: "KVKK Açık Rızası — Owner Oluşturma"
+  content: |
+    `POST /api/v1/clinic/owners` çağrısında `consentKvkk=true`
+    ZORUNLUDUR. Yanlışlıkla false gönderilirse 422
+    `VET-VALIDATION-0002` döner; kayıt oluşturulmaz, audit
+    yayınlanmaz.
+
+    Neden zorunlu:
+    - KVKK Madde 5/6: Kişisel veri işleme ancak açık rıza ile
+      mümkündür. firstName, lastName, phone, email, taxId, address
+      PII alanlarıdır.
+    - Audit trail: `audit:owner.create` payload'ında
+      `consentKvkk` flag'i kayıt altına alınır. Sonradan rıza
+      geri çekme talebi `flow-kvkk-erasure` akışı ile işlenir.
+    - Pazarlama izni (`consentMarketing`) ayrı bir flag'dir;
+      varsayılan false. Rıza olmadan kampanya/ileti gönderilmez.
+
+    Frontend guideline:
+    - Owner create formunda iki ayrı onay checkbox'ı gösterilir:
+      "KVKK kapsamında kişisel verilerimin işlenmesini kabul
+      ediyorum" (zorunlu) + "Kampanya ve bilgilendirme
+      iletilerini almak istiyorum" (opsiyonel).
+    - Zorunlu onay işaretlenmeden submit butonu devre dışı
+      bırakılır.
+  keywords: [KVKK, açık rıza, consent, owner, GDPR, pazarlama]
+  related_chunks: [glossary-owner, flow-owner-create, flow-kvkk-erasure, pii-phone-mask, pii-tax-id-mask, pii-email-mask, error-VET-VALIDATION-0002]
+  related_pages: []
+  related_api: [POST /api/v1/clinic/owners]
 
 # -----------------------------------------------------------------------------
 # CORRELATION — Request ID standardı

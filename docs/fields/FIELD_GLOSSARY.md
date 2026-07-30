@@ -466,3 +466,102 @@ branch.ts) tanımlıdır.
 ### createdAt, updatedAt, archivedAt
 
 - Tenant ile aynı semantik.
+
+---
+
+## Owner (Hasta sahibi) alanları (GOAL-020)
+
+> Şema: `apps/api/src/common/owners/owner.types.ts`.
+> Sözleşme: `packages/contracts/src/owner.ts`
+> (`ownerCreateInputSchema`, `ownerSearchQuerySchema`).
+
+### id (string, zorunlu)
+
+- **Tip:** String, `own-` prefix + UUID v4
+- **PII:** hayır
+- **Açıklama:** Owner benzersiz tanımlayıcısı. Service
+  `OwnersRepository.nextId(tenantId)` ile üretir.
+
+### tenantId (UUID, zorunlu)
+
+- **Tip:** UUID
+- **PII:** hayır
+- **Açıklama:** Ait olduğu tenant. Tüm sorgularda tenant
+  izolasyonu zorunlu; service `requireTenantScope` ile
+  `actor.tenantId`'yi doğrular.
+
+### firstName (string, zorunlu)
+
+- **Tip:** String, 2-100 karakter
+- **PII:** evet (kişi tanımlayıcı)
+- **Mask'leme:** Audit log'da `***` ile mask'lenir.
+
+### lastName (string, zorunlu)
+
+- **Tip:** String, 2-100 karakter
+- **PII:** evet
+
+### phone (string, zorunlu, normalize E.164)
+
+- **Tip:** String, E.164 (`+90XXXXXXXXXX`)
+- **Format:** Service `normalizeTrPhone` ile normalize edilir.
+  Giriş varyasyonları: `05321234567`, `5321234567`,
+  `+905321234567`. `5XX` ile başlamalı (TR mobil).
+- **PII:** evet (PII_MASKING telefon alanı; audit'te mask'li)
+- **Unique:** `(tenantId, phone)` composite unique
+
+### email (string, opsiyonel)
+
+- **Tip:** String, RFC 5322 (5-200 karakter)
+- **PII:** evet
+- **Mask'leme:** Audit log'da mask'li (bkz. pii-email-mask chunk).
+
+### taxId (string, opsiyonel, normalize)
+
+- **Tip:** String, 10 hane (VKN) veya 11 hane (TCKN)
+- **Format:** Service `validateAndNormalizeTaxId` ile ülke
+  adaptörü (`CountryAdapter.validateTaxId`) üzerinden
+  algoritmik doğrulanır (TCKN mod 11, VKN mod 10).
+- **PII:** evet (PII_MASKING vergi kimlik; mask format
+  `123***90`)
+
+### address (JSON, opsiyonel)
+
+- **Tip:** JSONB `{ city, district, fullAddress? }`
+- **PII:** kısmi (adres PII; mask'leme uygulanır)
+
+### consents (object, zorunlu)
+
+- **Şema:**
+  ```ts
+  {
+    kvkk: boolean;       // zorunlu true; false → 422
+    marketing: boolean;  // opsiyonel; default false
+  }
+  ```
+- **PII:** hayır
+- **Açıklama:** `kvkk=false` → 422 `VET-VALIDATION-0002`.
+  Audit'te `audit:owner.create` payload'ında flag kayıt altına
+  alınır.
+
+### createdAt (timestamptz, otomatik)
+
+- **Tip:** ISO 8601 string (service) / TIMESTAMPTZ (DB)
+
+### archivedAt (timestamptz, opsiyonel)
+
+- **Tip:** ISO 8601 string / TIMESTAMPTZ (nullable)
+- **PII:** hayır
+- **Açıklama:** Soft delete zamanı. `DELETE` endpoint'i
+  set eder; PII ve audit trail korunur. Default arama
+  sonuçlarında DÖNMEZ.
+
+### OwnerSearchQuery filtreleri
+
+| Ad | Tip | Açıklama |
+| --- | --- | --- |
+| `search` | string | Ad/soyad/telefon/email/taxId case-insensitive substring |
+| `phone` | string | Telefon substring (ham veya E.164) |
+| `city` | string | Şehir filtresi |
+| `limit` | int | Default 20, max 100 |
+| `offset` | int | Default 0 |

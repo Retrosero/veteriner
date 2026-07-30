@@ -300,6 +300,10 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-FILE-0002`      | Dosya tipi desteklenmiyor   | 415  | warning  | server | JPG, PNG, PDF desteklenir.           |
 | `VET-FILE-0003`      | Dosya bulunamadı            | 404  | warning  | server | Dosya silinmiş olabilir.             |
 | `VET-FILE-0004`      | Virüs tarama başarısız     | 422  | error    | server | Farklı bir dosya deneyin.            |
+| `VET-FILE-0005`      | Dosya zaten arşivlenmiş     | 409  | warning  | server | Zaten arşivli; tekrar arşivlenemez.   |
+| `VET-FILE-0006`      | Storage backend hatası      | 502  | error    | server | Storage sağlık kontrolü yapın.        |
+| `VET-FILE-0007`      | Scan engine hatası          | 502  | error    | server | Scan servisinin sağlık durumunu kontrol edin. |
+| `VET-FILE-0008`      | Signed URL üretilemedi      | 502  | error    | server | Birkaç dakika sonra tekrar deneyin.   |
 
 ## Bildirim (NOTIF)
 
