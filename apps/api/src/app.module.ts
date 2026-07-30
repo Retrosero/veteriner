@@ -47,6 +47,7 @@ import { PatientsModule } from "./modules/patients/patients.module.js";
 import { AlertsModule } from "./modules/alerts/alerts.module.js";
 import { OwnershipHistoryModule } from "./modules/ownership-history/ownership-history.module.js";
 import { SuperadminModule } from "./modules/superadmin/superadmin.module.js";
+import { TimelineModule } from "./modules/timeline/timeline.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 
 @Module({
@@ -72,6 +73,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     AlertsModule,
     OwnershipHistoryModule,
     SuperadminModule,
+    TimelineModule,
   ],
 })
 export class AppModule {}

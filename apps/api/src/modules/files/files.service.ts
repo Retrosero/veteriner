@@ -295,6 +295,25 @@ export class FilesService {
   }
 
   /**
+   * Tenant'a ait tüm meta'ları döner. GOAL-024 hayvan zaman
+   * çizelgesinin `FileTimelineSource`'u tarafından kullanılır;
+   * timeline filtereleme yaparak `relatedEntityType=patient`
+   * olanları seçer. SUPERADMIN tüm tenant'ları görür; diğer
+   * aktörler yalnızca kendi tenant'larını görür.
+   *
+   * Production'a geçişte Prisma query ile değiştirilecek.
+   */
+  public snapshot(tenantId: string, actor: ActorContext): FileMeta[] {
+    if (actor.role === "SUPERADMIN") {
+      return Array.from(this.store.values());
+    }
+    if (actor.tenantId !== tenantId) return [];
+    return Array.from(this.store.values()).filter(
+      (m) => m.tenantId === tenantId,
+    );
+  }
+
+  /**
    * Tenant izolasyonu + arşiv kontrolü. Cross-tenant denemesinde
    * `undefined` döner (controller 404 fırlatır; bilgi sızdırmaz).
    */
