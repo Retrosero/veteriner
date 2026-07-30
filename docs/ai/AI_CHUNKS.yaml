@@ -2578,3 +2578,67 @@ generated_at: "2026-07-30"
   related_api:
     - "GET /api/v1/clinic/patients/{patientId}/alerts"
 
+- chunk_id: timeline-overview
+  type: page
+  source: docs/ai/AI_CHUNKS.yaml
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Hayvan Zaman Çizelgesi (Timeline)"
+  content: |
+    Hayvan zaman çizelgesi, bir hayvana (patient) ait tüm klinik,
+    petshop, dosya, uyarı ve sahiplik olaylarının birleşik bir
+    timeline'da gösterilmesidir. Veteriner hayvanın klinik kartını
+    açtığında olayları kronolojik sırada görür; muayene, aşı,
+    reçete, ameliyat, yatış, laboratuvar, görüntüleme, satış,
+    dosya, uyarı ve sahiplik değişimleri tek listede toplanır.
+
+    Nasıl çalışır:
+    1. Frontend hayvan detay sayfasını açar
+       (`GET /api/v1/clinic/patients/{id}`).
+    2. Timeline bileşeni
+       `GET /api/v1/clinic/patients/{patientId}/timeline?from=&to=&types=&limit=&offset=`
+       çağrısı yapar; `clinic:patient:read` izni gerekir.
+    3. Backend `TimelineService.listForPatient` tüm aktif
+       `TimelineEventSource` örneklerinden paralel olarak
+       veri çeker (`Promise.all`).
+    4. Sonuçlar `occurredAt` ISO string locale-compare azalan
+       (stable) sırada birleştirilir; `from`/`to`/`types`
+       filtreleri uygulanır, sonra `limit`/`offset` ile
+       sayfalama yapılır.
+
+    Aktif event kaynakları (GOAL-024): `alert` (GOAL-023
+    aktif uyarılar), `transfer` (GOAL-022 sahiplik geçmişi
+    initial + transfer), `file` (GOAL-014 hasta dosyaları).
+    Diğer 9 tip (appointment, examination, vaccination,
+    prescription, surgery, hospitalization, lab, imaging,
+    sale) için event source placeholder; ilgili modüller
+    FAZ-3+'da hazır olduğunda DI token'ı
+    (`TIMELINE_EVENT_SOURCES`) üzerinden otomatik olarak
+    eklenir.
+
+    Filtreler:
+    - `from` / `to` (ISO 8601): tarih aralığı (dahil).
+    - `types` (virgülle ayrılmış): `alert,transfer,file` vb.
+      Geçersiz tip sessizce atlanır.
+    - `limit` (1-200, default 20), `offset` (0-10000,
+      default 0).
+
+    Güvenlik:
+    - Cross-tenant patient → 404 `VET-AUTHZ-0001`
+      (bilgi sızdırmaz).
+    - Audit event **yayınlamaz** (gürültü kontrolü;
+      hayvan detayı sık açılır).
+    - `actorName` maskelenmiş görünen ad; plain PII
+      (TCKN/email/telefon) içermez.
+  keywords: [timeline, zaman çizelgesi, history, geçmiş,
+             kronolojik, event, alert, transfer, file,
+             hayvan, hasta, patient]
+  related_chunks: [glossary-patient, flow-allergy-warning,
+                   medication-conflict-check]
+  related_pages: []
+  related_api:
+    - "GET /api/v1/clinic/patients/{patientId}/timeline"
+

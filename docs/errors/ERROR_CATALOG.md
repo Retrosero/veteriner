@@ -132,8 +132,12 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-CLINIC-0003`    | Mikroçip zaten kullanımda   | 409  | warning  | server | Mikroçip numarasını kontrol edin.    |
 | `VET-CLINIC-0004`    | Tür izin verilmiyor         | 422  | warning  | server | Yalnızca kedi, köpek ve kuş desteklenir. |
 | `VET-CLINIC-0005`    | Sahiplik devri başarısız    | 422  | warning  | server | Yeni sahip bilgilerini kontrol edin. |
+| `VET-CLINIC-0006`    | Aktif sahiplik çakışması    | 409  | warning  | server | Aktif kayıt bekleniyor; mevcut aktif kapatılmalı. |
 | `VET-CLINIC-0007`    | Aynı sahibe transfer no-op  | 422  | warning  | server | Yeni sahip mevcut sahiple aynı; farklı bir sahip seçin. |
+| `VET-CLINIC-0008`    | Arşivli hayvana transfer    | 422  | warning  | server | Hasta arşivli; transfer kabul edilmez. |
+| `VET-CLINIC-0009`    | reason=initial transfer red | 422  | warning  | server | reason=initial yalnızca ilk kayıtta kullanılır. |
 | `VET-CLINIC-0010`    | Uyarı bulunamadı            | 404  | info     | server | Uyarı ID'sini kontrol edin veya arşivli olabilir. |
+| `VET-CLINIC-0011`    | Aktif sahiplik bulunamadı   | 404  | warning  | server | Hastanın aktif sahiplik kaydı yok. |
 | `VET-CLINIC-0099`    | Klinik genel hata           | 500  | critical | server | Yeniden deneyin.                     |
 
 ## Randevu (APPT)
