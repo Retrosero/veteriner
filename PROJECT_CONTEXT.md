@@ -66,8 +66,12 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   tip, kısıt).
 - `docs/workflows/OVERVIEW.md` — üst düzey akış kataloğu (fazlara
   göre).
-- `docs/permissions/PERMISSION_MATRIX.md` — yetki matrisi (rol
-  başına permission'lar).
+- `docs/permissions/PERMISSION_CATALOG.yaml` — **makinece
+  okunabilir** yetki kataloğu (113 permission, CI doğrulamalı).
+- `docs/permissions/PERMISSION_MATRIX.md` — **insan okunabilir**
+  yetki matrisi (modül bazlı tablolar).
+- `docs/permissions/ROLE_DESCRIPTIONS.md` — 5 rol için detaylı
+  sorumluluk açıklamaları.
 - `docs/errors/ERROR_CATALOG.md` — hata kataloğu (kod → mesaj → çözüm).
 - `docs/api/`, `docs/pages/`, `docs/user-education/`, `docs/ai/` —
   sayfa, API, eğitim ve AI kaynakları.
@@ -77,7 +81,7 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
 - **Faz 0 — Keşif, ürün kuralları ve proje iskeleti**
   - GOAL-000 ✅ repository, monorepo, kalite kapıları (tamamlandı)
   - GOAL-001 ✅ domain sözlüğü ve pilot klinik iş akışları (tamamlandı)
-  - GOAL-002 ⏳ rol/yetki matrisi (Faz 0 devamı)
+  - GOAL-002 ✅ rol/yetki matrisi (tamamlandı — 113 permission, 5 rol)
   - GOAL-003 ⏳ çoklu dil ve ülke adaptörü sözleşmesi
   - GOAL-004 ⏳ log, audit ve hata kodu standardı
   - GOAL-005 ⏳ dokümantasyon ve AI bilgi havuzu şeması

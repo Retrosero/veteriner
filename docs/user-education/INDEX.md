@@ -36,6 +36,26 @@ GOAL-001 sonunda henüz rol-bazlı rehberler
 (`OWNER.md`, `VETERINARIAN.md` vb.) doldurulmadı; bu rehberler
 Faz 2+ sırasında, ilgili UI sayfaları uygulandıkça doldurulacaktır.
 
+## GOAL-002 — Rol/yetki matrisi (Faz 0 devamı)
+
+GOAL-002 ile birlikte **kullanıcı eğitiminin yetki temeli** atıldı:
+
+- [`docs/permissions/PERMISSION_CATALOG.yaml`](../permissions/PERMISSION_CATALOG.yaml) —
+  **makinece okunabilir** yetki kataloğu. 113 permission, 5 rol, 28
+  modül. CI kapısı `pnpm docs:check` bunu referans alır.
+- [`docs/permissions/PERMISSION_MATRIX.md`](../permissions/PERMISSION_MATRIX.md) —
+  **insan okunabilir** modül bazlı tablolar. "Bu işlemi kim
+  yapabilir?" sorularının kaynağı.
+- [`docs/permissions/ROLE_DESCRIPTIONS.md`](../permissions/ROLE_DESCRIPTIONS.md) —
+  5 rol için detaylı sorumluluk açıklamaları, kapsam dışı
+  durumlar, tipik senaryolar. Rol bazlı kullanıcı eğitimlerinin
+  **yetki temelini** oluşturur.
+
+GOAL-002 sonunda henüz rol-bazlı rehberler doldurulmadı, ancak
+her rolün sorumluluk haritası bu dokümanla kesinleşti. Rehberler
+Faz 2+ sırasında, ilgili UI sayfaları uygulandıkça
+`{ROL}.md` dosyaları olarak eklenecek.
+
 ## Eğitim doldurma zamanlaması
 
 - **Faz 2 (GOAL-020+):** Hasta sahibi ve hayvan kaydı → `STAFF.md`,

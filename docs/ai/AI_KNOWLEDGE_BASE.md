@@ -14,13 +14,20 @@ kullanım asistanı temeli) zenginleştirilecektir.
   sorularını bu kaynaktan yanıtlar.
 - `docs/domain/PILOT_SCOPE.md` — pilot kapsamı ve MVP dışı konular.
   AI asistanı "bu özellik var mı?" sorularını buradan yanıtlar.
+- `docs/permissions/PERMISSION_CATALOG.yaml` — **makinece
+  okunabilir** yetki kataloğu (113 permission, GOAL-002'de
+  üretildi). AI asistanı "bu işlemi kim yapabilir?" sorularını
+  buradan yanıtlar.
+- `docs/permissions/PERMISSION_MATRIX.md` — insan okunabilir
+  yetki matrisi.
+- `docs/permissions/ROLE_DESCRIPTIONS.md` — 5 rol için sorumluluk
+  açıklamaları.
 - `docs/fields/FIELD_GLOSSARY.md` — alan düzeyinde sözlük (alan
   adı, tip, kısıt). Form alanlarını açıklamak için.
 - `docs/pages/` — sayfa bilgi kayıtları (YAML).
 - `docs/workflows/` — iş akışları üst katalogu (fazlara göre
   gruplama).
 - `docs/errors/` — hata kataloğu.
-- `docs/permissions/` — yetki matrisi.
 - `docs/user-education/` — Türkçe kullanıcı eğitimi.
 
 ## AI asistan kapsamı (GOAL-000)

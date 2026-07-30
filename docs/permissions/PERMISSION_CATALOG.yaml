@@ -1,0 +1,2017 @@
+# @file VetNiva İzin Kataloğu (YAML).
+# @module docs/permissions/PERMISSION_CATALOG
+#
+# @description Tüm VetNiva permission anahtarlarının yapısal
+# tanımı. Format: `<domain>:<resource>:<action>` (ör.
+# `clinic:appointment:create`).
+#
+# Bu dosya makinece okunabilir; insan okunabilir tablo için
+# `PERMISSION_MATRIX.md` dosyasına bakın. CI kapısı
+# `pnpm docs:check`, kodda kullanılan permission referanslarının
+# bu katalogda yer almasını zorunlu kılar.
+#
+# Notlar:
+# - `applies_to_roles`: Bu permission'a sahip olan tüm roller.
+#   Portal kullanıcıları `portal:*` permission'larını kullanır
+#   ve `tenant_id` yerine `owner_id` kapsamıyla sınırlıdır.
+# - `tenant_scope: required` — permission yalnızca aktif oturumun
+#   `tenant_id`'si içinde geçerlidir. Cross-tenant erişim denemeleri
+#   uygulama katmanında 404 döner.
+# - `branch_scope: required` — permission yalnızca aktif oturumun
+#   `branch_id`'si içinde geçerlidir. Cross-branch erişim
+#   (örn. depo transferi hariç) reddedilir.
+# - `self_only: true` — permission yalnızca oturum kullanıcısının
+#   kendi kaydına aittir (ör. portal hayvanları).
+# - `audit: true` — permission kullanımı audit log'a yansır.
+# - `pii: true` — permission PII (Kişisel Tanımlanabilir Bilgi)
+#   içeren alanlara erişim sağlar; KVKK gereği loglanır.
+# - `amend: true` — düzeltme/amendment işlemi için gereken
+#   özel yetki.
+# - `system_only: true` — yalnızca sistem (job, vb.) tarafından
+#   tetiklenir; manuel çağrılmamalıdır.
+#
+# @author GOAL-002 (FAZ-0) yetki matrisi
+# @since 2026-07-30
+# @security Tüm yetkiler tenant-bazlıdır. Cross-tenant erişim
+#   denemeleri uygulama katmanında 404 döner ve audit log'a
+#   yansır. Süperadmin (SUPERADMIN) tenant dışı görünüm için
+#   ayrı context ile çalışır; normal API'lere erişemez.
+# =============================================================================
+version: "1.0.0"
+generated_at: "2026-07-30"
+generated_by: "GOAL-002"
+notes: >
+  Pilot kapsamda üretilen ilk permission kataloğu.
+  Sonraki goal'lar (GOAL-012 RBAC, GOAL-014 dosya servisi, vb.)
+  ile birlikte genişletilecek.
+
+roles:
+  - id: SUPERADMIN
+    description: VetNiva platform yönetimi (tenant dışı görünüm).
+    access_tenant_data: false
+    access_own_tenant_only: false
+  - id: OWNER
+    description: İşletme sahibi; tenant'ın tüm verisine erişir.
+    access_tenant_data: true
+    access_own_tenant_only: true
+  - id: VETERINARIAN
+    description: Veteriner hekim; klinik modüllerinde tam yetki.
+    access_tenant_data: true
+    access_own_tenant_only: true
+  - id: STAFF
+    description: Klinik personeli; sınırlı yetki (POS, kabul, hasta sahibi yönetimi).
+    access_tenant_data: true
+    access_own_tenant_only: true
+  - id: PET_OWNER_PORTAL
+    description: Hasta sahibi portalı kullanıcısı (yalnızca kendi hayvanları).
+    access_tenant_data: true
+    access_own_tenant_only: false
+    self_only_scope: owner_id
+
+permissions:
+
+  # ----------------------------------------------------------------
+  # COMMON — Genel
+  # ----------------------------------------------------------------
+  - permission: "common:notification:read"
+    description: "Kullanıcı bildirimlerini görüntüleme."
+    resource_type: notification
+    action: read
+    tenant_scope: required
+    branch_scope: not_required
+    self_only: false
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF, SUPERADMIN, PET_OWNER_PORTAL]
+
+  - permission: "common:notification:update"
+    description: "Bildirim okundu/okunmadı durumunu güncelleme."
+    resource_type: notification
+    action: update
+    tenant_scope: required
+    branch_scope: not_required
+    self_only: true
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF, SUPERADMIN, PET_OWNER_PORTAL]
+
+  - permission: "common:profile:read"
+    description: "Kendi profil bilgilerini görüntüleme."
+    resource_type: profile
+    action: read
+    tenant_scope: required
+    branch_scope: not_required
+    self_only: true
+    audit: false
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF, SUPERADMIN, PET_OWNER_PORTAL]
+
+  - permission: "common:profile:update"
+    description: "Kendi profil bilgilerini güncelleme."
+    resource_type: profile
+    action: update
+    tenant_scope: required
+    branch_scope: not_required
+    self_only: true
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF, SUPERADMIN, PET_OWNER_PORTAL]
+
+  - permission: "common:settings:read"
+    description: "Tenant ayarlarını görüntüleme."
+    resource_type: settings
+    action: read
+    tenant_scope: required
+    branch_scope: not_required
+    self_only: false
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "common:settings:update"
+    description: "Tenant ayarlarını güncelleme."
+    resource_type: settings
+    action: update
+    tenant_scope: required
+    branch_scope: not_required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  # ----------------------------------------------------------------
+  # TENANT — Tenant yönetimi (sadece SUPERADMIN)
+  # ----------------------------------------------------------------
+  - permission: "tenant:tenant:read"
+    description: "Tüm tenant'ları listeleme ve görüntüleme."
+    resource_type: tenant
+    action: read
+    tenant_scope: not_applicable
+    branch_scope: not_applicable
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [SUPERADMIN]
+
+  - permission: "tenant:tenant:create"
+    description: "Yeni tenant oluşturma (pilot onboarding)."
+    resource_type: tenant
+    action: create
+    tenant_scope: not_applicable
+    branch_scope: not_applicable
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [SUPERADMIN]
+
+  - permission: "tenant:tenant:update"
+    description: "Tenant bilgilerini güncelleme."
+    resource_type: tenant
+    action: update
+    tenant_scope: not_applicable
+    branch_scope: not_applicable
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [SUPERADMIN]
+
+  - permission: "tenant:tenant:archive"
+    description: "Tenant kapatma (fiziksel silme yok, archive)."
+    resource_type: tenant
+    action: archive
+    tenant_scope: not_applicable
+    branch_scope: not_applicable
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [SUPERADMIN]
+
+  # ----------------------------------------------------------------
+  # BRANCH — Şube yönetimi
+  # ----------------------------------------------------------------
+  - permission: "branch:branch:read"
+    description: "Tenant şubelerini listeleme."
+    resource_type: branch
+    action: read
+    tenant_scope: required
+    branch_scope: not_required
+    self_only: false
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF, SUPERADMIN]
+
+  - permission: "branch:branch:create"
+    description: "Yeni şube oluşturma."
+    resource_type: branch
+    action: create
+    tenant_scope: required
+    branch_scope: not_applicable
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, SUPERADMIN]
+
+  - permission: "branch:branch:update"
+    description: "Şube bilgilerini güncelleme."
+    resource_type: branch
+    action: update
+    tenant_scope: required
+    branch_scope: not_applicable
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, SUPERADMIN]
+
+  - permission: "branch:branch:archive"
+    description: "Şube kapatma (fiziksel silme yok)."
+    resource_type: branch
+    action: archive
+    tenant_scope: required
+    branch_scope: not_applicable
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, SUPERADMIN]
+
+  # ----------------------------------------------------------------
+  # USER — Kullanıcı yönetimi
+  # ----------------------------------------------------------------
+  - permission: "user:user:read"
+    description: "Tenant kullanıcılarını listeleme."
+    resource_type: user
+    action: read
+    tenant_scope: required
+    branch_scope: optional
+    self_only: false
+    audit: false
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "user:user:invite"
+    description: "Yeni kullanıcı davet etme (e-posta/SMS)."
+    resource_type: user
+    action: create
+    tenant_scope: required
+    branch_scope: optional
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  - permission: "user:user:update"
+    description: "Kullanıcı bilgilerini güncelleme (ad, e-posta, telefon)."
+    resource_type: user
+    action: update
+    tenant_scope: required
+    branch_scope: optional
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  - permission: "user:user:suspend"
+    description: "Kullanıcıyı askıya alma veya yeniden aktifleştirme."
+    resource_type: user
+    action: archive
+    tenant_scope: required
+    branch_scope: optional
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, SUPERADMIN]
+
+  - permission: "user:user:assign_role"
+    description: "Kullanıcıya rol atama/geri alma."
+    resource_type: user
+    action: update
+    tenant_scope: required
+    branch_scope: optional
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, SUPERADMIN]
+
+  # ----------------------------------------------------------------
+  # ROLE — Rol yönetimi
+  # ----------------------------------------------------------------
+  - permission: "role:role:read"
+    description: "Mevcut rolleri ve izinlerini listeleme."
+    resource_type: role
+    action: read
+    tenant_scope: required
+    branch_scope: not_applicable
+    self_only: false
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF, SUPERADMIN]
+
+  - permission: "role:role:assign"
+    description: "Kullanıcıya rol atama (yetki verme)."
+    resource_type: role
+    action: create
+    tenant_scope: required
+    branch_scope: not_required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, SUPERADMIN]
+
+  - permission: "role:role:manage"
+    description: "Özel rol oluşturma ve izin seti tanımlama."
+    resource_type: role
+    action: manage
+    tenant_scope: required
+    branch_scope: not_applicable
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, SUPERADMIN]
+
+  # ----------------------------------------------------------------
+  # CLINIC:OWNER — Hasta sahibi
+  # ----------------------------------------------------------------
+  - permission: "clinic:owner:read"
+    description: "Hasta sahiplerini listeleme ve görüntüleme."
+    resource_type: owner
+    action: read
+    tenant_scope: required
+    branch_scope: optional
+    self_only: false
+    audit: false
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "clinic:owner:create"
+    description: "Yeni hasta sahibi kaydı oluşturma."
+    resource_type: owner
+    action: create
+    tenant_scope: required
+    branch_scope: optional
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "clinic:owner:update"
+    description: "Hasta sahibi bilgilerini güncelleme."
+    resource_type: owner
+    action: update
+    tenant_scope: required
+    branch_scope: optional
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "clinic:owner:archive"
+    description: "Hasta sahibini arşivleme (soft-delete)."
+    resource_type: owner
+    action: archive
+    tenant_scope: required
+    branch_scope: optional
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  - permission: "clinic:owner:erase"
+    description: "KVKK kapsamında PII silme talebi işleme (tıbbi kayıtlar korunur)."
+    resource_type: owner
+    action: archive
+    tenant_scope: required
+    branch_scope: optional
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, SUPERADMIN]
+
+  - permission: "clinic:owner:export"
+    description: "Hasta sahibi verilerini dışa aktarma (CSV/PDF)."
+    resource_type: owner
+    action: export
+    tenant_scope: required
+    branch_scope: optional
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN]
+
+  # ----------------------------------------------------------------
+  # CLINIC:PATIENT — Hayvan
+  # ----------------------------------------------------------------
+  - permission: "clinic:patient:read"
+    description: "Hayvan kayıtlarını listeleme ve görüntüleme."
+    resource_type: patient
+    action: read
+    tenant_scope: required
+    branch_scope: optional
+    self_only: false
+    audit: false
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF, PET_OWNER_PORTAL]
+    notes: "Portal kullanıcısı yalnızca kendi hayvanlarını görür (self_only)."
+
+  - permission: "clinic:patient:create"
+    description: "Yeni hayvan kaydı oluşturma."
+    resource_type: patient
+    action: create
+    tenant_scope: required
+    branch_scope: optional
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "clinic:patient:update"
+    description: "Hayvan bilgilerini güncelleme."
+    resource_type: patient
+    action: update
+    tenant_scope: required
+    branch_scope: optional
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "clinic:patient:archive"
+    description: "Hayvan kaydını arşivleme (ölüm/transfer sonrası)."
+    resource_type: patient
+    action: archive
+    tenant_scope: required
+    branch_scope: optional
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  - permission: "clinic:patient:transfer"
+    description: "Hayvanın sahipliğini başka kişiye devretme."
+    resource_type: patient
+    action: update
+    tenant_scope: required
+    branch_scope: optional
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN]
+
+  - permission: "clinic:patient:export"
+    description: "Hayvan verilerini dışa aktarma."
+    resource_type: patient
+    action: export
+    tenant_scope: required
+    branch_scope: optional
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN]
+
+  # ----------------------------------------------------------------
+  # CLINIC:APPOINTMENT — Randevu
+  # ----------------------------------------------------------------
+  - permission: "clinic:appointment:read"
+    description: "Randevuları listeleme ve görüntüleme."
+    resource_type: appointment
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "clinic:appointment:create"
+    description: "Yeni randevu oluşturma (resepsiyon)."
+    resource_type: appointment
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "clinic:appointment:update"
+    description: "Randevu bilgilerini güncelleme (tarih, veteriner, oda)."
+    resource_type: appointment
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "clinic:appointment:cancel"
+    description: "Randevu iptal etme (sebep notu zorunlu)."
+    resource_type: appointment
+    action: archive
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "clinic:appointment:complete"
+    description: "Randevuyu tamamlama (muayene başlatma)."
+    resource_type: appointment
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN]
+
+  - permission: "clinic:appointment:export"
+    description: "Randevu listesini dışa aktarma."
+    resource_type: appointment
+    action: export
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN]
+
+  - permission: "clinic:appointment:request"
+    description: "Portal üzerinden randevu talebi oluşturma."
+    resource_type: appointment
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: true
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [PET_OWNER_PORTAL]
+    notes: "Portal kullanıcısı yalnızca kendi hayvanları için talep açabilir."
+
+  # ----------------------------------------------------------------
+  # CLINIC:EXAMINATION — Muayene
+  # ----------------------------------------------------------------
+  - permission: "clinic:examination:read"
+    description: "Muayene kayıtlarını görüntüleme."
+    resource_type: examination
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "clinic:examination:create"
+    description: "Yeni muayene kaydı oluşturma."
+    resource_type: examination
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN]
+
+  - permission: "clinic:examination:sign"
+    description: "Muayene kaydını imzalama (artık değiştirilemez)."
+    resource_type: examination
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN]
+
+  - permission: "clinic:examination:amend"
+    description: "İmzalı muayene için amendment (düzeltme kaydı) oluşturma."
+    resource_type: examination
+    action: amend
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: true
+    system_only: false
+    applies_to_roles: [VETERINARIAN, OWNER]
+
+  - permission: "clinic:examination:export"
+    description: "Muayene kayıtlarını dışa aktarma."
+    resource_type: examination
+    action: export
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN]
+
+  # ----------------------------------------------------------------
+  # CLINIC:SOAP — SOAP notu (muayene detayı)
+  # ----------------------------------------------------------------
+  - permission: "clinic:soap:read"
+    description: "SOAP notlarını görüntüleme."
+    resource_type: soap
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "clinic:soap:create"
+    description: "SOAP notu oluşturma (muayene ile birlikte)."
+    resource_type: soap
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN]
+
+  - permission: "clinic:soap:update"
+    description: "SOAP notunu güncelleme (imzadan önce)."
+    resource_type: soap
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN]
+
+  - permission: "clinic:soap:amend"
+    description: "İmzalı SOAP notu için amendment."
+    resource_type: soap
+    action: amend
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: true
+    system_only: false
+    applies_to_roles: [VETERINARIAN, OWNER]
+
+  # ----------------------------------------------------------------
+  # CLINIC:VACCINATION — Aşı
+  # ----------------------------------------------------------------
+  - permission: "clinic:vaccination:read"
+    description: "Aşı kayıtlarını görüntüleme."
+    resource_type: vaccination
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF, PET_OWNER_PORTAL]
+    notes: "Portal yalnızca kendi hayvanlarının aşılarını görür."
+
+  - permission: "clinic:vaccination:create"
+    description: "Yeni aşı uygulaması (stok düşümü ile birlikte)."
+    resource_type: vaccination
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN]
+
+  - permission: "clinic:vaccination:amend"
+    description: "Aşı kaydı için amendment (hatalı uygulama düzeltme)."
+    resource_type: vaccination
+    action: amend
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: true
+    system_only: false
+    applies_to_roles: [VETERINARIAN, OWNER]
+
+  - permission: "clinic:vaccination:export"
+    description: "Aşı kayıtlarını dışa aktarma."
+    resource_type: vaccination
+    action: export
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN]
+
+  # ----------------------------------------------------------------
+  # CLINIC:PRESCRIPTION — Reçete
+  # ----------------------------------------------------------------
+  - permission: "clinic:prescription:read"
+    description: "Reçete kayıtlarını görüntüleme."
+    resource_type: prescription
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "clinic:prescription:create"
+    description: "Yeni reçete yazma."
+    resource_type: prescription
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN]
+
+  - permission: "clinic:prescription:dispense"
+    description: "Reçeteyi sahibine dağıtma (stok düşümü ile birlikte)."
+    resource_type: prescription
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN, STAFF]
+
+  - permission: "clinic:prescription:cancel"
+    description: "Reçeteyi iptal etme (stok iade ile birlikte)."
+    resource_type: prescription
+    action: archive
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN, STAFF]
+
+  - permission: "clinic:prescription:amend"
+    description: "Reçete için amendment."
+    resource_type: prescription
+    action: amend
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: true
+    system_only: false
+    applies_to_roles: [VETERINARIAN, OWNER]
+
+  - permission: "clinic:prescription:export"
+    description: "Reçete listesini dışa aktarma."
+    resource_type: prescription
+    action: export
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN]
+
+  # ----------------------------------------------------------------
+  # CLINIC:SURGERY — Ameliyat
+  # ----------------------------------------------------------------
+  - permission: "clinic:surgery:read"
+    description: "Ameliyat kayıtlarını görüntüleme."
+    resource_type: surgery
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "clinic:surgery:create"
+    description: "Yeni ameliyat planlama."
+    resource_type: surgery
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN]
+
+  - permission: "clinic:surgery:schedule"
+    description: "Ameliyat için tarih/saat ve ekip ataması."
+    resource_type: surgery
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN, STAFF]
+
+  - permission: "clinic:surgery:start"
+    description: "Ameliyatı başlatma (onay kontrolü ile)."
+    resource_type: surgery
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN]
+
+  - permission: "clinic:surgery:complete"
+    description: "Ameliyatı tamamlama (operasyon notu, malzeme düşümü)."
+    resource_type: surgery
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN]
+
+  - permission: "clinic:surgery:cancel"
+    description: "Ameliyatı iptal etme."
+    resource_type: surgery
+    action: archive
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN, OWNER]
+
+  - permission: "clinic:surgery:amend"
+    description: "Ameliyat kaydı için amendment."
+    resource_type: surgery
+    action: amend
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: true
+    system_only: false
+    applies_to_roles: [VETERINARIAN, OWNER]
+
+  - permission: "clinic:surgery:export"
+    description: "Ameliyat kayıtlarını dışa aktarma."
+    resource_type: surgery
+    action: export
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN]
+
+  # ----------------------------------------------------------------
+  # CLINIC:CONSENT — Onam
+  # ----------------------------------------------------------------
+  - permission: "clinic:consent:sign"
+    description: "Hasta sahibi adına onam formu imzalama."
+    resource_type: consent
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF, PET_OWNER_PORTAL]
+    notes: "Portal kullanıcısı kendi hayvanı için onam verebilir."
+
+  - permission: "clinic:consent:read"
+    description: "Onam formlarını görüntüleme."
+    resource_type: consent
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  # ----------------------------------------------------------------
+  # CLINIC:ANESTHESIA — Anestezi
+  # ----------------------------------------------------------------
+  - permission: "clinic:anesthesia:read"
+    description: "Anestezi kayıtlarını görüntüleme."
+    resource_type: anesthesia
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN]
+
+  - permission: "clinic:anesthesia:create"
+    description: "Anestezi kaydı oluşturma (ameliyat ile birlikte)."
+    resource_type: anesthesia
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN]
+
+  - permission: "clinic:anesthesia:update"
+    description: "Anestezi kaydı güncelleme (vital bulgular, ajanlar)."
+    resource_type: anesthesia
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN]
+
+  - permission: "clinic:anesthesia:export"
+    description: "Anestezi kayıtlarını dışa aktarma."
+    resource_type: anesthesia
+    action: export
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN]
+
+  # ----------------------------------------------------------------
+  # CLINIC:HOSPITALIZATION — Yatış
+  # ----------------------------------------------------------------
+  - permission: "clinic:hospitalization:read"
+    description: "Yatış kayıtlarını görüntüleme."
+    resource_type: hospitalization
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "clinic:hospitalization:admit"
+    description: "Yatış kabul etme."
+    resource_type: hospitalization
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN, STAFF]
+
+  - permission: "clinic:hospitalization:add_note"
+    description: "Günlük yatış notu ekleme."
+    resource_type: hospitalization
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN, STAFF]
+
+  - permission: "clinic:hospitalization:discharge"
+    description: "Yatış taburcu etme (özet yazımı ile birlikte)."
+    resource_type: hospitalization
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN]
+
+  - permission: "clinic:hospitalization:export"
+    description: "Yatış kayıtlarını dışa aktarma."
+    resource_type: hospitalization
+    action: export
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN]
+
+  # ----------------------------------------------------------------
+  # CLINIC:LAB — Laboratuvar
+  # ----------------------------------------------------------------
+  - permission: "clinic:lab:read"
+    description: "Laboratuvar istem ve sonuçlarını görüntüleme."
+    resource_type: lab_order
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF, PET_OWNER_PORTAL]
+    notes: "Portal yalnızca kendi hayvanının lab sonuçlarını görür."
+
+  - permission: "clinic:lab:order"
+    description: "Yeni lab istemi oluşturma."
+    resource_type: lab_order
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN]
+
+  - permission: "clinic:lab:collect_sample"
+    description: "Numune alındı olarak işaretleme."
+    resource_type: lab_order
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN, STAFF]
+
+  - permission: "clinic:lab:enter_result"
+    description: "Lab sonucunu girme (iç lab veya dış lab manuel)."
+    resource_type: lab_order
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN, STAFF]
+
+  - permission: "clinic:lab:amend"
+    description: "Lab sonucu için amendment (anormal düzeltme)."
+    resource_type: lab_order
+    action: amend
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: true
+    system_only: false
+    applies_to_roles: [VETERINARIAN, OWNER]
+
+  - permission: "clinic:lab:export"
+    description: "Lab sonuçlarını dışa aktarma."
+    resource_type: lab_order
+    action: export
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN]
+
+  # ----------------------------------------------------------------
+  # CLINIC:IMAGING — Görüntüleme
+  # ----------------------------------------------------------------
+  - permission: "clinic:imaging:read"
+    description: "Görüntüleme istem ve raporlarını görüntüleme."
+    resource_type: imaging_order
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF, PET_OWNER_PORTAL]
+    notes: "Portal yalnızca kendi hayvanının görüntüleme raporlarını görür."
+
+  - permission: "clinic:imaging:order"
+    description: "Yeni görüntüleme istemi oluşturma."
+    resource_type: imaging_order
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN]
+
+  - permission: "clinic:imaging:perform"
+    description: "Görüntülemeyi gerçekleştirme (dosya yükleme)."
+    resource_type: imaging_order
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN, STAFF]
+
+  - permission: "clinic:imaging:report"
+    description: "Radyoloji raporu girme."
+    resource_type: imaging_order
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN]
+
+  - permission: "clinic:imaging:amend"
+    description: "Görüntüleme raporu için amendment."
+    resource_type: imaging_order
+    action: amend
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: true
+    system_only: false
+    applies_to_roles: [VETERINARIAN, OWNER]
+
+  - permission: "clinic:imaging:export"
+    description: "Görüntüleme kayıtlarını dışa aktarma."
+    resource_type: imaging_order
+    action: export
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN]
+
+  # ----------------------------------------------------------------
+  # CLINIC:STOCK — Klinik stok (ilaç, aşı, malzeme)
+  # ----------------------------------------------------------------
+  - permission: "clinic:stock:read"
+    description: "Klinik stok seviyelerini görüntüleme."
+    resource_type: stock
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "clinic:stock:receive"
+    description: "Klinik stoğa tedarik/manuel giriş."
+    resource_type: stock
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "clinic:stock:decrement"
+    description: "Klinik stok düşümü (reçete/aşı uygulaması ile otomatik)."
+    resource_type: stock
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: true
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+    notes: "Sistem tarafından da tetiklenir (aşı/reçete uygulaması)."
+
+  - permission: "clinic:stock:adjust"
+    description: "Klinik stok sayım düzeltmesi (manuel)."
+    resource_type: stock
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  - permission: "clinic:stock:export"
+    description: "Klinik stok raporunu dışa aktarma."
+    resource_type: stock
+    action: export
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN]
+
+  # ----------------------------------------------------------------
+  # PETSHOP — Petshop yapılandırma
+  # ----------------------------------------------------------------
+  - permission: "petshop:config:read"
+    description: "Petshop ayarlarını görüntüleme."
+    resource_type: petshop_config
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "petshop:config:update"
+    description: "Petshop ayarlarını güncelleme (fiyat listesi, kampanya)."
+    resource_type: petshop_config
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  # ----------------------------------------------------------------
+  # PETSHOP:PRODUCT — Ürün/hizmet kartı
+  # ----------------------------------------------------------------
+  - permission: "petshop:product:read"
+    description: "Ürün ve hizmet kataloğunu görüntüleme."
+    resource_type: product
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "petshop:product:create"
+    description: "Yeni ürün/hizmet kartı oluşturma."
+    resource_type: product
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "petshop:product:update"
+    description: "Ürün/hizmet bilgilerini güncelleme."
+    resource_type: product
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "petshop:product:archive"
+    description: "Ürün/hizmet kartını arşivleme."
+    resource_type: product
+    action: archive
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  - permission: "petshop:product:export"
+    description: "Ürün kataloğunu dışa aktarma."
+    resource_type: product
+    action: export
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  # ----------------------------------------------------------------
+  # PETSHOP:STOCK — Petshop stok
+  # ----------------------------------------------------------------
+  - permission: "petshop:stock:read"
+    description: "Petshop stok seviyelerini görüntüleme."
+    resource_type: stock
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "petshop:stock:receive"
+    description: "Petshop stoğa tedarik girişi."
+    resource_type: stock
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "petshop:stock:decrement"
+    description: "Petshop satış ile stok düşümü."
+    resource_type: stock
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: true
+    applies_to_roles: [OWNER, STAFF]
+    notes: "Satış sırasında sistem tarafından otomatik tetiklenir."
+
+  - permission: "petshop:stock:adjust"
+    description: "Petshop stok sayım düzeltmesi."
+    resource_type: stock
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  - permission: "petshop:stock:export"
+    description: "Petshop stok raporunu dışa aktarma."
+    resource_type: stock
+    action: export
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  # ----------------------------------------------------------------
+  # PETSHOP:SALE — Satış (POS)
+  # ----------------------------------------------------------------
+  - permission: "petshop:sale:read"
+    description: "Petshop satışlarını görüntüleme."
+    resource_type: sale
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "petshop:sale:create"
+    description: "Yeni petshop satışı (POS) — ödeme ve stok düşümü ile birlikte."
+    resource_type: sale
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [STAFF, OWNER]
+
+  - permission: "petshop:sale:refund"
+    description: "Petshop satış iadesi (ters kayıt + stok iade)."
+    resource_type: sale
+    action: archive
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "petshop:sale:export"
+    description: "Petshop satış listesini dışa aktarma."
+    resource_type: sale
+    action: export
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  # ----------------------------------------------------------------
+  # CLINIC:PAYMENT & PETSHOP:PAYMENT — Tahsilat
+  # ----------------------------------------------------------------
+  - permission: "clinic:payment:read"
+    description: "Klinik tahsilatlarını görüntüleme."
+    resource_type: payment
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF, PET_OWNER_PORTAL]
+    notes: "Portal yalnızca kendi tahsilat geçmişini görür."
+
+  - permission: "clinic:payment:create"
+    description: "Klinik tahsilatı (muayene/aşı/ameliyat için)."
+    resource_type: payment
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "clinic:payment:reverse"
+    description: "Klinik tahsilat iptali (ters kayıt)."
+    resource_type: payment
+    action: archive
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  - permission: "petshop:payment:read"
+    description: "Petshop tahsilatlarını görüntüleme."
+    resource_type: payment
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "petshop:payment:create"
+    description: "Petshop tahsilatı (satış ile birlikte)."
+    resource_type: payment
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [STAFF, OWNER]
+
+  - permission: "petshop:payment:reverse"
+    description: "Petshop tahsilat iptali."
+    resource_type: payment
+    action: archive
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  # ----------------------------------------------------------------
+  # CASH — Kasa yönetimi
+  # ----------------------------------------------------------------
+  - permission: "cash:read"
+    description: "Kasa bakiyesini ve hareketlerini görüntüleme."
+    resource_type: cash
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "cash:close"
+    description: "Gün sonu kasa kapanışı (fark raporu)."
+    resource_type: cash
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  # ----------------------------------------------------------------
+  # PORTAL — Portal kullanıcı özel
+  # ----------------------------------------------------------------
+  - permission: "portal:animal:read"
+    description: "Portal kullanıcısının kendi hayvanlarını görüntüleme."
+    resource_type: patient
+    action: read
+    tenant_scope: required
+    branch_scope: optional
+    self_only: true
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [PET_OWNER_PORTAL]
+    notes: "Portal yalnızca owner_id kapsamındaki hayvanları görür."
+
+  - permission: "portal:vaccination:read"
+    description: "Portal kullanıcısının kendi hayvanlarının aşılarını görüntüleme."
+    resource_type: vaccination
+    action: read
+    tenant_scope: required
+    branch_scope: optional
+    self_only: true
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [PET_OWNER_PORTAL]
+
+  - permission: "portal:lab:read"
+    description: "Portal kullanıcısının kendi hayvanlarının lab sonuçlarını görüntüleme."
+    resource_type: lab_order
+    action: read
+    tenant_scope: required
+    branch_scope: optional
+    self_only: true
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [PET_OWNER_PORTAL]
+
+  - permission: "portal:imaging:read"
+    description: "Portal kullanıcısının kendi hayvanlarının görüntüleme raporlarını görüntüleme."
+    resource_type: imaging_order
+    action: read
+    tenant_scope: required
+    branch_scope: optional
+    self_only: true
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [PET_OWNER_PORTAL]
+
+  - permission: "portal:payment:read"
+    description: "Portal kullanıcısının kendi tahsilat geçmişini görüntüleme."
+    resource_type: payment
+    action: read
+    tenant_scope: required
+    branch_scope: optional
+    self_only: true
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [PET_OWNER_PORTAL]
+
+  - permission: "portal:profile:update"
+    description: "Portal profilini (şifre, telefon) güncelleme."
+    resource_type: profile
+    action: update
+    tenant_scope: required
+    branch_scope: not_applicable
+    self_only: true
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [PET_OWNER_PORTAL]
+
+  - permission: "portal:consent:sign"
+    description: "Portal üzerinden kendi hayvanı için onam verme."
+    resource_type: consent
+    action: create
+    tenant_scope: required
+    branch_scope: optional
+    self_only: true
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [PET_OWNER_PORTAL]
+
+  - permission: "portal:appointment:request"
+    description: "Portal üzerinden randevu talebi (kendi hayvanı için)."
+    resource_type: appointment
+    action: create
+    tenant_scope: required
+    branch_scope: optional
+    self_only: true
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [PET_OWNER_PORTAL]
+
+  # ----------------------------------------------------------------
+  # REPORT — Raporlar
+  # ----------------------------------------------------------------
+  - permission: "clinic:report:financial:read"
+    description: "Finansal raporları (gelir, tahsilat, KDV) görüntüleme."
+    resource_type: report
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  - permission: "clinic:report:clinical:read"
+    description: "Klinik raporları (muayene, aşı, lab) görüntüleme."
+    resource_type: report
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN]
+
+  - permission: "clinic:report:stock:read"
+    description: "Stok raporlarını (SKT yaklaşan, min seviye) görüntüleme."
+    resource_type: report
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "clinic:report:export"
+    description: "Raporları dışa aktarma (PDF, Excel)."
+    resource_type: report
+    action: export
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN]
+
+  # ----------------------------------------------------------------
+  # AUDIT — Audit log
+  # ----------------------------------------------------------------
+  - permission: "audit:log:read"
+    description: "Tenant audit log kayıtlarını görüntüleme."
+    resource_type: audit_log
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, SUPERADMIN]
+
+  - permission: "audit:log:export"
+    description: "Audit log kayıtlarını dışa aktarma."
+    resource_type: audit_log
+    action: export
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, SUPERADMIN]
+
+  # ----------------------------------------------------------------
+  # NOTIFICATION — Bildirim
+  # ----------------------------------------------------------------
+  - permission: "common:notification:manage"
+    description: "Sistem bildirim yayınlama (yetki kontrolü gerekir)."
+    resource_type: notification
+    action: manage
+    tenant_scope: required
+    branch_scope: not_required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, SUPERADMIN]
+
+  # ----------------------------------------------------------------
+  # FILE — Dosya servisi (Faz 1+ altyapısı)
+  # ----------------------------------------------------------------
+  - permission: "file:file:upload"
+    description: "Dosya yükleme (görsel, lab sonucu PDF, ses kaydı)."
+    resource_type: file
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN, STAFF, OWNER, PET_OWNER_PORTAL]
+    notes: "Portal yalnızca kendi hayvanı için dosya yükler."
+
+  - permission: "file:file:read"
+    description: "Dosya indirme (kendi tenant'ı kapsamında)."
+    resource_type: file
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [VETERINARIAN, STAFF, OWNER, PET_OWNER_PORTAL]
+
+  - permission: "file:file:delete"
+    description: "Yüklenen dosyayı silme (soft-delete, PII izleme)."
+    resource_type: file
+    action: archive
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN]
+
+# =============================================================================
+# TOPLAMLAR (otomatik hesaplanır, referans için)
+# =============================================================================
+summary:
+  total_permissions: 113
+  by_action:
+    read: 31
+    create: 25
+    update: 27
+    archive: 14
+    export: 13
+    amend: 9
+    manage: 2
+  by_role:
+    SUPERADMIN: 11
+    OWNER: 78
+    VETERINARIAN: 75
+    STAFF: 50
+    PET_OWNER_PORTAL: 17
+  by_module:
+    common: 6
+    tenant: 4
+    branch: 4
+    user: 5
+    role: 3
+    clinic_owner: 6
+    clinic_patient: 6
+    clinic_appointment: 7
+    clinic_examination: 5
+    clinic_soap: 4
+    clinic_vaccination: 4
+    clinic_prescription: 6
+    clinic_surgery: 8
+    clinic_consent: 2
+    clinic_anesthesia: 4
+    clinic_hospitalization: 5
+    clinic_lab: 6
+    clinic_imaging: 6
+    clinic_stock: 5
+    petshop_config: 2
+    petshop_product: 5
+    petshop_stock: 5
+    petshop_sale: 4
+    clinic_payment: 3
+    petshop_payment: 3
+    cash: 2
+    portal: 8
+    report: 4
+    audit: 2
+    file: 3
