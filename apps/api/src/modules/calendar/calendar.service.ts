@@ -267,8 +267,7 @@ export class CalendarService {
   }
 
   /**
-   * Test amaçlı: booked slot ekler (GOAL-031 Appointment modeli
-   * gelene kadar manuel seed için).
+   * Test amaçlı: booked slot ekler (manuel seed için).
    */
   public seedBookedSlot(record: BookedSlotRecord): void {
     const key = this.bookedKey(
@@ -277,6 +276,97 @@ export class CalendarService {
       record.start,
     );
     this.bookedSlots.set(key, record);
+  }
+
+  /**
+   * GOAL-031: Appointment oluşturma sırasında slot'u booked yapar.
+   * Aynı tenant + vet + start için tek bir booked slot olabilir
+   * (çakışma kontrolü service katmanında yapılır).
+   */
+  public bookSlot(record: BookedSlotRecord): void {
+    const key = this.bookedKey(
+      record.tenantId,
+      record.veterinarianId,
+      record.start,
+    );
+    this.bookedSlots.set(key, record);
+  }
+
+  /**
+   * GOAL-031: Appointment iptali / yeniden planlaması sonrasında
+   * booked slot'u kaldırır. Key bulunamazsa false döner.
+   */
+  public releaseSlot(
+    tenantId: string,
+    veterinarianId: string,
+    startIso: string,
+  ): boolean {
+    const key = this.bookedKey(tenantId, veterinarianId, startIso);
+    return this.bookedSlots.delete(key);
+  }
+
+  /**
+   * GOAL-031: Belirtilen [start, end) aralığının uygunluğunu kontrol
+   * eder. Booked veya blocked slot ile overlap → uygun değil.
+   * Branch filtresi verildiğinde yalnızca o şubenin booked/blocked
+   * kayıtlarına bakılır (tenant-wide kayıtlar her şubede görünür).
+   *
+   * @returns available=false durumda `reason` ve `conflictId` döner
+   *   (booked → appointmentId, blocked → blockId).
+   */
+  public checkAvailability(
+    tenantId: string,
+    veterinarianId: string,
+    startIso: string,
+    endIso: string,
+    branchId?: string,
+  ): {
+    available: boolean;
+    reason: "booked" | "blocked" | null;
+    conflictId: string | null;
+  } {
+    const s = new Date(startIso).getTime();
+    const e = new Date(endIso).getTime();
+
+    for (const rec of this.bookedSlots.values()) {
+      if (rec.tenantId !== tenantId) continue;
+      if (rec.veterinarianId !== veterinarianId) continue;
+      if (
+        branchId !== undefined &&
+        rec.branchId !== null &&
+        rec.branchId !== branchId
+      ) {
+        continue;
+      }
+      const rs = new Date(rec.start).getTime();
+      const re = new Date(rec.end).getTime();
+      if (s < re && rs < e) {
+        return {
+          available: false,
+          reason: "booked",
+          conflictId: rec.appointmentId,
+        };
+      }
+    }
+
+    for (const rec of this.blockedById.values()) {
+      if (rec.tenantId !== tenantId) continue;
+      if (rec.veterinarianId !== veterinarianId) continue;
+      if (
+        branchId !== undefined &&
+        rec.branchId !== null &&
+        rec.branchId !== branchId
+      ) {
+        continue;
+      }
+      const rs = new Date(rec.start).getTime();
+      const re = new Date(rec.end).getTime();
+      if (s < re && rs < e) {
+        return { available: false, reason: "blocked", conflictId: rec.id };
+      }
+    }
+
+    return { available: true, reason: null, conflictId: null };
   }
 
   /**

@@ -30,3 +30,4 @@ export * from "./alert.js";
 export * from "./timeline.js";
 export * from "./portal.js";
 export * from "./calendar.js";
+export * from "./appointment.js";
