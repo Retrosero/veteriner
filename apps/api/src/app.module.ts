@@ -44,6 +44,7 @@ import { FeatureFlagModule } from "./modules/feature-flag/feature-flag.module.js
 import { NotificationsModule } from "./modules/notifications/notifications.module.js";
 import { OwnersModule } from "./modules/owners/owners.module.js";
 import { PatientsModule } from "./modules/patients/patients.module.js";
+import { OwnershipHistoryModule } from "./modules/ownership-history/ownership-history.module.js";
 import { SuperadminModule } from "./modules/superadmin/superadmin.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 
@@ -67,6 +68,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     NotificationsModule,
     OwnersModule,
     PatientsModule,
+    OwnershipHistoryModule,
     SuperadminModule,
   ],
 })

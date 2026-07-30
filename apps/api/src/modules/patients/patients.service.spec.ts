@@ -14,7 +14,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
 import type { Owner } from "../../common/owners/owner.types.js";
+import type { Ownership } from "../../common/ownership/ownership.types.js";
 import type { OwnersService } from "../owners/owners.service.js";
+import type { OwnershipHistoryService } from "../ownership-history/ownership-history.service.js";
 
 import { PatientsService } from "./patients.service.js";
 import { PatientsRepository } from "./patients.repository.js";
@@ -88,6 +90,37 @@ function makeAudit(): AuditService {
   } as unknown as AuditService;
 }
 
+/**
+ * GOAL-022: Patient oluşturma sırasında ilk sahiplik kaydı
+ * otomatik açılır. Testlerde bunu minimal mock ile sağlıyoruz.
+ */
+function makeOwnership(): OwnershipHistoryService {
+  const stub: Partial<OwnershipHistoryService> = {
+    createInitial: vi.fn(
+      async (
+        tenantId: string,
+        patientId: string,
+        ownerId: string,
+      ): Promise<Ownership> => ({
+        id: `own-stub-${patientId.slice(-4)}`,
+        tenantId,
+        patientId,
+        ownerId,
+        startDate: new Date().toISOString(),
+        endDate: null,
+        reason: "initial",
+        otherNote: null,
+        createdBy: "usr-staff-a",
+        createdAt: new Date().toISOString(),
+      }),
+    ),
+    transfer: vi.fn(),
+    list: vi.fn(),
+    findActiveByPatient: vi.fn(),
+  };
+  return stub as OwnershipHistoryService;
+}
+
 function validInput(overrides: Partial<{
   ownerId: string;
   name: string;
@@ -115,6 +148,7 @@ describe("PatientsService", () => {
   let repo: PatientsRepository;
   let owners: OwnersService;
   let audit: AuditService;
+  let ownership: OwnershipHistoryService;
 
   beforeEach(() => {
     ownersStore.clear();
@@ -123,7 +157,8 @@ describe("PatientsService", () => {
     repo = new PatientsRepository();
     owners = makeOwners();
     audit = makeAudit();
-    service = new PatientsService(owners, repo, audit);
+    ownership = makeOwnership();
+    service = new PatientsService(owners, repo, audit, ownership);
   });
 
   describe("create — başarı", () => {
@@ -156,6 +191,20 @@ describe("PatientsService", () => {
       expect(patient.microchip).toBeNull();
       expect(patient.breed).toBeNull();
       expect(patient.birthDate).toBeNull();
+    });
+
+    it("GOAL-022: hasta oluşturma sırasında ilk sahiplik kaydı açılır", async () => {
+      const patient = await service.create(
+        TENANT_A,
+        validInput({ name: "Karabaş" }),
+        STAFF_A,
+      );
+      expect(ownership.createInitial).toHaveBeenCalledWith(
+        TENANT_A,
+        patient.id,
+        OWNER_ID_A,
+        STAFF_A,
+      );
     });
   });
 

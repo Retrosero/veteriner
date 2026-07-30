@@ -142,6 +142,24 @@ export class PatientsRepository {
     return rec;
   }
 
+  /**
+   * Hasta sahibini günceller (kimlik seviyesi). GOAL-022 ownership
+   * transfer akışı tarafından çağrılır; klinik/finansal kayıtlar
+   * (muayene, aşı, vb.) bu değişiklikten etkilenmez — append-only
+   * korunur.
+   */
+  public updateOwner(
+    tenantId: string,
+    id: string,
+    newOwnerId: string,
+  ): PatientRecord | null {
+    const rec = this.findById(tenantId, id);
+    if (!rec) return null;
+    rec.ownerId = newOwnerId;
+    this.byId.set(id, rec);
+    return rec;
+  }
+
   /** Test yardımcısı: tüm veriyi temizler. */
   public clear(): void {
     this.byId.clear();
