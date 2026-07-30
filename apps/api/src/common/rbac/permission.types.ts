@@ -43,7 +43,7 @@ export interface PermissionDecision {
 export interface PermissionEvaluationContext {
   readonly actor: {
     actorId: string | null;
-    actorType: "user" | "system";
+    actorType: "user" | "system" | "portal_user";
     role: ActorRole;
     tenantId: string | null;
     branchId: string | null;

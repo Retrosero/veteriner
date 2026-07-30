@@ -49,6 +49,7 @@ import { OwnershipHistoryModule } from "./modules/ownership-history/ownership-hi
 import { SuperadminModule } from "./modules/superadmin/superadmin.module.js";
 import { TimelineModule } from "./modules/timeline/timeline.module.js";
 import { PortalModule } from "./modules/portal/portal.module.js";
+import { PortalAuthModule } from "./modules/portal-auth/portal-auth.module.js";
 import { CalendarModule } from "./modules/calendar/calendar.module.js";
 import { WaitlistModule } from "./modules/waitlist/waitlist.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
@@ -78,6 +79,8 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     SuperadminModule,
     TimelineModule,
     PortalModule,
+    PortalAuthModule,
+    PortalAuthModule,
     CalendarModule,
     WaitlistModule,
   ],

@@ -557,7 +557,7 @@ export class CalendarService {
 
   private actorToAuditActor(actor: ActorContext): {
     actorId: string | null;
-    actorType: "user" | "system";
+    actorType: "user" | "system" | "portal_user";
     tenantId: string | null;
     branchId?: string | null;
     correlationId: string;
@@ -567,7 +567,7 @@ export class CalendarService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType,
+      actorType: actor.actorType as "user" | "system",
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,
