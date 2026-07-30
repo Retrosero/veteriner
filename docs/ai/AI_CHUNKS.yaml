@@ -3796,3 +3796,109 @@ generated_at: "2026-07-30"
     - "POST /api/v1/clinic/diagnoses/{id}/chronic"
     - "POST /api/v1/clinic/diagnoses/{id}/ruled-out"
     - "DELETE /api/v1/clinic/diagnoses/{id}"
+
+- chunk_id: flow-treatment-plan
+  type: flow
+  source: apps/api/src/modules/orders/orders.service.ts
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Tedavi Planı ve Klinik Order Akışı"
+  content: |
+    Klinik order, bir muayeneye (examination) bağlı tedavi iş
+    kalemidir. Tedavi planı, bir hasta (patient) için tüm order'ların
+    aktif (pending + in_progress) ve tamamlanmış (completed +
+    cancelled) ayrımıyla gruplanmış görünümüdür.
+
+    Order tipleri (7 + 1): `medication` (ilaç), `application`
+    (pansuman, enjeksiyon, serum), `procedure` (cerrahi/prosedür),
+    `lab` (lab testi), `imaging` (röntgen, USG), `vaccination` (aşı),
+    `follow_up` (kontrol randevusu köprüsü, GOAL-046), `instruction`
+    (genel talimat).
+
+    State machine: `pending` (create) -> `in_progress` (start) ->
+    `completed` (complete). `pending` ve `in_progress` durumundan
+    `cancelled`'a geçiş yapılabilir. Geçersiz geçişler 409
+    `VET-ORDER-0001`.
+
+    Akış adımları:
+    1. **Ekle** (`POST /api/v1/clinic/examinations/{id}/orders`, 201,
+       yetki `clinic:examination:create`, STAFF/VETERINARIAN): Zod
+       şema `orderCreateInputSchema` enforce eder. Alanlar: `type`
+       (7+1 enum), `description` (1-2000, zorunlu), `notes` (max
+       2000, opsiyonel), `dueDate` (ISO 8601 datetime, opsiyonel).
+       Service önce `ExaminationsService.findById(tenantId, id,
+       actor)` ile muayenenin aynı tenant'ta olduğunu doğrular.
+       Cross-tenant → 404 `VET-CLINIC-0001` (bilgi sızdırmaz).
+       `patientId` muayeneden türetilir; client gönderemez.
+       `status = 'pending'` olarak başlatılır. `id =
+       order-<tenant8>-000001` (artan sayaç, tenant başına). Audit
+       `audit:order.create` (info) — examinationId, patientId, type,
+       status.
+    2. **Listele** (`GET /api/v1/clinic/orders`, 200, yetki
+       `clinic:patient:read`): tenant-scoped; opsiyonel filtreler
+       `patientId`, `type`, `status`, `from`, `to`; pagination
+       `limit` (1-200, default 20) + `offset` (0-10000, default 0).
+    3. **Başlat** (`POST /api/v1/clinic/orders/{id}/start`, 200,
+       yetki `clinic:examination:create`): `status='pending'` olan
+       order'ı `'in_progress'` yapar. Aksi → 409 `VET-ORDER-0001`
+       (state machine kuralı). Audit `audit:order.update` (info) —
+       before/after status.
+    4. **Tamamla** (`POST /api/v1/clinic/orders/{id}/complete`, 200,
+       yetki `clinic:examination:create`): `status='in_progress'`
+       olan order'ı `'completed'` yapar; `completedAt` + `completedBy`
+       set edilir. Aksi → 409 `VET-ORDER-0001`. Audit
+       `audit:order.update` (info).
+    5. **İptal** (`POST /api/v1/clinic/orders/{id}/cancel`, 200,
+       yetki `clinic:examination:create`): `status='pending'` veya
+       `'in_progress'` olan order'ı `'cancelled'` yapar;
+       `cancelledAt` + `cancellationReason` set edilir.
+       `reason` zorunlu (1-2000). `completed` veya `cancelled` →
+       409 `VET-ORDER-0001`. Audit `audit:order.update` (info).
+    6. **Tedavi planı (Hasta)** (`GET
+       /api/v1/clinic/patients/{id}/treatment-plan`, 200, yetki
+       `clinic:patient:read`): Hastanın tüm order'larını aktif
+       (`pending` + `in_progress`) ve tamamlanmış (`completed` +
+       `cancelled`) olarak iki dizide döner (`limit=200`).
+    7. **State machine:** `pending` -> `in_progress` -> `completed`.
+       `pending` veya `in_progress` -> `cancelled` (iptal/iptal+sebep).
+       `completed` veya `cancelled` -> `cancelled` REDDEDİLİR (409
+       `VET-ORDER-0001`). İleri/geri sıçrama yok; yalnızca lineer
+       ileri + aktiften iptal.
+    8. **Append-only politika:** Order kaydı klinik kayıttır; mevcut
+       kayıt üzerinde UPDATE/DELETE yok (start/complete/cancel
+       status transition'ları append-only audit event'i ile birlikte
+       yapılır; alanlar klinik kayıt standardına göre yalnızca
+       ekleme). Yanlış order düzeltmesi yeni order kaydı veya cancel
+       + yeni order ile yapılır; önceki kayıt korunur.
+    9. **Tenant izolasyonu:** `requireTenantScope(actor, tenantId)` +
+       `create` (examination varlık kontrolü) tümü `actor.tenantId`
+       kapsamında; cross-tenant denemesi → 403 `VET-AUTHZ-0001` veya
+       404 `VET-CLINIC-0001`.
+    10. **Order tip semantiği:** Bu 7+1 set tedavi planının temel
+        kapsamıdır; yatış (hospitalization, GOAL-084+) için ortak
+        contract kökü olarak da hizmet eder. `medication` order'ları
+        reçete (GOAL-045) ile bağlanabilir; `follow_up` order'ları
+        kontrol randevusuna (GOAL-046) köprü kurar; `medication` /
+        `application` order'ları stok düşümü (GOAL-066) tetikler.
+  keywords: [tedavi planı, treatment plan, klinik order, clinical
+             order, medication, application, procedure, lab,
+             imaging, vaccination, follow_up, instruction,
+             state machine, pending, in_progress, completed,
+             cancelled, append-only, tenant-scoped,
+             audit:order.create, audit:order.update,
+             VET-ORDER-0001, VET-CLINIC-0001]
+  related_chunks: [glossary-examination, glossary-patient,
+                   flow-examination-create, flow-diagnosis,
+                   error-VET-CLINIC-0001, error-VET-ORDER-0001,
+                   error-VET-AUTHZ-0001, error-VET-TENANT-0001]
+  related_pages: []
+  related_api:
+    - "POST /api/v1/clinic/examinations/{id}/orders"
+    - "GET /api/v1/clinic/orders"
+    - "POST /api/v1/clinic/orders/{id}/start"
+    - "POST /api/v1/clinic/orders/{id}/complete"
+    - "POST /api/v1/clinic/orders/{id}/cancel"
+    - "GET /api/v1/clinic/patients/{id}/treatment-plan"

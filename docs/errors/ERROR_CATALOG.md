@@ -172,6 +172,12 @@ bu katalogda yer almasını zorunlu kılar.
 | -------------------- | --------------------------- | ---- | -------- | ------ | ------------------------------------ |
 | `VET-DIAG-0001`      | Teşhis durumu geçersiz      | 409  | warning  | server | Teşhis durumu geçersiz. Önce aktif olmalı. |
 
+## Klinik Order (ORDER)
+
+| Kod                  | Ad                          | HTTP | Severity | Kaynak | Çözüm                                |
+| -------------------- | --------------------------- | ---- | -------- | ------ | ------------------------------------ |
+| `VET-ORDER-0001`     | Order durumu geçersiz       | 409  | warning  | server | Order durumu geçersiz. Geçerli durumdan başka bir duruma geçilemez. |
+
 ## Aşı (VACC)
 
 | Kod                  | Ad                          | HTTP | Severity | Kaynak | Çözüm                                |

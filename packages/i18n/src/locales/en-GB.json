@@ -230,6 +230,7 @@
     "VET-SOAP-0001": "SOAP note not found.",
     "VET-SOAP-0002": "This SOAP note is signed and cannot be modified. Open an amendment instead.",
     "VET-DIAG-0001": "Diagnosis status is invalid. Must be active first.",
+    "VET-ORDER-0001": "Order status is invalid. Cannot transition from current status.",
     "VET-VACC-0001": "Vaccination record could not be created. Check stock and lot information.",
     "VET-VACC-0002": "This lot has expired. Please select a new lot.",
     "VET-VACC-0003": "Insufficient stock. Please add stock or use a different lot.",

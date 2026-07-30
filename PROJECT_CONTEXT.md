@@ -147,7 +147,7 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-041 ✅ SOAP klinik kaydı (tamamlandı — 2026-07-30)
   - GOAL-042 ✅ Vital bulgular (tamamlandı — 2026-07-30)
   - GOAL-043 ✅ Teşhis ve problem listesi (tamamlandı — 2026-07-30)
-  - GOAL-044 ⏳ Tedavi planı ve klinik order
+  - GOAL-044 ✅ Tedavi planı ve klinik order (tamamlandı — 2026-07-30)
   - GOAL-045 ⏳ Reçete oluşturma
   - GOAL-046 ⏳ Kontrol randevusu oluşturma
   - GOAL-047 ⏳ Klinik kayıt PDF ve paylaşım
