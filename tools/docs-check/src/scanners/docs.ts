@@ -2,16 +2,26 @@
  * @file Doküman envanteri okuyucusu.
  * @module @vetniva/docs-check/scanners/docs
  *
- * @description `docs/pages/`, `docs/api/`, `docs/errors/ERROR_CATALOG.md`
- * ve `docs/permissions/PERMISSION_MATRIX.md` dosyalarını okuyup envanter
- * çıkarır. Diğer tarayıcılar bu envanteri kullanır.
+ * @description `docs/pages/`, `docs/api/`, `docs/errors/ERROR_CATALOG.md`,
+ * `docs/permissions/PERMISSION_MATRIX.md` ve `docs/ai/AI_CHUNKS.yaml`
+ * dosyalarını okuyup envanter çıkarır. Diğer tarayıcılar bu
+ * envanteri kullanır.
+ *
+ * GOAL-004: VET-<MODULE>-<NNN> formatı desteklenir.
+ * GOAL-005: AI_CHUNKS.yaml desteği eklendi.
  */
 
 import fg from "fast-glob";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import yaml from "js-yaml";
 
 import type { DocInventory } from "../types.js";
+
+/** VET- formatı. */
+const VET_CODE_RE = /`?(VET-[A-Z]{2,12}-[0-9]{4})`?/g;
+/** Eski TR_/EN_ formatı. */
+const LEGACY_CODE_RE = /`?((TR|EN)_[A-Z]+(_[A-Z]+)*_[0-9]{1,4})`?/g;
 
 export async function readDocFiles(docsRoot: string): Promise<DocInventory> {
   const inv: DocInventory = {
@@ -19,6 +29,7 @@ export async function readDocFiles(docsRoot: string): Promise<DocInventory> {
     apiFiles: new Set(),
     errorCodes: new Set(),
     permissions: new Set(),
+    aiChunks: new Set(),
   };
 
   const pageYmls = await fg(["pages/**/*.yaml", "pages/**/*.yml"], {
@@ -31,7 +42,6 @@ export async function readDocFiles(docsRoot: string): Promise<DocInventory> {
 
   const apiMd = await fg(["api/**/*.md"], { cwd: docsRoot, onlyFiles: true });
   for (const p of apiMd) {
-    // Path: 'api/api.get._api_v1_health.md' -> Key: 'api.get._api_v1_health'
     const stripped = p
       .replace(/^api\//, "")
       .replace(/\.md$/, "")
@@ -43,7 +53,12 @@ export async function readDocFiles(docsRoot: string): Promise<DocInventory> {
   const errorCatalogPath = path.join(docsRoot, "errors/ERROR_CATALOG.md");
   const errorCatalog = await tryRead(errorCatalogPath);
   if (errorCatalog) {
-    for (const m of errorCatalog.matchAll(/`([A-Z]{2}_[A-Z]+_[0-9]{4,})`/g)) {
+    for (const m of errorCatalog.matchAll(VET_CODE_RE)) {
+      const code = m[1];
+      if (code) inv.errorCodes.add(code);
+    }
+    // Eski kodlar da envanterde (alias desteği).
+    for (const m of errorCatalog.matchAll(LEGACY_CODE_RE)) {
       const code = m[1];
       if (code) inv.errorCodes.add(code);
     }
@@ -60,6 +75,26 @@ export async function readDocFiles(docsRoot: string): Promise<DocInventory> {
     )) {
       const perm = m[1];
       if (perm) inv.permissions.add(perm);
+    }
+  }
+
+  // AI_CHUNKS.yaml — chunk_id envanteri.
+  const aiChunksPath = path.join(docsRoot, "ai/AI_CHUNKS.yaml");
+  const aiChunksText = await tryRead(aiChunksPath);
+  if (aiChunksText) {
+    try {
+      const parsed = yaml.load(aiChunksText) as
+        | { chunks?: Array<{ chunk_id?: string }> }
+        | undefined;
+      if (parsed && Array.isArray(parsed.chunks)) {
+        for (const c of parsed.chunks) {
+          if (c && typeof c.chunk_id === "string") {
+            inv.aiChunks.add(c.chunk_id);
+          }
+        }
+      }
+    } catch {
+      // Parse hatası ai-chunks scanner tarafından raporlanır.
     }
   }
 

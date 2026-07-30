@@ -2,7 +2,9 @@
  * @file Denetleyici tipleri.
  * @module @vetniva/docs-check/types
  *
- * @description Route, hata kodu, permission ve issue tipleri.
+ * @description Route, hata kodu, permission, AI chunk ve
+ * issue tipleri. GOAL-004 ile VET- formatı, GOAL-005 ile
+ * AI chunks desteği eklendi.
  */
 
 export type RouteInfo = {
@@ -22,4 +24,5 @@ export type DocInventory = {
   apiFiles: Set<string>;
   errorCodes: Set<string>;
   permissions: Set<string>;
+  aiChunks: Set<string>;
 };

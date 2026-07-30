@@ -90,6 +90,14 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   (KVKK / UK GDPR uyumlu).
 - `docs/errors/AUDIT_EVENTS.yaml` — makinece okunabilir audit event
   kataloğu (clinical / petshop / finance / identity / system / security).
+- `docs/ai/CHUNK_SCHEMA.md` — AI RAG chunk şeması (12 chunk türü,
+  metadata, versiyonlama, PII etiketi).
+- `docs/ai/AI_CHUNKS.yaml` — RAG chunk kataloğu (initial seed,
+  glossary + flow + error + page + permission + audit + log + pii +
+  correlation chunk'ları).
+- `docs/pages/PAGE_SCHEMA.md` — sayfa kataloğu şeması.
+- `docs/api/API_SCHEMA.md` — API endpoint kataloğu şeması.
+- `docs/fields/FIELD_SCHEMA.md` — alan sözlüğü şeması.
 - `docs/api/`, `docs/pages/`, `docs/user-education/`, `docs/ai/` —
   sayfa, API, eğitim ve AI kaynakları.
 
@@ -103,7 +111,10 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-004 ✅ audit + log + hata kodu standardı (tamamlandı —
     VET- formatı, audit/log/PII/correlation iskeleti, 121 i18n error
     anahtarı tr/en parity, 52 unit test geçti)
-  - GOAL-005 ⏳ dokümantasyon ve AI bilgi havuzu şeması
+  - GOAL-005 ✅ dokümantasyon ve AI bilgi havuzu şeması
+    (tamamlandı — chunk/page/api/field şemaları, AI_CHUNKS.yaml
+    seed, RAG retrieval + AI help endpoint iskeleti,
+    docs-check VET- + AI chunks validator, 18 unit test geçti)
 - **Faz 1 — Platform çekirdeği** ⏳ sırada
   - GOAL-010 tenant ve şube
   - GOAL-011 kimlik doğrulama ve oturum

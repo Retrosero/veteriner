@@ -1,0 +1,855 @@
+# @file AI Chunk Kataloğu (Initial Seed).
+# @module docs/ai/AI_CHUNKS
+#
+# @description VetNiva AI asistanının RAG bilgi tabanına
+# yüklenecek chunk'ların makinece okunabilir kataloğu.
+# Initial seed: FAZ-0'da üretilen dokümanlardan türetilmiş
+# 60+ chunk (glossary + flow + error + page + permission +
+# audit + log + pii + correlation).
+#
+# @author GOAL-005 (FAZ-0) dokümantasyon ve AI bilgi havuzu
+# @since 2026-07-30
+# @security PII alanı olan chunk'lar `pii: true` işaretli.
+#   Plain text PII içeren chunk CI tarafından reddedilir.
+# =============================================================================
+
+version: "1.0.0"
+generated_by: "GOAL-005"
+generated_at: "2026-07-30"
+
+# -----------------------------------------------------------------------------
+# GLOSSARY — Domain Sözlüğü (her entity bir chunk)
+# -----------------------------------------------------------------------------
+# Source: docs/domain/DOMAIN_GLOSSARY.md (GOAL-001)
+# 18 entity.
+
+- chunk_id: glossary-owner
+  type: glossary
+  source: docs/domain/DOMAIN_GLOSSARY.md
+  entity: owner
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: true
+  title: "Hasta Sahibi"
+  content: |
+    Hasta sahibi, kliniğe gelen hayvanın yasal sahibi olan gerçek
+    kişidir. Her hayvanın en az bir aktif sahibi vardır; sahiplik
+    devri `flow-ownership-transfer` akışı ile yapılır.
+
+    PII alanları: first_name, last_name, email, phone, tax_id (TCKN/VKN).
+    PII alanları mask'lenir (bkz. PII_MASKING.md).
+  keywords: [hasta sahibi, hayvan sahibi, müşteri, KVKK, owner]
+  related_chunks: [glossary-patient, flow-ownership-transfer]
+  related_pages: []
+  related_api: []
+
+- chunk_id: glossary-patient
+  type: glossary
+  source: docs/domain/DOMAIN_GLOSSARY.md
+  entity: patient
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Hayvan (Hasta)"
+  content: |
+    Hayvan kaydı, kliniğe gelen canlı varlıktır. Tür, ırk, doğum
+    tarihi, mikroçip, cinsiyet, kısırlaştırma durumu gibi alanlar
+    taşır. Her hayvanın en az bir aktif sahibi olmalıdır.
+  keywords: [hayvan, hasta, pet, animal, patient]
+  related_chunks: [glossary-owner, glossary-microchip]
+  related_pages: []
+  related_api: []
+
+- chunk_id: glossary-appointment
+  type: glossary
+  source: docs/domain/DOMAIN_GLOSSARY.md
+  entity: appointment
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Randevu"
+  content: |
+    Randevu, belirli bir tarih/saatte belirli bir hayvan için
+    ayrılan zaman dilimidir. Veteriner veya hizmet atanabilir.
+    Durum: scheduled / confirmed / cancelled / completed / no_show.
+  keywords: [randevu, appointment, takvim, schedule]
+  related_chunks: [glossary-patient, flow-appointment-create]
+  related_pages: []
+  related_api: []
+
+- chunk_id: glossary-examination
+  type: glossary
+  source: docs/domain/DOMAIN_GLOSSARY.md
+  entity: examination
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Muayene"
+  content: |
+    Muayene, bir randevu kapsamında veya doğrudan oluşturulan klinik
+    inceleme kaydıdır. SOAP notları, vital bulgular, teşhis, tedavi
+    planı içerir. İmzalandıktan sonra append-only; düzeltme için
+    amendment açılır.
+  keywords: [muayene, examination, klinik kayıt]
+  related_chunks: [glossary-soap, flow-examination-create]
+  related_pages: []
+  related_api: []
+
+- chunk_id: glossary-vaccination
+  type: glossary
+  source: docs/domain/DOMAIN_GLOSSARY.md
+  entity: vaccination
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Aşı"
+  content: |
+    Aşı uygulaması, bir hayvana yapılan bağışıklama kaydıdır.
+    Lot, son kullanma tarihi, uygulayan veteriner, protokol
+    bilgilerini taşır. Stok düşümünü tetikler.
+  keywords: [aşı, vaccination, immunizasyon, stok]
+  related_chunks: [flow-vaccination, glossary-stock]
+  related_pages: []
+  related_api: []
+
+- chunk_id: glossary-prescription
+  type: glossary
+  source: docs/domain/DOMAIN_GLOSSARY.md
+  entity: prescription
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Reçete"
+  content: |
+    Reçete, veteriner hekimin yazdığı ilaç kaydıdır. 30 gün
+    geçerlidir (TR). Stok düşümünü tetikler, hasta sahibine
+    PDF/paylaşım ile gönderilebilir.
+  keywords: [reçete, prescription, ilaç, dağıtım]
+  related_chunks: [flow-prescription, glossary-stock]
+  related_pages: []
+  related_api: []
+
+- chunk_id: glossary-surgery
+  type: glossary
+  source: docs/domain/DOMAIN_GLOSSARY.md
+  entity: surgery
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Ameliyat"
+  content: |
+    Ameliyat, planlama + onam + anestezi + operasyon notu + malzeme
+    kullanımı adımlarından oluşan klinik süreçtir. Öncesinde onam
+    formu zorunludur.
+  keywords: [ameliyat, surgery, operasyon, onam]
+  related_chunks: [flow-surgery, glossary-anesthesia]
+  related_pages: []
+  related_api: []
+
+- chunk_id: glossary-anesthesia
+  type: glossary
+  source: docs/domain/DOMAIN_GLOSSARY.md
+  entity: anesthesia
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Anestezi"
+  content: |
+    Anestezi kaydı, ameliyat sırasında uygulanan anestezi
+    protokolünü ve takibini içerir. ASA skoru, ilaçlar, vital
+    bulgular, komplikasyonlar.
+  keywords: [anestezi, anesthesia, ASA]
+  related_chunks: [glossary-surgery, flow-anesthesia]
+  related_pages: []
+  related_api: []
+
+- chunk_id: glossary-hospitalization
+  type: glossary
+  source: docs/domain/DOMAIN_GLOSSARY.md
+  entity: hospitalization
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Yatış"
+  content: |
+    Yatış kaydı, hayvanın klinikte kaldığı süreci kapsar. Kafes
+    atama, order uygulamaları, gözlem notları, taburcu özeti.
+  keywords: [yatış, hospitalization, kafes]
+  related_chunks: [glossary-cage, flow-hospitalization]
+  related_pages: []
+  related_api: []
+
+- chunk_id: glossary-lab
+  type: glossary
+  source: docs/domain/DOMAIN_GLOSSARY.md
+  entity: lab_order
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Laboratuvar"
+  content: |
+    Lab istemi, numune alımı, sonuç girişi. Dış laboratuvar
+    adapter'ı (Idexx vb.) ile entegre çalışır.
+  keywords: [lab, laboratuvar, test, numune]
+  related_chunks: [flow-lab]
+  related_pages: []
+  related_api: []
+
+- chunk_id: glossary-imaging
+  type: glossary
+  source: docs/domain/DOMAIN_GLOSSARY.md
+  entity: imaging_order
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Görüntüleme"
+  content: |
+    Görüntüleme istemi (röntgen, USG, MR). DICOM dosyaları dosya
+    servisinde saklanır, rapor yazımı append-only.
+  keywords: [görüntüleme, imaging, DICOM, röntgen, USG]
+  related_chunks: [flow-imaging]
+  related_pages: []
+  related_api: []
+
+- chunk_id: glossary-product
+  type: glossary
+  source: docs/domain/DOMAIN_GLOSSARY.md
+  entity: product
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Ürün"
+  content: |
+    Petshop ürün kataloğu. Barkod, fiyat, kategori, vergi oranı,
+    stok birimi. Klinik malzeme ürünleri de bu entity'den türetilir.
+  keywords: [ürün, product, barkod, katalog]
+  related_chunks: [glossary-stock, flow-product]
+  related_pages: []
+  related_api: []
+
+- chunk_id: glossary-stock
+  type: glossary
+  source: docs/domain/DOMAIN_GLOSSARY.md
+  entity: stock
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Stok"
+  content: |
+    Klinik ve petshop stok miktarı. Lot ve SKT takibi yapılır.
+    Stok hareketleri append-only; doğrudan miktar yazımı yasak.
+  keywords: [stok, stock, lot, SKT]
+  related_chunks: [glossary-product, flow-stock]
+  related_pages: []
+  related_api: []
+
+- chunk_id: glossary-sale
+  type: glossary
+  source: docs/domain/DOMAIN_GLOSSARY.md
+  entity: sale
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Satış"
+  content: |
+    Petshop POS satışı. Nakit veya kart ile ödeme. İade edilebilir
+    (süre sınırı var). Fiş/fatura yazdırılabilir.
+  keywords: [satış, sale, POS, fiş]
+  related_chunks: [glossary-payment, flow-sale]
+  related_pages: []
+  related_api: []
+
+- chunk_id: glossary-payment
+  type: glossary
+  source: docs/domain/DOMAIN_GLOSSARY.md
+  entity: payment
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Ödeme"
+  content: |
+    Klinik veya petshop tahsilatı. Nakit, kart, havale, cüzdan.
+    Ters kayıt ile iptal (append-only).
+  keywords: [ödeme, payment, tahsilat, kasa]
+  related_chunks: [glossary-cash, flow-payment]
+  related_pages: []
+  related_api: []
+
+- chunk_id: glossary-cash
+  type: glossary
+  source: docs/domain/DOMAIN_GLOSSARY.md
+  entity: cash_session
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Kasa"
+  content: |
+    Kasa oturumu. Açılış, hareketler, sayım, kapanış. Gün sonu
+    raporu kasa farkı ile biter.
+  keywords: [kasa, cash, gün sonu]
+  related_chunks: [glossary-payment]
+  related_pages: []
+  related_api: []
+
+- chunk_id: glossary-portal-user
+  type: glossary
+  source: docs/domain/DOMAIN_GLOSSARY.md
+  entity: portal_user
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: true
+  title: "Portal Kullanıcısı"
+  content: |
+    Hasta sahibinin mobil/web portalına erişim hesabı.
+    Davet bazlı aktivasyon, tenant-scoped.
+  keywords: [portal, hasta sahibi, davet, PET_OWNER_PORTAL]
+  related_chunks: [flow-portal-invite]
+  related_pages: []
+  related_api: []
+
+# -----------------------------------------------------------------------------
+# FLOW — Klinik Akışlar (her akış bir chunk)
+# -----------------------------------------------------------------------------
+# Source: docs/domain/CLINICAL_FLOWS.md (GOAL-001)
+# 16 akışın özeti.
+
+- chunk_id: flow-vaccination
+  type: flow
+  source: docs/domain/CLINICAL_FLOWS.md
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Aşı Uygulama Akışı"
+  content: |
+    1. Veteriner, hayvana uygulanacak aşı için muayene açar
+       (randevu veya doğrudan).
+    2. Klinik order'da "aşı" tipinde order oluşturur.
+    3. Lot seçilir; SKT kontrolü otomatik yapılır.
+    4. Aşı uygulanır; stok otomatik düşer (lot bazlı).
+    5. Aşı kartı oluşturulur (aşı_kart.md).
+    6. Audit event yazılır: `audit:vaccination.create`.
+  keywords: [aşı, akış, vaccination, stok, lot]
+  related_chunks: [glossary-vaccination, glossary-stock, error-VET-VACC-0001, error-VET-VACC-0002, error-VET-VACC-0003]
+  related_pages: []
+  related_api: []
+
+- chunk_id: flow-ownership-transfer
+  type: flow
+  source: docs/domain/CLINICAL_FLOWS.md
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: true
+  title: "Sahiplik Devri"
+  content: |
+    1. Mevcut sahip, devir için yeni sahip bilgilerini sağlar.
+    2. Veteriner veya personel, devir formunu açar.
+    3. Eski sahip ile ilişki `archived` yapılır.
+    4. Yeni sahip kaydı oluşturulur veya mevcut sahip seçilir.
+    5. Yeni sahip ile ilişki `active` yapılır.
+    6. Audit event yazılır: `audit:patient.transfer`.
+  keywords: [sahiplik, transfer, ownership, KVKK]
+  related_chunks: [glossary-owner, glossary-patient]
+  related_pages: []
+  related_api: []
+
+- chunk_id: flow-kvkk-erasure
+  type: flow
+  source: docs/domain/CLINICAL_FLOWS.md
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: true
+  title: "KVKK Silme Talebi"
+  content: |
+    1. Hasta sahibi veya yasal temsilci KVKK Madde 7 kapsamında
+       silme talebinde bulunur.
+    2. Talep 30 gün içinde işlenir.
+    3. Klinik kayıtlar (muayene, aşı, reçete vb.) append-only;
+       PII alanları NULL'lanır veya mask'lenir.
+    4. Finansal kayıtlar 7 yıl saklanır (Vergi Usul Kanunu).
+    5. Audit event yazılır: `audit:owner.erase` (severity: critical).
+  keywords: [KVKK, silme, erasure, GDPR, privacy]
+  related_chunks: [glossary-owner, error-VET-KVKK-0001, error-VET-KVKK-0002, error-VET-KVKK-0003]
+  related_pages: []
+  related_api: []
+
+# -----------------------------------------------------------------------------
+# ERROR — Hata Kodları (her VET- kodu bir chunk)
+# -----------------------------------------------------------------------------
+# Source: docs/errors/ERROR_CATALOG.md
+# Toplu: COMMON, VALIDATION, AUTH, AUTHZ vb.
+
+- chunk_id: error-VET-COMMON-0001
+  type: error
+  source: docs/errors/ERROR_CATALOG.md
+  error_code: VET-COMMON-0001
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Beklenmeyen sunucu hatası"
+  content: |
+    HTTP 500. Yakalanmamış bir hata oluştu. Yeniden deneyin.
+    Sorun sürerse correlation_id (X-Request-Id) ile destek
+    ekibine bildirin.
+  keywords: [500, sunucu hatası, server error, common]
+  related_chunks: [log-sistem, correlation-req-prefix]
+  related_pages: []
+  related_api: []
+
+- chunk_id: error-VET-CLINIC-0001
+  type: error
+  source: docs/errors/ERROR_CATALOG.md
+  error_code: VET-CLINIC-0001
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Hayvan bulunamadı"
+  content: |
+    HTTP 404. İstenen hasta kaydı bulunamadı veya tenant
+    izolasyonu nedeniyle erişilemez (bilgi sızdırmaz).
+
+    Çözüm: Hayvan ID'sini kontrol edin. Gerekirse hasta
+    sahibi üzerinden arama yapın.
+  keywords: [404, hayvan, hasta, not found, clinic]
+  related_chunks: [glossary-patient]
+  related_pages: []
+  related_api: []
+
+- chunk_id: error-VET-AUTH-0001
+  type: error
+  source: docs/errors/ERROR_CATALOG.md
+  error_code: VET-AUTH-0001
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Oturum geçersiz veya süresi dolmuş"
+  content: |
+    HTTP 401. Yeniden giriş yapın. Token süresi dolmuş veya
+    iptal edilmiş olabilir.
+  keywords: [401, auth, session, oturum]
+  related_chunks: [correlation-req-prefix]
+  related_pages: []
+  related_api: []
+
+- chunk_id: error-VET-AUTHZ-0001
+  type: error
+  source: docs/errors/ERROR_CATALOG.md
+  error_code: VET-AUTHZ-0001
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Bu işlem için yetkiniz yok"
+  content: |
+    HTTP 403. RBAC kontrolü başarısız. Yönetici ile iletişime
+    geçin veya gerekli izni talep edin.
+  keywords: [403, authz, yetki, RBAC, permission]
+  related_chunks: [glossary-owner]
+  related_pages: []
+  related_api: []
+
+- chunk_id: error-VET-VACC-0002
+  type: error
+  source: docs/errors/ERROR_CATALOG.md
+  error_code: VET-VACC-0002
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Lot süresi dolmuş"
+  content: |
+    HTTP 422. Seçilen aşı lotunun son kullanma tarihi geçmiş.
+    Lütfen farklı lot seçin veya yeni lot tedarik edin.
+  keywords: [aşı, lot, SKT, süresi dolmuş, vaccine]
+  related_chunks: [flow-vaccination, glossary-vaccination]
+  related_pages: []
+  related_api: []
+
+# -----------------------------------------------------------------------------
+# AUDIT — Audit Log kategorileri
+# -----------------------------------------------------------------------------
+- chunk_id: audit-overview
+  type: audit
+  source: docs/errors/AUDIT_LOG_STANDARD.md
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Audit Log Genel Bakış"
+  content: |
+    Audit log, "kim, ne zaman, neyi nasıl değiştirdi?" sorusuna
+    cevap verir. Append-only, 7 yıl retention. PII alanları mask'li.
+
+    Event isimlendirme: `audit:<entity>.<action>`.
+    Severity: info / warning / error / critical.
+  keywords: [audit, log, denetim, iz]
+  related_chunks: [pii-phone-mask, correlation-req-prefix]
+  related_pages: []
+  related_api: []
+
+- chunk_id: audit-owner-erase
+  type: audit
+  source: docs/errors/AUDIT_LOG_STANDARD.md
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: true
+  title: "audit:owner.erase"
+  content: |
+    KVKK / GDPR kapsamında hasta sahibi PII silindi.
+    Severity: critical. Anlık alert tetikler.
+  keywords: [KVKK, erase, silme, owner, audit]
+  related_chunks: [flow-kvkk-erasure, audit-overview]
+  related_pages: []
+  related_api: []
+
+# -----------------------------------------------------------------------------
+# LOG-STANDARD — Log türleri
+# -----------------------------------------------------------------------------
+- chunk_id: log-sistem
+  type: log-standard
+  source: docs/errors/LOG_STANDARD.md
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Sistem Logu"
+  content: |
+    API/web servislerinin uygulama logu. JSON format. Seviyeler:
+    trace, debug, info, warn, error, fatal. Production'da
+    info ve üzeri. Her log correlation_id taşır.
+  keywords: [log, sistem, info, warn, error, application]
+  related_chunks: [correlation-req-prefix, pii-phone-mask]
+  related_pages: []
+  related_api: []
+
+- chunk_id: log-job
+  type: log-standard
+  source: docs/errors/LOG_STANDARD.md
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Background Job Logu"
+  content: |
+    BullMQ worker'ların logu. Ek alanlar: job_id, job_name,
+    attempt, bullmq_queue. Retry'lar görünür.
+  keywords: [job, bullmq, worker, retry, background]
+  related_chunks: [log-sistem]
+  related_pages: []
+  related_api: []
+
+- chunk_id: log-integration
+  type: log-standard
+  source: docs/errors/LOG_STANDARD.md
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Entegrasyon Logu"
+  content: |
+    Dış servislerle (e-Smm, SMS, ödeme, lab cihazı) iletişim
+    logu. Request/response payload hash'lenir; plain text
+    asla loglanmaz.
+  keywords: [entegrasyon, integration, e-smm, sms, odeme]
+  related_chunks: [log-sistem, pii-phone-mask]
+  related_pages: []
+  related_api: []
+
+- chunk_id: log-security
+  type: log-standard
+  source: docs/errors/LOG_STANDARD.md
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: true
+  title: "Güvenlik Logu"
+  content: |
+    Auth olayları, yetkilendirme kararları, PII erişimi,
+    şüpheli aktivite. Anlık alert tetikler. Event isimleri:
+    auth.login, auth.fail, authz.deny, pii.read, pii.erase,
+    tenant.cross_attempt.
+  keywords: [guvenlik, security, auth, alert, suspicious]
+  related_chunks: [audit-overview, pii-phone-mask]
+  related_pages: []
+  related_api: []
+
+# -----------------------------------------------------------------------------
+# PII-RULE — PII maskeleme kuralları
+# -----------------------------------------------------------------------------
+- chunk_id: pii-phone-mask
+  type: pii-rule
+  source: docs/errors/PII_MASKING.md
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: true
+  title: "Telefon Numarası Maskeleme"
+  content: |
+    Telefon numarası PII alanıdır. Log/audit'te mask formatı:
+    son 2 hane görünür, geri kalan `*`. Örnek: `05321234567`
+    → `*********67`. Detay: PII_MASKING.md.
+  keywords: [PII, telefon, phone, mask, KVKK]
+  related_chunks: [pii-email-mask, audit-overview]
+  related_pages: []
+  related_api: []
+
+- chunk_id: pii-email-mask
+  type: pii-rule
+  source: docs/errors/PII_MASKING.md
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: true
+  title: "E-posta Maskeleme"
+  content: |
+    E-posta PII alanıdır. Log/audit'te mask formatı:
+    ilk harf + `***` + `@domain`. Örnek: `ali@example.com`
+    → `a***@example.com`.
+  keywords: [PII, email, e-posta, mask, KVKK]
+  related_chunks: [pii-phone-mask]
+  related_pages: []
+  related_api: []
+
+- chunk_id: pii-tax-id-mask
+  type: pii-rule
+  source: docs/errors/PII_MASKING.md
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: true
+  title: "TCKN/VKN Maskeleme"
+  content: |
+    TCKN (11 hane) ve VKN (10 hane) PII alanlarıdır.
+    Log/audit'te mask formatı: ilk 3 + `***` + son 2.
+    Örnek: `1234567890` → `123***90`. Doğrulama:
+    TCKN mod 11, VKN mod 10.
+  keywords: [PII, TCKN, VKN, vergi, kimlik, KVKK]
+  related_chunks: [pii-phone-mask]
+  related_pages: []
+  related_api: []
+
+# -----------------------------------------------------------------------------
+# CORRELATION — Request ID standardı
+# -----------------------------------------------------------------------------
+- chunk_id: correlation-req-prefix
+  type: correlation
+  source: docs/errors/CORRELATION_ID.md
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Correlation / Request ID"
+  content: |
+    Her HTTP isteği, background job ve dış entegrasyon çağrısı
+    correlation_id ile etiketlenir. Format: `req-<32-hex>`.
+
+    Kullanıcı hata aldığında "Referans kodu: req-..." notunu
+    destek ekibine iletir. Tüm log'lar bu ID ile ilişkili.
+  keywords: [correlation, request id, X-Request-Id, izleme]
+  related_chunks: [log-sistem, audit-overview]
+  related_pages: []
+  related_api: []
+
+# -----------------------------------------------------------------------------
+# COUNTRY — Ülke adaptörü bilgisi
+# -----------------------------------------------------------------------------
+- chunk_id: country-tr-format-currency
+  type: country
+  source: apps/api/src/common/adapters/tr-country.adapter.ts
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Türkiye Para Formatı (TRY)"
+  content: |
+    Türk Lirası formatı: 1.234,56 ₺. KDV oranları: %1, %10, %20.
+    Fatura numarası: ABC-2026-00001 (seri + yıl + sıra).
+  keywords: [TRY, Türk Lirası, KDV, fatura, format]
+  related_chunks: [glossary-payment, country-gb-format-currency]
+  related_pages: []
+  related_api: []
+
+- chunk_id: country-gb-format-currency
+  type: country
+  source: apps/api/src/common/adapters/gb-country.adapter.ts
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: low
+  pii: false
+  title: "İngiltere Para Formatı (GBP)"
+  content: |
+    Pound Sterling formatı: £1,234.56. VAT oranları: %0, %5, %20.
+    Invoice number: INV-2026-00001. Faz 14'te implementasyon
+    detayları eklenecek.
+  keywords: [GBP, pound, sterling, VAT, invoice, UK]
+  related_chunks: [country-tr-format-currency]
+  related_pages: []
+  related_api: []
+
+# -----------------------------------------------------------------------------
+# PAGE — Mevcut sayfalar
+# -----------------------------------------------------------------------------
+- chunk_id: page-web-app-locale
+  type: page
+  source: docs/pages/web.app.locale.yaml
+  page_id: web.app.locale
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Landing Sayfası"
+  content: |
+    VetNiva landing sayfası. Kullanıcıyı karşılar, sağlık
+    durumuna kısayol sunar. Public erişim (auth gerektirmez).
+  keywords: [landing, anasayfa, home, başlangıç]
+  related_chunks: [page-web-app-locale-health]
+  related_pages: [web.app.locale]
+  related_api: [GET /api/v1/health]
+
+- chunk_id: page-web-app-locale-health
+  type: page
+  source: docs/pages/web.app.locale.health.yaml
+  page_id: web.app.locale.health
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Sistem Sağlık Sayfası"
+  content: |
+    API'nin ve bağımlılıklarının (veritabanı) canlı durumunu
+    gösterir. Sistem izleme ve smoke test için kullanılır.
+
+    down durumunda correlation_id notunu alıp destek ekibine
+    bildirin.
+  keywords: [sağlık, sistem durumu, monitoring, db, gecikme]
+  related_chunks: [log-sistem, correlation-req-prefix, error-VET-COMMON-0001]
+  related_pages: [web.app.locale]
+  related_api: [GET /api/v1/health/ready]
+
+# -----------------------------------------------------------------------------
+# PERMISSION — Örnek permission'lar (ilk 5)
+# -----------------------------------------------------------------------------
+# Full set PERMISSION_CATALOG.yaml'da. AI_CHUNKS'da sadece
+# sık sorulanlar.
+
+- chunk_id: permission-clinic-owner-erase
+  type: permission
+  source: docs/permissions/PERMISSION_CATALOG.yaml
+  permission: clinic:owner:erase
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: true
+  title: "clinic:owner:erase"
+  content: |
+    Hasta sahibi PII silme (KVKK). Sadece OWNER rolü ve
+    sistem job'ları (KVKK anonymize). Tenant-scoped.
+    Audit: audit:owner.erase (critical).
+  keywords: [KVKK, silme, erase, owner, permission]
+  related_chunks: [glossary-owner, flow-kvkk-erasure, audit-owner-erase]
+  related_pages: []
+  related_api: []
+
+- chunk_id: permission-clinic-examination-sign
+  type: permission
+  source: docs/permissions/PERMISSION_CATALOG.yaml
+  permission: clinic:examination:sign
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "clinic:examination:sign"
+  content: |
+    Muayene kaydını imzalama. VETERINARIAN rolü. İmzalı
+    muayene append-only; düzeltme için amendment gerekir.
+    Audit: audit:examination.sign.
+  keywords: [muayene, sign, imza, examination]
+  related_chunks: [glossary-examination, audit-overview]
+  related_pages: []
+  related_api: []
+
+# -----------------------------------------------------------------------------
+# API — Mevcut API endpoint'leri
+# -----------------------------------------------------------------------------
+- chunk_id: api-get-api-v1-health
+  type: api
+  source: docs/api/get._api_v1_health.md
+  endpoint_id: get._api_v1_health
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "GET /api/v1/health"
+  content: |
+    Sistem sağlık endpoint'i. Public (auth gerektirmez).
+    DB bağlantı durumu, sürüm bilgisi, correlation_id
+    döner. Smoke test için kullanılır.
+  keywords: [health, sağlık, status, ready, monitoring]
+  related_chunks: [log-sistem, correlation-req-prefix]
+  related_pages: [web.app.locale.health]
+  related_api: [GET /api/v1/health]

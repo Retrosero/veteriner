@@ -32,10 +32,13 @@ run(root).then((result) => {
   process.stdout.write(
     `  web: ${result.scanned.web}, api: ${result.scanned.api}\n`,
   );
-  process.stdout.write(`Hata kodu referansı: ${result.scanned.errorCodes}\n`);
   process.stdout.write(
-    `Permission referansı: ${result.scanned.permissions}\n\n`,
+    `Hata kodu referansı: ${result.scanned.errorCodesVet} VET-, ${result.scanned.errorCodesLegacy} legacy\n`,
   );
+  process.stdout.write(
+    `Permission referansı: ${result.scanned.permissions}\n`,
+  );
+  process.stdout.write(`AI chunk: ${result.scanned.aiChunks}\n\n`);
 
   if (result.issues.length === 0) {
     process.stdout.write(green("✓ Tüm kontroller geçti.\n"));
