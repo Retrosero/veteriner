@@ -2959,3 +2959,76 @@ generated_at: "2026-07-30"
     - "POST /api/v1/clinic/appointments/{id}/no-show"
     - "PATCH /api/v1/clinic/appointments/{id}"
 
+# -----------------------------------------------------------------------------
+# WAITLIST — Bekleme listesi ve resepsiyon akışı
+# -----------------------------------------------------------------------------
+# Source: apps/api/src/modules/waitlist/* (GOAL-032)
+# State machine: waiting → notified → scheduled; * → cancelled;
+# waiting → expired (TTL). Priority emergency > urgent > normal.
+
+- chunk_id: flow-waitlist
+  type: flow
+  source: apps/api/src/modules/waitlist/waitlist.service.ts
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Bekleme Listesi (Resepsiyon) Akışı"
+  content: |
+    1. Resepsiyon görevlisi (STAFF) uygun bir randevu slot'u
+       bulamadığında hastayı bekleme listesine ekler
+       (`POST /api/v1/clinic/waitlist`).
+    2. Zod şema enforce eder: `patientId` (zorunlu, mevcut hasta),
+       `reason` (1-500 karakter, zorunlu), `priority` (normal |
+       urgent | emergency), opsiyonel `preferredDate` (ISO 8601),
+       `preferredVeterinarianId` ve `expiresAt` (override).
+    3. Service `patients.findById(tenantId, patientId)` ile hastanın
+       aynı tenant'ta olduğunu doğrular. Cross-tenant veya olmayan
+       patient → 404 `VET-CLINIC-0001`.
+    4. `expiresAt` verilmezse `now + 30 gün`
+       (`WAITLIST_DEFAULT_TTL_DAYS`); `status="waiting"`,
+       `notifiedAt=null`, `scheduledAppointmentId=null` set edilir.
+    5. Audit `audit:waitlist.add` (info) — patientId, ownerId,
+       priority, preferredDate, preferredVeterinarianId, expiresAt
+       payload.
+    6. **Listeleme** (`GET /api/v1/clinic/waitlist`): status,
+       priority, patientId, from, to filtreleri. Sıralama
+       **emergency (0) > urgent (1) > normal (2)**, sonra
+       `createdAt asc`.
+    7. **Bildirim** (`POST /api/v1/clinic/waitlist/{id}/notify`):
+       slot açıldığında hasta bilgilendirilir. `status=notified`,
+       `notifiedAt=now`. `scheduled/cancelled` üzerinde → 422
+       `VET-CLINIC-0006`. NotificationService stub (`in_app`,
+       `templateKey=waitlist.notify`) best-effort; hata durumunda
+       akış durmaz. Audit `audit:waitlist.notify` (info).
+    8. **Randevuya dönüş** (`POST /api/v1/clinic/waitlist/{id}/
+       schedule`): `body.appointmentId` ile `status=scheduled`,
+       `scheduledAppointmentId` set. Aynı `id` + aynı
+       `appointmentId` idempotent (no-op). Farklı `appointmentId`
+       ile `scheduled` üzerinde → 422 `VET-CLINIC-0006`.
+       `cancelled/expired` → 422. Audit `audit:waitlist.schedule`
+       (info).
+    9. **İptal** (`POST /api/v1/clinic/waitlist/{id}/cancel`):
+       `body.reason` (1-500, zorunlu). `status=cancelled`. İkinci
+       kez idempotent. `scheduled/expired` → 422. Audit
+       `audit:waitlist.cancel` (**warning**) + reason.
+    10. **TTL expire:** `expireOverdue()` periyodik cron (FAZ-3+)
+        `waiting && expiresAt<now` olan kayıtları `expired`'a çeker.
+        Audit `audit:waitlist.expire` (actorType=system, info).
+  keywords: [bekleme listesi, waitlist, resepsiyon, reception, priority,
+             emergency, urgent, normal, state machine, TTL, expire,
+             notify, schedule, cancel, audit]
+  related_chunks: [glossary-appointment, glossary-patient,
+                   flow-appointment-create, flow-appointment-cancel,
+                   error-VET-CLINIC-0001, error-VET-CLINIC-0006,
+                   error-VET-VALIDATION-0001, error-VET-TENANT-0001,
+                   error-VET-AUTHZ-0001]
+  related_pages: []
+  related_api:
+    - "POST /api/v1/clinic/waitlist"
+    - "GET /api/v1/clinic/waitlist"
+    - "POST /api/v1/clinic/waitlist/{id}/notify"
+    - "POST /api/v1/clinic/waitlist/{id}/schedule"
+    - "POST /api/v1/clinic/waitlist/{id}/cancel"
+

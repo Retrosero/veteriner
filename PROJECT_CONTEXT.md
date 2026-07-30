@@ -133,7 +133,7 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
 - **Faz 3 — Randevu + portal** ⏳ sırada
   - GOAL-030 ✅ Klinik takvimi (tamamlandı — 2026-07-30)
   - GOAL-031 ✅ Randevu oluşturma ve yönetim (tamamlandı — 2026-07-30)
-  - GOAL-032 Bekleme listesi ve resepsiyon akışı
+  - GOAL-032 ✅ Bekleme listesi ve resepsiyon akışı (tamamlandı — 2026-07-30)
   - GOAL-033 Hasta sahibi portal kayıt ve giriş
   - GOAL-034 Portal hayvan listesi ve detay
   - GOAL-035 Online randevu talebi

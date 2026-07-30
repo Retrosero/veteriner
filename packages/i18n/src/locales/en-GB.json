@@ -211,7 +211,7 @@
     "VET-CLINIC-0003": "This microchip number is already in use.",
     "VET-CLINIC-0004": "This species is not supported. Only cat, dog and bird are supported.",
     "VET-CLINIC-0005": "Ownership transfer failed. Please check the new owner details.",
-    "VET-CLINIC-0006": "An active ownership record already exists for this patient. Close the current one first.",
+    "VET-CLINIC-0006": "Invalid status transition for this record. (Ownership: an active ownership record already exists. Waitlist: notify/schedule/cancel attempted on a scheduled/cancelled/expired entry.)",
     "VET-CLINIC-0007": "This animal already belongs to this owner.",
     "VET-CLINIC-0008": "Cannot transfer ownership for an archived patient.",
     "VET-CLINIC-0009": "reason=initial can only be used when creating the first ownership record.",

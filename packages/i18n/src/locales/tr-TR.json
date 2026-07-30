@@ -211,7 +211,7 @@
     "VET-CLINIC-0003": "Bu mikroçip numarası zaten kullanımda.",
     "VET-CLINIC-0004": "Bu tür henüz desteklenmiyor. Yalnızca kedi, köpek ve kuş desteklenir.",
     "VET-CLINIC-0005": "Sahiplik devri başarısız. Yeni sahip bilgilerini kontrol edin.",
-    "VET-CLINIC-0006": "Bu hasta için zaten aktif bir sahiplik kaydı var. Önce mevcut kaydı kapatın.",
+    "VET-CLINIC-0006": "Bu kayıt için durum geçişi geçersiz. (Ownership: aktif sahiplik zaten var. Waitlist: scheduled/cancelled/expired kayıt üzerinde notify/schedule/cancel deneniyor.)",
     "VET-CLINIC-0007": "Bu hayvan zaten bu sahibe ait.",
     "VET-CLINIC-0008": "Hasta arşivli olduğu için sahiplik devri yapılamaz.",
     "VET-CLINIC-0009": "reason=initial yalnızca ilk kayıt oluşturulurken kullanılabilir.",
