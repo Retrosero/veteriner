@@ -1812,6 +1812,50 @@ generated_at: "2026-07-30"
                 api.post._api_v1_clinic_lab-orders__orderId_result_approve,
                 api.post._api_v1_clinic_lab-orders__orderId_result_amend]
 
+- chunk_id: flow-imaging-order
+  type: flow
+  source: packages/contracts/src/imaging-order.ts
+  entity: imaging_order
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Görüntüleme İsteği ve Raporu Akışı (Imaging Order)"
+  content: |
+    1. Görüntüleme (ImagingOrder). 5 modality: `xray` |
+       `ultrasound` | `ct` | `mri` | `dental_xray`.
+    2. State: `ordered` → `scheduled` → `performed` →
+       `reported` → `completed` | `cancelled`.
+    3. Schedule: `scheduledAt` + `room`.
+    4. Perform: `imageIds[]` (PACS/DICOM ref).
+    5. Report: `findings` + `impression` + opsiyonel
+       `recommendations`.
+    6. Approve: rapor finalize; hasta/portal görebilir.
+    7. Amend: approved rapor append-only yeni rapor
+       oluşturur.
+    8. Complete: acil senaryo (approve atlanır).
+    9. Cancel: ordered/scheduled → cancelled.
+    10. Audit: `audit:imaging_order.{create,schedule,
+        perform,report,approve_report,amend_report,
+        complete,cancel}` (info/warning).
+  keywords: [görüntüleme, imaging, xray, ultrasound, ct,
+             mri, dental, rapor, findings, impression,
+             radyoloji, pacs, dicom, schedule, perform]
+  related_chunks: [flow-patient, flow-discharge-summary,
+                   error-VET-IMAGING-0001]
+  related_pages: []
+  related_api: [api.post._api_v1_clinic_imaging-orders,
+                api.get._api_v1_clinic_imaging-orders,
+                api.get._api_v1_clinic_imaging-orders__id_,
+                api.post._api_v1_clinic_imaging-orders__id_schedule,
+                api.post._api_v1_clinic_imaging-orders__id_perform,
+                api.post._api_v1_clinic_imaging-orders__id_report,
+                api.post._api_v1_clinic_imaging-orders__id_approve-report,
+                api.post._api_v1_clinic_imaging-orders__id_amend-report,
+                api.post._api_v1_clinic_imaging-orders__id_complete,
+                api.post._api_v1_clinic_imaging-orders__id_cancel]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
