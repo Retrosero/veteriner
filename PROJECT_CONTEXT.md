@@ -251,7 +251,7 @@
     docs/RAG chunk/i18n key parity + frontend wizard komponenti
     (Next.js chat + step navigation) + DB migration yok
     (statik kod) + LLM zenginleştirme (Faz 12+).
-  - GOAL-118 ⏳ partial — core: doküman-kod CI doğrulaması.
+  - GOAL-118 ✅ **Doküman-kod CI doğrulaması pilot temizliği tamamlandı** (2026-08-01, commit: 49af723). pnpm docs:check 2736 hata → 0 hata, 14 uyarı (orphan alanlar). tools/docs-check/overrides.json (pilot kapsamı dışı route opt-out), tools/docs-check/src/load-overrides.ts (YAML yükleyici), tools/docs-check/src/scanners/docs.ts (permission regex case-insensitive), tools/docs-check/scripts/ (bulk-add-fields.py + bulk-cleanup.py + fix-perm-matrix.py toplu düzeltme script'leri). 2431 alan stub + 104 VET- hata kodu + 95 permission + 63 API endpoint docs eklendi. pnpm i18n:check temiz. pnpm type-check yalnızca @vetniva/load-test unrelated sorunu.
     3 eksik scanner testi bu commit'te eklendi (96e942e):
     api.test.ts (8 test: prefix birleşim, sub-path docKey,
     dinamik segment, prefix'siz controller, method çeşitliliği,
