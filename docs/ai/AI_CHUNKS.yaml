@@ -1503,6 +1503,57 @@ generated_at: "2026-07-30"
                 api.post._api_v1_clinic_anesthesia__id_staff,
                 api.post._api_v1_clinic_anesthesia__id_finalize]
 
+- chunk_id: flow-operation-note
+  type: flow
+  source: packages/contracts/src/operation-note.ts
+  entity: operation_note
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Ameliyat Operasyon Notu Akışı (Operation Note)"
+  content: |
+    1. Operasyon notu (OperationNote). State: `draft` →
+       `finalized` → `amended` (append-only amendment).
+    2. Oluşturma: `surgeryPlanId` zorunlu; plan `in_progress`
+       olmalı (422 VET-OPNOTE-0003). Aynı plan için
+       ikinci not reddedilir (409 VET-OPNOTE-0004).
+    3. Alt kayıtlar (draft'te eklenir):
+       - `team[]` — ekip üyesi + rol (surgeon/
+         assistant_surgeon/nurse/anesthesiologist/
+         technician/observer) + joinedAt/leftAt.
+       - `materials[]` — productId + lotId + quantity
+         (sütür, implant, ilaç).
+    4. Finalize: outcome (`successful` | `complicated` |
+       `aborted`) + summary. Finalize sonrası güncelleme
+       reddedilir.
+    5. Amend: `finalized` → amendment kaydı oluşturulur
+       (append-only). Eski not korunur. Tıbbi kayıt
+       düzeltmesi için zorunlu.
+    6. Faz 8 reaktif hook: materials → `clinical_usage`
+       (GOAL-066) `type='surgery'` ile stok düşümü.
+    7. Ameliyat planı (GOAL-080) entegre.
+    8. Audit: `audit:operation_note.{create,update,
+       team.add,material.add,finalize,amend}` (info/
+       warning). Amend'de `amendReason` + before/after
+       snapshot payload.
+  keywords: [operasyon notu, operation note, ameliyat
+             notu, ekip, malzeme, finalize, amendment,
+             append-only, reaktif stok düşümü]
+  related_chunks: [flow-surgery-plan, flow-clinical-usage,
+                   flow-vaccine-application-amend,
+                   error-VET-OPNOTE-0003, error-VET-OPNOTE-0004]
+  related_pages: []
+  related_api: [api.post._api_v1_clinic_operation-notes,
+                api.get._api_v1_clinic_operation-notes,
+                api.get._api_v1_clinic_operation-notes__id_,
+                api.patch._api_v1_clinic_operation-notes__id_,
+                api.post._api_v1_clinic_operation-notes__id_team,
+                api.post._api_v1_clinic_operation-notes__id_materials,
+                api.post._api_v1_clinic_operation-notes__id_finalize,
+                api.post._api_v1_clinic_operation-notes__id_amend]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
