@@ -72,3 +72,4 @@ export * from "./cash-register.js";
 export * from "./anesthesia.js";
 export * from "./operation-note.js";
 export * from "./hospitalization.js";
+export * from "./hospitalization-order.js";

@@ -724,3 +724,25 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
 - Full api regression: 1074/1074 yeşil, 8 skipped, 0 hata
 - tsc --noEmit temiz
 - Docs/RAG chunks/i18n/cross-ref: sonraki tick'lere ertelendi
+
+## GOAL-085 yatış order ve uygulama kayıtları ⏳ partial
+
+- Yeni modul: apps/api/src/modules/hospitalization-orders/ (controller, service, repository, module, spec, index)
+- Yeni tipler: apps/api/src/common/hospitalization-orders/hospitalization-order.types.ts
+- Yeni contract: packages/contracts/src/hospitalization-order.ts (exported via index)
+- Cross-module: HospitalizationModule (yatış varlık kontrolü)
+- 2 varlık: HospitalizationOrder + HospitalizationOrderSchedule
+- Endpointler: POST/GET /api/v1/clinic/hospitalization-orders, GET/PATCH :id, POST :id/cancel|schedules; GET /schedules (status filtresi: pending/applied/skipped/overdue), POST schedules/:id/apply|skip
+- 6 order type: medication / feeding / measurement / care / check / other
+- 3 order status: active → cancelled (endsAt set edilir)
+- 4 priority: low / medium / high / critical
+- Schedule status: pending (henüz appliedAt/skippedAt yok) / applied / skipped / overdue (asOf filtresiyle)
+- Append-only: iptal status=cancelled; uygulama appliedAt set; skip skippedAt set. Schedule'lar fiziksel silinmez
+- 7 audit event: order.create/update/cancel, schedule.add/apply/skip
+- 7 hata kodu: VET-HORD-0001/0002/0003/0004/0005/0006/0007
+- Permissions: clinic:hospitalization:read + add_note + admit (mevcut catalog'da)
+- Cross-tenant idor → null/404, cross-tenant create 403 VET-AUTHZ-0001
+- Test: 19/19 yeni spec geçti
+- Full api regression: 1093/1093 yeşil, 8 skipped, 0 hata
+- tsc --noEmit temiz
+- Docs/RAG chunks/i18n/cross-ref: sonraki tick'lere ertelendi
