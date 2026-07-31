@@ -28,24 +28,7 @@
     tick'te yazdığım payments modülü çakışma nedeniyle trash'e
     gönderildi; mevcut payments modülü kullanılıyor.
 
-  - GOAL-076 ⏳ partial — core: temel finans raporları. reports
-    modülü (4 endpoint: daily-sales/payment-methods/
-    open-balances/export) + 3 rapor tipi (daily_sales/
-    payment_methods/open_balances) + JSON/CSV dışa aktarma +
-    8/8 yeni test + 967/967 api testi geçti. Cross-module:
-    ClinicSalesService + PetshopSalesService + PaymentsService
-    (read-only). Günlük satış: clinic + petshop completed
-    toplamı. Tahsilat yöntemi: yöntem bazlı kırılım (reversed
-    payment hariç). Açık bakiye: tamamlanmış sales'in
-    ödenmemiş kalan tutarı. Export audit:report.export
-    üretir (info). Mevcut permission'lar kullanıldı:
-    clinic:report:financial:read + clinic:report:export.
-    Sonraki tick: docs/RAG chunk/i18n key parity + DB
-    migration (Prisma aggregate) + Faz 8 ürün/hizmet
-    kırılımı raporu + Faz 8 veteriner bazlı işlem raporu
-    + Faz 8 stok hareketleri raporu + Faz 10 superadmin
-    raporları.
-
+  - GOAL-076 ✅ Temel finans raporları (tamamlandı — 2026-07-30, core: d0a58f1, docs/i18n: bu commit). 4 endpoint (GET daily-sales/GET payment-methods/GET open-balances/POST export); 3 read + 1 async export (PDF/CSV). Günlük satış source dağılımı, ödeme yöntemi toplam, açık bakiyeler totalDebit DESC. Audit udit:report.export (info). Faz 10 BullMQ + custom report builder sonra.
   - GOAL-075 ⏳ partial — core: müşteri borç/alacak görünümü.
     customer-balances modülü (2 endpoint: summary/
     transactions) + 6/6 yeni test + 973/973 api testi geçti.

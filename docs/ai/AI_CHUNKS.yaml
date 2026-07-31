@@ -1291,6 +1291,43 @@ generated_at: "2026-07-30"
   related_api: [api.get._api_v1_customer-balances_owners__ownerId_,
                 api.get._api_v1_customer-balances_owners__ownerId_transactions]
 
+- chunk_id: flow-report
+  type: flow
+  source: packages/contracts/src/report.ts
+  entity: report
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Temel Finans Raporları Akışı (Reports)"
+  content: |
+    1. Finans raporları. 3 salt-okunur rapor endpoint'i
+       (daily-sales, payment-methods, open-balances) + 1
+       async export (PDF/CSV).
+    2. Günlük satış: tarih aralığında gün × toplam + source
+       dağılımı (clinic_sale/petshop_sale).
+    3. Ödeme yöntemi: tarih aralığında method × toplam +
+       işlem adedi.
+    4. Açık bakiyeler: tahsil edilmemiş owner × tutar + en
+       eski fatura; default sıralama totalDebit DESC.
+    5. Export: async job; format pdf/csv; `downloadUrl`
+       tamamlandığında set edilir (signed URL).
+    6. Faz 10 BullMQ ile job yönetimi; FAZ-7'de in-process.
+    7. Audit: `audit:report.export` (info). Rapor okuma
+       audit YOK (salt okunur).
+    8. Tenant-scoped; cross-tenant → 404.
+  keywords: [finans raporu, daily sales, payment methods,
+             open balances, tahsilat raporu, PDF, CSV,
+             export, async job]
+  related_chunks: [flow-payment, flow-customer-balance,
+                   flow-cash-register]
+  related_pages: []
+  related_api: [api.get._api_v1_reports_daily-sales,
+                api.get._api_v1_reports_payment-methods,
+                api.get._api_v1_reports_open-balances,
+                api.post._api_v1_reports_export]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
