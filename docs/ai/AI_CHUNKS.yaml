@@ -1694,6 +1694,43 @@ generated_at: "2026-07-30"
                 api.post._api_v1_clinic_hospitalizations__hospitalizationId_discharge-summary_amend,
                 api.post._api_v1_clinic_hospitalizations__hospitalizationId_discharge-summary_portal-share]
 
+- chunk_id: flow-lab-test
+  type: flow
+  source: packages/contracts/src/lab-test.ts
+  entity: lab_test
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Laboratuvar Test Kataloğu Akışı (Lab Test)"
+  content: |
+    1. Laboratuvar test kataloğu (LabTest). Tenant-scoped.
+    2. `category`: `hematology` | `biochemistry` |
+       `microbiology` | `parasitology` | `urinalysis` |
+       `cytology` | `imaging` | `other`.
+    3. `specimenType`: `blood` | `urine` | `feces` |
+       `swab` | `tissue` | `other`.
+    4. `referenceRanges[]`: analyte + unit + low + high
+       (analyte başına referans aralığı).
+    5. `tatHours` (turnaround time) + `price` (Decimal).
+    6. Update: aktif order'lar etkilenmez; yeni order'lar
+       güncel hali görür (snapshot).
+    7. Faz 14 cihaz adapter (GOAL-094) ile
+       `code`/`referenceRanges` cihaz sözlüğü ile
+       eşlenir.
+    8. Audit: `audit:lab_test.{create,update}` (info).
+  keywords: [laboratuvar, test kataloğu, lab test, hematoloji,
+             biyokimya, mikrobiyoloji, numune, referans
+             aralığı, analyte, turnaround time]
+  related_chunks: [flow-lab-order, flow-lab-result,
+                   flow-lab-adapter, error-VET-LAB-0001]
+  related_pages: []
+  related_api: [api.post._api_v1_clinic_lab-tests,
+                api.get._api_v1_clinic_lab-tests,
+                api.get._api_v1_clinic_lab-tests__id_,
+                api.patch._api_v1_clinic_lab-tests__id_]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
