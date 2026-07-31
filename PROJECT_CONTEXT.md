@@ -5,25 +5,7 @@
   - GOAL-071 ✅ Klinik satış taslağı (tamamlandı — 2026-07-30, core: 1e6bf50, docs/i18n: bu commit). 6 endpoint (POST/GET list/GET :id/PATCH/POST complete/POST cancel); state draft→completed|cancelled; 6 sourceType (examination/prescription/lab_test/imaging/surgery/order) + sourceId zorunlu; line item (productId × quantity × unitPrice + priceListItemId ref); complete ile Faz 7 Payment (GOAL-072, paymentMethod); cancel ile Faz 7 PaymentReversal (GOAL-073). Stok düşümü YOK (GOAL-066 ayrı akış). Audit udit:clinic_sale.{create,update,complete,cancel}. Tam iade Faz 7+ clinic-sale-returns.
   - GOAL-072 ✅ Tahsilat (tamamlandı — 2026-07-30, core: 564dff3, docs/i18n: bu commit). 4 ana endpoint (POST/GET list/GET :id/POST :id/reverse); 2 sourceType (clinic_sale/petshop_sale) + 4 method (cash/card/bank_transfer/other); kısmi tahsilat (toplam > sale → 422 VET-PAYMENT-0002); ters kayıt (PaymentReversal — GOAL-073 docs ayrı). Audit udit:payment.{create,reverse}. Kasa etkisi Faz 8 (GOAL-074).
   - GOAL-073 ✅ Tahsilat iptal ve ters kayıt (tamamlandı — 2026-07-30, core: d18d45a, docs/i18n: bu commit). 3 reversal endpoint (GET reversals list/GET :id/GET :id/summary); 5 reasonCode (refund/customer_request/error/duplicate/other); çoklu ters kayıt (kısmi düzeltme, totalReversed <= paymentAmount); kasa etkisi 'out' (Faz 7 cash-register entegrasyonu). Audit udit:payment.reverse (warning). Ters kayıt oluşturma POST /payments/{id}/reverse (GOAL-072).
-  - GOAL-075 ⏳ partial — core: müşteri borç ve alacak görünümü.
-    customer-balances modülü (2 endpoint: getSummary +
-    listTransactions) + `customer-balance` sözleşmesi
-    (CustomerBalanceSummary + CustomerTransaction + 2 tür
-    sale/payment) + payment.effectiveAmount entegrasyonu
-    (ters kayıt sonrası kalan tutar) + payment.status=
-    partially_reversed dahil edilmesi + 6/6 yeni test +
-    973/973 api testi geçti. ownerId bazlı; ClinicSales +
-    PetshopSales + PaymentsService read-only kullanır.
-    totalSaleAmount, totalPaidAmount, totalReversedAmount,
-    totalNetAmount, openAmount = net - paid. Cross-module
-    validations: saleIdSet ile satışa bağlı tahsilat filtre.
-    Mevcut permission: clinic:report:financial:read.
-    Sonraki tick: docs/RAG chunk/i18n key parity + DB
-    migration (Prisma) + tenant bazlı (ownerId olmadan)
-    tüm müşterilerin toplam borç/alacak raporu + portal
-    entegrasyonu (sahip kendi bakiyesini görebilir) +
-    audit + çoklu para birimi.
-
+  - GOAL-075 ✅ Müşteri borç ve alacak görünümü (tamamlandı — 2026-07-30, core: 903870b, docs/i18n: bu commit). 2 endpoint (GET owner balance/GET owner transactions); atomic hesaplama (cache'lenmez); totalDebit (tahsil edilmemiş), totalCredit (refund credit + manuel), netBalance (negatif = kredi bakiye); 6 transaction source. Faz 7 tahsilat (GOAL-072) + ters kayıt (GOAL-073) + petshop refund credit (GOAL-065) + manuel dahil. Audit yok (salt okunur).
   - GOAL-077 ⏳ partial — core: e-SMM adapter sözleşmesi. esmm
     modülü (6 endpoint: create/list/get/submit/retry/cancel) +
     3 belge türü (e_fatura / e_arsiv / e_irsaliye) + 6 durum

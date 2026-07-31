@@ -1255,6 +1255,42 @@ generated_at: "2026-07-30"
                 api.get._api_v1_cash-register_sessions__id_movements,
                 api.get._api_v1_cash-register_sessions__id_summary]
 
+- chunk_id: flow-customer-balance
+  type: flow
+  source: packages/contracts/src/customer-balance.ts
+  entity: customer_balance
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Müşteri Borç ve Alacak Görünümü Akışı (Customer Balance)"
+  content: |
+    1. Müşteri (owner) borç/alacak görünümü. Atomic sorgu
+       anında hesaplanır (cache'lenmez).
+    2. `totalDebit` — tahsil edilmemiş sale toplamı
+       (clinic_sale + petshop_sale - payment - reversal).
+    3. `totalCredit` — refund 'credit' (GOAL-065) +
+       manuel alacaklar.
+    4. `netBalance` = `totalDebit - totalCredit` (negatif =
+       kredi bakiye, müşteri lehine).
+    5. Transaction kaynakları: `clinic_sale` (debit) |
+       `petshop_sale` (debit) | `return_credit` (credit) |
+       `payment` (debit çözümleyici) | `payment_reversal`
+       (credit iade) | `manual_adjustment`.
+    6. Tenant-scoped; cross-tenant ownerId → 404.
+    7. Audit: yok (salt okunur hesaplama).
+    8. Faz 8'de dashboard widget (borçlu müşteriler listesi)
+       + SMS/email hatırlatma.
+  keywords: [müşteri bakiyesi, borç, alacak, customer balance,
+             debit, credit, refund credit, kısmi tahsilat,
+             owner, hesap ekstresi]
+  related_chunks: [flow-payment, flow-payment-reversal,
+                   flow-petshop-sale-return, error-VET-CB-0001]
+  related_pages: []
+  related_api: [api.get._api_v1_customer-balances_owners__ownerId_,
+                api.get._api_v1_customer-balances_owners__ownerId_transactions]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
