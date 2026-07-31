@@ -406,9 +406,10 @@ function collectInterfaceFields(
   if (!fileEntity) return [];
   const results: Array<{ entity: string; fieldName: string }> = [];
 
-  // interface/type bloğu içindeki `field: type;` alanlarını topla.
+  // interface/type bloğu: `{`, `= {`, veya `extends ... {` ile
+  // başlayabilir. Açma karakteri pozisyonu en sonda olmalı.
   const interfaceRe =
-    /(?:export\s+)?(?:interface|type)\s+[A-Z][a-zA-Z0-9_]*\s*(?:=\s*\{|extends[^{]*\{)/g;
+    /(?:export\s+)?(?:interface|type)\s+[A-Z][a-zA-Z0-9_]*[^{=]*\{/g;
   let m: RegExpExecArray | null;
   while ((m = interfaceRe.exec(text)) !== null) {
     const openIdx = m.index + m[0].length - 1;
