@@ -78,3 +78,4 @@ export * from "./lab-test.js";
 export * from "./lab-order.js";
 export * from "./lab-result.js";
 export * from "./imaging-order.js";
+export * from "./lab-adapter.js";
