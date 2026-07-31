@@ -167,3 +167,50 @@
     modülü) + cold storage adapter (production) + scheduled cron
     registration + tenant bazlı log retention önizleme UI
     (Faz 11+ RBAC policy admin paneli).
+- **Faz 11 — Dokümantasyon ve AI asistanı temeli** ⏳ sırada
+  - GOAL-110 ✅ Sayfa kataloğu (tamamlandı — 2026-07-31, core+docs:
+    cfef786). docs/pages/*.yaml envanteri + page_id şeması.
+  - GOAL-111 ✅ Akış kataloğu (tamamlandı — 2026-07-31,
+    core+docs: cfef786). docs/workflows/*.md envanteri.
+  - GOAL-112 ✅ Alan sözlüğü ve yetki kataloğu (tamamlandı —
+    2026-07-31, core: ac057de, docs: 751e2f5). FIELD_GLOSSARY.md
+    4 yeni bölüm (muayene/SOAP/vitals/aşı) + machine-readable
+    fields.yaml (3 entity: tenant/branch/user, 29 alan) +
+    docs-check field scanner + permission check
+    warning→error sertleştirme + 19/19 docs-check testi. 5a06067
+    polish (interface regex + @types/js-yaml).
+  - GOAL-113 ✅ Hata kataloğu (tamamlandı — 2026-07-31, core+docs:
+    751e2f5). ERROR_CATALOG.md zaten FAZ-4 + FAZ-10'da tamamlanmış
+    (200+ kod, 30+ modül); yeni ekleme yok; VET-ERRSTAT-0001 (FAZ-10)
+    dahil.
+  - GOAL-114 ✅ Türkçe kullanıcı eğitimi merkezi (tamamlandı —
+    2026-07-31, core+docs: 751e2f5). 4 yeni doküman:
+    APPOINTMENT.md (randevu yönetimi, 4 senaryo) + 3 diğer
+    (login, hasta kaydı, aşı).
+  - GOAL-115 ✅ Context-aware help endpoint (tamamlandı —
+    2026-07-31, core+docs: ac057de). POST /api/v1/ai/help
+    (Zod input validation + CurrentActor tenant/role türetme +
+    cross-tenant filter + composeAnswer template-based +
+    generationSource: template|retrieval|hybrid + audit:ai.help.request).
+    3 yeni test + 1439 yeşil api regresyon. LLM entegrasyonu Faz
+    12+'da bu katmanı değiştirecek.
+  - GOAL-116 ⏳ partial — core: RAG chunk production pipeline.
+    tools/rag-chunk-producer modülü (discoverFiles +
+    chunkMarkdown + chunkYaml + mergeChunks + runPipeline +
+    inferChunkId + inferType + inferEntity + extractKeywords +
+    extractApiRefs + CLI main) + ProducedChunk sözleşmesi
+    (7 type: glossary/flow/field/permission/error/page/
+    user_education + 2 locale + 3 confidence + 5 metadata) +
+    PipelineConfig (sourceDir/outputFile/defaultLocale/runAt) +
+    AI_CHUNKS.yaml idempotent merge (chunk_id varsa skip) +
+    8/8 vitest testi (inferChunkId, inferType, chunkMarkdown,
+    chunkYaml, chunkYaml parse hatası, extractKeywords,
+    extractApiRefs) + tsc temiz + build temiz. 51b7a75 polish
+    (parse hatasında boş array). CLI: pnpm produce,
+    pnpm produce:workflows, pnpm produce:pages.
+    Cross-module: docs/ai/AI_CHUNKS.yaml (FAZ-5 doküman
+    şeması). Sonraki tick: docs/RAG chunk üretim dokümanı +
+    i18n key parity + production scheduler (FAZ-12+) + web
+    index entegrasyonu (FAZ-12+ retrieval için) + chunk dedup
+    stratejisi (hash/content-based) + LLM metadata enrichment
+    opsiyonel.
