@@ -1,4 +1,4 @@
-# Proje Bağlamı
+﻿# Proje Bağlamı
 
 ## Ürün vizyonu
 
@@ -154,23 +154,7 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
 - **Faz 5 — Aşı + stok** ⏳ sırada
   - GOAL-050 ✅ Aşı kataloğu ve protokoller (tamamlandı — 2026-07-30)
   - GOAL-051 ✅ Aşı uygulama kaydı (tamamlandı — 2026-07-30)
-  - GOAL-052 ⏳ partial — core: aşı kartı. `vaccineCard` sözleşmesi
-    (VaccineCard + VaccineCardEntry + entry status:
-    completed/upcoming/overdue/not_started + tenant portal
-    ayarı) + `vaccine-card.types.ts` (buildCardEntry +
-    resolveEntryStatus + resolveEntryNextDueDate + UTC date
-    yardımcıları) + `VaccineCardsRepository` (tenant portal
-    ayarı in-memory) + `VaccineCardsService` (getVaccineCard +
-    getPortalVaccineCard + getPortalSetting +
-    updatePortalSetting) + 2 controller (VaccineCardsController
-    personel + PortalVaccineCardsController portal) +
-    module wiring + 26/26 yeni test + 594/594 api testi geçti.
-    Personel endpoint: `GET /api/v1/clinic/vaccines/cards/patient/:patientId`
-    + `GET/PUT /api/v1/clinic/vaccines/cards/portal-setting`.
-    Portal endpoint: `GET /api/v1/portal/vaccines/cards/patient/:patientId`
-    (tenant ayarı kapalıysa 403 VET-AUTHZ-0002). Audit
-    `audit:vaccine.card.portal_setting.update`. Sonraki tick:
-    docs/RAG chunk/i18n key parity + PDF/çıktı + DB migration.
+  - GOAL-052 ✅ Aşı kartı (tamamlandı — 2026-07-30, core: `2b7cc84`, docs/i18n: bu commit). 4 personel endpoint + 1 portal endpoint; species filter (all/other→tüm takvimler); status çözümleme (overdue/upcoming/completed/not_started); tenant `portalVaccineCardEnabled` portal ayarı; in-memory derive (DB göçünde materialized view planı); cross-tenant patient → 404 VET-CLINIC-0001. PDF/çıktı ve owner-pet eşleşmesi guard katmanı sonraya.
   - GOAL-053 ⏳ partial — core: aşı hatırlatma job'u. `vaccineReminder`
     sözleşmesi (VaccineReminder + VaccineReminderListQuery +
     VaccineReminderConfigInput + `vaccine_reminder` notification
@@ -380,3 +364,34 @@ equiresPrescription/controlledDrug UK ila�
     (PDF/termal) + çoklu ödeme (taksit) + Faz 7 tahsilat
     entegrasyonu (GOAL-072) + Faz 6 iade (GOAL-065) için
     refund-specific endpoint.
+  - GOAL-065 ⏳ partial — core: petshop satış iadesi. petshop-sale-returns
+    modülü (`petshopSaleReturn` sözleşmesi: PetshopSaleReturn +
+    PetshopSaleReturnLine + status: draft/completed/cancelled +
+    refundMethod: cash/card/transfer) + PetshopSaleReturnsRepository
+    (in-memory Map + byId/byOriginalSale indeksleri) +
+    PetshopSaleReturnsService (createReturn / listReturns /
+    getReturnDetail / completeReturn / cancelReturn) +
+    PetshopSaleReturnsController (5 endpoint: POST list, GET list,
+    GET :id, POST :id/complete, POST :id/cancel) + module wiring
+    (PetshopSalesModule + ProductsModule + InventoryModule +
+    StockMovementsModule + AuditModule) + 20/20 yeni test + 810/810
+    api testi geçti. Yeni hata kodları VET-RETURN-0001/0002/0003/
+    0004/0005/0006/0007/0008/0009/0010/0011. İş kuralları: yalnızca
+    `completed` orijinal satışlara izin (VET-RETURN-0002); iade
+    miktarı orijinal satılan miktarı aşamaz (kısmi iade toplam
+    takibi, VET-RETURN-0003); orijinal satır + ürün eşleşmesi
+    zorunlu (VET-RETURN-0004); lot belirtilen satırlarda lot mevcut +
+    arşivsiz + ürün eşleşmesi (VET-RETURN-0006/0007/0008). Tamamla:
+    her satır için StockMovementsService.createSystemMovement
+    (type='return', +N, lotId ile) — purchaseTracked ürünler için.
+    Tamamlanmış iade iptal edilemez (VET-RETURN-0010; ayrı ters
+    kayıt gerekir). Mevcut permission'lar kullanıldı: petshop:sale:
+    read + petshop:sale:refund. Audit audit:petshop_sale_return.
+    create/complete/cancel. Cross-module: PetshopSalesRepository
+    (orijinal satış/satır varlık), ProductsService (ürün +
+    purchaseTracked), InventoryService (lot varlık/arşiv/ürün
+    eşleşmesi), StockMovementsService (return hareketi). Sonraki
+    tick: docs/RAG chunk/i18n key parity + DB migration (Prisma) +
+    tahsilat ters kaydı (GOAL-073 entegrasyonu) + müşteri/tedarikçi
+    iade ayrımı (sales return vs purchase return) + GOAL-067 dış
+    lokasyon stok uyarılarına return lot bilgisi bağlama.

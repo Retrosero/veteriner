@@ -388,6 +388,56 @@ generated_at: "2026-07-30"
   related_pages: []
   related_api: []
 
+- chunk_id: flow-vaccine-card
+  type: flow
+  source: packages/contracts/src/vaccine-card.ts
+  entity: vaccine_card
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Aşı Kartı Akışı (Vaccine Card)"
+  content: |
+    1. Aşı kartı, bir hastanın tüm aşı takvimini özetleyen
+       derlenmiş görünüm. Personel paneli ve hasta sahibi
+       portalı için tek hesaplama kaynağı.
+    2. Personel kökü: `GET /api/v1/clinic/vaccines/cards/
+       patient/{patientId}` ile kart çekilir. Yetki
+       `clinic:vaccination:read`. Cross-tenant patientId → 404
+       `VET-CLINIC-0001` (bilgi sızdırmaz).
+    3. Uygulanabilir protokoller: türü `Patient.species` ile
+       eşleşen veya `species='all'` olan protokol. `species=
+       'other'` ise tüm protokoller uygulanabilir (klinik
+       politikası: tür bilinmiyor → tüm takvimler).
+    4. Her protokol için tüm `Vaccination` kayıtları (iptal
+       edilenler dahil) toplanır; `VaccineCardEntry.status`
+       çözümlenir: `overdue` (son nextDueAt geçmiş),
+       `upcoming` (30 gün içinde), `completed` (tüm step'ler
+       bitmiş ve ek doz yok), `not_started` (hiç uygulama yok).
+    5. `summary`: her durum için kayıt sayısı. `portalVisible`
+       tenant ayarından gelir (default `true`).
+    6. Portal kökü: `GET /api/v1/portal/vaccines/cards/patient
+       /{patientId}` ile hasta sahibi kendi kartını görür.
+       `PortalSessionGuard` ile korunur; tenant session'dan.
+       Tenant ayarı `portalVaccineCardEnabled=false` ise 403
+       `VET-AUTHZ-0002`.
+    7. Tenant ayarı: `GET/PUT /api/v1/clinic/vaccines/cards/
+       portal-setting`. PUT ile `portalVaccineCardEnabled`
+       güncellenir; audit `audit:vaccine.card.portal_setting.
+       update` (info).
+    8. Görüntüleme: personel için PDF/çıktı (ileride),
+       portal için salt okunur. Aşı kartı verisi
+       hesaplanmış (derived) — ana kayıt `Vaccination` +
+       `VaccineProtocol`'dür; bu nedenle ayrı bir tablo YOK
+       (in-memory derive), DB göçünde materialized view planı.
+  keywords: [aşı kartı, vaccine card, takvim, portal,
+             tenant ayarı, overdue, upcoming, completed,
+             not_started, append-only derive]
+  related_chunks: [flow-vaccination, glossary-vaccine-protocol, glossary-patient, error-VET-CLINIC-0001, error-VET-AUTHZ-0002]
+  related_pages: []
+  related_api: [api.get._api_v1_clinic_vaccines_cards_patient__patientId_, api.get._api_v1_clinic_vaccines_cards_portal-setting, api.put._api_v1_clinic_vaccines_cards_portal-setting, api.get._api_v1_portal_vaccines_cards_patient__patientId_]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
