@@ -276,3 +276,26 @@
     global yakalama) + sentry/otel adapter opsiyonel +
     SUPERADMIN panel frontend (GOAL-103) + rate limit
     (token bucket per user) + retry/backoff stratejisi.
+  - GOAL-102 ⏳ partial — core: background job ve entegrasyon
+    logları. job-runs modülü (8 endpoint: POST start/POST
+    :id/finish/POST :id/retry/GET list/GET summary/GET
+    dead-letter/GET attempts/:jobKey/GET :id) + JobRun
+    sözleşmesi (JobRun + StartInput + FinishInput +
+    RetryInput + Filters + ListResponse +
+    AttemptsByKeyResponse + DeadLetterQuery + Summary +
+    20+ Zod şema) + 5 status (pending/running/succeeded/
+    failed/dead_letter) + 4 source (queue/adapter/cron/
+    system) + 4 triggeredBy (user/system/manual_retry/
+    integration) + failed → dead_letter otomatik terfi
+    (attempt >= maxAttempts) + parentRunId retry zinciri +
+    durationMs hesabı + PII mask input/output (PiiMasker
+    + truncate >100 key) + attemptsByKey view + dead-letter
+    view + summary aggregate (status + queue + 24h dead +
+    oldestRunning) + 40/40 yeni test + 1306/1306 api
+    regresyon geçti. SUPERADMIN yetkisi audit:log:read.
+    Cross-module: PiiMasker (common/logging); AuditService
+    ileride eklenecek. Sonraki tick: docs/RAG chunk/i18n
+    key parity + DB migration (Prisma) + cross-correlation
+    (ErrorEvents + JobRuns) + auto caller (BullMQ worker
+    integration) + Faz 10+ superadmin panel frontend
+    (GOAL-103) + tenant bazlı job kuyruğu görünümü.
