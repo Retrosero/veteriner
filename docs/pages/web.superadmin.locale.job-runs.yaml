@@ -1,0 +1,120 @@
+page_id: web.superadmin.locale.job-runs
+route: "/[locale]/superadmin/job-runs"
+module: superadmin
+title_key: superadmin.job_runs.title
+purpose:
+  tr-TR: "Tüm tenant'ların background job ve entegrasyon loglarını gösteren SUPERADMIN paneli. Filtreli arama, retry, dead-letter view, attempts-by-key."
+  en-GB: "SUPERADMIN panel that displays all tenants' background job and integration logs. Provides filtered search, retry, dead-letter view, and attempts-by-key."
+allowed_roles:
+  - SUPERADMIN
+required_permissions:
+  - "audit:log:read"
+prerequisites:
+  - "Kullanıcı SUPERADMIN rolüne sahip olmalı (GOAL-016)."
+fields:
+  - key: filters.queueName
+    label_key: superadmin.job_runs.filters.queue
+    description:
+      tr-TR: "BullMQ kuyruğu veya adapter adına göre filtrele."
+      en-GB: "Filter by BullMQ queue or adapter name."
+    type: string
+    required: false
+  - key: filters.status
+    label_key: superadmin.job_runs.filters.status
+    description:
+      tr-TR: "pending | running | succeeded | failed | dead_letter."
+      en-GB: "pending | running | succeeded | failed | dead_letter."
+    type: enum
+    required: false
+  - key: filters.source
+    label_key: superadmin.job_runs.filters.source
+    description:
+      tr-TR: "queue | adapter | cron | system."
+      en-GB: "queue | adapter | cron | system."
+    type: enum
+    required: false
+  - key: filters.tenantId
+    label_key: superadmin.job_runs.filters.tenant
+    description:
+      tr-TR: "Belirli bir tenant'ın job run'larını göster."
+      en-GB: "Show job runs for a specific tenant."
+    type: string
+    required: false
+  - key: list.items
+    label_key: superadmin.job_runs.list.items
+    description:
+      tr-TR: "Job run'lar; queueName, jobName, attempt, status, errorCode, startedAt, durationMs kolonları."
+      en-GB: "Job runs; columns: queueName, jobName, attempt, status, errorCode, startedAt, durationMs."
+    type: array
+    required: true
+  - key: summary.deadLetterLast24h
+    label_key: superadmin.job_runs.summary.dead_letter_24h
+    description:
+      tr-TR: "Son 24 saatteki dead-letter sayısı."
+      en-GB: "Dead-letter count in the last 24 hours."
+    type: number
+    required: true
+actions:
+  - key: view_detail
+    description:
+      tr-TR: "Job run detayını (input, output, errorStack) gösterir."
+      en-GB: "Show job run detail (input, output, errorStack)."
+    permission: "audit:log:read"
+  - key: retry
+    description:
+      tr-TR: "Yalnızca failed/dead_letter run'lar için manuel retry başlatır."
+      en-GB: "Trigger manual retry for failed/dead_letter runs only."
+    permission: "audit:log:read"
+  - key: view_attempts
+    description:
+      tr-TR: "Aynı jobKey için tüm retry geçmişini gösterir."
+      en-GB: "Show all retry history for the same jobKey."
+    permission: "audit:log:read"
+  - key: view_dead_letter
+    description:
+      tr-TR: "Yalnızca dead-letter view'ı açar."
+      en-GB: "Open dead-letter-only view."
+    permission: "audit:log:read"
+step_by_step:
+  tr-TR:
+    - "Tarayıcıdan /<locale>/superadmin/job-runs adresine git."
+    - "Üst kısımdaki filtrelerden queue, status, source, tenant seç."
+    - "Listeden bir kayda tıklayarak detay panelini aç."
+    - "input/output PII mask'lı görüntülenir; errorStack yalnızca failed/dead_letter için dolu."
+    - "Manuel retry için 'Retry' butonuna tıkla; yeni input/maxAttempts opsiyonel olarak girilebilir."
+    - "Aynı jobKey'in tüm denemelerini görmek için 'Attempts' butonuna tıkla."
+  en-GB:
+    - "Navigate to /<locale>/superadmin/job-runs in the browser."
+    - "Select queue, status, source, tenant from the top filters."
+    - "Click a row to open the detail panel."
+    - "input/output are displayed with PII masked; errorStack is populated only for failed/dead_letter."
+    - "For manual retry, click 'Retry'; new input/maxAttempts can be entered optionally."
+    - "To view all attempts of the same jobKey, click 'Attempts'."
+possible_errors:
+  - code: VET-AUDIT-0002
+    tr-TR: "Job run bulunamadı; ID yanlış veya silinmiş olabilir."
+    en-GB: "Job run not found; ID may be wrong or deleted."
+  - code: VET-JOBRUN-0001
+    tr-TR: "Run zaten terminal; tekrar finish edilemez."
+    en-GB: "Run is already terminal; cannot be finished again."
+  - code: VET-JOBRUN-0003
+    tr-TR: "Run retry için uygun değil (succeeded/running/pending)."
+    en-GB: "Run is not eligible for retry (succeeded/running/pending)."
+  - code: VET-AUTHZ-0001
+    tr-TR: "SUPERADMIN yetkisi yok."
+    en-GB: "Not a SUPERADMIN."
+related_pages: []
+related_api:
+  - "POST /api/v1/superadmin/job-runs"
+  - "POST /api/v1/superadmin/job-runs/{id}/finish"
+  - "POST /api/v1/superadmin/job-runs/{id}/retry"
+  - "GET /api/v1/superadmin/job-runs"
+  - "GET /api/v1/superadmin/job-runs/summary"
+  - "GET /api/v1/superadmin/job-runs/dead-letter"
+  - "GET /api/v1/superadmin/job-runs/attempts/{jobKey}"
+  - "GET /api/v1/superadmin/job-runs/{id}"
+keywords:
+  tr-TR: [job run, background job, BullMQ, queue, retry, dead letter, entegrasyon, SUPERADMIN]
+  en-GB: [job run, background job, BullMQ, queue, retry, dead letter, integration, SUPERADMIN]
+version: "1.0.0"
+last_verified_at: 2026-07-31

@@ -1,0 +1,186 @@
+page_id: web.superadmin.locale.error-center
+route: "/[locale]/superadmin/error-center"
+module: superadmin
+title_key: superadmin.error_center.title
+purpose:
+  tr-TR: "Tüm tenant'ların hata olaylarını (5xx + critical) gösteren SUPERADMIN paneli. Filtreli arama, fingerprint grupları, status yönetimi, atama, çözüm notu, destek bağlantısı ve birleşik audit log'a erişim sağlar."
+  en-GB: "SUPERADMIN panel that displays all tenants' error events (5xx + critical). Provides filtered search, fingerprint groups, status management, assignment, resolution notes, support link, and unified audit log."
+allowed_roles:
+  - SUPERADMIN
+required_permissions:
+  - "audit:log:read"
+prerequisites:
+  - "Kullanıcı SUPERADMIN rolüne sahip olmalı (GOAL-016)."
+  - "Actor context'inde tenantId yok (cross-tenant görünüm)."
+fields:
+  - key: filters.severity
+    label_key: superadmin.error_center.filters.severity
+    description:
+      tr-TR: "info | warning | error | critical seviyesine göre filtrele."
+      en-GB: "Filter by info | warning | error | critical level."
+    type: enum
+    required: false
+  - key: filters.module
+    label_key: superadmin.error_center.filters.module
+    description:
+      tr-TR: "auth | clinic | lab | inventory | payment | ... modüllerine göre filtrele."
+      en-GB: "Filter by module (auth, clinic, lab, inventory, payment, ...)."
+    type: enum
+    required: false
+  - key: filters.status
+    label_key: superadmin.error_center.filters.status
+    description:
+      tr-TR: "Hata durumuna göre filtrele: new | investigating | resolved | reopened."
+      en-GB: "Filter by error status: new | investigating | resolved | reopened."
+    type: enum
+    required: false
+  - key: filters.tenantId
+    label_key: superadmin.error_center.filters.tenant
+    description:
+      tr-TR: "Belirli bir tenant'ın hatalarını göster."
+      en-GB: "Show errors for a specific tenant."
+    type: string
+    required: false
+  - key: filters.from
+    label_key: superadmin.error_center.filters.from
+    description:
+      tr-TR: "firstSeenAt >= from."
+      en-GB: "firstSeenAt >= from."
+    type: datetime
+    required: false
+  - key: filters.to
+    label_key: superadmin.error_center.filters.to
+    description:
+      tr-TR: "lastSeenAt <= to."
+      en-GB: "lastSeenAt <= to."
+    type: datetime
+    required: false
+  - key: list.items
+    label_key: superadmin.error_center.list.items
+    description:
+      tr-TR: "Filtrelere uyan hata olayları; severity, module, errorCode, message, route, status, occurrenceCount, lastSeenAt kolonları."
+      en-GB: "Error events matching filters; columns: severity, module, errorCode, message, route, status, occurrenceCount, lastSeenAt."
+    type: array
+    required: true
+  - key: detail.context
+    label_key: superadmin.error_center.detail.context
+    description:
+      tr-TR: "PII mask'lı context alanı; request body field name'leri + query + headers."
+      en-GB: "PII-masked context field; request body field names + query + headers."
+    type: object
+    required: false
+  - key: detail.stack
+    label_key: superadmin.error_center.detail.stack
+    description:
+      tr-TR: "Stack trace; yalnızca 5xx + critical için dolu."
+      en-GB: "Stack trace; populated only for 5xx + critical."
+    type: string
+    required: false
+  - key: detail.transitions
+    label_key: superadmin.error_center.detail.transitions
+    description:
+      tr-TR: "Status geçiş kayıtları; append-only."
+      en-GB: "Status transition records; append-only."
+    type: array
+    required: false
+  - key: detail.notes
+    label_key: superadmin.error_center.detail.notes
+    description:
+      tr-TR: "Çözüm notları; append-only."
+      en-GB: "Resolution notes; append-only."
+    type: array
+    required: false
+  - key: detail.supportLinks
+    label_key: superadmin.error_center.detail.support_links
+    description:
+      tr-TR: "JIRA/Linear/Zendesk/GitHub destek kaydı bağlantıları."
+      en-GB: "JIRA/Linear/Zendesk/GitHub support ticket links."
+    type: array
+    required: false
+  - key: detail.assignments
+    label_key: superadmin.error_center.detail.assignments
+    description:
+      tr-TR: "Atama geçmişi; append-only."
+      en-GB: "Assignment history; append-only."
+    type: array
+    required: false
+actions:
+  - key: change_status
+    description:
+      tr-TR: "State machine'e uygun şekilde hata durumunu günceller."
+      en-GB: "Update error status according to state machine."
+    permission: "audit:log:read"
+  - key: assign
+    description:
+      tr-TR: "Geliştirici/sorumluya atar veya atamayı kaldırır."
+      en-GB: "Assign to developer/owner or unassign."
+    permission: "audit:log:read"
+  - key: add_note
+    description:
+      tr-TR: "Çözüm notu ekler; append-only."
+      en-GB: "Add a resolution note; append-only."
+    permission: "audit:log:read"
+  - key: add_support_link
+    description:
+      tr-TR: "JIRA/Linear/Zendesk/GitHub destek kaydı bağlantısı ekler."
+      en-GB: "Add a JIRA/Linear/Zendesk/GitHub support ticket link."
+    permission: "audit:log:read"
+  - key: view_detail
+    description:
+      tr-TR: "Hata olayının tüm detaylarını (context, stack, transitions, notes, supportLinks, assignments) gösterir."
+      en-GB: "View all details (context, stack, transitions, notes, supportLinks, assignments) of an error event."
+    permission: "audit:log:read"
+  - key: view_audit_log
+    description:
+      tr-TR: "Birleşik audit log'u occurredAt artan sırada gösterir."
+      en-GB: "Display unified audit log sorted by occurredAt ascending."
+    permission: "audit:log:read"
+step_by_step:
+  tr-TR:
+    - "Tarayıcıdan /<locale>/superadmin/error-center adresine git."
+    - "Üst kısımdaki filtrelerden severity, module, status, tenant, tarih aralığını seç."
+    - "Listeden bir kayda tıklayarak detay panelini aç."
+    - "Detay panelinde context, stack trace, status geçişleri, çözüm notları, destek bağlantıları, atama geçmişini incele."
+    - "Status değiştirmek için 'Durumu Güncelle' butonuna tıkla; state machine'e uygun bir sonraki adımı seç."
+    - "Geliştiriciye atamak için 'Ata' butonuna tıkla; kullanıcı ID'sini gir."
+    - "Çözüm notu eklemek için 'Not Ekle' butonuna tıkla; metni yaz (PII mask'lenir)."
+    - "Destek kaydı bağlamak için 'Destek Bağlantısı Ekle' butonuna tıkla; JIRA/Linear/Zendesk bilgilerini gir."
+  en-GB:
+    - "Navigate to /<locale>/superadmin/error-center in the browser."
+    - "Select severity, module, status, tenant, and date range from the top filters."
+    - "Click a row to open the detail panel."
+    - "Review context, stack trace, status transitions, resolution notes, support links, and assignment history in the detail panel."
+    - "To change status, click 'Update Status' and pick a state machine-compliant next step."
+    - "To assign, click 'Assign' and enter the user ID."
+    - "To add a resolution note, click 'Add Note' and enter the text (PII is masked)."
+    - "To add a support link, click 'Add Support Link' and enter JIRA/Linear/Zendesk details."
+possible_errors:
+  - code: VET-AUDIT-0001
+    tr-TR: "Hata olayı bulunamadı; ID yanlış veya silinmiş olabilir."
+    en-GB: "Error event not found; ID may be wrong or deleted."
+  - code: VET-ERRSTAT-0001
+    tr-TR: "Geçersiz hata durumu geçişi; state machine'e uygun bir sonraki adım seçin."
+    en-GB: "Invalid error status transition; choose a state machine-compliant next step."
+  - code: VET-AUTHZ-0001
+    tr-TR: "SUPERADMIN yetkisi yok."
+    en-GB: "Not a SUPERADMIN."
+related_pages: []
+related_api:
+  - "GET /api/v1/superadmin/error-events"
+  - "GET /api/v1/superadmin/error-events/summary"
+  - "GET /api/v1/superadmin/error-events/groups"
+  - "GET /api/v1/superadmin/error-events/{id}"
+  - "GET /api/v1/superadmin/error-events/{id}/transitions"
+  - "GET /api/v1/superadmin/error-events/{id}/notes"
+  - "POST /api/v1/superadmin/error-events/{id}/notes"
+  - "GET /api/v1/superadmin/error-events/{id}/support-links"
+  - "POST /api/v1/superadmin/error-events/{id}/support-links"
+  - "GET /api/v1/superadmin/error-events/{id}/assignments"
+  - "PATCH /api/v1/superadmin/error-events/{id}/assignment"
+  - "PATCH /api/v1/superadmin/error-events/{id}/status"
+  - "GET /api/v1/superadmin/error-events/{id}/audit-log"
+keywords:
+  tr-TR: [hata merkezi, hata olayı, fingerprint, SUPERADMIN, durum yönetimi, atama, çözüm notu, destek bağlantısı, audit log]
+  en-GB: [error center, error event, fingerprint, SUPERADMIN, status management, assignment, resolution note, support link, audit log]
+version: "1.0.0"
+last_verified_at: 2026-07-31

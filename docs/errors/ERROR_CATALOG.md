@@ -376,8 +376,9 @@ bu katalogda yer almasını zorunlu kılar.
 
 | Kod                  | Ad                          | HTTP | Severity | Kaynak | Çözüm                                |
 | -------------------- | --------------------------- | ---- | -------- | ------ | ------------------------------------ |
-| `VET-AUDIT-0001`     | Audit log yazılamadı        | 500  | critical | server | İşlem kritik; manuel müdahale gerekebilir. |
-| `VET-AUDIT-0002`     | Audit sorgu hatası          | 500  | error    | server | Filtreleri kontrol edin.             |
+| `VET-AUDIT-0001`     | Hata olayı bulunamadı       | 404  | warning  | server | Geçersiz veya silinmiş bir kayıt.    |
+| `VET-AUDIT-0002`     | Hata olayı sorgu hatası     | 500  | error    | server | Filtreleri kontrol edin.             |
+| `VET-ERRSTAT-0001`   | Geçersiz hata durumu geçişi | 422  | warning  | server | State machine'e uygun bir sonraki adım seçin. |
 
 ## Dosya (FILE)
 

@@ -5755,3 +5755,458 @@ generated_at: "2026-07-30"
     - "GET /api/v1/clinic/vaccines/protocols/{id}"
     - "PATCH /api/v1/clinic/vaccines/protocols/{id}"
     - "DELETE /api/v1/clinic/vaccines/protocols/{id}"
+
+# -----------------------------------------------------------------------------
+# GLOSSARY (ek) — Hata Olayı (GOAL-100)
+# -----------------------------------------------------------------------------
+# Source: apps/api/src/modules/error-events + packages/contracts/src/error-event.ts
+# 37 modül enum + 5 hata kodu (errorCode + module + normalizeMessage) →
+# 16 hex fingerprint. Aynı fingerprint tek bir hata sınıfını temsil eder;
+# duplicate event'ler occurrenceCount ile takip edilir.
+
+- chunk_id: glossary-error-event
+  type: glossary
+  source: packages/contracts/src/error-event.ts
+  entity: error_event
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-31
+  confidence: high
+  pii: false
+  title: "Hata Olayı (ErrorEvent)"
+  content: |
+    Hata olayı, NestJS AllExceptionsFilter tarafından yakalanan
+    5xx + critical hataların merkezi kaydıdır. Her olay
+    request_id, tenant, branch, user, module, route, release,
+    severity, fingerprint, sanitize edilmiş context ve
+    statusCode taşır. Aynı fingerprint için duplicate
+    event'ler occurrenceCount ile takip edilir (Faz 10'da
+    in-memory Map; production'a geçişte Prisma tablosu).
+    PII mask'lı; stack trace yalnızca 5xx + critical için
+    dolu. SUPERADMIN hata merkezi (GOAL-103) tek satırlık
+    gruplama + status yönetimi + atama + çözüm notu
+    (GOAL-104) + destek kaydı bağlantısı + birleşik audit
+    log sunar.
+  keywords: [hata olayı, error event, fingerprint, severity,
+             SUPERADMIN, hata merkezi, AllExceptionsFilter,
+             VET-AUDIT-0001, VET-ERRSTAT-0001, audit:error_event.*]
+  related_chunks: [flow-error-capture, flow-error-status,
+                   flow-error-assignment, error-VET-AUDIT-0001,
+                   error-VET-ERRSTAT-0001, error-VET-AUTHZ-0001]
+  related_pages: [web.superadmin.locale.error-center]
+  related_api:
+    - "GET /api/v1/superadmin/error-events"
+    - "GET /api/v1/superadmin/error-events/summary"
+    - "GET /api/v1/superadmin/error-events/groups"
+    - "GET /api/v1/superadmin/error-events/{id}"
+    - "PATCH /api/v1/superadmin/error-events/{id}/status"
+    - "GET /api/v1/superadmin/error-events/{id}/audit-log"
+    - "POST /api/v1/system/error-events"
+
+# -----------------------------------------------------------------------------
+# GLOSSARY (ek) — Job Run (GOAL-102)
+# -----------------------------------------------------------------------------
+# Source: apps/api/src/modules/job-runs + packages/contracts/src/job-run.ts
+# 5 status (pending/running/succeeded/failed/dead_letter) +
+# 4 source (queue/adapter/cron/system) +
+# 4 triggeredBy (user/system/manual_retry/integration).
+
+- chunk_id: glossary-job-run
+  type: glossary
+  source: packages/contracts/src/job-run.ts
+  entity: job_run
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-31
+  confidence: high
+  pii: false
+  title: "Job Run (Background Job ve Entegrasyon Logu)"
+  content: |
+    JobRun, BullMQ kuyruğu, dış entegrasyon çağrısı, cron
+    tetikleyicisi veya sistem aksiyonu için tek bir
+    denemeye karşılık gelen SUPERADMIN görünürlüğündeki
+    kayıttır. `queueName + jobName + jobKey` üçlüsü
+    benzersizdir; aynı jobKey için retry zinciri
+    `parentRunId` ile birbirine bağlanır. Status: pending,
+    running, succeeded, failed, dead_letter. Source: queue,
+    adapter, cron, system. TriggeredBy: user, system,
+    manual_retry, integration. `attempt >= maxAttempts`
+    olan failed otomatik dead_letter'a terfi eder.
+    `input` ve `output` PII mask'lı; `errorStack` yalnızca
+    failed/dead_letter için dolu. SUPERADMIN summary +
+    dead-letter + attempts-by-key view'ları operatörün
+    işini kolaylaştırır.
+  keywords: [job run, background job, BullMQ, queue, retry,
+             dead letter, integration, VET-JOBRUN-0001,
+             VET-JOBRUN-0002, VET-JOBRUN-0003,
+             VET-INTEGRATION-0001, audit:job_run.*]
+  related_chunks: [flow-job-run, error-VET-AUDIT-0002,
+                   error-VET-AUTHZ-0001]
+  related_pages: [web.superadmin.locale.job-runs]
+  related_api:
+    - "POST /api/v1/superadmin/job-runs"
+    - "POST /api/v1/superadmin/job-runs/{id}/finish"
+    - "POST /api/v1/superadmin/job-runs/{id}/retry"
+    - "GET /api/v1/superadmin/job-runs"
+    - "GET /api/v1/superadmin/job-runs/summary"
+    - "GET /api/v1/superadmin/job-runs/dead-letter"
+    - "GET /api/v1/superadmin/job-runs/attempts/{jobKey}"
+    - "GET /api/v1/superadmin/job-runs/{id}"
+
+# -----------------------------------------------------------------------------
+# FLOW — Merkezi Backend Hata Yakalama (GOAL-100)
+# -----------------------------------------------------------------------------
+# Source: apps/api/src/common/filters/all-exceptions.filter.ts +
+#         apps/api/src/modules/error-events
+# 5xx + critical hatalar tek bir noktada yakalanır; fingerprint
+# ile gruplanır; SUPERADMIN panelinden izlenir.
+
+- chunk_id: flow-error-capture
+  type: flow
+  source: apps/api/src/modules/error-events
+  entity: error_event
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-31
+  confidence: high
+  pii: false
+  title: "Merkezi Backend Hata Yakalama Akışı"
+  content: |
+    Backend'de oluşan 5xx hataları ile critical 4xx hataları
+    `AllExceptionsFilter` tarafından yakalanır. Filter
+    `ErrorEventsService.recordError` çağrısı yapar; bu metot
+    `errorCode + module + normalizeMessage(message)`'dan 16
+    hex `fingerprint` üretir. Aynı fingerprint için mevcut
+    kayıt varsa `occurrenceCount` artırılır, `lastSeenAt`
+    güncellenir. `status === 'resolved'` olan kayıt için
+    yeni hata oluştuğunda otomatik `resolved → reopened`
+    terfisi yapılır. Modül seçimi öncelik sırasıyla:
+    `derivedModule` (test override) → `input.module` (filter
+    tarafı) → `moduleFromRoute(route)` (path'ten türetme).
+    Stack trace yalnızca 5xx + critical için saklanır;
+    `context` her zaman PiiMasker'dan geçirilir.
+
+    Frontend (tarayıcı) hataları `error-reporter.ts`
+    (apps/web) tarafından batch'lenir ve
+    `POST /api/v1/system/error-events` endpoint'ine
+    gönderilir. Backend'te `recordClientError` aktör
+    bağlamından tenant/branch/userId/actorType türetir;
+    istemciden gelen bu alanlara GÜVENİLMEZ
+    (impersonation saldırısına karşı).
+
+    Permission: `audit:log:read` (SUPERADMIN panel).
+  keywords: [hata yakalama, AllExceptionsFilter, fingerprint,
+             merkezi hata, frontend hata raporu, error-reporter,
+             sendBeacon, dedup, PII mask,
+             VET-AUDIT-0001, audit:error_event.*]
+  related_chunks: [glossary-error-event, flow-error-status,
+                   flow-client-error-report]
+  related_pages: [web.superadmin.locale.error-center,
+                  web.app.locale.error-boundary]
+  related_api:
+    - "GET /api/v1/superadmin/error-events"
+    - "GET /api/v1/superadmin/error-events/summary"
+    - "GET /api/v1/superadmin/error-events/fingerprints/{fingerprint}"
+    - "GET /api/v1/superadmin/error-events/{id}"
+    - "POST /api/v1/system/error-events"
+
+# -----------------------------------------------------------------------------
+# FLOW — Hata Durum Yönetimi (GOAL-103)
+# -----------------------------------------------------------------------------
+# State machine: new → investigating ↔ resolved ↔ reopened.
+
+- chunk_id: flow-error-status
+  type: flow
+  source: apps/api/src/modules/error-events/error-events.service.ts
+  entity: error_event
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-31
+  confidence: high
+  pii: false
+  title: "Hata Durum Yönetimi (State Machine)"
+  content: |
+    SUPERADMIN hata merkezi durum yönetimi dört state'ten
+    oluşur: `new → investigating`, `investigating ↔ new`,
+    `investigating → resolved`, `resolved → reopened`,
+    `resolved → investigating`, `reopened → investigating`,
+    `reopened → resolved`. Her geçiş append-only
+    `errorEventStatusTransition` kaydı oluşturur
+    (actorId, actorType, reason, occurredAt). Geçersiz
+    geçişler 422 `VET-ERRSTAT-0001` ile reddedilir.
+    `resolved` durumdaki bir kayıt için yeni hata
+    oluştuğunda (fingerprint tekrarı) otomatik
+    `resolved → reopened` terfisi tetiklenir; bu sistem
+    kaynaklı bir geçiş olduğu için `actorId='system'`
+    ile log'a yazılır. Status değişikliği
+    `audit:error_event.status_change` audit olayı
+    üretir (info). `assignedToUserId` opsiyonel olarak
+    status ile birlikte güncellenebilir; salt atama
+    aksiyonu için `PATCH /:id/assignment` (GOAL-104)
+    kullanılır.
+  keywords: [hata durumu, state machine, status transition,
+             resolved, reopened, investigating, new,
+             VET-ERRSTAT-0001, audit:error_event.status_change]
+  related_chunks: [glossary-error-event, flow-error-capture,
+                   flow-error-assignment]
+  related_pages: [web.superadmin.locale.error-center]
+  related_api:
+    - "PATCH /api/v1/superadmin/error-events/{id}/status"
+    - "GET /api/v1/superadmin/error-events/{id}/transitions"
+    - "GET /api/v1/superadmin/error-events/{id}/audit-log"
+
+# -----------------------------------------------------------------------------
+# FLOW — Hata Atama ve Çözüm Notları (GOAL-104)
+# -----------------------------------------------------------------------------
+# SUPERADMIN atama + çözüm notu + destek bağlantısı +
+# birleşik audit log.
+
+- chunk_id: flow-error-assignment
+  type: flow
+  source: apps/api/src/modules/error-events/error-events.service.ts
+  entity: error_event
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-31
+  confidence: high
+  pii: false
+  title: "Hata Atama, Çözüm Notu ve Destek Bağlantısı"
+  content: |
+    SUPERADMIN bir hata olayını geliştirici/sorumluya
+    atayabilir (`PATCH /:id/assignment`) veya atamayı
+    kaldırabilir (`unassign=true`). Her atama/unassign
+    append-only `errorEventAssignment` kaydı oluşturur
+    (assigneeId, assignorId, action, assignedAt).
+    Status değiştirmez; status yönetimi ayrı bir
+    PATCH endpoint'idir.
+
+    Çözüm notları (`POST /:id/notes`) append-only'dur;
+    silinemez veya düzeltilemez; düzeltme yeni not
+    ile yapılır. `visibility: internal | shared`
+    (FAZ-12+'da tenant yöneticileriyle paylaşım için
+    rezerve).
+
+    Destek kaydı bağlantıları (`POST /:id/support-links`)
+    JIRA/Linear/Zendesk/GitHub gibi dış sistemlerle
+    ilişki kurar; en az biri zorunlu (system veya
+    externalId veya url veya title).
+
+    Birleşik audit log (`GET /:id/audit-log`) tüm
+    aksiyonları (status transition + not + destek
+    bağlantısı + atama + occurrence_recorded)
+    occurredAt artan sırada döner; UI `action`
+    discriminator'ı ile render eder.
+  keywords: [hata atama, çözüm notu, destek bağlantısı,
+             audit log, JIRA, Linear, Zendesk, GitHub,
+             append-only, audit:error_event.*]
+  related_chunks: [glossary-error-event, flow-error-status]
+  related_pages: [web.superadmin.locale.error-center]
+  related_api:
+    - "PATCH /api/v1/superadmin/error-events/{id}/assignment"
+    - "GET /api/v1/superadmin/error-events/{id}/assignments"
+    - "POST /api/v1/superadmin/error-events/{id}/notes"
+    - "GET /api/v1/superadmin/error-events/{id}/notes"
+    - "POST /api/v1/superadmin/error-events/{id}/support-links"
+    - "GET /api/v1/superadmin/error-events/{id}/support-links"
+    - "GET /api/v1/superadmin/error-events/{id}/audit-log"
+
+# -----------------------------------------------------------------------------
+# FLOW — Frontend Hata Raporu (GOAL-101)
+# -----------------------------------------------------------------------------
+
+- chunk_id: flow-client-error-report
+  type: flow
+  source: apps/web/src/lib/error-reporter.ts
+  entity: client_error
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-31
+  confidence: high
+  pii: true
+  title: "Frontend Hata Raporu (Browser → Backend)"
+  content: |
+    Tarayıcıda oluşan hatalar (Next.js runtime, API
+    çağrıları, React render) `error-reporter.ts`
+    tarafından yakalanır. Reporter PII mask
+    (email/TCKN/telefon/CC) uygular; `maxQueueSize=50`,
+    `dedupWindowMs=1000`, `flushIntervalMs=2000`.
+    `navigator.sendBeacon` sayfa unload'ında senkron
+    flush yapar; navigator yoksa atlanır. Reporter
+    hiçbir koşulda throw etmez.
+
+    Batch'lenen raporlar `POST /api/v1/system/error-events`
+    endpoint'ine gönderilir. Backend'te
+    `recordClientError` istemciden gelen `tenantId`/
+    `branchId`/`userId`/`actorType`/`requestId`
+    alanlarına GÜVENİLMEZ; bunlar `ActorContext`'ten
+    türetilir (impersonation saldırısına karşı).
+    `severity` 5xx→error, 4xx→warning şeklinde
+    eşlenebilir. `errorCode` opsiyonel; gelmezse
+    `VET-CLIENT-0001` atanır. Response'ta
+    `id + fingerprint` korelasyon için döner.
+
+    Auth placeholder'ı tüm oturum açmış kullanıcılara
+    (personel + portal) açıktır; gerçek auth devreye
+    girdiğinde JWT/session doğrulaması
+    `ActorContextService` üzerinden otomatik sağlanır.
+  keywords: [frontend hata, browser error, error-reporter,
+             sendBeacon, PII mask, dedup, severity mapping,
+             VET-CLIENT-0001, audit:error_event.client_report]
+  related_chunks: [glossary-error-event, flow-error-capture]
+  related_pages: [web.app.locale.error-boundary]
+  related_api:
+    - "POST /api/v1/system/error-events"
+
+# -----------------------------------------------------------------------------
+# FLOW — Job Run Lifecycle (GOAL-102)
+# -----------------------------------------------------------------------------
+
+- chunk_id: flow-job-run
+  type: flow
+  source: apps/api/src/modules/job-runs
+  entity: job_run
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-31
+  confidence: high
+  pii: false
+  title: "Job Run Yaşam Döngüsü"
+  content: |
+    JobRun, BullMQ kuyruğu, adapter, cron veya
+    sistem aksiyonu için tek denemeye karşılık
+    gelen kayıttır. Lifecycle:
+    `pending → running → {succeeded | failed |
+    dead_letter}`. `failed` durumda `attempt <
+    maxAttempts` ise yeni run `parentRunId` zinciri
+    ile başlatılır; `attempt >= maxAttempts` ise
+    otomatik `dead_letter`'a terfi edilir.
+
+    SUPERADMIN operatör için 8 endpoint sunar:
+    start (`POST /`), finish (`POST /:id/finish`),
+    retry (`POST /:id/retry`), list (`GET /`),
+    summary (`GET /summary`), dead-letter
+    (`GET /dead-letter`), attempts-by-key
+    (`GET /attempts/:jobKey`), detail (`GET /:id`).
+
+    PII mask'lı: `input` ve `output` kaydedilirken
+    PiiMasker'dan geçirilir; `errorStack` yalnızca
+    failed/dead_letter için dolu. `durationMs`
+    otomatik hesaplanır. SUPERADMIN yetkisi
+    `audit:log:read` ile korunur.
+  keywords: [job run, background job, lifecycle, retry,
+             dead letter, BullMQ, PII mask, summary,
+             audit:job_run.*]
+  related_chunks: [glossary-job-run, error-VET-JOBRUN-0001,
+                   error-VET-JOBRUN-0003]
+  related_pages: [web.superadmin.locale.job-runs]
+  related_api:
+    - "POST /api/v1/superadmin/job-runs"
+    - "POST /api/v1/superadmin/job-runs/{id}/finish"
+    - "POST /api/v1/superadmin/job-runs/{id}/retry"
+    - "GET /api/v1/superadmin/job-runs"
+    - "GET /api/v1/superadmin/job-runs/summary"
+    - "GET /api/v1/superadmin/job-runs/dead-letter"
+    - "GET /api/v1/superadmin/job-runs/attempts/{jobKey}"
+    - "GET /api/v1/superadmin/job-runs/{id}"
+
+
+# -----------------------------------------------------------------------------
+# GLOSSARY (ek) � G�venlik Olay� (GOAL-105)
+# -----------------------------------------------------------------------------
+# Source: apps/api/src/modules/security-events +
+#         packages/contracts/src/security-event.ts
+# 5 type � 4 severity. Default type�severity/errorCode map.
+# Critical olayda pluggable alarm adapter tetiklenir.
+
+- chunk_id: glossary-security-event
+  type: glossary
+  source: packages/contracts/src/security-event.ts
+  entity: security_event
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-31
+  confidence: high
+  pii: true
+  title: "G�venlik Olay� (SecurityEvent)"
+  content: |
+    G�venlik olay�, auth/RBAC/tenant guard katmanlar�ndan ve
+    frontend'ten g�nderilen 5 farkl� tipte g�venlik sinyalinin
+    merkezi kayd�d�r: failed_login, unauthorized_access_attempt,
+    suspicious_export, role_change, tenant_isolation_breach_attempt.
+    Her olay requestId, tenant, branch, user, module, route,
+    release, severity (info|warning|error|critical), fingerprint,
+    mask'l� IP, k�sa userAgent hash, sanitize edilmi� context
+    ve default errorCode ta��r. Critical olayda pluggable
+    `SecurityAlertAdapter` (default Noop) tetiklenir; `success=true`
+    d�nerse `alertSent=true` korunur. Ayn� fingerprint i�in
+    duplicate event''ler `occurrenceCount` ile takip edilir.
+  keywords: [g�venlik olay�, security event, failed login,
+             unauthorized access, suspicious export, role change,
+             tenant isolation breach, alarm adapter, VET-AUTH-0002,
+             VET-AUTHZ-0002, VET-AUDIT-0002, VET-RBAC-0002,
+             VET-TENANT-0002, VET-SEC-0001]
+  related_chunks: [flow-security-event, error-VET-AUTH-0002,
+                   error-VET-AUTHZ-0002, error-VET-AUDIT-0002,
+                   error-VET-RBAC-0002, error-VET-TENANT-0002]
+  related_pages: [web.superadmin.locale.security-events]
+  related_api:
+    - "GET /api/v1/superadmin/security-events"
+    - "GET /api/v1/superadmin/security-events/summary"
+    - "GET /api/v1/superadmin/security-events/{id}"
+    - "POST /api/v1/system/security-events"
+
+# -----------------------------------------------------------------------------
+# FLOW � G�venlik Olay� Kayd� (GOAL-105)
+# -----------------------------------------------------------------------------
+# 5 type � 4 severity � default errorCode map. Critical � alarm adapter.
+
+- chunk_id: flow-security-event
+  type: flow
+  source: apps/api/src/modules/security-events/security-events.service.ts
+  entity: security_event
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-31
+  confidence: high
+  pii: true
+  title: "G�venlik Olay� Kayd� ve Alarm Ak���"
+  content: |
+    Auth guard, RBAC guard, tenant guard ve d�� katmanlar
+    `recordSecurityEvent(input, actor)` �a�r�s� yapar; bu
+    metot `type + module + normalizeMessage(message)`''dan
+    16 hex `fingerprint` �retir. Ayn� fingerprint i�in
+    mevcut kay�t varsa `occurrenceCount` art�r�l�r.
+    `severity === "critical" && !alertSent` ise
+    `SECURITY_ALERT_ADAPTER` token'� ile DI edilen
+    `SecurityAlertAdapter.sendAlert(event)` �a�r�l�r.
+    Adapter `success=true` d�nerse `repo.markAlertSent`
+    ile `alertSent=true` yap�l�r; `success=false` veya
+    throw ise `alertSent=false` korunur.
+
+    Frontend taraf� `recordClientSecurityEvent` �zerinden
+    (System namespace, oturum gerekli) aktar�m yapar;
+    istemciden gelen `tenantId/branchId/userId/actorType/
+    requestId` alanlar�na G�VEN�LMEZ; bunlar
+    `ActorContext`'ten t�retilir.
+
+    Permission: `audit:log:read` (SUPERADMIN panel).
+    5 type default errorCode map'i: failed_login�
+    VET-AUTH-0002, unauthorized_access_attempt�
+    VET-AUTHZ-0002, suspicious_export�VET-AUDIT-0002,
+    role_change�VET-RBAC-0002, tenant_isolation_breach_attempt�
+    VET-TENANT-0002. Default severity: warning | warning |
+    error | info | critical.
+
+    IP `192.168.1.***` format�nda mask'l�; userAgent 8 hex
+    hash. Cross-tenant fingerprint �ak��mas� i�in caller
+    `message` alan�na tenant ID'sini dahil etmelidir.
+  keywords: [g�venlik kayd�, alarm, security alert, alert adapter,
+             VET-AUTH-0002, VET-AUTHZ-0002, VET-AUDIT-0002,
+             VET-RBAC-0002, VET-TENANT-0002]
+  related_chunks: [glossary-security-event, flow-error-capture]
+  related_pages: [web.superadmin.locale.security-events]
+  related_api:
+    - "GET /api/v1/superadmin/security-events"
+    - "GET /api/v1/superadmin/security-events/summary"
+    - "GET /api/v1/superadmin/security-events/{id}"
+    - "POST /api/v1/system/security-events"
