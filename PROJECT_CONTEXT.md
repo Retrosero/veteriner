@@ -29,6 +29,7 @@
     (sahipten bağımsız) + iade (refund) transaction tipi
     için destek.
 
+  - GOAL-080 ✅ Ameliyat planlama (tamamlandı — 2026-07-30, core: 6596ae0, docs/i18n: bu commit). 7 endpoint (POST/GET list/GET :id/PATCH/POST :id/start/POST :id/complete/POST :id/cancel); state machine planned→in_progress→completed|cancelled; onam (GOAL-081) zorunlu start'tan önce; anesthesiaType (local/regional/general/sedation). Audit udit:surgery_plan.{create,update,start,complete,cancel}. Anestezi (GOAL-082) + operasyon notu (GOAL-083) entegre.
   - GOAL-080 ⏳ partial — core: ameliyat planlama. surgery-plans
     modülü (7 endpoint: create/list/get/update/start/
     complete/cancel) + 4 durum (scheduled/in_progress/

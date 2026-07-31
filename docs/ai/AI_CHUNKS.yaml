@@ -1371,6 +1371,50 @@ generated_at: "2026-07-30"
                 api.post._api_v1_esmm_documents__id_retry,
                 api.post._api_v1_esmm_documents__id_cancel]
 
+- chunk_id: flow-surgery-plan
+  type: flow
+  source: packages/contracts/src/surgery-plan.ts
+  entity: surgery_plan
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Ameliyat Planlama Akışı (Surgery Plan)"
+  content: |
+    1. Ameliyat planı (SurgeryPlan). State: `planned` →
+       `in_progress` → `completed` | `cancelled`.
+    2. Oluşturma: `patientId` + `surgeonId` + `scheduledAt`
+       + `procedureName` zorunlu. `anesthesiaType`
+       (local/regional/general/sedation) opsiyonel.
+    3. Güncelleme: yalnızca `planned`.
+    4. Başlatma: `planned` → `in_progress`. Onam (GOAL-081)
+       imzalanmadan başlatılamaz (409).
+    5. Tamamlama: `in_progress` → `completed`. `outcome` +
+       opsiyonel `complications` + `followUpNotes`.
+    6. İptal: `planned` veya `in_progress` → `cancelled`.
+       `in_progress` iken iptal anestezi/operasyon
+       notu acil kapatma tetikler.
+    7. Anestezi (GOAL-082) + operasyon notu (GOAL-083)
+       entegre.
+    8. Audit: `audit:surgery_plan.{create,update,start,
+       complete,cancel}` (info/warning). Cancel'de
+       `reason` + `previousStatus` payload.
+  keywords: [ameliyat, surgery, planlama, başlatma,
+             tamamlama, iptal, onam, anestezi, operasyon
+             notu, hasta, veteriner]
+  related_chunks: [flow-consent, flow-anesthesia,
+                   flow-operation-note, flow-patient,
+                   error-VET-SURGERY-0001]
+  related_pages: []
+  related_api: [api.post._api_v1_clinic_surgery-plans,
+                api.get._api_v1_clinic_surgery-plans,
+                api.get._api_v1_clinic_surgery-plans__id_,
+                api.patch._api_v1_clinic_surgery-plans__id_,
+                api.post._api_v1_clinic_surgery-plans__id_start,
+                api.post._api_v1_clinic_surgery-plans__id_complete,
+                api.post._api_v1_clinic_surgery-plans__id_cancel]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
