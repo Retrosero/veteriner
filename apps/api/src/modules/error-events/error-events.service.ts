@@ -31,6 +31,8 @@ import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import { PiiMasker } from "../../common/logging/pii-masker.js";
 import type {
+  ClientErrorReportInput,
+  ClientErrorReportResponse,
   ErrorEvent,
   ErrorEventCreateInput,
   ErrorEventFilters,
@@ -459,5 +461,61 @@ export class ErrorEventsService {
     } catch {
       return {};
     }
+  }
+
+  // -------------------------------------------------------------------------
+  // recordClientError (GOAL-101 frontend hata yakalama)
+  // -------------------------------------------------------------------------
+
+  /**
+   * Frontend (tarayıcı) kaynaklı hata raporunu kabul eder ve
+   * standart ErrorEvent akışına yönlendirir. Tenant/branch/userId/
+   * actorType/requestId/country bilgileri **aktör bağlamından**
+   * türetilir; istemcinin gönderdiği değerlere güvenilmez.
+   *
+   * - `route` istemciden gelir, ancak tenant/branch ile birlikte
+   *   modül tespitinde kullanılır.
+   * - `errorCode` istemcide bilinmiyorsa generic frontend kodu
+   *   atanır; backend tarafı doğrulamaz.
+   * - Severity `info` veya `warning` ise stack trace saklanmaz;
+   *   `error` veya `critical` ise saklanır.
+   * - Client fingerprint hesaplamaz; backend'in tutarlı
+   *   `computeFingerprint` algoritması kullanılır.
+   *
+   * @security Hassas form verilerinin istemcide zaten mask'lı
+   *   gönderilmesi beklenir; backend yine de context'i bir
+   *   kez daha PiiMasker'dan geçirir (savunma derinliği).
+   */
+  public recordClientError(
+    input: ClientErrorReportInput,
+    actor: ActorContext,
+    requestId: string,
+  ): ClientErrorReportResponse {
+    const errorCode = (input.errorCode ?? "TR_FE_0001") as ErrorEventCreateInput["errorCode"];
+
+    const createInput: ErrorEventCreateInput = {
+      requestId,
+      tenantId: actor.tenantId,
+      branchId: actor.branchId,
+      userId: actor.actorId,
+      actorType: actor.actorType,
+      module: moduleFromRoute(input.route),
+      route: input.route,
+      release: input.release ?? APP_RELEASE,
+      severity: input.severity,
+      errorCode,
+      message: input.message,
+      statusCode: 0,
+      stack: input.stack ?? null,
+      context: input.context,
+      country: input.country ?? "SYSTEM",
+      occurredAt: input.occurredAt,
+    };
+
+    const event = this.recordError(createInput);
+    return {
+      id: event.id,
+      fingerprint: event.fingerprint,
+    };
   }
 }

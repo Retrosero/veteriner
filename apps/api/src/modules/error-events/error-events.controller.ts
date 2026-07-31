@@ -3,25 +3,38 @@
  * @module apps/api/modules/error-events/error-events.controller
  *
  * @description GOAL-100 (FAZ-10) Superadmin hata merkezi için
- * read-only REST API.
+ * read-only REST API. GOAL-101 ile birlikte frontend kaynaklı
+ * hata raporlarını kabul eden `POST /api/v1/system/error-events`
+ * endpoint'i de bu modülden dışa açılır; ayrı bir controller
+ * olarak düzenlenmiştir (tenant context'i farklı).
  *
- * Endpoint'ler:
+ * Endpoint'ler (SUPERADMIN - audit:log:read):
  * - `GET /api/v1/superadmin/error-events`             — Filtreli liste
  * - `GET /api/v1/superadmin/error-events/summary`     — Özet (severity/module)
  * - `GET /api/v1/superadmin/error-events/fingerprints/:fingerprint` — Fingerprint detayı
  * - `GET /api/v1/superadmin/error-events/:id`         — Tek olay detayı
  *
- * @security Yalnızca SUPERADMIN (`audit:log:read` permission).
- *   PII mask'lı context response'da yer alır. Stack trace
- *   yalnızca 5xx + critical için dolu.
+ * Endpoint'ler (System - frontend raporu, oturum gerekli):
+ * - `POST /api/v1/system/error-events`               — Frontend hata raporu
+ *
+ * @security SUPERADMIN uçları `audit:log:read` permission'ı
+ *   gerektirir; PII mask'lı context response'da yer alır. Stack
+ *   trace yalnızca 5xx + critical için dolu. Frontend rapor uçnda
+ *   ise auth placeholder'ı yeterlidir; impersonation saldırılarına
+ *   karşı tenant/branch/userId/actorType/requestId/country
+ *   istemciden alınmaz, aktör bağlamından türetilir.
  *
  * @since GOAL-100 (FAZ-10) merkezi backend hata yakalama core
+ *        GOAL-101 (FAZ-10) frontend hata yakalama core
  */
 
 import {
+  Body,
   Controller,
   Get,
+  Headers,
   Param,
+  Post,
   Query,
   UseGuards,
 } from "@nestjs/common";
@@ -33,8 +46,11 @@ import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
 import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
 import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
+  clientErrorReportInputSchema,
   errorEventFiltersSchema,
   errorEventSummaryQuerySchema,
+  type ClientErrorReportInput,
+  type ClientErrorReportResponse,
   type ErrorEvent,
   type ErrorEventFilters,
   type ErrorEventListResponse,
@@ -115,5 +131,53 @@ export class ErrorEventsController {
     @CurrentActor() actor: ActorContext,
   ): Promise<ErrorEvent> {
     return this.service.getErrorEventDetail(id, actor);
+  }
+}
+
+/**
+ * Frontend (tarayıcı) tarafından gönderilen hata raporlarını
+ * kabul eden controller. `system` namespace'i altında tutulur
+ * çünkü SUPERADMIN paneline değil, oturum açmış tüm kullanıcılara
+ * (personel + portal) açıktır.
+ *
+ * İstemciden gelen tenant/branch/userId/actorType/requestId
+ * bilgilerine GÜVENİLMEZ; bunlar aktör bağlamından türetilir.
+ * İstemci yalnızca severity, message, stack (opsiyonel), context
+ * (PII mask'lı), route, occurredAt (opsiyonel), release (opsiyonel)
+ * ve country (opsiyonel) bilgilerini gönderir.
+ *
+ * Auth placeholder'ı bu endpoint'i kabul eder; gerçek auth
+ * devreye girdiğinde JWT/session doğrulaması `ActorContextService`
+ * üzerinden otomatik sağlanır.
+ *
+ * @since GOAL-101 (FAZ-10) frontend hata yakalama core
+ */
+@ApiTags("system/error-events")
+@Controller("api/v1/system/error-events")
+export class SystemErrorEventsController {
+  public constructor(private readonly service: ErrorEventsService) {}
+
+  @Post()
+  @ApiOperation({
+    operationId: "clientErrorReport",
+    summary: "Frontend hata raporu (oturum gerekli)",
+    description:
+      "Next.js runtime, API ve kullanıcı arayüzü hatalarını merkezi " +
+      "sisteme gönderir. Severity, message, route zorunlu; geri kalan " +
+      "opsiyonel. Hassas form verileri gönderilmez; backend context'i " +
+      "PiiMasker'dan geçirir.",
+  })
+  @ApiResponse({ status: 201, description: "Hata kaydı oluşturuldu." })
+  @ApiResponse({ status: 400, description: "Geçersiz payload." })
+  public report(
+    @Body(new ZodValidationPipe(clientErrorReportInputSchema))
+    body: ClientErrorReportInput,
+    @CurrentActor() actor: ActorContext,
+    @Headers("x-request-id") headerRequestId?: string,
+  ): ClientErrorReportResponse {
+    // X-Request-Id header'ı upstream korelasyon için kullanılır;
+    // gelmezse actor.correlationId'e düşer.
+    const requestId = headerRequestId ?? actor.correlationId;
+    return this.service.recordClientError(body, actor, requestId);
   }
 }

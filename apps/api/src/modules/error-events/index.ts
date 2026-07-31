@@ -8,7 +8,10 @@
 export { ErrorEventsModule } from "./error-events.module.js";
 export { ErrorEventsService } from "./error-events.service.js";
 export { ErrorEventsRepository } from "./error-events.repository.js";
-export { ErrorEventsController } from "./error-events.controller.js";
+export {
+  ErrorEventsController,
+  SystemErrorEventsController,
+} from "./error-events.controller.js";
 export {
   moduleFromRoute,
   computeFingerprint,

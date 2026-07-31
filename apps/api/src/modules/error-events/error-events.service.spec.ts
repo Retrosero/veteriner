@@ -422,3 +422,189 @@ describe("computeFingerprint", () => {
     expect(a).toMatch(/^[0-9a-f]{16}$/);
   });
 });
+
+// -------------------------------------------------------------------------
+// recordClientError (GOAL-101 frontend hata yakalama)
+// -------------------------------------------------------------------------
+
+describe("ErrorEventsService.recordClientError", () => {
+  let service: ErrorEventsService;
+  let repo: ErrorEventsRepository;
+
+  beforeEach(() => {
+    repo = new ErrorEventsRepository();
+    service = new ErrorEventsService(repo);
+  });
+
+  it("minimum input ile kayıt oluşturur", () => {
+    const out = service.recordClientError(
+      {
+        severity: "error",
+        message: "Component X is undefined",
+        route: "GET /tr-TR/dashboard",
+      },
+      STAFF_A,
+      "req-client-1",
+    );
+    expect(out.id).toMatch(/^err-/);
+    expect(out.fingerprint).toHaveLength(16);
+  });
+
+  it("actor bağlamından tenant/branch/userId türetilir", () => {
+    service.recordClientError(
+      {
+        severity: "warning",
+        message: "Toast render failed",
+        route: "GET /tr-TR/clinic/patient",
+      },
+      STAFF_A,
+      "req-client-2",
+    );
+    const list = repo.all();
+    expect(list).toHaveLength(1);
+    expect(list[0]!.tenantId).toBe(TENANT_A);
+    expect(list[0]!.branchId).toBeNull();
+    expect(list[0]!.userId).toBe("usr-staff-a");
+    expect(list[0]!.actorType).toBe("user");
+  });
+
+  it("errorCode verilmediyse generic frontend kodu kullanılır", () => {
+    const out = service.recordClientError(
+      {
+        severity: "error",
+        message: "Render hatası",
+        route: "GET /tr-TR/dashboard",
+      },
+      STAFF_A,
+      "req-client-3",
+    );
+    const rec = repo.findById(out.id);
+    expect(rec?.errorCode).toBe("TR_FE_0001");
+  });
+
+  it("errorCode verildiyse olduğu gibi kullanılır", () => {
+    const out = service.recordClientError(
+      {
+        severity: "error",
+        errorCode: "TR_FE_0001",
+        message: "Render hatası",
+        route: "GET /tr-TR/dashboard",
+      },
+      STAFF_A,
+      "req-client-4",
+    );
+    const rec = repo.findById(out.id);
+    expect(rec?.errorCode).toBe("TR_FE_0001");
+  });
+
+  it("actorType portal_user olarak işaretlenir", () => {
+    const portalActor: ActorContext = {
+      ...STAFF_A,
+      actorId: "prt-1",
+      actorType: "portal_user",
+      role: "PET_OWNER_PORTAL",
+    };
+    service.recordClientError(
+      {
+        severity: "warning",
+        message: "Portal render error",
+        route: "GET /portal/pets",
+      },
+      portalActor,
+      "req-portal-1",
+    );
+    const rec = repo.all()[0]!;
+    expect(rec.actorType).toBe("portal_user");
+  });
+
+  it("info severity → stack saklanmaz", () => {
+    const out = service.recordClientError(
+      {
+        severity: "info",
+        message: "Info",
+        route: "GET /tr-TR/dashboard",
+        stack: "should-not-persist",
+      },
+      STAFF_A,
+      "req-info-1",
+    );
+    const rec = repo.findById(out.id);
+    expect(rec?.stack).toBeNull();
+  });
+
+  it("critical severity → stack saklanır", () => {
+    const out = service.recordClientError(
+      {
+        severity: "critical",
+        message: "Critical",
+        route: "GET /tr-TR/dashboard",
+        stack: "trace",
+      },
+      STAFF_A,
+      "req-crit-1",
+    );
+    const rec = repo.findById(out.id);
+    expect(rec?.stack).toBe("trace");
+  });
+
+  it("context PII mask'lı (savunma derinliği)", () => {
+    const out = service.recordClientError(
+      {
+        severity: "warning",
+        message: "form submit",
+        route: "POST /tr-TR/clinic/owner",
+        context: {
+          email: "user@example.com",
+          password: "secret",
+          field: "name",
+        },
+      },
+      STAFF_A,
+      "req-pii-1",
+    );
+    const rec = repo.findById(out.id);
+    const ctx = rec?.context as Record<string, unknown>;
+    expect(ctx["email"]).not.toBe("user@example.com");
+    expect(ctx["password"]).toBe("[redacted]");
+    expect(ctx["field"]).toBe("name");
+  });
+
+  it("occurredAt client clock korunur", () => {
+    const out = service.recordClientError(
+      {
+        severity: "error",
+        message: "client clock",
+        route: "GET /tr-TR/dashboard",
+        occurredAt: "2026-07-15T08:30:00.000Z",
+      },
+      STAFF_A,
+      "req-clock-1",
+    );
+    const rec = repo.findById(out.id);
+    expect(rec?.occurredAt).toBe("2026-07-15T08:30:00.000Z");
+  });
+
+  it("release client verirse onu kullanır, aksi halde APP_RELEASE", () => {
+    const withRelease = service.recordClientError(
+      {
+        severity: "error",
+        message: "x",
+        route: "GET /tr-TR/dashboard",
+        release: "1.2.3",
+      },
+      STAFF_A,
+      "req-rel-1",
+    );
+    const withoutRelease = service.recordClientError(
+      {
+        severity: "error",
+        message: "y",
+        route: "GET /tr-TR/dashboard",
+      },
+      STAFF_A,
+      "req-rel-2",
+    );
+    expect(repo.findById(withRelease.id)?.release).toBe("1.2.3");
+    expect(repo.findById(withoutRelease.id)?.release).toMatch(/.+/);
+  });
+});

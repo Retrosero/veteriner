@@ -7,18 +7,26 @@
  * - AllExceptionsFilter (filter tarafında ErrorEventsService.recordError
  *   çağrılır; burada DI uyumu için module global erişilebilir olmalı).
  *
+ * GOAL-101 ile birlikte frontend hata raporları için
+ * `SystemErrorEventsController` de aynı modülden dışa açılır;
+ * servis + repository tek noktadan paylaşılır.
+ *
  * @since GOAL-100 (FAZ-10) merkezi backend hata yakalama core
+ *        GOAL-101 (FAZ-10) frontend hata yakalama core
  */
 
 import { Global, Module } from "@nestjs/common";
 
-import { ErrorEventsController } from "./error-events.controller.js";
+import {
+  ErrorEventsController,
+  SystemErrorEventsController,
+} from "./error-events.controller.js";
 import { ErrorEventsRepository } from "./error-events.repository.js";
 import { ErrorEventsService } from "./error-events.service.js";
 
 @Global()
 @Module({
-  controllers: [ErrorEventsController],
+  controllers: [ErrorEventsController, SystemErrorEventsController],
   providers: [ErrorEventsService, ErrorEventsRepository],
   exports: [ErrorEventsService, ErrorEventsRepository],
 })

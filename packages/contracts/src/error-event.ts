@@ -261,3 +261,47 @@ export const errorEventSummaryQuerySchema = z.object({
 export type ErrorEventSummaryQuery = z.infer<
   typeof errorEventSummaryQuerySchema
 >;
+
+/* --------------------------------------------------------------------------
+ * Client (frontend) hata raporu — GOAL-101
+ * --------------------------------------------------------------------------
+ */
+
+/**
+ * Frontend'ten gelen hata raporu şeması. Yalnızca kullanıcının
+ * tarayıcısından gönderebileceği alanları kabul eder; tenant/branch/
+ * userId/actorType/requestId/country bilgileri backend tarafında
+ * oturum/header'dan türetilir. Bu sayede istemci tarafı
+ * impersonation saldırılarına karşı korunmuş olur.
+ *
+ * Zorunlu: severity, message, route.
+ * Opsiyonel: errorCode (yoksa generic frontend kodu), stack, context,
+ *            occurredAt (client clock), release, country.
+ */
+export const clientErrorReportInputSchema = z.object({
+  severity: errorSeveritySchema,
+  errorCode: errorCodeSchema.optional(),
+  message: z.string().min(1).max(2000),
+  stack: z.string().max(20000).optional(),
+  context: z.record(z.unknown()).optional(),
+  route: z.string().min(1).max(512),
+  occurredAt: z.string().datetime().optional(),
+  release: z.string().min(1).max(64).optional(),
+  country: errorEventCountrySchema.optional(),
+});
+export type ClientErrorReportInput = z.infer<
+  typeof clientErrorReportInputSchema
+>;
+
+/**
+ * Frontend raporunun kabul edildiğine dair minimal yanıt. Tam
+ * ErrorEvent dönmek yerine yalnızca id + fingerprint paylaşılır;
+ * istemci tarafı için yeterli korelasyon bilgisidir.
+ */
+export const clientErrorReportResponseSchema = z.object({
+  id: z.string(),
+  fingerprint: z.string().length(16),
+});
+export type ClientErrorReportResponse = z.infer<
+  typeof clientErrorReportResponseSchema
+>;
