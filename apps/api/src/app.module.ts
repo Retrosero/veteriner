@@ -87,6 +87,7 @@ import { DischargeSummariesModule } from "./modules/discharge-summaries/discharg
 import { LabTestsModule } from "./modules/lab-tests/lab-tests.module.js";
 import { LabOrdersModule } from "./modules/lab-orders/lab-orders.module.js";
 import { LabResultsModule } from "./modules/lab-results/lab-results.module.js";
+import { ImagingOrdersModule } from "./modules/imaging-orders/imaging-orders.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 
 @Module({
@@ -153,6 +154,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     LabTestsModule,
     LabOrdersModule,
     LabResultsModule,
+    ImagingOrdersModule,
   ],
 })
 export class AppModule {}

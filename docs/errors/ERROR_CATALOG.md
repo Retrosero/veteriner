@@ -229,12 +229,18 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-LAB-0003`       | Cihaz bağlantısı yok        | 502  | error    | server | Cihaz bağlantısını kontrol edin.     |
 | `VET-LAB-0004`       | Sonuç referans aralık dışı  | 200  | warning  | server | (Uyarı; işlem başarılı.)            |
 
-## Görüntüleme (IMAG)
+## Görüntüleme (IMG) — GOAL-093
 
-| Kod                  | Ad                          | HTTP | Severity | Kaynak | Çözüm                                |
-| -------------------- | --------------------------- | ---- | -------- | ------ | ------------------------------------ |
-| `VET-IMAG-0001`      | Görüntüleme istemi bulunamadı | 404 | warning | server | İstem ID'sini kontrol edin.          |
-| `VET-IMAG-0002`      | DICOM yüklenemedi           | 500  | error    | server | Dosya bütünlüğünü kontrol edin.      |
+| Kod                  | Ad                                    | HTTP | Severity | Kaynak | Çözüm                                |
+| -------------------- | ------------------------------------- | ---- | -------- | ------ | ------------------------------------ |
+| `VET-IMG-0001`       | Görüntüleme isteği bulunamadı         | 404  | warning  | server | İstek ID'sini kontrol edin.          |
+| `VET-IMG-0002`       | Geçersiz durum geçişi                 | 409  | warning  | server | Sırasıyla ordered → scheduled → performed → reported → completed. |
+| `VET-IMG-0003`       | Katalogda görüntüleme testi yok       | 422  | warning  | server | imagingTestId kontrol edin.          |
+| `VET-IMG-0004`       | Katalog pasif                          | 422  | warning  | server | Aktif bir görüntüleme testi seçin.   |
+| `VET-IMG-0006`       | Rapor onayı için yanlış durum         | 409  | warning  | server | Sipariş reported/amended olmalı.     |
+| `VET-IMG-0007`       | Rapor bulunamadı                      | 422  | warning  | server | Önce rapor yazın.                    |
+| `VET-IMG-0008`       | Son rapor zaten onaylanmış            | 409  | warning  | server | Düzeltme için amend kullanın.        |
+| `VET-IMG-0009`       | Rapor düzeltme için yanlış durum      | 409  | warning  | server | Sipariş reported/amended olmalı.     |
 
 ## Stok (STOCK)
 
