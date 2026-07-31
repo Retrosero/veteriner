@@ -78,3 +78,29 @@
     (ErrorEvents + JobRuns) + auto caller (BullMQ worker
     integration) + Faz 10+ superadmin panel frontend
     (GOAL-103) + tenant bazlı job kuyruğu görünümü.
+  - GOAL-103 ⏳ partial — core: superadmin hata merkezi. Status
+    yönetimi (new → investigating → resolved → reopened) +
+    state machine validation (12 geçerli, geri kalan 422) +
+    append-only status transition log (actorId/actorType/reason
+    /occurredAt) + ErrorEvent alanları status + firstSeenAt +
+    lastSeenAt + assignedToUserId + 4 yeni filtre (status,
+    branchId, release, assignedToUserId) + 4 yeni endpoint
+    (PATCH /:id/status, GET /:id/transitions, GET /groups, GET
+    /groups/:fingerprint) + yeni hata kodu VET-ERRSTAT-0001
+    (422) + otomatik resolved → reopened terfisi (yeni hata
+    oluştuğunda sistem kaynaklı transition log'a yazar) +
+    fingerprint grupları (severity/module/errorCode/status
+    /assignedToUserId/eventCount/uniqueTenants/firstSeenAt/
+    lastSeenAt toplu görünüm) + groups toGroup'da fingerprint
+    filtresi düzeltildi (tüm tenant toplamı yerine sadece
+    kendi fingerprint'inin kayıtları) + 50 yeni test
+    (error-events 32 → 82: status+timestamp 4 + isValidTransition
+    11 + updateErrorEventStatus 9 + listTransitions 4 +
+    listErrorEventGroups 4 + getErrorEventGroup 3 + ek filtreler
+    4 + 11 helper) + 1346/1346 api regresyon + tsc temiz.
+    Mevcut permission: audit:log:read. Sonraki tick: docs/RAG
+    chunk/i18n key parity + DB migration (Prisma) + atama/çözüm
+    notları (GOAL-104) + güvenlik alarm kuralları (GOAL-105) +
+    SUPERADMIN panel frontend (Next.js: hata listesi + grup +
+    detay ekranı) + severity=kayıt kuralı konfigürabləşdirməsi
+    + tenant bazlı hata filtresi iyileştirmesi.
