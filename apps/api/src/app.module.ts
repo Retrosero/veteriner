@@ -90,6 +90,7 @@ import { LabResultsModule } from "./modules/lab-results/lab-results.module.js";
 import { ImagingOrdersModule } from "./modules/imaging-orders/imaging-orders.module.js";
 import { LabAdaptersModule } from "./modules/lab-adapters/lab-adapters.module.js";
 import { ErrorEventsModule } from "./modules/error-events/error-events.module.js";
+import { JobRunsModule } from "./modules/job-runs/job-runs.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 
 @Module({
@@ -159,6 +160,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     ImagingOrdersModule,
     LabAdaptersModule,
     ErrorEventsModule,
+    JobRunsModule,
   ],
 })
 export class AppModule {}
