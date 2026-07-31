@@ -167,26 +167,7 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
   - GOAL-066 ✅ Klinik tüketimden otomatik stok düşümü (tamamlandı — 2026-07-30, core: de6b6df, docs/i18n: bu commit). 3 endpoint (POST/GET list/GET :id); 4 sourceType (examination/vaccine_application/surgery/hospitalization); atomik StockMovement (vaccine_application→vaccination, diğer→clinical_use; direction='out'); yetersiz stok 422 VET-STOCK-0007. Audit udit:clinical_usage.create. Faz 8 reaktif hook planı (otomatik tetikleme).
   - GOAL-067 ✅ Düşük stok ve SKT uyarıları (tamamlandı — 2026-07-30, core: d6765df + fix 690ba90, docs/i18n: bu commit). 6 endpoint (low-stock/expiring-lots/refresh/summary + 2 ack); düşük stok severity (warning: qty>0&<=reorder, critical: qty<=min veya <=0); SKT severity (warning: 8-30, critical: 1-7, expired: ≤0 gün); acknowledge idempotent (mevcut acknowledgedAt korunur); refresh idempotent. Audit udit:stock_alert.{refresh,low_stock.acknowledge,expiring_lot.acknowledge}. Faz 7+ dispatch + Faz 8 dashboard planı.
   - GOAL-070 ✅ Fiyat listeleri ve hizmet ücretleri (tamamlandı — 2026-07-30, core: 32ceb6c, docs/i18n: bu commit). 11 endpoint (6 list + 4 item + 1 product price resolve); 3 liste türü (standard/promotional/contract); aktif liste zincirleme (aynı type+currency deaktive); müşteri-özel fiyat (ownerId) + miktar kademeli (minQuantity); çözümleme sırası contract_owner → standard/promotional → product default. Audit udit:price_list.* + udit:price_list_item.*. KDV/GST ülke adaptörü Faz 7'de.
-  - GOAL-071 ⏳ partial — core: klinik satış taslağı. clinic-sales
-    modülü (6 endpoint: create/list/get/update/complete/cancel)
-    + 3 durum (draft/completed/cancelled) + 4 sourceType
-    (examination/vaccine_application/lab_order/imaging_order) +
-    satır indirimi + global indirim + rol bazlı indirim yetkisi
-    (STAFF/VETERINARIAN max %10, OWNER sınırsız; aksi 403
-    VET-CLINIC_SALE-0004) + 17/17 yeni test + 927/927 api testi
-    geçti. Ürün arşivliyse 422 VET-CLINIC_SALE-0005; ürün yoksa
-    422 VET-CLINIC_SALE-0005. unitPrice verilmediyse ürün
-    salePrice'ından alınır. Audit audit:clinic_sale.create/
-    update/complete/cancel. Mevcut permission'lar kullanıldı:
-    clinic:payment:create/read/reverse. Cross-module:
-    ProductsService. Sonraki tick: docs/RAG chunk/i18n key
-    parity + DB migration (Prisma) + PricingService entegrasyonu
-    (resolveProductPrice ile liste bazlı fiyat çözümleme) +
-    Owner/Patient varlık doğrulaması (cross-module) + Faz 7
-    tahsilat (GOAL-072) ile sale üzerinden payment bağlantısı
-    + Faz 7 kısmi tahsilat (GOAL-073) + Faz 8 ameliyat (GOAL-080)
-    ile surgery order sourceType.
-
+  - GOAL-071 ✅ Klinik satış taslağı (tamamlandı — 2026-07-30, core: 1e6bf50, docs/i18n: bu commit). 6 endpoint (POST/GET list/GET :id/PATCH/POST complete/POST cancel); state draft→completed|cancelled; 6 sourceType (examination/prescription/lab_test/imaging/surgery/order) + sourceId zorunlu; line item (productId × quantity × unitPrice + priceListItemId ref); complete ile Faz 7 Payment (GOAL-072, paymentMethod); cancel ile Faz 7 PaymentReversal (GOAL-073). Stok düşümü YOK (GOAL-066 ayrı akış). Audit udit:clinic_sale.{create,update,complete,cancel}. Tam iade Faz 7+ clinic-sale-returns.
   - GOAL-072 ⏳ partial — core: tahsilat (payment). payments modülü
     (4 endpoint: create/list/get/reverse) + 4 yöntem (cash/card/
     bank_transfer/other) + 2 sourceType (clinic_sale/petshop_sale)

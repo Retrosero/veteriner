@@ -1081,6 +1081,53 @@ generated_at: "2026-07-30"
                 api.post._api_v1_pricing_lists__id_items__itemId_cancel,
                 api.get._api_v1_pricing_products__productId_price]
 
+- chunk_id: flow-clinic-sale
+  type: flow
+  source: packages/contracts/src/clinic-sale.ts
+  entity: clinic_sale
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Klinik Satış Taslağı Akışı (Clinic Sale)"
+  content: |
+    1. Klinik satış taslağı: muayene/reçete/tahlil/görüntüleme/
+       ameliyat/order için hasta sahibi + opsiyonel hasta.
+       State: `draft` → `completed` | `cancelled`.
+    2. `sourceType`: `examination` | `prescription` | `lab_test`
+       | `imaging` | `surgery` | `order`. `sourceId` zorunlu.
+    3. Line item: `productId` × `quantity` × `unitPrice` +
+       opsiyonel `priceListItemId` (GOAL-070 pricing referansı).
+    4. Complete: `paymentMethod` set edilirse atomik `Payment`
+       oluşturulur (Faz 7 GOAL-072, `sourceType='clinic_sale'`).
+       Set edilmezse ödeme ayrıca `POST /payments`.
+    5. Cancel: `completed` ise Faz 7 `PaymentReversal`
+       (GOAL-073, `sourceType='clinic_sale'`) tetiklenir.
+    6. Tam iade (müşteri ödeme iadesi) Faz 7+
+       `clinic-sale-returns` modülünde (Faz 7 genişletme);
+       burada yalnızca iptal + tahsilat reversal.
+    7. Stok etkisi: klinik satışta otomatik düşüm YOK (klinik
+       tüketim ayrı, GOAL-066); ancak muayene/aşı vb. için
+       reaktif hook Faz 8'de.
+    8. Audit: `audit:clinic_sale.{create,update,complete,
+       cancel}`. Complete'de `paymentId?`, cancel'de
+       `paymentReversalIds[]` payload.
+  keywords: [klinik satış, clinic sale, taslak, muayene,
+             reçete, tahlil, görüntüleme, ameliyat, tahsilat,
+             Decimal, fiyat listesi]
+  related_chunks: [flow-pricing, flow-payment, flow-payment-reversal,
+                   flow-clinical-usage, error-VET-SALE-0001,
+                   error-VET-SALE-0002, error-VET-SALE-0003,
+                   error-VET-SALE-0005]
+  related_pages: []
+  related_api: [api.post._api_v1_clinic_sales,
+                api.get._api_v1_clinic_sales,
+                api.get._api_v1_clinic_sales__id_,
+                api.patch._api_v1_clinic_sales__id_,
+                api.post._api_v1_clinic_sales__id_complete,
+                api.post._api_v1_clinic_sales__id_cancel]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
