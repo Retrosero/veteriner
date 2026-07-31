@@ -156,28 +156,7 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-051 ✅ Aşı uygulama kaydı (tamamlandı — 2026-07-30)
   - GOAL-052 ✅ Aşı kartı (tamamlandı — 2026-07-30, core: `2b7cc84`, docs/i18n: bu commit). 4 personel endpoint + 1 portal endpoint; species filter (all/other→tüm takvimler); status çözümleme (overdue/upcoming/completed/not_started); tenant `portalVaccineCardEnabled` portal ayarı; in-memory derive (DB göçünde materialized view planı); cross-tenant patient → 404 VET-CLINIC-0001. PDF/çıktı ve owner-pet eşleşmesi guard katmanı sonraya.
   - GOAL-053 ✅ Aşı hatırlatma job'u (tamamlandı — 2026-07-30, core: 763f2f, docs/i18n: bu commit). 4 endpoint; schedule/cancel/reschedule hook'ları; in-process queue + 3 denemelik exponential backoff; tenant config (daysBeforeDue 1-90 + channels 1-3, default 7 gün + sms+in_app); consent-aware dispatch (sms/email consent yoksa atla); idempotent + double-send korumalı; multi-tenant processDue. BullMQ geçişi FAZ-10'a, otomatik cron FAZ-10'a.
-  - GOAL-054 ⏳ partial — core: aşı amendment ve düzeltme. Eski
-    kayıt korunur (status='amended' + `amendedAt`/`amendedBy`/
-    `amendedReason`); düzeltilebilir alanlar `dose`,
-    `nextDueDate`, `notes`, `lot`. `lot` değişirse atomik
-    stok ters+yeni hareket (yeni lot önce SKT + yeterlilik
-    kontrolü, başarılıysa eski lot'a `reverse` + yeni lot'tan
-    `decrement`). Yeni lot SKT geçmişse 422 VET-VACC-0010;
-    yetersiz stok 422 VET-VACC-0009; eski lot değişmez
-    (atomiklik korunur). Aynı lot tekrar gönderilirse yalnızca
-    alanlar güncellenir, stok hareketi oluşmaz. Audit
-    `audit:vaccine.application.amend` (warning) — `lotChange`
-    varsa before/after hareket ID'leri ile birlikte loglanır.
-    `vaccineApplicationAmendInputSchema`'ya `lot` opsiyonel
-    alanı + `vaccineApplicationSchema`'ya `amendedReason` eklendi.
-    `VaccineApplicationPatch` + `VaccineApplicationRecord`
-    `lot`/`amendedReason` alanları. `VaccineApplicationsRepository`
-    `isSameLot()` yardımcısı. Controller amend description
-    güncellendi (GOAL-054 lot değişimi davranışını kapsıyor).
-    5/5 yeni test + 629/629 api testi geçti. Sonraki tick:
-    docs/RAG chunk/i18n key parity + DB migration (Prisma) +
-    Faz 6 stok modülü ile `stockProductId` gerçek referans +
-    amendment zinciri (parentId) için çoklu amend.
+  - GOAL-054 ✅ Aşı amendment ve düzeltme (tamamlandı — 2026-07-30, core: 7c42ba, docs/i18n: bu commit). 1 endpoint (PATCH); status='active' şartı; düzeltilebilir alanlar dose/nextDueDate/notes/lot; lot değişiminde atomik ters kayıt + yeni düşüm (SKT 422 VET-VACC-0010, yetersiz stok 422 VET-VACC-0009, aktif değil 409 VET-VACC-0007); mendReason zorunlu; append-only (status='amended', fiziksel silme yok); audit udit:vaccine.application.amend (warning, before snapshot + lotChange). Reminder hook escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) sonraya.
   - GOAL-061 ⏳ partial — core: depo, raf ve lot tanımları.
     `inventory` sözleşmesi (Warehouse + Shelf + StockLot +
     3 tür: clinic/petshop/general + raf temperatureZone:

@@ -489,6 +489,57 @@ generated_at: "2026-07-30"
   related_pages: []
   related_api: [api.get._api_v1_clinic_vaccines_reminders_patient__patientId_, api.get._api_v1_clinic_vaccines_reminders_config, api.put._api_v1_clinic_vaccines_reminders_config, api.post._api_v1_clinic_vaccines_reminders_process]
 
+- chunk_id: flow-vaccine-application-amend
+  type: flow
+  source: packages/contracts/src/vaccine-application.ts
+  entity: vaccine_application
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Aşı Uygulama Kaydı Amendment (Düzeltme) Akışı"
+  content: |
+    1. Hatalı aşı uygulama kayıtları fiziksel silinmez; bunun
+       yerine amendment (düzeltme) yapılır. Tıbbi kayıtların
+       geçmişi korunur kuralının uygulaması.
+    2. `PATCH /api/v1/clinic/vaccines/applications/{id}` ile
+       `VaccineApplicationAmendInput` gönderilir: opsiyonel
+       `dose`, `nextDueDate`, `notes`, `lot` (lotNumber +
+       expiryDate + manufacturer); zorunlu `amendReason` (denetim
+       için neden zorunlu).
+    3. Service `amendApplication` metodu:
+       - Cross-tenant → 404 VET-CLINIC-0001.
+       - `existing.status !== 'active'` → 409 VET-VACC-0007
+         (iptal edilmiş/düzeltilmiş kayıt amend edilemez).
+       - `before` snapshot (dose, nextDueDate, notes, lot)
+         audit payload'ı için hazırlanır.
+    4. Lot değişimi senaryosu (atomik ters kayıt + yeni düşüm):
+       a) Yeni lot SKT kontrolü → geçmişse 422 VET-VACC-0010.
+       b) Yeni lot yeterli stok kontrolü → yetersizse 422
+          VET-VACC-0009.
+       c) Eski lot'a `VaccineStockLedger` reversal kaydı
+          (type='reversal').
+       d) Yeni lot'a düşüm kaydı (type='usage').
+       e) Application kaydının `lot` alanı güncellenir.
+       Bu sıralama, yetersiz stok veya SKT geçmiş senaryolarında
+       eski lot'u güvenli tutar.
+    5. Kayıt güncellenir: `status='amended'`, `amendedAt`,
+       `amendedBy`, opsiyonel `amendmentChainId` (parentId) set
+       edilir. Eski kayıt korunur (fiziksel silme YOK).
+    6. Audit `audit:vaccine.application.amend` (warning) →
+       before snapshot + lotChange before/after + newMovementIds
+       payload'a eklenir.
+    7. Reminder hook: `rescheduleForApplication` amendment
+       sonrası tetiklenir; `nextDueAt` değişmişse delta hesabıyla
+       `scheduledFor` kaydırılır.
+  keywords: [aşı amendment, düzeltme, vaccine application,
+             amend, lot değişimi, ters kayıt, reversal,
+             append-only, audit, stok düzeltme, SKT, stok]
+  related_chunks: [flow-vaccination, flow-vaccine-reminder, glossary-vaccine-application, error-VET-VACC-0007, error-VET-VACC-0009, error-VET-VACC-0010]
+  related_pages: []
+  related_api: [api.patch._api_v1_clinic_vaccines_applications__id_]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
