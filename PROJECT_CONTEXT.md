@@ -778,3 +778,16 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
 - Testler: lab-tests.service.spec.ts 19/19 yeşil; full regression 1126/1126 api testleri (1107 → 1126, +19).
 - Error kodları: VET-LABTEST-0001 (not found 404), VET-LABTEST-0002 (duplicate code 409), VET-AUTHZ-0001 (cross-tenant 403).
 - Docs/i18n/RAG chunk/field glossary/cross-ref henüz eklenmedi (sonraki tick).
+
+## GOAL-091 laboratuvar isteği ve numune ⏳ partial
+- Contract: packages/contracts/src/lab-order.ts (18 schema/type) + index export.
+- Domain: pps/api/src/common/lab-orders/lab-order.types.ts (LabOrderRecord + toLabOrder).
+- Repository: pps/api/src/modules/lab-orders/lab-orders.repository.ts (in-memory Map; state machine: ordered → collected → processing → completed; ordered|collected → cancelled).
+- Service: pps/api/src/modules/lab-orders/lab-orders.service.ts (createLabOrder/collectSample/startProcessing/completeLabOrder/cancelLabOrder).
+  - Cross-module: LabTestsService.getLabTestDetail ile katalog snapshot alınır (katalog sonradan değişse bile order'ın snapshot'ı sabit kalır).
+- Controller: pps/api/src/modules/lab-orders/lab-orders.controller.ts (POST/GET list/GET :id/POST :id/collect /start /complete /cancel).
+- Module: LabOrdersModule LabTestsModule import eder, pp.module.ts içinde kablolu.
+- Testler: lab-orders.service.spec.ts 23/23 yeşil; full regression 1149/1149 api testleri (1126 → 1149, +23).
+- Error kodları: VET-LABORD-0001 (not found 404), VET-LABORD-0002 (invalid state transition 409), VET-LABORD-0003 (labtest not found 422), VET-LABORD-0004 (labtest inactive 422), VET-AUTHZ-0001 (cross-tenant 403).
+- Permissions: POST/GET list/:id clinic:lab:read|order; POST :id/collect clinic:lab:collect_sample; POST :id/complete clinic:lab:enter_result; POST :id/cancel clinic:lab:order.
+- Docs/i18n/RAG chunk/field glossary/cross-ref henüz eklenmedi (sonraki tick).
