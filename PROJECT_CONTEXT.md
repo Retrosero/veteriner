@@ -314,3 +314,18 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
     tahsilat ters kaydı (GOAL-073 entegrasyonu) + müşteri/tedarikçi
     iade ayrımı (sales return vs purchase return) + GOAL-067 dış
     lokasyon stok uyarılarına return lot bilgisi bağlama.
+
+  - GOAL-065 ⏳ partial — core: petshop satış iadesi. petshop-sale-returns
+    modülü (6 endpoint: create/list/get/update/complete/cancel) + 3
+    durum (draft/completed/cancelled) + orijinal sale'a bağlı satır
+    (originalLineId) + tam/kısmi iade (birikmiş miktar orijinali
+    aşamaz 422 VET-RETURN-0003) + lot kontrolü (404/409 VET-RETURN-
+    0006/0007) + stok geri girişi (return hareketi). 810/810 api
+    testi geçti (mevcut petshop-sale-returns modülü). Hata kodları
+    VET-RETURN-0001/0002/0003/0004/0005/0006/0007 + VET-AUTHZ-0001.
+    Mevcut permission petshop:sale:refund kullanıldı. Audit
+    audit:petshop_sale_return.create/complete/cancel. Cross-module:
+    PetshopSalesService + ProductsService + StockMovementsService +
+    InventoryService (lot kontrolü). Sonraki tick: docs/RAG chunk/
+    i18n key parity + DB migration (Prisma) + tamamlanmış
+    iadelerin ters kayıt (reversal) ile iptali (GOAL-073 kapsamı).
