@@ -233,13 +233,17 @@ export class StockAlertsService {
       });
     }
 
-    const nowIso = new Date().toISOString();
+    // Idempotent: mevcut ack varsa orijinal acknowledgedAt
+    // korunur; yoksa yeni timestamp üretilir.
+    const existingAck = this.acks.find(tenantId, "lowStock", productId);
+    const acknowledgedAt =
+      existingAck?.acknowledgedAt ?? new Date().toISOString();
     this.acks.upsert({
       tenantId,
       alertKey: stockAlertAckKey("lowStock", productId),
       alertType: "lowStock",
       targetId: productId,
-      acknowledgedAt: nowIso,
+      acknowledgedAt,
       acknowledgedBy: actor.actorId ?? "system",
       note: note ?? null,
     });
@@ -247,7 +251,7 @@ export class StockAlertsService {
     const updated: LowStockAlertRecord = {
       ...rec,
       status: "acknowledged",
-      acknowledgedAt: nowIso,
+      acknowledgedAt,
       acknowledgedBy: actor.actorId ?? "system",
     };
     await this.audit.recordSimple(
@@ -309,13 +313,17 @@ export class StockAlertsService {
       });
     }
 
-    const nowIso = new Date().toISOString();
+    // Idempotent: mevcut ack varsa orijinal acknowledgedAt
+    // korunur; yoksa yeni timestamp üretilir.
+    const existingAck = this.acks.find(tenantId, "expiring", lotId);
+    const acknowledgedAt =
+      existingAck?.acknowledgedAt ?? new Date().toISOString();
     this.acks.upsert({
       tenantId,
       alertKey: stockAlertAckKey("expiring", lotId),
       alertType: "expiring",
       targetId: lotId,
-      acknowledgedAt: nowIso,
+      acknowledgedAt,
       acknowledgedBy: actor.actorId ?? "system",
       note: note ?? null,
     });
@@ -323,7 +331,7 @@ export class StockAlertsService {
     const updated: ExpiringLotAlertRecord = {
       ...rec,
       status: "acknowledged",
-      acknowledgedAt: nowIso,
+      acknowledgedAt,
       acknowledgedBy: actor.actorId ?? "system",
     };
     await this.audit.recordSimple(

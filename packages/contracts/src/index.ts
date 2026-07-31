@@ -59,3 +59,4 @@ export * from "./petshop-sale-return.js";
 export * from "./stock-movement.js";
 export * from "./clinical-consumption.js";
 export * from "./stock-alert.js";
+export * from "./pricing.js";
