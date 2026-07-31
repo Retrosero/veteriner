@@ -36,6 +36,11 @@ import type {
  * Persist edilmiş aşı uygulama kaydı. API sözleşmesinden (public
  * VaccineApplication) farkı: status tipi + dahili alanlar (createdBy
  * null olabilir, system üzerinden de kayıt açılabilir).
+ *
+ * GOAL-054 amendment:
+ * - `amendedReason` — son amendment gerekçesi (audit için).
+ * - Eski kayıt korunur (status='amended' set edilir, önceki alan
+ *   değerleri audit log'a yazılır; fiziksel silme yok).
  */
 export interface VaccineApplicationRecord {
   id: string;
@@ -54,6 +59,8 @@ export interface VaccineApplicationRecord {
   updatedAt: string;
   amendedAt: string | null;
   amendedBy: string | null;
+  /** GOAL-054: amendment gerekçesi. */
+  amendedReason: string | null;
   cancelledAt: string | null;
   cancellationReason: string | null;
   /** Bu uygulamaya bağlı stok hareket(ler)i ID listesi. */
@@ -81,6 +88,7 @@ export function toVaccineApplication(
     updatedAt: rec.updatedAt,
     amendedAt: rec.amendedAt,
     amendedBy: rec.amendedBy,
+    amendedReason: rec.amendedReason,
     cancelledAt: rec.cancelledAt,
     cancellationReason: rec.cancellationReason,
     stockMovementIds: [...rec.stockMovementIds],

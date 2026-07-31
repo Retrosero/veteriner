@@ -218,3 +218,25 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
     DB migration (Prisma) + Faz 6 stok modülü ile `stockProductId`
     gerçek referans + zaman-locale timezone adapter (tenant
     timezone).
+  - GOAL-054 ⏳ partial — core: aşı amendment ve düzeltme. Eski
+    kayıt korunur (status='amended' + `amendedAt`/`amendedBy`/
+    `amendedReason`); düzeltilebilir alanlar `dose`,
+    `nextDueDate`, `notes`, `lot`. `lot` değişirse atomik
+    stok ters+yeni hareket (yeni lot önce SKT + yeterlilik
+    kontrolü, başarılıysa eski lot'a `reverse` + yeni lot'tan
+    `decrement`). Yeni lot SKT geçmişse 422 VET-VACC-0010;
+    yetersiz stok 422 VET-VACC-0009; eski lot değişmez
+    (atomiklik korunur). Aynı lot tekrar gönderilirse yalnızca
+    alanlar güncellenir, stok hareketi oluşmaz. Audit
+    `audit:vaccine.application.amend` (warning) — `lotChange`
+    varsa before/after hareket ID'leri ile birlikte loglanır.
+    `vaccineApplicationAmendInputSchema`'ya `lot` opsiyonel
+    alanı + `vaccineApplicationSchema`'ya `amendedReason` eklendi.
+    `VaccineApplicationPatch` + `VaccineApplicationRecord`
+    `lot`/`amendedReason` alanları. `VaccineApplicationsRepository`
+    `isSameLot()` yardımcısı. Controller amend description
+    güncellendi (GOAL-054 lot değişimi davranışını kapsıyor).
+    5/5 yeni test + 629/629 api testi geçti. Sonraki tick:
+    docs/RAG chunk/i18n key parity + DB migration (Prisma) +
+    Faz 6 stok modülü ile `stockProductId` gerçek referans +
+    amendment zinciri (parentId) için çoklu amend.

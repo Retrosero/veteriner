@@ -179,6 +179,7 @@ function makeApplication(
     updatedAt: new Date().toISOString(),
     amendedAt: null,
     amendedBy: null,
+    amendedReason: null,
     cancelledAt: null,
     cancellationReason: null,
     stockMovementIds: ["stm-1"],

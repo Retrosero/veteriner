@@ -102,11 +102,21 @@ export type VaccineApplicationCreateInput = z.infer<
 >;
 
 /**
- * Aşı uygulama kaydı düzeltme (amendment) isteği. Yalnızca
- * klinik olarak yanlış girilen alanlar düzeltilebilir: doz,
- * sonraki tarih, lot, notlar. `patientId` / `protocolId` /
- * `applicationDate` değiştirilemez; bunlar için iptal +
- * yeniden kayıt yapılmalıdır.
+ * Aşı uygulama kaydı düzeltme (amendment) isteği. GOAL-054:
+ * düzeltme sonrası eski kayıt korunur (status='amended' +
+ * `amendedAt`/`amendedBy`/`amendmentReason` set edilir) ve
+ * stok etkisi olan alanlar (lot) değiştiyse ters kayıt (eski
+ * lot'a iade) + yeni lot'tan düşüm hareketi oluşturulur.
+ *
+ * Değiştirilebilir alanlar:
+ * - `dose`        — klinik doz override.
+ * - `nextDueDate` — sonraki rapel/booster tarihi.
+ * - `notes`       — serbest not.
+ * - `lot`         — uygulanan lot; değişirse atomik stok
+ *                   ters+yeni hareketi tetikler.
+ *
+ * `patientId` / `protocolId` / `applicationDate` değiştirilemez;
+ * bunlar için iptal + yeniden kayıt yapılmalıdır.
  */
 export const vaccineApplicationAmendInputSchema = z.object({
   dose: vaccineDoseSchema.optional(),
@@ -115,6 +125,13 @@ export const vaccineApplicationAmendInputSchema = z.object({
     .regex(ISO_DATE_REGEX)
     .optional(),
   notes: z.string().max(2000).optional(),
+  /**
+   * Düzeltilen lot bilgisi (opsiyonel). Farklı lot/stok
+   * ürünü/SKT girilirse eski lot'a ters kayıt, yeni lot'tan
+   * düşüm hareketi oluşturulur. Aynı lot tekrar gönderilirse
+   * stok hareketi oluşmaz (yalnızca alanlar güncellenir).
+   */
+  lot: vaccineLotInfoSchema.optional(),
   /** Amendment gerekçesi (audit için). */
   reason: z.string().min(1).max(2000),
 });
@@ -152,6 +169,8 @@ export const vaccineApplicationSchema = z.object({
   /** Amendment zamanı; null = henüz düzeltilmedi. */
   amendedAt: z.string().datetime().nullable(),
   amendedBy: z.string().nullable(),
+  /** GOAL-054: son amendment gerekçesi; null = henüz düzeltilmedi. */
+  amendedReason: z.string().nullable(),
   /** İptal zamanı; null = aktif. */
   cancelledAt: z.string().datetime().nullable(),
   cancellationReason: z.string().nullable(),

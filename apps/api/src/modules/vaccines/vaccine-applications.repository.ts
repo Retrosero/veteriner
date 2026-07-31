@@ -28,10 +28,13 @@ export interface VaccineApplicationPatch {
   dose?: VaccineApplicationRecord["dose"] | undefined;
   nextDueDate?: string | null | undefined;
   notes?: string | null | undefined;
+  /** GOAL-054 amendment: lot değişikliği durumunda. */
+  lot?: VaccineApplicationRecord["lot"] | undefined;
   status?: VaccineApplicationStatus | undefined;
   updatedAt?: string | undefined;
   amendedAt?: string | null | undefined;
   amendedBy?: string | null | undefined;
+  amendedReason?: string | null | undefined;
   cancelledAt?: string | null | undefined;
   cancellationReason?: string | null | undefined;
   stockMovementIds?: string[] | undefined;
@@ -147,8 +150,28 @@ export class VaccineApplicationsRepository {
     this.counters.clear();
   }
 
-  public toRecord(args: VaccineApplicationRecord): VaccineApplicationRecord {
-    return { ...args };
+  /**
+   * Yeni record oluşturma yardımcısı. Eski kayıtlar (GOAL-054
+   * öncesi) `amendedReason` içermez; backfill için null default.
+   */
+  public toRecord(
+    args: Omit<VaccineApplicationRecord, "amendedReason"> & {
+      amendedReason?: string | null;
+    },
+  ): VaccineApplicationRecord {
+    return { ...args, amendedReason: args.amendedReason ?? null };
+  }
+
+  /**
+   * İki lot'un eşit olup olmadığını kontrol eder. Aynı
+   * `stockProductId` + `lot` + `expiryDate` üçlüsü eşit sayılır.
+   */
+  public isSameLot(a: VaccineApplicationRecord["lot"], b: VaccineApplicationRecord["lot"]): boolean {
+    return (
+      a.stockProductId === b.stockProductId &&
+      a.lot === b.lot &&
+      a.expiryDate === b.expiryDate
+    );
   }
 }
 

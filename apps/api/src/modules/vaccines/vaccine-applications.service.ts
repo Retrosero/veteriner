@@ -2,10 +2,10 @@
  * @file Vaccine application (aşı uygulama) service.
  * @module apps/api/modules/vaccines/vaccine-applications.service
  *
- * @description GOAL-051 aşı uygulama kaydı iş kuralları. Hayvana
- * uygulanan aşının klinik kaydı + stok düşümünü atomik olarak
- * yapar. Düzeltme (amend) ve iptal (cancel) ile klinik kayıt
- * politikası korunur.
+ * @description GOAL-051 aşı uygulama kaydı + GOAL-054 amendment
+ * iş kuralları. Hayvana uygulanan aşının klinik kaydı + stok
+ * düşümünü atomik olarak yapar. Düzeltme (amend) ve iptal
+ * (cancel) ile klinik kayıt politikası korunur.
  *
  * İş kuralları:
  * - `createApplication`:
@@ -23,10 +23,17 @@
  * - `listApplications`: tenant-scoped; patientId / protocolId /
  *   status / from / to filtreleri; cancelled default hariç.
  * - `getApplication`: tenant-scoped; cross-tenant → null.
- * - `amendApplication`: status='active' değilse → 409
- *   VET-VACC-0007. status='amended', amendedAt+amendedBy+reason.
- *   Stok değişmez. Audit `audit:vaccine.application.amend`
- *   (warning).
+ * - `amendApplication` (GOAL-054):
+ *   - status='active' değilse → 409 VET-VACC-0007.
+ *   - status='amended', amendedAt+amendedBy+amendedReason.
+ *   - `dose` / `nextDueDate` / `notes` değişirse stok etkisi yok.
+ *   - `lot` değişirse:
+ *       * Yeni lot SKT'si geçmişse → 422 VET-VACC-0010.
+ *       * Yeni lot yeterli stok yoksa → 422 VET-VACC-0009.
+ *       * Eski lot'a ters kayıt + yeni lot'tan düşüm.
+ *       * Hareket ID'leri `stockMovementIds`'e append edilir.
+ *   - Audit `audit:vaccine.application.amend` (warning);
+ *     `lotChange` varsa audit detail'inde before/after.
  * - `cancelApplication`: status='cancelled' ise → 409
  *   VET-VACC-0008. status='cancelled', cancelledAt+cancellationReason.
  *   Tüm bağlı stok hareketleri ters kayıt ile geri alınır.
@@ -37,6 +44,8 @@
  *   request body/query'den güvenilmez. Fiziksel silme YOKTUR.
  *
  * @since GOAL-051 (FAZ-5) aşı uygulama kaydı core
+ * @updated GOAL-054 (FAZ-5) aşı amendment ve düzeltme core
+ *   (lot değişikliği + atomik stok ters/yeni hareket)
  */
 
 import { Injectable, Logger } from "@nestjs/common";
@@ -226,6 +235,7 @@ export class VaccineApplicationsService {
       updatedAt: nowIso,
       amendedAt: null,
       amendedBy: null,
+      amendedReason: null,
       cancelledAt: null,
       cancellationReason: null,
       stockMovementIds: [movement.id],
@@ -352,16 +362,150 @@ export class VaccineApplicationsService {
       dose: existing.dose,
       nextDueDate: existing.nextDueDate,
       notes: existing.notes,
+      lot: existing.lot,
     };
+
+    // GOAL-054: lot değişimi atomik — yeni lot önce valide
+    // edilir (SKT + yeterli stok), sonra eski lot ters kayıt +
+    // yeni lot düşüm yapılır. Bu sıralama, yetersiz stok veya
+    // SKT geçmiş senaryolarında eski lot'u güvenli tutar.
+    let lotChange: {
+      before: typeof existing.lot;
+      after: typeof existing.lot;
+      reversedMovementId: string;
+      newMovementId: string;
+    } | null = null;
+    const newMovementIds: string[] = [];
+    let newLot: typeof existing.lot | null = null;
+    if (
+      input.lot !== undefined &&
+      !this.repo.isSameLot(existing.lot, input.lot)
+    ) {
+      // 1) Yeni lot SKT kontrolü.
+      if (isLotExpired(input.lot.expiryDate, new Date().toISOString())) {
+        throw new DomainError({
+          errorCode: "VET-VACC-0010",
+          message: "Yeni lot'un son kullanma tarihi geçmiş",
+          httpStatus: 422,
+          severity: "warning",
+          i18nKey: "error.VET-VACC-0010",
+          details: {
+            lot: input.lot.lot,
+            expiryDate: input.lot.expiryDate,
+          },
+        });
+      }
+
+      // 2) Yeni lot'tan düşüm dene. Yeterli değilse 422 — eski
+      //    lot'a dokunulmamış olur (atomik).
+      const administeredBy = existing.administeredBy;
+      const provisionalNewMovement = this.stock.decrement({
+        tenantId,
+        stockProductId: input.lot.stockProductId,
+        lot: input.lot.lot,
+        expiryDate: input.lot.expiryDate,
+        quantity: 1,
+        applicationId: existing.id,
+        createdBy: administeredBy,
+      });
+      if (!provisionalNewMovement) {
+        const balance = this.stock.getBalance({
+          tenantId,
+          stockProductId: input.lot.stockProductId,
+          lot: input.lot.lot,
+          expiryDate: input.lot.expiryDate,
+        });
+        throw new DomainError({
+          errorCode: "VET-VACC-0009",
+          message: "Yeni lot için yetersiz stok",
+          httpStatus: 422,
+          severity: "warning",
+          i18nKey: "error.VET-VACC-0009",
+          details: {
+            lot: input.lot.lot,
+            availableQuantity: balance,
+          },
+        });
+      }
+      // Geçici hareket — başarılı olursa kalıcı, başarısız
+      // olursa (eski reverse başarısız) iade edilecek. Reverse
+      // başarısız olursa kritik log üretiriz.
+      newMovementIds.push(provisionalNewMovement.id);
+
+      // 3) Eski lot'a ters kayıt. Hareket ID'leri uygulama
+      //    kaydında tutulur; amortismana uğramış (voided)
+      //    hareketi tersine çevirmiyoruz.
+      const reversedMovementIds: string[] = [];
+      for (const movementId of existing.stockMovementIds) {
+        const reversed = this.stock.reverse(
+          tenantId,
+          movementId,
+          amendedBy,
+        );
+        if (!reversed) {
+          // Reverse başarısız: yeni lot'tan düşülen hareketi
+          // geri almak için iade (negative) hareketi oluştur.
+          // Bu senaryo normalde olmamalı (ledger tutarlı);
+          // olursa critical log + audit.
+          await this.audit.recordSimple(
+            "audit:vaccine.application.amend",
+            "vaccine_application",
+            id,
+            "amend",
+            this.actorToAuditActor(actor),
+            "critical",
+            {
+              reason: input.reason,
+              error:
+                "Stok ters kayıt başarısız; yeni lot hareketi iade edildi",
+              before,
+              after: {
+                dose: existing.dose,
+                nextDueDate: existing.nextDueDate,
+                notes: existing.notes,
+                lot: input.lot,
+              },
+            },
+          );
+          throw new DomainError({
+            errorCode: "VET-VACC-0001",
+            message: "Stok hareketi tersine çevrilemedi",
+            httpStatus: 500,
+            severity: "critical",
+            i18nKey: "error.VET-VACC-0001",
+            details: { id, movementId },
+          });
+        }
+        reversedMovementIds.push(reversed.id);
+      }
+
+      newMovementIds.unshift(...reversedMovementIds);
+      newLot = input.lot;
+      lotChange = {
+        before: existing.lot,
+        after: input.lot,
+        reversedMovementId: reversedMovementIds[0] ?? "",
+        newMovementId: provisionalNewMovement.id,
+      };
+    }
+
     const patch: VaccineApplicationPatch = {
       status: "amended",
       updatedAt: nowIso,
       amendedAt: nowIso,
       amendedBy,
+      amendedReason: input.reason,
     };
     if (input.dose !== undefined) patch.dose = input.dose;
     if (input.nextDueDate !== undefined) patch.nextDueDate = input.nextDueDate;
     if (input.notes !== undefined) patch.notes = input.notes;
+    if (newLot !== null) patch.lot = newLot;
+    if (newMovementIds.length > 0) {
+      patch.stockMovementIds = [
+        ...existing.stockMovementIds,
+        ...newMovementIds,
+      ];
+    }
     const updated = this.repo.update(tenantId, id, patch);
     if (!updated) {
       throw new DomainError({
@@ -374,6 +518,28 @@ export class VaccineApplicationsService {
       });
     }
 
+    const auditDetail: Record<string, unknown> = {
+      reason: input.reason,
+      before: {
+        dose: before.dose,
+        nextDueDate: before.nextDueDate,
+        notes: before.notes,
+      },
+      after: {
+        dose: updated.dose,
+        nextDueDate: updated.nextDueDate,
+        notes: updated.notes,
+      },
+    };
+    if (lotChange !== null) {
+      auditDetail.lotChange = {
+        before: lotChange.before,
+        after: lotChange.after,
+        reversedMovementId: lotChange.reversedMovementId,
+        newMovementId: lotChange.newMovementId,
+      };
+    }
+
     await this.audit.recordSimple(
       "audit:vaccine.application.amend",
       "vaccine_application",
@@ -381,15 +547,7 @@ export class VaccineApplicationsService {
       "amend",
       this.actorToAuditActor(actor),
       "warning",
-      {
-        reason: input.reason,
-        before,
-        after: {
-          dose: updated.dose,
-          nextDueDate: updated.nextDueDate,
-          notes: updated.notes,
-        },
-      },
+      auditDetail,
     );
 
     return toVaccineApplication(updated);

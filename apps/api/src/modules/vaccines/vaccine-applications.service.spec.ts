@@ -789,4 +789,318 @@ describe("VaccineApplicationsService", () => {
       expect(a.tenantId).toBe(TENANT_A);
     });
   });
+
+  // -------------------------------------------------------------------------
+  // GOAL-054 — Amendment: lot değişikliği (atomik stok ters+yeni)
+  // -------------------------------------------------------------------------
+
+  describe("amendApplication — lot değişikliği (GOAL-054)", () => {
+    it("lot değişirse eski lot'a iade + yeni lot'tan düşüm + audit lotChange", async () => {
+      // İkinci lot için stok seed.
+      stock.addStock({
+        tenantId: TENANT_A,
+        stockProductId: "stkp-vac-1",
+        lot: "LOT-2026-B",
+        expiryDate: "2027-12-31",
+        quantity: 3,
+      });
+
+      const a = await service.createApplication(
+        TENANT_A,
+        validInput(),
+        VET_A,
+      );
+      // Başlangıç durumu: LOT-2026-A → 4, LOT-2026-B → 3.
+      expect(
+        service.getStockBalance({
+          tenantId: TENANT_A,
+          stockProductId: "stkp-vac-1",
+          lot: "LOT-2026-A",
+          expiryDate: "2027-12-31",
+        }),
+      ).toBe(4);
+      expect(
+        service.getStockBalance({
+          tenantId: TENANT_A,
+          stockProductId: "stkp-vac-1",
+          lot: "LOT-2026-B",
+          expiryDate: "2027-12-31",
+        }),
+      ).toBe(3);
+
+      (audit.recordSimple as ReturnType<typeof vi.fn>).mockClear();
+      const amended = await service.amendApplication(
+        TENANT_A,
+        a.id,
+        {
+          reason: "Yanlış lot girilmişti, doğrusu LOT-2026-B",
+          lot: {
+            lot: "LOT-2026-B",
+            expiryDate: "2027-12-31",
+            stockProductId: "stkp-vac-1",
+          },
+        },
+        VET_A,
+      );
+
+      // status='amended', yeni lot set edildi.
+      expect(amended.status).toBe("amended");
+      expect(amended.lot.lot).toBe("LOT-2026-B");
+      expect(amended.amendedReason).toBe(
+        "Yanlış lot girilmişti, doğrusu LOT-2026-B",
+      );
+
+      // Stok: LOT-2026-A 4 → 5 (ters kayıt iade), LOT-2026-B 3 → 2.
+      expect(
+        service.getStockBalance({
+          tenantId: TENANT_A,
+          stockProductId: "stkp-vac-1",
+          lot: "LOT-2026-A",
+          expiryDate: "2027-12-31",
+        }),
+      ).toBe(5);
+      expect(
+        service.getStockBalance({
+          tenantId: TENANT_A,
+          stockProductId: "stkp-vac-1",
+          lot: "LOT-2026-B",
+          expiryDate: "2027-12-31",
+        }),
+      ).toBe(2);
+
+      // stockMovementIds: original + reverse + new decrement.
+      expect(amended.stockMovementIds).toHaveLength(3);
+
+      // Audit: lotChange içermeli.
+      expect(audit.recordSimple).toHaveBeenCalledWith(
+        "audit:vaccine.application.amend",
+        "vaccine_application",
+        a.id,
+        "amend",
+        expect.objectContaining({ tenantId: TENANT_A }),
+        "warning",
+        expect.objectContaining({
+          reason: "Yanlış lot girilmişti, doğrusu LOT-2026-B",
+          lotChange: expect.objectContaining({
+            before: expect.objectContaining({ lot: "LOT-2026-A" }),
+            after: expect.objectContaining({ lot: "LOT-2026-B" }),
+          }),
+        }),
+      );
+    });
+
+    it("yeni lot SKT geçmişse → 422 VET-VACC-0010, eski lot değişmez", async () => {
+      const a = await service.createApplication(
+        TENANT_A,
+        validInput(),
+        VET_A,
+      );
+      // Eski lot 4, hareket 1 adet.
+      expect(
+        service.getStockBalance({
+          tenantId: TENANT_A,
+          stockProductId: "stkp-vac-1",
+          lot: "LOT-2026-A",
+          expiryDate: "2027-12-31",
+        }),
+      ).toBe(4);
+      const oldMovementCount = a.stockMovementIds.length;
+
+      await expect(
+        service.amendApplication(
+          TENANT_A,
+          a.id,
+          {
+            reason: "lot değişti ama SKT geçmiş",
+            lot: {
+              lot: "LOT-2026-EXPIRED",
+              expiryDate: "2024-01-01",
+              stockProductId: "stkp-vac-1",
+            },
+          },
+          VET_A,
+        ),
+      ).rejects.toMatchObject({
+        errorCode: "VET-VACC-0010",
+        httpStatus: 422,
+      });
+
+      // Eski lot değişmemiş olmalı (atomik).
+      expect(
+        service.getStockBalance({
+          tenantId: TENANT_A,
+          stockProductId: "stkp-vac-1",
+          lot: "LOT-2026-A",
+          expiryDate: "2027-12-31",
+        }),
+      ).toBe(4);
+      // Record hala aktif, lot değişmemiş.
+      const after = await service.getApplication(TENANT_A, a.id, VET_A);
+      expect(after?.status).toBe("active");
+      expect(after?.lot.lot).toBe("LOT-2026-A");
+      expect(after?.stockMovementIds).toHaveLength(oldMovementCount);
+    });
+
+    it("yeni lot yetersiz stok → 422 VET-VACC-0009, eski lot değişmez", async () => {
+      // Yeni lot 0 stok.
+      stock.addStock({
+        tenantId: TENANT_A,
+        stockProductId: "stkp-vac-1",
+        lot: "LOT-2026-C",
+        expiryDate: "2027-12-31",
+        quantity: 0,
+      });
+      const a = await service.createApplication(
+        TENANT_A,
+        validInput(),
+        VET_A,
+      );
+      expect(
+        service.getStockBalance({
+          tenantId: TENANT_A,
+          stockProductId: "stkp-vac-1",
+          lot: "LOT-2026-A",
+          expiryDate: "2027-12-31",
+        }),
+      ).toBe(4);
+      const oldMovementCount = a.stockMovementIds.length;
+
+      await expect(
+        service.amendApplication(
+          TENANT_A,
+          a.id,
+          {
+            reason: "lot değişti ama stok yok",
+            lot: {
+              lot: "LOT-2026-C",
+              expiryDate: "2027-12-31",
+              stockProductId: "stkp-vac-1",
+            },
+          },
+          VET_A,
+        ),
+      ).rejects.toMatchObject({
+        errorCode: "VET-VACC-0009",
+        httpStatus: 422,
+      });
+
+      // Eski lot değişmemiş olmalı (atomik).
+      expect(
+        service.getStockBalance({
+          tenantId: TENANT_A,
+          stockProductId: "stkp-vac-1",
+          lot: "LOT-2026-A",
+          expiryDate: "2027-12-31",
+        }),
+      ).toBe(4);
+      // Yeni lot da değişmemiş (decrement denemesi başarısız).
+      expect(
+        service.getStockBalance({
+          tenantId: TENANT_A,
+          stockProductId: "stkp-vac-1",
+          lot: "LOT-2026-C",
+          expiryDate: "2027-12-31",
+        }),
+      ).toBe(0);
+      const after = await service.getApplication(TENANT_A, a.id, VET_A);
+      expect(after?.status).toBe("active");
+      expect(after?.lot.lot).toBe("LOT-2026-A");
+      expect(after?.stockMovementIds).toHaveLength(oldMovementCount);
+    });
+
+    it("aynı lot bilgisi gönderilirse stok hareketi oluşmaz, sadece alanlar güncellenir", async () => {
+      const a = await service.createApplication(
+        TENANT_A,
+        validInput(),
+        VET_A,
+      );
+      const oldMovementCount = a.stockMovementIds.length;
+
+      const amended = await service.amendApplication(
+        TENANT_A,
+        a.id,
+        {
+          reason: "lot aynı kalsın, sadece not düzelteyim",
+          notes: "Yeni not",
+          lot: {
+            lot: "LOT-2026-A",
+            expiryDate: "2027-12-31",
+            stockProductId: "stkp-vac-1",
+          },
+        },
+        VET_A,
+      );
+      expect(amended.status).toBe("amended");
+      expect(amended.notes).toBe("Yeni not");
+      // Stok değişmemeli.
+      expect(
+        service.getStockBalance({
+          tenantId: TENANT_A,
+          stockProductId: "stkp-vac-1",
+          lot: "LOT-2026-A",
+          expiryDate: "2027-12-31",
+        }),
+      ).toBe(4);
+      expect(amended.stockMovementIds).toHaveLength(oldMovementCount);
+    });
+
+    it("lot + dose + notes birlikte değişebilir, audit detail hepsini içerir", async () => {
+      stock.addStock({
+        tenantId: TENANT_A,
+        stockProductId: "stkp-vac-1",
+        lot: "LOT-2026-D",
+        expiryDate: "2027-12-31",
+        quantity: 2,
+      });
+      const a = await service.createApplication(
+        TENANT_A,
+        validInput(),
+        VET_A,
+      );
+      (audit.recordSimple as ReturnType<typeof vi.fn>).mockClear();
+
+      const amended = await service.amendApplication(
+        TENANT_A,
+        a.id,
+        {
+          reason: "lot yanlıştı, doz da eksikti",
+          dose: { amount: 0.5, unit: "ml" },
+          notes: "Doğru doz: 0.5ml",
+          nextDueDate: "2027-03-15",
+          lot: {
+            lot: "LOT-2026-D",
+            expiryDate: "2027-12-31",
+            stockProductId: "stkp-vac-1",
+          },
+        },
+        VET_A,
+      );
+      expect(amended.dose).toEqual({ amount: 0.5, unit: "ml" });
+      expect(amended.notes).toBe("Doğru doz: 0.5ml");
+      expect(amended.nextDueDate).toBe("2027-03-15");
+      expect(amended.lot.lot).toBe("LOT-2026-D");
+
+      expect(audit.recordSimple).toHaveBeenCalledWith(
+        "audit:vaccine.application.amend",
+        "vaccine_application",
+        a.id,
+        "amend",
+        expect.objectContaining({ tenantId: TENANT_A }),
+        "warning",
+        expect.objectContaining({
+          reason: "lot yanlıştı, doz da eksikti",
+          before: expect.objectContaining({
+            dose: { amount: 1, unit: "ml" },
+          }),
+          after: expect.objectContaining({
+            dose: { amount: 0.5, unit: "ml" },
+          }),
+          lotChange: expect.objectContaining({
+            before: expect.objectContaining({ lot: "LOT-2026-A" }),
+            after: expect.objectContaining({ lot: "LOT-2026-D" }),
+          }),
+        }),
+      );
+    });
+  });
 });

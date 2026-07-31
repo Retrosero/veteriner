@@ -165,9 +165,15 @@ export class VaccineApplicationsController {
     operationId: "vaccineApplicationAmend",
     summary: "Aşı uygulama kaydını düzelt (amend)",
     description:
-      "Yalnızca aktif kayıtlar düzeltilebilir (status='active'). " +
-      "Düzeltme sonrası status='amended'. Stok değişmez. Audit " +
-      "`audit:vaccine.application.amend` (warning). Zaten " +
+      "GOAL-054 amendment. Yalnızca aktif kayıtlar düzeltilebilir " +
+      "(status='active'). Düzeltme sonrası status='amended' ve eski " +
+      "kayıt korunur (fiziksel silme yok). Değiştirilebilir alanlar: " +
+      "dose, nextDueDate, notes, lot. `lot` değişirse eski lot'a " +
+      "ters kayıt + yeni lot'tan düşüm hareketi atomik olarak " +
+      "oluşturulur. Yeni lot SKT geçmişse 422 VET-VACC-0010; " +
+      "yetersiz stok 422 VET-VACC-0009; eski lot değişmez. " +
+      "Audit `audit:vaccine.application.amend` (warning) — " +
+      "lotChange varsa before/after ayrıca loglanır. Zaten " +
       "düzeltilmiş/iptal edilmiş kayıt → 409 VET-VACC-0007.",
   })
   public async amend(
