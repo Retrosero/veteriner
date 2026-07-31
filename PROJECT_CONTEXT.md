@@ -479,3 +479,25 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
 - Test: 29/29 yeni spec yeşil (1 placeholder skipped). Full api regression 1224/1224 yeşil, 9 skipped, 0 hata. tsc --noEmit temiz.
 - Docs/i18n/RAG chunk/field glossary/cross-ref: sonraki tick'lere ertelendi.
 - Sonraki: docs/RAG chunk/i18n key parity + DB migration (Prisma) + Faz 13+ gerçek provider entegrasyonu (Idexx/Heska/Reflab/...) + tenant-bazlı adapter konfigürasyonu + Faz 8 React UI + adapter auto-discovery (heartbeat/health check).
+
+- **Faz 10 — Hata merkezi** ⏳ sırada
+  - GOAL-100 ⏳ partial — core: merkezi backend hata yakalama.
+    error-events modülü (4 endpoint: list/summary/
+    byFingerprint/:id) + AllExceptionsFilter entegrasyonu (5xx
+    + critical; 4xx kayıt dışı) + ErrorEvent sözleşmesi
+    (request_id/tenant/branch/user/module/route/release/
+    severity/fingerprint/sanitized context) + 37 modül enum
+    (auth/clinic/lab/inventory/...) + fingerprint üretimi
+    (errorCode + module + normalizeMessage) + duplicate
+    gruplama (occurrenceCount) + SUPERADMIN yetkisi
+    (`audit:log:read`) + moduleFromRoute helper (path →
+    modül) + PII mask context'ten geçer + 4xx için stack null.
+    32/32 yeni test + 1256/1256 api regresyon geçti.
+    Cross-module: AllExceptionsFilter (5xx + critical hata
+    olaylarını ErrorEventsService.recordError'a yönlendirir).
+    Sonraki tick: docs/RAG chunk/i18n key parity + DB
+    migration (Prisma) + atama/çözüm notları (GOAL-104) +
+    güvenlik alarm kuralları (GOAL-105) + tenant bazlı hata
+    filtresi iyileştirmesi + frontend hata yakalama
+    (GOAL-101) entegrasyonu + severity=kayıt kuralı
+    konfigürabləşdirməsi.
