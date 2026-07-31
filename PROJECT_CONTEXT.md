@@ -414,6 +414,42 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
     için React UI + reaktif hook'lar (stok hareketi
     oluşturulduğunda / lot arşivlendiğinde otomatik
     refresh tetikleme).
+  - GOAL-074 ⏳ partial — core: kasa ve gün sonu.
+    cash-register modülü (7 endpoint: openSession /
+    getCurrentOpenSession / listSessions / getSessionDetail /
+    closeSession / reopenSession / listMovements / getSummary) +
+    3 status (open → closed → reopened) + şubeye bağlı tek
+    açık oturum + OWNER yetkisi ile reopen + KasaRepository
+    üzerinden sessionRange hareket okuma + normalizeCashDecimal
+    (4 ondalık normalize, trailing sıfır kırpma) + 23/23 yeni
+    test + 1054/1054 api regression geçti. 8 yeni hata kodu
+    VET-CASH_REGISTER-0001-0008. Audit cash_register.session.
+    {open,close,reopen}. Cross-module: KasaRepository
+    (listForSessionRange). Sonraki tick: docs/RAG chunk/i18n
+    key parity + DB migration (Prisma) + Faz 7 tahsilat
+    (GOAL-072) ile payment kasa etkisi test senaryoları +
+    session raporu export (PDF/CSV).
+
+  - GOAL-083 ⏳ partial — core: ameliyat operasyon notu ve
+    kullanılan malzemeler. operation-notes modülü (7 endpoint:
+    create/list/get/update/addTeamMember/addMaterial/finalize/
+    amend + list alt kayıtlar) + 3 status (draft → finalized →
+    amended) + ekip (5 rol) + malzemeler (append-only,
+    purchaseTracked ürünlerde finalize'da stock movement) +
+    SurgeryPlansService (plan in_progress kontrolü) +
+    StockMovementsService (finalize'da her material için
+    createSystemMovement(type='clinical_use')) + 15/15 yeni
+    test + 1054/1054 api regression geçti. 4 yeni hata kodu
+    VET-OPNOTE-0001-0004. Audit operation_note.
+    {create,update,finalize,amend}. Cross-module:
+    SurgeryPlansService + StockMovementsService.
+    Mevcut permission'lar kullanıldı: clinic:surgery:
+    read/create/start/complete + clinic:stock:decrement.
+    Sonraki tick: docs/RAG chunk/i18n key parity + DB
+    migration (Prisma) + Faz 6 klinik tüketim (GOAL-066) ile
+    type='operation_note' entegrasyonu + onam formu (GOAL-081)
+    ile bağlantı + Faz 5 aşı uygulaması (GOAL-051) ile
+    malzeme türü.
 - **Faz 7 — Finans** ⏳ sırada
   - GOAL-070 ⏳ partial — core: fiyat listeleri ve hizmet
     ücretleri altyapısı. pricing modülü (`pricing` sözleşmesi:
