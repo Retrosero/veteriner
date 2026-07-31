@@ -189,3 +189,32 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
     (tenant ayarı kapalıysa 403 VET-AUTHZ-0002). Audit
     `audit:vaccine.card.portal_setting.update`. Sonraki tick:
     docs/RAG chunk/i18n key parity + PDF/çıktı + DB migration.
+  - GOAL-053 ⏳ partial — core: aşı hatırlatma job'u. `vaccineReminder`
+    sözleşmesi (VaccineReminder + VaccineReminderListQuery +
+    VaccineReminderConfigInput + `vaccine_reminder` notification
+    category) + `vaccine-reminder.types.ts` (VaccineReminderRecord +
+    VaccineReminderConfig + DEFAULT_VACCINE_REMINDER_CONFIG +
+    computeScheduledFor + pickStepForApplication + buildVaccineReminderDedupeKey
+    yardımcıları) + `VaccineRemindersRepository` (in-memory; dedupe
+    + tenant config) + `VaccineRemindersService`
+    (scheduleForApplication + cancelForApplication +
+    cancelForPatient + rescheduleForApplication +
+    processDueReminders + listForPatient + getTenantConfig +
+    updateTenantConfig) + `VaccineRemindersController` (list +
+    config get/update + processDue endpoint'leri) + vaccines
+    module wiring (Notifications + Consent + Patient + Owner +
+    Tenant bağımlılıkları) + 30/30 yeni test + 624/624 api testi
+    geçti. Personel endpoint'ler:
+    `GET /api/v1/clinic/vaccines/reminders/patient/:patientId` +
+    `GET/PUT /api/v1/clinic/vaccines/reminders/config` +
+    `POST /api/v1/clinic/vaccines/reminders/process`. Default
+    config 7 gün önce + sms + in_app; marketing consent yoksa
+    sms atlanır, in_app'e düşer. Snapshot deseni (application +
+    step) ile circular import koruması. Audit
+    `audit:vaccine.reminder.schedule/cancel/cancel_patient/
+    reschedule/config.update/process_due`. Hata kodları
+    VET-AUTHZ-0001 (cross-tenant), VET-VALIDATION-0010 (config
+    invalid). Sonraki tick: docs/RAG chunk/i18n key parity +
+    DB migration (Prisma) + Faz 6 stok modülü ile `stockProductId`
+    gerçek referans + zaman-locale timezone adapter (tenant
+    timezone).

@@ -35,6 +35,7 @@ export type NotificationStatus = z.infer<typeof notificationStatusSchema>;
 export const notificationCategorySchema = z.enum([
   "appointment_reminder",
   "vaccination_due",
+  "vaccine_reminder",
   "lab_result_ready",
   "invoice",
   "portal_invite",
