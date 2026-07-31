@@ -98,6 +98,7 @@ export class VaccinesService {
       species: input.species,
       category: input.category,
       manufacturer: input.manufacturer ?? null,
+      defaultDose: input.defaultDose ?? null,
       steps: input.steps,
       totalDurationMonths,
       isCore,
@@ -123,6 +124,7 @@ export class VaccinesService {
         isCore: record.isCore,
         stepCount: record.steps.length,
         totalDurationMonths: record.totalDurationMonths,
+        hasDefaultDose: record.defaultDose !== null,
       },
     );
 
@@ -213,6 +215,8 @@ export class VaccinesService {
     if (input.name !== undefined) patch.name = input.name;
     if (input.manufacturer !== undefined)
       patch.manufacturer = input.manufacturer;
+    if (input.defaultDose !== undefined)
+      patch.defaultDose = input.defaultDose ?? null;
     if (input.category !== undefined) {
       patch.category = input.category;
       patch.isCore = input.category === "core";

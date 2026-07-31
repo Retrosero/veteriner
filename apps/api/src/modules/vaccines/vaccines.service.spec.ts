@@ -54,7 +54,13 @@ function makeAudit(): AuditService {
   } as unknown as AuditService;
 }
 
-function validSteps() {
+function validSteps(): Array<{
+  ageWeeks: number;
+  vaccineName: string;
+  boosterIntervalDays?: number;
+  dose?: { amount: number; unit: "ml" | "dose" | "mg" | "drop" };
+  notes?: string;
+}> {
   return [
     { ageWeeks: 8, vaccineName: "DHPP-1" },
     { ageWeeks: 12, vaccineName: "DHPP-2" },
@@ -68,6 +74,7 @@ function validInput(
     species: "dog" | "cat" | "bird" | "all";
     category: "core" | "non_core" | "lifestyle" | "not_recommended";
     manufacturer: string;
+    defaultDose: { amount: number; unit: "ml" | "dose" | "mg" | "drop" };
     steps: ReturnType<typeof validSteps>;
   }> = {},
 ) {
@@ -150,6 +157,39 @@ describe("VaccinesService", () => {
         httpStatus: 422,
       });
       expect(audit.recordSimple).not.toHaveBeenCalled();
+    });
+
+    it("defaultDose verilince response'a yansır", async () => {
+      const p = await service.createProtocol(
+        TENANT_A,
+        validInput({ defaultDose: { amount: 1, unit: "ml" } }),
+        VET_A,
+      );
+      expect(p.defaultDose).toEqual({ amount: 1, unit: "ml" });
+    });
+
+    it("defaultDose verilmezse null döner", async () => {
+      const p = await service.createProtocol(TENANT_A, validInput(), VET_A);
+      expect(p.defaultDose).toBeNull();
+    });
+
+    it("step boosterIntervalDays ve dose override saklanır", async () => {
+      const p = await service.createProtocol(
+        TENANT_A,
+        validInput({
+          steps: [
+            { ageWeeks: 8, vaccineName: "DHPP-1", boosterIntervalDays: 21 },
+            {
+              ageWeeks: 12,
+              vaccineName: "DHPP-2",
+              dose: { amount: 1.5, unit: "ml" },
+            },
+          ],
+        }),
+        VET_A,
+      );
+      expect(p.steps[0]?.boosterIntervalDays).toBe(21);
+      expect(p.steps[1]?.dose).toEqual({ amount: 1.5, unit: "ml" });
     });
   });
 
@@ -304,6 +344,37 @@ describe("VaccinesService", () => {
         errorCode: "VET-VACC-0001",
         httpStatus: 409,
       });
+    });
+
+    it("defaultDose update — set edilince yansır", async () => {
+      const created = await service.createProtocol(
+        TENANT_A,
+        validInput(),
+        VET_A,
+      );
+      const updated = await service.updateProtocol(
+        TENANT_A,
+        created.id,
+        { defaultDose: { amount: 2, unit: "dose" } },
+        VET_A,
+      );
+      expect(updated.defaultDose).toEqual({ amount: 2, unit: "dose" });
+    });
+
+    it("defaultDose override — mevcut doz değişir", async () => {
+      const created = await service.createProtocol(
+        TENANT_A,
+        validInput({ defaultDose: { amount: 1, unit: "ml" } }),
+        VET_A,
+      );
+      expect(created.defaultDose).toEqual({ amount: 1, unit: "ml" });
+      const updated = await service.updateProtocol(
+        TENANT_A,
+        created.id,
+        { defaultDose: { amount: 0.5, unit: "ml" } },
+        VET_A,
+      );
+      expect(updated.defaultDose).toEqual({ amount: 0.5, unit: "ml" });
     });
   });
 

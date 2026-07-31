@@ -35,12 +35,33 @@ export const vaccineCategorySchema = z.enum([
 export type VaccineCategory = z.infer<typeof vaccineCategorySchema>;
 
 /**
+ * Varsayılan aşı dozu. `amount` >= 0 (0 = üreticinin kılavuzuna göre
+ * değişken; klinik kendi dozunu step'te override eder). `unit` pilav
+ * listesinden seçilir: `ml` (sıvı), `dose` (tek doz), `mg` (kuru),
+ * `drop` (damla). Doz birimi DB'de saklanır; doz hesabı client tarafında
+ * yapılır (clinic policy).
+ */
+export const vaccineDoseUnitSchema = z.enum(["ml", "dose", "mg", "drop"]);
+export type VaccineDoseUnit = z.infer<typeof vaccineDoseUnitSchema>;
+
+export const vaccineDoseSchema = z.object({
+  amount: z.number().min(0).max(1000),
+  unit: vaccineDoseUnitSchema,
+});
+export type VaccineDose = z.infer<typeof vaccineDoseSchema>;
+
+/**
  * Protokol adımı. `ageWeeks` pozitif tam sayı; `vaccineName` zorunlu.
- * `notes` opsiyonel serbest metin (örn. "yavru", "rapel dozu").
+ * `boosterIntervalDays` sonraki booster'a kadar geçen gün sayısı
+ * (örn. 21 = 3 hafta sonra, 365 = yıllık rapel). `dose` opsiyonel
+ * override (yoksa protokolün `defaultDose`'u kullanılır). `notes`
+ * opsiyonel serbest metin (örn. "yavru", "rapel dozu").
  */
 export const vaccineProtocolStepSchema = z.object({
   ageWeeks: z.number().int().min(0).max(2080),
   vaccineName: z.string().min(1).max(200),
+  boosterIntervalDays: z.number().int().min(0).max(3650).optional(),
+  dose: vaccineDoseSchema.optional(),
   notes: z.string().max(500).optional(),
 });
 export type VaccineProtocolStep = z.infer<typeof vaccineProtocolStepSchema>;
@@ -50,6 +71,7 @@ export type VaccineProtocolStep = z.infer<typeof vaccineProtocolStepSchema>;
  * - `name` zorunlu, max 200.
  * - `steps` en az 1 (boş → 422 VET-VALIDATION-0010).
  * - `manufacturer` opsiyonel.
+ * - `defaultDose` opsiyonel; step'te override edilmezse kullanılır.
  * - `isCore` client'tan kabul edilmez; `category='core'` ise
  *   service katmanı otomatik `true` yapar.
  */
@@ -58,6 +80,7 @@ export const vaccineProtocolCreateInputSchema = z.object({
   species: speciesTargetSchema,
   category: vaccineCategorySchema,
   manufacturer: z.string().max(200).optional(),
+  defaultDose: vaccineDoseSchema.optional(),
   steps: z.array(vaccineProtocolStepSchema).min(1),
 });
 export type VaccineProtocolCreateInput = z.infer<
@@ -72,6 +95,7 @@ export const vaccineProtocolUpdateInputSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   category: vaccineCategorySchema.optional(),
   manufacturer: z.string().max(200).optional(),
+  defaultDose: vaccineDoseSchema.optional(),
   steps: z.array(vaccineProtocolStepSchema).min(1).optional(),
 });
 export type VaccineProtocolUpdateInput = z.infer<
@@ -86,6 +110,8 @@ export const vaccineProtocolSchema = z.object({
   species: speciesTargetSchema,
   category: vaccineCategorySchema,
   manufacturer: z.string().nullable(),
+  /** Protokolün varsayılan dozu; step'te override edilmezse kullanılır. */
+  defaultDose: vaccineDoseSchema.nullable(),
   steps: z.array(vaccineProtocolStepSchema),
   /** Son step'ten hesaplanan toplam süre (ay). */
   totalDurationMonths: z.number().int().nonnegative(),

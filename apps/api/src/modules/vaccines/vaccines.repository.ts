@@ -30,6 +30,7 @@ export interface VaccineProtocolPatch {
   name?: string | undefined;
   category?: VaccineCategory | undefined;
   manufacturer?: string | null | undefined;
+  defaultDose?: VaccineProtocolRecord["defaultDose"] | undefined;
   steps?: VaccineProtocolRecord["steps"] | undefined;
   totalDurationMonths?: number | undefined;
   isCore?: boolean | undefined;

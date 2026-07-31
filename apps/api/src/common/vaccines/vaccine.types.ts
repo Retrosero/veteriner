@@ -20,6 +20,7 @@
 import type {
   SpeciesTarget,
   VaccineCategory,
+  VaccineDose,
   VaccineProtocol,
   VaccineProtocolStep,
 } from "@vetniva/contracts";
@@ -27,6 +28,8 @@ import type {
 /**
  * Persist edilmiş vaccine protocol record. API sözleşmesinden (public
  * VaccineProtocol) `archivedAt` ve `createdBy` ek olarak tutulur.
+ * `defaultDose` protokol düzeyinde varsayılan; step'te override yoksa
+ * uygulama sırasında kullanılır (bkz. GOAL-051 aşı uygulama kaydı).
  */
 export interface VaccineProtocolRecord {
   id: string;
@@ -35,6 +38,7 @@ export interface VaccineProtocolRecord {
   species: SpeciesTarget;
   category: VaccineCategory;
   manufacturer: string | null;
+  defaultDose: VaccineDose | null;
   steps: VaccineProtocolStep[];
   totalDurationMonths: number;
   isCore: boolean;
@@ -47,6 +51,7 @@ export interface VaccineProtocolRecord {
 export type {
   SpeciesTarget,
   VaccineCategory,
+  VaccineDose,
   VaccineProtocol,
   VaccineProtocolStep,
 };
@@ -62,6 +67,7 @@ export function toVaccineProtocol(
     species: rec.species,
     category: rec.category,
     manufacturer: rec.manufacturer,
+    defaultDose: rec.defaultDose,
     steps: rec.steps,
     totalDurationMonths: rec.totalDurationMonths,
     isCore: rec.isCore,
