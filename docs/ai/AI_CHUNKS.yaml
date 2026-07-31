@@ -849,6 +849,56 @@ generated_at: "2026-07-30"
                 api.get._api_v1_inventory_stock-movements__id_,
                 api.post._api_v1_inventory_stock-movements__id_reverse]
 
+- chunk_id: flow-petshop-sale
+  type: flow
+  source: packages/contracts/src/petshop-sale.ts
+  entity: petshop_sale
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Petshop Satış Akışı (Petshop POS)"
+  content: |
+    1. Petshop satış yaşam döngüsü: `draft` → `completed` |
+       `cancelled`.
+    2. Oluşturma (POST): `lines[]` (min 1) zorunlu; müşteri
+       (`ownerId`) opsiyonel. Toplam otomatik (Decimal
+       çarpma, satır + genel `discount`).
+    3. Güncelleme (PATCH): yalnızca `status='draft'`
+       güncellenebilir (409 VET-SALE-0003).
+    4. Tamamlama (POST /complete): `draft` → `completed`.
+       Her line için atomik `StockMovement` (`type='sale'`,
+       `direction='out'`) üretilir. Yetersiz stok → 422
+       VET-SALE-0007.
+    5. İptal (POST /cancel): `draft` veya `completed` →
+       `cancelled`. `completed` ise her line için
+       `reversal` hareketi (stok iade) otomatik üretilir.
+    6. Line item: `productId` × `quantity` × `unitPrice`
+       (Decimal) + opsiyonel `discount`. Toplam otomatik.
+    7. Tam iade (müşteri ödeme iadesi) Faz 6 GOAL-065
+       petshop-sale-returns modülünde; burada yalnızca
+       satış iptali + stok reversal.
+    8. Audit: `audit:petshop_sale.{create,update,complete,
+       cancel}`. Complete'de `newMovementIds[]`,
+       cancel'de reversal payload'a eklenir.
+    9. Faz 7 tahsilat (GOAL-072) ile ödeme bağlantısı
+       (`paymentMethod` opsiyonel).
+  keywords: [petshop, POS, satış, sale, line item, draft,
+             completed, cancelled, stok düşüm, reversal,
+             Decimal, indirim]
+  related_chunks: [flow-product-catalog, flow-stock-movement,
+                   flow-customer-balance, error-VET-SALE-0001,
+                   error-VET-SALE-0002, error-VET-SALE-0003,
+                   error-VET-SALE-0006, error-VET-SALE-0007]
+  related_pages: []
+  related_api: [api.post._api_v1_petshop_sales,
+                api.get._api_v1_petshop_sales,
+                api.get._api_v1_petshop_sales__id_,
+                api.patch._api_v1_petshop_sales__id_,
+                api.post._api_v1_petshop_sales__id_complete,
+                api.post._api_v1_petshop_sales__id_cancel]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
