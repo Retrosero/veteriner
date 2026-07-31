@@ -239,10 +239,18 @@ bu katalogda yer almasını zorunlu kılar.
 
 | Kod                  | Ad                              | HTTP | Severity | Kaynak | Çözüm                                |
 | -------------------- | ------------------------------- | ---- | -------- | ------ | ------------------------------------ |
-| `VET-STOCK-0001`     | Yetersiz stok                   | 422  | warning  | server | Stok ekleme veya farklı ürün kullanın. |
-| `VET-STOCK-0002`     | Lot bulunamadı                  | 404  | warning  | server | Lot numarasını kontrol edin.         |
-| `VET-STOCK-0003`     | SKT geçmiş                      | 422  | warning  | server | SKT'si geçmiş lot kullanılamaz.      |
-| `VET-STOCK-0004`     | Stok hareketi tutarsız          | 500  | critical | server | Sayım düzeltmesi gerekir.            |
+| `VET-STOCK-0001`     | Stok hareketi bulunamadı        | 404  | warning  | server | Hareket ID'sini kontrol edin.        |
+| `VET-STOCK-0002`     | Yetersiz stok (bakiye)          | 422  | warning  | server | Tedarik yapın veya farklı lot seçin. |
+| `VET-STOCK-0003`     | Ürün bulunamadı                 | 404  | warning  | server | Ürün ID'sini kontrol edin.           |
+| `VET-STOCK-0004`     | Stok hareketi tutarsız          | 500  | critical | server | Sayım düzeltmesi gerekir; destekle iletişime geçin. |
+| `VET-STOCK-0005`     | Lot bulunamadı                  | 404  | warning  | server | Lot ID'sini kontrol edin.            |
+| `VET-STOCK-0006`     | Arşivlenmiş lot                 | 409  | warning  | server | Farklı bir lot seçin veya arşivlemeyi kaldırın. |
+| `VET-STOCK-0007`     | Neden (reason) zorunlu          | 422  | warning  | server | Sayım düzeltmesi/waste/reversal için neden girin. |
+| `VET-STOCK-0008`     | Service ürünü için stok hareketi olamaz | 422 | warning | server | Hizmet türünde ürünler stoklanmaz. |
+| `VET-STOCK-0009`     | Arşivlenmiş ürün                | 409  | warning  | server | Arşivli ürün için hareket oluşturulamaz. |
+| `VET-STOCK-0010`     | Ters kayıt zaten var            | 409  | warning  | server | Orijinal hareket yalnızca bir kez tersine çevrilebilir. |
+| `VET-STOCK-0011`     | Lot ile ürün eşleşmiyor         | 422  | warning  | server | Lot, doğru ürüne ait olmalı.        |
+| `VET-STOCK-0012`     | Sistem hareketi source eksik    | 422  | warning  | server | sourceType ve sourceId zorunlu.      |
 
 ## Envanter (INVENTORY) — Depo, Raf, Lot
 

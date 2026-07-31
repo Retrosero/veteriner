@@ -652,8 +652,12 @@ describe("AppointmentRemindersService", () => {
     });
 
     it("insert aynı tenant+dedupeKey ile ikinci kez no-op", () => {
-      const rec1 = makeRepoRecord(TENANT_A, "id-1", APPT_ID_A, futureIso(24), "sms");
-      const rec2 = makeRepoRecord(TENANT_A, "id-2", APPT_ID_A, futureIso(24), "sms");
+      // Aynı scheduledFor değerini paylaşmalı (milisaniye farkı
+      // dedupeKey'i bozar; futureIso() her çağrıda yeni Date.now()
+      // okur). Bu yüzden tek seferlik hesaplanır.
+      const scheduled = futureIso(24);
+      const rec1 = makeRepoRecord(TENANT_A, "id-1", APPT_ID_A, scheduled, "sms");
+      const rec2 = makeRepoRecord(TENANT_A, "id-2", APPT_ID_A, scheduled, "sms");
       const r1 = h.repo.insert(rec1);
       const r2 = h.repo.insert(rec2);
       expect(r1.inserted).toBe(true);

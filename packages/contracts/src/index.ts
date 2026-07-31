@@ -52,3 +52,4 @@ export * from "./product.js";
 export * from "./inventory.js";
 export * from "./supplier.js";
 export * from "./purchase-order.js";
+export * from "./stock-movement.js";

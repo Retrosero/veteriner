@@ -1798,6 +1798,71 @@ permissions:
     applies_to_roles: [OWNER]
 
   # ----------------------------------------------------------------
+  # INVENTORY:STOCK_MOVEMENT — Stok hareketleri ve sayım (GOAL-063)
+  # Append-only hareket tablosu: 9 tür (purchase, sale,
+  # clinical_use, vaccination, return, transfer, count_adjustment,
+  # waste, reversal). Mevcut miktar hareket toplamından türetilir.
+  # ----------------------------------------------------------------
+  - permission: "inventory:stock_movement:read"
+    description: "Stok hareketlerini ve bakiyeleri görüntüleme."
+    resource_type: stock_movement
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "inventory:stock_movement:create"
+    description: >-
+      Manuel stok hareketi oluşturma (sayım düzeltmesi, fire,
+      manuel alış/return vb.). Sistem akışları (purchase order
+      receive, vaccine application) bu permission'a ihtiyaç
+      duymaz; otomatik oluşturulur.
+    resource_type: stock_movement
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "inventory:stock_movement:reverse"
+    description: >-
+      Stok hareketini ters kayıt ile iptal etme. Yeni bir
+      'reversal' hareketi oluşturulur; orijinal hareket korunur
+      (append-only). Neden (reason) zorunlu.
+    resource_type: stock_movement
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: true
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  - permission: "inventory:stock_movement:export"
+    description: "Stok hareketlerini dışa aktarma (CSV/PDF)."
+    resource_type: stock_movement
+    action: export
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  # ----------------------------------------------------------------
   # CATALOG:SUPPLIER — Tedarikçi kataloğu (GOAL-062)
   # ----------------------------------------------------------------
   - permission: "catalog:supplier:read"

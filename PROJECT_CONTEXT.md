@@ -332,3 +332,47 @@ equiresPrescription/controlledDrug UK ila�
     PurchaseOrderLine'a lotId referansı + mevcut
     appointment-reminders testindeki regression (1 test,
     bizim eklediğimiz kodla ilgisiz, önceden var) düzeltmesi.
+  - GOAL-063 ⏳ partial — core: 9 türlü stok hareketi (purchase, sale,
+    clinical_use, vaccination, return, transfer, count_adjustment,
+    waste, reversal) + append-only ledger + atomik bakiye hesabı.
+    `stockMovement` sözleşmesi (StockMovement + StockBalance +
+    StockMovementCreateInput + StockMovementReverseInput +
+    StockMovementFilters; `REASON_REQUIRED_MOVEMENT_TYPES` set'i) +
+    `stock-movement.types.ts` (StockMovementRecord + toStockMovement +
+    normalizeSignedDecimal + decimalToScaledBigInt +
+    addSignedDecimals + negateSignedDecimal + requiresReason +
+    movementAffectsStock) + `StockMovementsRepository` (in-memory;
+    byId/byProduct/byLot/bySource/byReversal indeksleri + nextId +
+    insert + findById + listBySource + listByReversal + search +
+    update + clear) + `StockMovementsService` (createMovement public
+    + createSystemMovement purchase/vaccine için + listMovements +
+    getMovement + reverseMovement + listBalances; cross-tenant 403
+    VET-AUTHZ-0001, ürün yok 404 VET-STOCK-0003, ürün arşivli 409
+    VET-STOCK-0009, service türü 422 VET-STOCK-0008, lot yok 404
+    VET-STOCK-0005, lot arşivli 409 VET-STOCK-0006, lot-ürün
+    eşleşmiyor 422 VET-STOCK-0011, neden eksik 422 VET-STOCK-0007,
+    hareket yok 404 VET-STOCK-0001, ters kayıt zaten var 409
+    VET-STOCK-0010, sistem source eksik 422 VET-STOCK-0012) +
+    `StockMovementsController` (5 endpoint + Zod validation +
+    PermissionsGuard) + module wiring (ProductsModule +
+    InventoryModule + AuditModule bağımlılıkları) + 4 yeni
+    permission catalog: inventory:stock_movement:read/create/reverse/
+    export (PERMISSION_CATALOG.yaml + permission-spec.ts union +
+    OWNER +3, VETERINARIAN +1, STAFF +2) + 12 yeni hata kodu
+    VET-STOCK-0001-0012 (ERROR_CATALOG.md güncellendi; eski 4
+    placeholder yeniden anlamlandırıldı) + 38/38 yeni test +
+    761/761 api testi geçti. Audit `audit:stock_movement.create`
+    (info) + `audit:stock_movement.reverse` (warning).
+    System akışları (`createSystemMovement`) purchase order
+    receive ve vaccine application için çağrı yapısını hazır;
+    purchase-orders ve vaccines modüllerinin entegrasyonu bir
+    sonraki tick'te. Sonraki tick: docs/RAG chunk/i18n key
+    parity + DB migration (Prisma) + purchase-orders.receive
+    PurchaseOrder ve vaccine.applications.createApplication'ın
+    createSystemMovement'a bağlanması (purchase ve vaccination
+    türlerinde) + Faz 7 petshop satış (GOAL-064+) ile sale
+    türünde entegrasyon + Faz 7 satış iadesi (GOAL-065) ile
+    return türü + transfer türü için çift-kayıt (kaynak/hedef)
+    desteği + negatif bakiye kontrolü (yetersiz stok 422
+    VET-STOCK-0002) + StockMovementPatch endpoint (notes/reason
+    düzeltme).
