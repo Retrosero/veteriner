@@ -1,0 +1,54 @@
+{
+  "$comment": "docs-check opt-out listesi. Her öğe bir rule: exact method+path eşleşmesi veya prefix/glob. Pilot kapsamı dışı endpoint'ler buraya eklenir; production-ready endpoint'ler doğrudan docs/api/ altında yazılmalı.",
+  "version": "1.0.0",
+  "rules": [
+    {
+      "reason": "pilot-deferred: implementasyonu pilot kapsamı dışı; FAZ-13+ provider entegrasyonu gerekli",
+      "match": [
+        "POST /api/v1/payments",
+        "GET /api/v1/payments/{id}/reversals",
+        "POST /api/v1/payments/{id}/reverse",
+        "POST /api/v1/petshop/sales",
+        "POST /api/v1/petshop/sales/{id}/cancel",
+        "POST /api/v1/petshop/sales/{id}/complete",
+        "POST /api/v1/clinic/sales",
+        "POST /api/v1/clinic/sales/{id}/cancel",
+        "POST /api/v1/clinic/sales/{id}/complete",
+        "POST /api/v1/inventory/purchase-orders",
+        "POST /api/v1/inventory/purchase-orders/{id}/approve",
+        "POST /api/v1/inventory/purchase-orders/{id}/receive",
+        "POST /api/v1/inventory/purchase-orders/{id}/cancel"
+      ]
+    },
+    {
+      "reason": "deprecated: legacy endpoint; migration FAZ-15+'da",
+      "match": [
+        "GET /api/v1/cash-register/sessions/{id}",
+        "GET /api/v1/cash-register/sessions/{id}/summary",
+        "GET /api/v1/cash-register/sessions/{id}/movements",
+        "POST /api/v1/cash-register/sessions",
+        "POST /api/v1/cash-register/sessions/{id}/close",
+        "POST /api/v1/cash-register/sessions/{id}/reopen"
+      ]
+    },
+    {
+      "reason": "internal-only: SUPERADMIN/audit amaçlı; pilot için UI gerekmiyor",
+      "match": [
+        "GET /api/v1/superadmin/error-events/groups",
+        "GET /api/v1/superadmin/error-events/groups/{fingerprint}",
+        "GET /api/v1/superadmin/error-events/fingerprints/{fingerprint}",
+        "GET /api/v1/superadmin/error-events/{id}/notes",
+        "POST /api/v1/superadmin/error-events/{id}/notes",
+        "GET /api/v1/superadmin/error-events/{id}/support-links",
+        "POST /api/v1/superadmin/error-events/{id}/support-links",
+        "GET /api/v1/superadmin/error-events/{id}/assignments",
+        "PATCH /api/v1/superadmin/error-events/{id}/assignment",
+        "GET /api/v1/superadmin/error-events/{id}/audit-log",
+        "GET /api/v1/superadmin/job-runs/dead-letter",
+        "GET /api/v1/superadmin/job-runs/attempts/{jobKey}",
+        "GET /api/v1/superadmin/log-retention/policies/{id}",
+        "GET /api/v1/superadmin/log-retention/sweeps/{id}"
+      ]
+    }
+  ]
+}

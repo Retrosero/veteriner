@@ -72,7 +72,7 @@ export async function readDocFiles(docsRoot: string): Promise<DocInventory> {
   const permissionMatrix = await tryRead(permissionMatrixPath);
   if (permissionMatrix) {
     for (const m of permissionMatrix.matchAll(
-      /`([a-z][a-z0-9_-]+:[a-z][a-z0-9_-]+(?::[a-z][a-z0-9_-]+)?)`/g,
+      /`([a-zA-Z][a-zA-Z0-9_-]+:[a-zA-Z][a-zA-Z0-9_-]+(?::[a-zA-Z][a-zA-Z0-9_-]+)?)`/g,
     )) {
       const perm = m[1];
       if (perm) inv.permissions.add(perm);

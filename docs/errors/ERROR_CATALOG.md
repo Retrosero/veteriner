@@ -54,6 +54,7 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-AUTH-0007`      | Parola politikasına uyumsuz           | 422  | warning  | server | En az 12 karakter; büyük/küçük harf ve rakam içermeli. |
 | `VET-AUTH-0008`      | Yeni parola eskisiyle aynı            | 400  | warning  | server | Farklı bir parola seçin.                         |
 
+| `VET-AUTH-9999       ` | VET-AUTH-9999 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
 ## Yetkilendirme (AUTHZ)
 
 | Kod                  | Ad                                | HTTP | Severity | Kaynak | Çözüm                                              |
@@ -65,6 +66,7 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-AUTHZ-0005`     | Belirli rol gerekli               | 403  | warning  | server | Bu işlem için SUPERADMIN veya OWNER rolü gerekli.   |
 | `VET-AUTHZ-0006`     | Tenant bağlamı zorunlu            | 403  | warning  | server | Bu işlem için aktif bir tenant üyeliği gerekli.   |
 
+| `VET-SEC-0001        ` | VET-SEC-0001 (FAZ-11 stub)  | 404  | warning  | server | (FAZ-11 stub)                        |
 ## RBAC (RBAC)
 
 | Kod                  | Ad                                | HTTP | Severity | Kaynak | Çözüm                                              |
@@ -188,6 +190,11 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-VACC-0004`      | Aşı protokolü bulunamadı   | 404  | warning  | server | Protokol kataloğunu kontrol edin.    |
 | `VET-VACC-0008`      | Aşı kaydı zaten iptal       | 409  | warning  | server | İptal edilmiş kayıt yeniden iptal edilemez. |
 
+| `VET-VACC-0005       ` | VET-VACC-0005 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-VACC-0006       ` | VET-VACC-0006 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-VACC-0007       ` | VET-VACC-0007 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-VACC-0009       ` | VET-VACC-0009 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-VACC-0010       ` | VET-VACC-0010 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
 ## Reçete (PRESC)
 
 | Kod                  | Ad                          | HTTP | Severity | Kaynak | Çözüm                                |
@@ -205,6 +212,11 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-SURG-0002`      | Onam formu eksik            | 422  | error    | server | Ameliyat öncesi onam alın.           |
 | `VET-SURG-0003`      | Ameliyat başlatılamaz       | 422  | warning  | server | Anestezi onayı ve oda durumunu kontrol edin. |
 
+| `VET-OPNOTE-0001     ` | VET-OPNOTE-0001 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-OPNOTE-0002     ` | VET-OPNOTE-0002 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-OPNOTE-0003     ` | VET-OPNOTE-0003 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-OPNOTE-0004     ` | VET-OPNOTE-0004 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-OPNOTE-0005     ` | VET-OPNOTE-0005 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
 ## Anestezi (ANESTH)
 
 | Kod                  | Ad                          | HTTP | Severity | Kaynak | Çözüm                                |
@@ -212,6 +224,10 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-ANESTH-0001`    | Anestezi kaydı bulunamadı   | 404  | warning  | server | Anestezi ID'sini kontrol edin.       |
 | `VET-ANESTH-0002`    | Anestezi riski çok yüksek   | 422  | error    | server | Ek değerlendirme gerekir.            |
 
+| `VET-ANESTHESIA-0001 ` | VET-ANESTHESIA-0001 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-ANESTHESIA-0002 ` | VET-ANESTHESIA-0002 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-ANESTHESIA-0003 ` | VET-ANESTHESIA-0003 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-ANESTHESIA-0004 ` | VET-ANESTHESIA-0004 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
 ## Yatış (HOSP)
 
 | Kod                  | Ad                          | HTTP | Severity | Kaynak | Çözüm                                |
@@ -220,6 +236,31 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-HOSP-0002`      | Kafes dolu                  | 409  | warning  | server | Başka bir kafes seçin.               |
 | `VET-HOSP-0003`      | Taburcu edilemez            | 422  | warning  | server | Aktif order'ları kapatın.            |
 
+| `VET-DSUM-0001       ` | VET-DSUM-0001 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-DSUM-0002       ` | VET-DSUM-0002 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-DSUM-0003       ` | VET-DSUM-0003 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-DSUM-0004       ` | VET-DSUM-0004 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-DSUM-0005       ` | VET-DSUM-0005 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-DSUM-0006       ` | VET-DSUM-0006 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-DSUM-0007       ` | VET-DSUM-0007 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-DSUM-0008       ` | VET-DSUM-0008 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-HORD-0001       ` | VET-HORD-0001 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-HORD-0002       ` | VET-HORD-0002 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-HORD-0003       ` | VET-HORD-0003 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-HORD-0004       ` | VET-HORD-0004 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-HORD-0005       ` | VET-HORD-0005 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-HORD-0006       ` | VET-HORD-0006 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-HORD-0007       ` | VET-HORD-0007 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-HOSP-0004       ` | VET-HOSP-0004 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-HOSP-0005       ` | VET-HOSP-0005 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-HOSP-0006       ` | VET-HOSP-0006 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-HOSP-0007       ` | VET-HOSP-0007 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-HOSP-0008       ` | VET-HOSP-0008 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-HOSP-0009       ` | VET-HOSP-0009 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-HOSP-0010       ` | VET-HOSP-0010 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-HOSP-0011       ` | VET-HOSP-0011 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-HOSP-0012       ` | VET-HOSP-0012 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-HOSP-0013       ` | VET-HOSP-0013 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
 ## Laboratuvar (LAB)
 
 | Kod                  | Ad                          | HTTP | Severity | Kaynak | Çözüm                                |
@@ -229,6 +270,27 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-LAB-0003`       | Cihaz bağlantısı yok        | 502  | error    | server | Cihaz bağlantısını kontrol edin.     |
 | `VET-LAB-0004`       | Sonuç referans aralık dışı  | 200  | warning  | server | (Uyarı; işlem başarılı.)            |
 
+| `VET-LABADAPTER-0001 ` | VET-LABADAPTER-0001 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-LABADAPTER-0002 ` | VET-LABADAPTER-0002 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-LABADAPTER-0003 ` | VET-LABADAPTER-0003 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-LABADAPTER-0004 ` | VET-LABADAPTER-0004 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-LABADAPTER-0005 ` | VET-LABADAPTER-0005 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-LABADAPTER-0006 ` | VET-LABADAPTER-0006 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-LABADAPTER-0007 ` | VET-LABADAPTER-0007 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-LABADAPTER-0008 ` | VET-LABADAPTER-0008 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-LABADAPTER-0009 ` | VET-LABADAPTER-0009 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-LABORD-0001     ` | VET-LABORD-0001 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-LABORD-0002     ` | VET-LABORD-0002 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-LABORD-0003     ` | VET-LABORD-0003 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-LABORD-0004     ` | VET-LABORD-0004 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-LABRES-0001     ` | VET-LABRES-0001 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-LABRES-0002     ` | VET-LABRES-0002 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-LABRES-0003     ` | VET-LABRES-0003 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-LABRES-0004     ` | VET-LABRES-0004 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-LABRES-0005     ` | VET-LABRES-0005 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-LABTEST-0001    ` | VET-LABTEST-0001 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-LABTEST-0002    ` | VET-LABTEST-0002 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-TEST-0001       ` | VET-TEST-0001 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
 ## Görüntüleme (IMG) — GOAL-093
 
 | Kod                  | Ad                                    | HTTP | Severity | Kaynak | Çözüm                                |
@@ -296,6 +358,10 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-INV-0009`       | Son kullanma tarihi geçmiş      | 422  | warning  | server | Gelecekte bir SKT girin.             |
 | `VET-INV-0010`       | Aktif bağımlı kayıt var         | 409  | warning  | server | Önce bağımlı kayıtları arşivleyin.  |
 
+| `VET-SUPPLIER-0001   ` | VET-SUPPLIER-0001 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-SUPPLIER-0002   ` | VET-SUPPLIER-0002 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-SUPPLIER-0003   ` | VET-SUPPLIER-0003 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-SUPPLIER-0004   ` | VET-SUPPLIER-0004 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
 ## Petshop (PETSHOP) — Satış (SALE)
 
 | Kod                  | Ad                          | HTTP | Severity | Kaynak | Çözüm                                |
@@ -304,6 +370,20 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-SALE-0002`      | Satış iade edilemez         | 422  | warning  | server | İade süresi geçmiş.                  |
 | `VET-SALE-0003`      | Kasa açık değil             | 409  | warning  | server | Satış için kasa açın.                |
 
+| `VET-RETURN-0001     ` | VET-RETURN-0001 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-RETURN-0002     ` | VET-RETURN-0002 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-RETURN-0003     ` | VET-RETURN-0003 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-RETURN-0004     ` | VET-RETURN-0004 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-RETURN-0005     ` | VET-RETURN-0005 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-RETURN-0006     ` | VET-RETURN-0006 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-RETURN-0007     ` | VET-RETURN-0007 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-RETURN-0008     ` | VET-RETURN-0008 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-RETURN-0009     ` | VET-RETURN-0009 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-RETURN-0010     ` | VET-RETURN-0010 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-RETURN-0011     ` | VET-RETURN-0011 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-SALE-0004       ` | VET-SALE-0004 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-SALE-0005       ` | VET-SALE-0005 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-SALE-0006       ` | VET-SALE-0006 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
 ## Petshop — Ürün (PRODUCT)
 
 | Kod                  | Ad                          | HTTP | Severity | Kaynak | Çözüm                                |
@@ -311,6 +391,8 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-PRODUCT-0001`   | Ürün bulunamadı             | 404  | warning  | server | Barkod/ürün adını kontrol edin.      |
 | `VET-PRODUCT-0002`   | Barkod zaten kayıtlı        | 409  | warning  | server | Farklı bir barkod kullanın.          |
 
+| `VET-PRODUCT-0003    ` | VET-PRODUCT-0003 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-PRODUCT-0004    ` | VET-PRODUCT-0004 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
 ## Petshop — Satış (PETSHOP)
 
 | Kod                  | Ad                          | HTTP | Severity | Kaynak | Çözüm                                |
@@ -342,6 +424,10 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-PAYMENT-0004`   | Ödeme ters kayıt yapılamaz      | 422  | warning  | server | Ters kayıt süresi geçmiş olabilir.   |
 | `VET-PAYMENT-0005`   | Tutar uyuşmuyor                 | 422  | warning  | server | Sepet tutarı ile ödeme tutarı eşit olmalı. |
 
+| `VET-PAYMENT-0006    ` | VET-PAYMENT-0006 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-PAYMENT-0007    ` | VET-PAYMENT-0007 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-PAYMENT-0008    ` | VET-PAYMENT-0008 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-PAYMENT-0010    ` | VET-PAYMENT-0010 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
 ## Kasa (CASH)
 
 | Kod                  | Ad                          | HTTP | Severity | Kaynak | Çözüm                                |
@@ -357,6 +443,8 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-CONSENT-0001`   | Onam formu bulunamadı       | 404  | warning  | server | Onam şablonunu kontrol edin.         |
 | `VET-CONSENT-0002`   | Onam iptal edilemez         | 422  | warning  | server | İmzalı onam iptal edilemez.          |
 
+| `VET-CONSENT-0003    ` | VET-CONSENT-0003 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-CONSENT-0004    ` | VET-CONSENT-0004 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
 ## KVKK
 
 | Kod                  | Ad                          | HTTP | Severity | Kaynak | Çözüm                                |
@@ -380,6 +468,7 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-AUDIT-0002`     | Hata olayı sorgu hatası     | 500  | error    | server | Filtreleri kontrol edin.             |
 | `VET-ERRSTAT-0001`   | Geçersiz hata durumu geçişi | 422  | warning  | server | State machine'e uygun bir sonraki adım seçin. |
 
+| `VET-ERRNOTE-0001    ` | VET-ERRNOTE-0001 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
 ## Dosya (FILE)
 
 | Kod                  | Ad                          | HTTP | Severity | Kaynak | Çözüm                                |
@@ -419,6 +508,18 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-INTEGRATION-0005`    | Ödeme sağlayıcı timeout     | 504  | error    | server | Tekrar deneyin; siparişi kontrol edin. |
 | `VET-INTEGRATION-0006`    | Dış servis auth hatası      | 502  | critical | server | API anahtarını yenileyin.            |
 
+| `VET-ESMM-0001       ` | VET-ESMM-0001 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-ESMM-0002       ` | VET-ESMM-0002 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-ESMM-0003       ` | VET-ESMM-0003 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-ESMM-0004       ` | VET-ESMM-0004 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-ESMM-0005       ` | VET-ESMM-0005 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-SURGERY-0001    ` | VET-SURGERY-0001 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-SURGERY-0002    ` | VET-SURGERY-0002 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-SURGERY-0003    ` | VET-SURGERY-0003 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-SURGERY-0004    ` | VET-SURGERY-0004 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-SURGERY-0005    ` | VET-SURGERY-0005 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-SURGERY-0006    ` | VET-SURGERY-0006 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-SURGERY-0007    ` | VET-SURGERY-0007 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
 ## Background Job (JOB)
 
 | Kod                  | Ad                          | HTTP | Severity | Kaynak | Çözüm                                |
@@ -427,6 +528,9 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-JOB-0002`       | Job tekrar limiti aşıldı    | 500  | error    | server | Manuel müdahale gerekir.             |
 | `VET-JOB-0003`       | Job payload geçersiz        | 422  | error    | server | Job'u yeniden kuyruğa alın.          |
 
+| `VET-JOBRUN-0001     ` | VET-JOBRUN-0001 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-JOBRUN-0002     ` | VET-JOBRUN-0002 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
+| `VET-JOBRUN-0003     ` | VET-JOBRUN-0003 (FAZ-11 stub) | 404  | warning  | server | (FAZ-11 stub)                        |
 ## Worker (WORKER)
 
 | Kod                  | Ad                          | HTTP | Severity | Kaynak | Çözüm                                |
