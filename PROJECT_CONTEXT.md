@@ -580,3 +580,18 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
     kırılımı raporu + Faz 8 veteriner bazlı işlem raporu
     + Faz 8 stok hareketleri raporu + Faz 10 superadmin
     raporları.
+
+  - GOAL-075 ⏳ partial — core: müşteri borç/alacak görünümü.
+    customer-balances modülü (2 endpoint: summary/
+    transactions) + 6/6 yeni test + 973/973 api testi geçti.
+    Owner (sahip) bazında toplam satış + toplam tahsilat
+    (reversedAmount hariç) + net + açık bakiye + son işlem
+    tarihleri. Transactions: satış + tahsilat karışık
+    liste; tarih sıralı; type filtresi. Cross-module:
+    ClinicSalesService + PetshopSalesService + PaymentsService
+    (read-only). Mevcut permission clinic:payment:read
+    kullanıldı. Audit üretmez (read-only). Sonraki tick:
+    docs/RAG chunk/i18n key parity + DB migration (Prisma) +
+    branch scope filtresi (branchId) + patient bazlı bakiye
+    (sahipten bağımsız) + iade (refund) transaction tipi
+    için destek.

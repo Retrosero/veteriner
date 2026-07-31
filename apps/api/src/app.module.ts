@@ -75,6 +75,7 @@ import { PricingModule } from "./modules/pricing/pricing.module.js";
 import { ClinicSalesModule } from "./modules/clinic-sales/clinic-sales.module.js";
 import { EsmmModule } from "./modules/esmm/esmm.module.js";
 import { ReportsModule } from "./modules/reports/reports.module.js";
+import { CustomerBalancesModule } from "./modules/customer-balances/customer-balances.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 
 @Module({
@@ -129,6 +130,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     ClinicSalesModule,
     EsmmModule,
     ReportsModule,
+    CustomerBalancesModule,
   ],
 })
 export class AppModule {}
