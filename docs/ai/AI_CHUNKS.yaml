@@ -1603,6 +1603,50 @@ generated_at: "2026-07-30"
                 api.post._api_v1_clinic_hospitalizations__id_cage-assignments,
                 api.post._api_v1_clinic_hospitalizations_cage-assignments__assignmentId_end]
 
+- chunk_id: flow-hospitalization-order
+  type: flow
+  source: packages/contracts/src/hospitalization-order.ts
+  entity: hospitalization_order
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Yatış Order ve Uygulama Akışı (Hospitalization Order)"
+  content: |
+    1. Yatış order (HospitalizationOrder): tedavi/talimat.
+       6 type: `medication` | `fluid_therapy` | `feeding` |
+       `monitoring` | `procedure` | `other`.
+    2. State: `active` → `completed` | `cancelled`.
+    3. Schedule: order için zamanlama. State: `pending` →
+       `applied` | `skipped`.
+    4. Apply: pending → applied; `appliedAt` +
+       `appliedBy` + `actualDose` set.
+    5. Skip: pending → skipped; `skipReason` (enum:
+       patient_refused/vomited/asleep/missed_window/
+       out_of_stock/other) zorunlu.
+    6. Cancel: order iptal; pending schedule'lar skipped
+       flag'lenir.
+    7. Faz 8 reaktif hook: medication apply → `clinical_usage`
+       (GOAL-066) `type='hospitalization'` ile stok düşümü.
+    8. Audit: `audit:hospitalization_order.{create,update,
+       cancel,schedule.add,schedule.apply,schedule.skip}`.
+  keywords: [yatış order, hospitalization order, ilaç,
+             tedavi, talimat, schedule, apply, skip,
+             reaktif stok düşümü]
+  related_chunks: [flow-hospitalization, flow-clinical-usage,
+                   error-VET-HO-0001]
+  related_pages: []
+  related_api: [api.post._api_v1_clinic_hospitalization-orders,
+                api.get._api_v1_clinic_hospitalization-orders,
+                api.get._api_v1_clinic_hospitalization-orders__id_,
+                api.patch._api_v1_clinic_hospitalization-orders__id_,
+                api.post._api_v1_clinic_hospitalization-orders__id_cancel,
+                api.post._api_v1_clinic_hospitalization-orders__id_schedules,
+                api.get._api_v1_clinic_hospitalization-orders_schedules,
+                api.post._api_v1_clinic_hospitalization-orders_schedules__scheduleId_apply,
+                api.post._api_v1_clinic_hospitalization-orders_schedules__scheduleId_skip]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
