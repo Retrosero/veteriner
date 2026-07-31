@@ -49,3 +49,4 @@ export * from "./vaccine-reminder.js";
 export * from "./followup.js";
 export * from "./clinical-record-share.js";
 export * from "./product.js";
+export * from "./inventory.js";

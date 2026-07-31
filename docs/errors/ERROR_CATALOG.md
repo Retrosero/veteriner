@@ -244,6 +244,21 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-STOCK-0003`     | SKT geçmiş                      | 422  | warning  | server | SKT'si geçmiş lot kullanılamaz.      |
 | `VET-STOCK-0004`     | Stok hareketi tutarsız          | 500  | critical | server | Sayım düzeltmesi gerekir.            |
 
+## Envanter (INVENTORY) — Depo, Raf, Lot
+
+| Kod                  | Ad                              | HTTP | Severity | Kaynak | Çözüm                                |
+| -------------------- | ------------------------------- | ---- | -------- | ------ | ------------------------------------ |
+| `VET-INV-0001`       | Depo bulunamadı                 | 404  | warning  | server | Depo ID'sini kontrol edin.           |
+| `VET-INV-0002`       | Raf bulunamadı                  | 404  | warning  | server | Raf ID'sini kontrol edin.            |
+| `VET-INV-0003`       | Lot bulunamadı                  | 404  | warning  | server | Lot ID'sini kontrol edin.            |
+| `VET-INV-0004`       | Depo kodu zaten kayıtlı         | 409  | warning  | server | Farklı bir depo kodu kullanın.       |
+| `VET-INV-0005`       | Raf kodu depoda zaten mevcut    | 409  | warning  | server | Farklı bir raf kodu kullanın.        |
+| `VET-INV-0006`       | Lot numarası zaten mevcut       | 409  | warning  | server | Farklı bir lot numarası kullanın.    |
+| `VET-INV-0007`       | Zaten arşivlenmiş               | 409  | warning  | server | Kayıt zaten arşivde.                 |
+| `VET-INV-0008`       | Arşivli kayıt üzerinde işlem engellendi | 409 | warning | server | Önce arşivlemeyi kaldırın veya farklı bir kayıt kullanın. |
+| `VET-INV-0009`       | Son kullanma tarihi geçmiş      | 422  | warning  | server | Gelecekte bir SKT girin.             |
+| `VET-INV-0010`       | Aktif bağımlı kayıt var         | 409  | warning  | server | Önce bağımlı kayıtları arşivleyin.  |
+
 ## Petshop (PETSHOP) — Satış (SALE)
 
 | Kod                  | Ad                          | HTTP | Severity | Kaynak | Çözüm                                |

@@ -240,37 +240,73 @@ Pilot klinikte gÃ¼nlÃ¼k iÅŸlerin gerÃ§ek kullanÄ±mda yÃ¶netilebildiÄŸi, kararlÄ±
     docs/RAG chunk/i18n key parity + DB migration (Prisma) +
     Faz 6 stok modÃ¼lÃ¼ ile `stockProductId` gerÃ§ek referans +
     amendment zinciri (parentId) iÃ§in Ã§oklu amend.
+  - GOAL-061 â³ partial â€” core: depo, raf ve lot tanÄ±mlarÄ±.
+    `inventory` sÃ¶zleÅŸmesi (Warehouse + Shelf + StockLot +
+    3 tÃ¼r: clinic/petshop/general + raf temperatureZone:
+    room/cold/freezer + lot SKT/tedarik/raf atama +
+    10 yeni VET-INV-* hata kodu: 0001-0010) +
+    `inventory.types.ts` (WarehouseRecord + ShelfRecord +
+    StockLotRecord + toWarehouse/toShelf/toStockLot +
+    normalizeLotQuantity + isExpired) +
+    InventoryRepository (in-memory; warehouse code unique +
+    shelf code per-warehouse unique + lot number per-product
+    unique + byProduct/byShelf/byWarehouse indeksleri +
+    countActiveShelvesForWarehouse + countActiveLotsForShelf) +
+    InventoryService (3 varlÄ±k Ã— 5 mutasyon = 15 public method;
+    cross-tenant 403 VET-AUTHZ-0001, archive chain
+    VET-INV-0007/0008/0010, code unique VET-INV-0004/0005,
+    lot unique VET-INV-0006, SKT geÃ§miÅŸ 422 VET-INV-0009;
+    manufactureAt â‰¤ expiryDate refine; tenant izolasyonu) +
+    InventoryController (15 REST endpoint: POST/GET/PATCH
+    + POST :id/archive Ã— 3 varlÄ±k; Zod validation +
+    PermissionsGuard) + InventoryModule (AppModule
+    entegrasyonu) + 12 yeni permission catalog:
+    inventory:warehouse:read/create/update/archive,
+    inventory:shelf:read/create/update/archive,
+    inventory:lot:read/create/update/archive
+    (PERMISSION_CATALOG.yaml + permission-spec.ts union +
+    OWNER +9, VETERINARIAN +3, STAFF +9) + 28/28 yeni test +
+    684/684 api testi geÃ§ti. Audit
+    `audit:inventory.warehouse.create/update/archive`,
+    `audit:inventory.shelf.create/update/archive`,
+    `audit:inventory.lot.create/update/archive`. Sonraki
+    tick: docs/RAG chunk/i18n key parity + DB migration
+    (Prisma) + Faz 6 stok hareketleri (GOAL-063+) ile
+    `stockProductId` gerÃ§ek referans + Faz 5 vaccine
+    protokol lot + Faz 7 satÄ±n alma ile `supplierName`
+    baÄŸlantÄ±sÄ± + lokasyon aÄŸacÄ± iÃ§in tree endpoint.
 
-- **Faz 6 — Klinik + petshop ortak stok/petshop** ? sırada
-  - GOAL-060 ? partial — core: ürün ve hizmet kataloğu. product
-    sözleşmesi (ProductKind: stock_product/medicine/vaccine/service/
-    consumable + ProductUnit × 11 + ProductTaxProfile + ProductCurrency
+- **Faz 6 â€” Klinik + petshop ortak stok/petshop** â³ sÄ±rada
+  - GOAL-060 â³ partial â€” core: Ã¼rÃ¼n ve hizmet kataloÄŸu. product
+    sï¿½zleï¿½mesi (ProductKind: stock_product/medicine/vaccine/service/
+    consumable + ProductUnit ï¿½ 11 + ProductTaxProfile + ProductCurrency
     + SKU/barkod unique per-tenant + auto-SKU prd-{kindChar}{6} +
-    vaccine türünde accineProtocolId Faz 5 referansı + medicine
-    türünde equiresPrescription/controlledDrug UK ilaç
-    regülasyonu için) + products.types.ts (ProductRecord +
+    vaccine tï¿½rï¿½nde accineProtocolId Faz 5 referansï¿½ + medicine
+    tï¿½rï¿½nde 
+equiresPrescription/controlledDrug UK ilaï¿½
+    regï¿½lasyonu iï¿½in) + products.types.ts (ProductRecord +
     toProduct + normalizeDecimalString + generateSku) +
     ProductsRepository (in-memory Map + bySku + byBarcode
     index + nextSkuCounter) + ProductsService (createProduct
     SKU/barkod unique + auto-SKU + audit info + Decimal
     normalizasyon + 422 VET-VALIDATION-0010 invalid price;
     listProducts kind/kinds/clinic/petshop/search/category/active
-    filtreleri; getProduct cross-tenant null; updateProduct kısmi
-    + arşivli kayıt 409 VET-PRODUCT-0004 + SKU/barkod değişimi
-    unique kontrolü + null=barkod temizle + audit info;
-    archiveProduct soft delete + active=false + zaten arşivli
+    filtreleri; getProduct cross-tenant null; updateProduct kï¿½smi
+    + arï¿½ivli kayï¿½t 409 VET-PRODUCT-0004 + SKU/barkod deï¿½iï¿½imi
+    unique kontrolï¿½ + null=barkod temizle + audit info;
+    archiveProduct soft delete + active=false + zaten arï¿½ivli
     409 VET-PRODUCT-0003 + audit warning) + ProductsController
     (5 endpoint + Zod validation + PermissionsGuard) + module
     wiring (AppModule entegrasyonu) + 5 yeni permission
     catalog:product:read/create/update/archive/export
     (PERMISSION_CATALOG.yaml + permission-spec.ts union +
     OWNER +5, VETERINARIAN +1, STAFF +4) + 26/26 yeni test +
-    655/655 api testi geçti. Hata kodları: VET-PRODUCT-0001
-    (bulunamadı), VET-PRODUCT-0002 (SKU/barkod duplicate),
-    VET-PRODUCT-0003 (zaten arşivli), VET-PRODUCT-0004
-    (arşivli güncellenemez), VET-VALIDATION-0010 (invalid
+    655/655 api testi geï¿½ti. Hata kodlarï¿½: VET-PRODUCT-0001
+    (bulunamadï¿½), VET-PRODUCT-0002 (SKU/barkod duplicate),
+    VET-PRODUCT-0003 (zaten arï¿½ivli), VET-PRODUCT-0004
+    (arï¿½ivli gï¿½ncellenemez), VET-VALIDATION-0010 (invalid
     price), VET-AUTHZ-0001 (cross-tenant). Audit
     udit:product.create/update/archive. Sonraki tick:
     docs/RAG chunk/i18n key parity + DB migration (Prisma) +
-    Faz 6 stok modülü ile gerçek stockProductId referansı
-    + Faz 5 vaccine protokolü tam entegrasyonu.
+    Faz 6 stok modï¿½lï¿½ ile gerï¿½ek stockProductId referansï¿½
+    + Faz 5 vaccine protokolï¿½ tam entegrasyonu.

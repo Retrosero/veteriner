@@ -1550,6 +1550,173 @@ permissions:
     applies_to_roles: [OWNER, STAFF]
 
   # ----------------------------------------------------------------
+  # INVENTORY:WAREHOUSE — Depo (FAZ-6 GOAL-061)
+  # Pilot tek şube olsa da birden fazla depo desteklenir.
+  # ----------------------------------------------------------------
+  - permission: "inventory:warehouse:read"
+    description: "Depo listesini/detayını görüntüleme."
+    resource_type: warehouse
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "inventory:warehouse:create"
+    description: "Yeni depo oluşturma."
+    resource_type: warehouse
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "inventory:warehouse:update"
+    description: "Depo kısmi güncelleme."
+    resource_type: warehouse
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "inventory:warehouse:archive"
+    description: "Depo arşivleme (soft delete)."
+    resource_type: warehouse
+    action: archive
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  # ----------------------------------------------------------------
+  # INVENTORY:SHELF — Raf (FAZ-6 GOAL-061)
+  # ----------------------------------------------------------------
+  - permission: "inventory:shelf:read"
+    description: "Raf listesini/detayını görüntüleme."
+    resource_type: shelf
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "inventory:shelf:create"
+    description: "Yeni raf oluşturma."
+    resource_type: shelf
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "inventory:shelf:update"
+    description: "Raf kısmi güncelleme."
+    resource_type: shelf
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "inventory:shelf:archive"
+    description: "Raf arşivleme (soft delete)."
+    resource_type: shelf
+    action: archive
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  # ----------------------------------------------------------------
+  # INVENTORY:LOT — Lot (FAZ-6 GOAL-061)
+  # Stok partisi / son kullanma tarihi takibi.
+  # ----------------------------------------------------------------
+  - permission: "inventory:lot:read"
+    description: "Lot listesini/detayını görüntüleme."
+    resource_type: stock_lot
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "inventory:lot:create"
+    description: "Yeni lot oluşturma (tedarik kabul)."
+    resource_type: stock_lot
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "inventory:lot:update"
+    description: "Lot kısmi güncelleme (raf atama, SKT düzeltme vb.)."
+    resource_type: stock_lot
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "inventory:lot:archive"
+    description: "Lot arşivleme (soft delete)."
+    resource_type: stock_lot
+    action: archive
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  # ----------------------------------------------------------------
   # PETSHOP:STOCK — Petshop stok
   # ----------------------------------------------------------------
   - permission: "petshop:stock:read"
