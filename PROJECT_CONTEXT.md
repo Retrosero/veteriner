@@ -310,3 +310,25 @@ equiresPrescription/controlledDrug UK ila�
     docs/RAG chunk/i18n key parity + DB migration (Prisma) +
     Faz 6 stok mod�l� ile ger�ek stockProductId referans�
     + Faz 5 vaccine protokol� tam entegrasyonu.
+
+  - GOAL-062 ⏳ partial — core: tedarikçi kataloğu (3 tür:
+    clinic/petshop/general + code unique per-tenant + soft archive +
+    19/19 supplier testi) + satın alma siparişi (5 durum:
+    draft/approved/partial/received/cancelled + 7 endpoint + line
+    item + decimal çarpma/toplam + partial kabul mantığı + 20/20
+    purchase-order testi; 39/39 yeni test + 722/722 api testi
+    geçti). Yeni VET-SUPPLIER-0001/0002/0003/0004 ve
+    VET-PURCHASE_ORDER-0001/0002/0004/0005/0007/0008 hata kodları.
+    10 yeni permission catalog: catalog:supplier:
+    read/create/update/archive + inventory:purchase_order:
+    read/create/update/approve/receive/cancel. Audit
+    udit:supplier.create/update/archive +
+    udit:purchase_order.create/update/approve/receive/cancel.
+    Cross-module: purchase-orders service, supplier varlık/arşiv
+    kontrolü için SuppliersService'e bağımlı. Sonraki tick:
+    docs/RAG chunk/i18n key parity + DB migration (Prisma) +
+    Faz 6 stok hareketleri (GOAL-063) ile StockMovement
+    üretimi (lot/SKT girişi receivePurchaseOrder'da) +
+    PurchaseOrderLine'a lotId referansı + mevcut
+    appointment-reminders testindeki regression (1 test,
+    bizim eklediğimiz kodla ilgisiz, önceden var) düzeltmesi.

@@ -50,3 +50,5 @@ export * from "./followup.js";
 export * from "./clinical-record-share.js";
 export * from "./product.js";
 export * from "./inventory.js";
+export * from "./supplier.js";
+export * from "./purchase-order.js";

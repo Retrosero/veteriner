@@ -1717,6 +1717,142 @@ permissions:
     applies_to_roles: [OWNER]
 
   # ----------------------------------------------------------------
+  # INVENTORY:PURCHASE_ORDER — Satın alma siparişi (GOAL-062)
+  # ----------------------------------------------------------------
+  - permission: "inventory:purchase_order:read"
+    description: "Satın alma siparişlerini görüntüleme."
+    resource_type: purchase_order
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "inventory:purchase_order:create"
+    description: "Yeni satın alma sipariş taslağı oluşturma."
+    resource_type: purchase_order
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "inventory:purchase_order:update"
+    description: "Taslak siparişin satırlarını/fiyatlarını düzenleme."
+    resource_type: purchase_order
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "inventory:purchase_order:approve"
+    description: "Sipariş taslağını onaylama (status: approved)."
+    resource_type: purchase_order
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  - permission: "inventory:purchase_order:receive"
+    description: "Siparişin mal kabulünü gerçekleştirme (lot/SKT girişi + alış maliyeti)."
+    resource_type: purchase_order
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "inventory:purchase_order:cancel"
+    description: "Siparişi iptal etme (taslak veya onaylı)."
+    resource_type: purchase_order
+    action: archive
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  # ----------------------------------------------------------------
+  # CATALOG:SUPPLIER — Tedarikçi kataloğu (GOAL-062)
+  # ----------------------------------------------------------------
+  - permission: "catalog:supplier:read"
+    description: "Tedarikçi kataloğunu görüntüleme."
+    resource_type: supplier
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "catalog:supplier:create"
+    description: "Yeni tedarikçi kartı oluşturma."
+    resource_type: supplier
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "catalog:supplier:update"
+    description: "Tedarikçi kartını güncelleme (ad, iletişim, vergi no)."
+    resource_type: supplier
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "catalog:supplier:archive"
+    description: "Tedarikçi kartını arşivleme (soft delete)."
+    resource_type: supplier
+    action: archive
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  # ----------------------------------------------------------------
   # PETSHOP:STOCK — Petshop stok
   # ----------------------------------------------------------------
   - permission: "petshop:stock:read"

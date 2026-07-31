@@ -63,6 +63,8 @@ import { VaccinesModule } from "./modules/vaccines/vaccines.module.js";
 import { FollowupsModule } from "./modules/followups/followups.module.js";
 import { ProductsModule } from "./modules/products/products.module.js";
 import { InventoryModule } from "./modules/inventory/inventory.module.js";
+import { SuppliersModule } from "./modules/suppliers/suppliers.module.js";
+import { PurchaseOrdersModule } from "./modules/purchase-orders/purchase-orders.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 
 @Module({
@@ -105,6 +107,8 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     ClinicalRecordsModule,
     ProductsModule,
     InventoryModule,
+    SuppliersModule,
+    PurchaseOrdersModule,
   ],
 })
 export class AppModule {}

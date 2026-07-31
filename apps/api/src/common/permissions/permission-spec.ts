@@ -9,7 +9,7 @@
  * kapısı YAML katalog ile bu liste arasında senkronizasyon sağlar.
  *
  * Format: `<domain>:<resource>:<action>` (ör. `clinic:owner:read`).
- * Toplam 143 permission (FAZ-1 kapsamı).
+ * Toplam 153 permission (FAZ-1 + FAZ-6 tedarikçi/satın alma kapsamı).
  *
  * @since GOAL-002 (FAZ-0) yetki matrisi
  * @updated GOAL-012 (FAZ-1) RBAC ve izin motoru
@@ -147,6 +147,16 @@ export const PERMISSIONS = [
   "inventory:lot:create",
   "inventory:lot:update",
   "inventory:lot:archive",
+  "inventory:purchase_order:read",
+  "inventory:purchase_order:create",
+  "inventory:purchase_order:update",
+  "inventory:purchase_order:approve",
+  "inventory:purchase_order:receive",
+  "inventory:purchase_order:cancel",
+  "catalog:supplier:read",
+  "catalog:supplier:create",
+  "catalog:supplier:update",
+  "catalog:supplier:archive",
   "petshop:stock:read",
   "petshop:stock:receive",
   "petshop:stock:decrement",
