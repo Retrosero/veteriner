@@ -531,4 +531,66 @@ export class ErrorEventsRepository {
     this.supportLinkCounter.n = 0;
     this.assignmentCounter.n = 0;
   }
+
+  /* ------------------------------------------------------------------------
+   * Retention (GOAL-106) — cutoff bazlı süpürme
+   * ------------------------------------------------------------------------
+   */
+
+  /**
+   * `lastSeenAt` alanı `cutoff` değerinden küçük veya eşit olan
+   * (yani cutoff'a kadar olan) hata kayıtlarını siler. Tenant
+   * filtresi opsiyoneldir; null ise tüm tenant'lar. Fingerprint
+   * index, transition listesi, notlar, destek bağlantıları ve
+   * atama geçmişi de eşit olarak silinir. Silinen kayıt sayısını
+   * döner.
+   *
+   * NOT: dryRun desteği bu metoda parametre olarak eklenmemiştir;
+   *   üst katman (LogRetentionService) dryRun ise bu metodu hiç
+   *   çağırmaz, yalnız `countOlderThan` ile sayım yapar.
+   */
+  public expireOlderThan(args: {
+    cutoff: string;
+    tenantId?: string | null;
+  }): number {
+    const idsToDelete: string[] = [];
+    for (const rec of this.byId.values()) {
+      if (args.tenantId !== undefined && rec.tenantId !== args.tenantId) {
+        continue;
+      }
+      if (rec.lastSeenAt <= args.cutoff) {
+        idsToDelete.push(rec.id);
+      }
+    }
+    for (const id of idsToDelete) {
+      const rec = this.byId.get(id);
+      if (!rec) continue;
+      this.byId.delete(id);
+      this.byFingerprint.delete(rec.fingerprint);
+      this.transitionsByFingerprint.delete(rec.fingerprint);
+      this.notesByFingerprint.delete(rec.fingerprint);
+      this.supportLinksByFingerprint.delete(rec.fingerprint);
+      this.assignmentsByFingerprint.delete(rec.fingerprint);
+    }
+    return idsToDelete.length;
+  }
+
+  /**
+   * `lastSeenAt` alanı `cutoff` değerinden küçük veya eşit olan
+   * (yani cutoff'a kadar olan) hata kayıtlarını sayar. Tenant
+   * filtresi opsiyoneldir. Dry-run sweep'lerde kullanılır.
+   */
+  public countOlderThan(args: {
+    cutoff: string;
+    tenantId?: string | null;
+  }): number {
+    let n = 0;
+    for (const rec of this.byId.values()) {
+      if (args.tenantId !== undefined && rec.tenantId !== args.tenantId) {
+        continue;
+      }
+      if (rec.lastSeenAt <= args.cutoff) n += 1;
+    }
+    return n;
+  }
 }

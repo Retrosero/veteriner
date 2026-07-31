@@ -318,4 +318,53 @@ export class JobRunsRepository {
     this.byId.clear();
     this.counter.n = 0;
   }
+
+  /* ------------------------------------------------------------------------
+   * Retention (GOAL-106) — cutoff bazlı süpürme
+   * ------------------------------------------------------------------------
+   */
+
+  /**
+   * `startedAt` alanı `cutoff` değerinden küçük veya eşit olan
+   * (yani cutoff'a kadar olan) job run kayıtlarını siler. Tenant
+   * filtresi opsiyoneldir; null ise tüm tenant'lar. Silinen kayıt
+   * sayısını döner.
+   */
+  public expireOlderThan(args: {
+    cutoff: string;
+    tenantId?: string | null;
+  }): number {
+    const idsToDelete: string[] = [];
+    for (const r of this.byId.values()) {
+      if (args.tenantId !== undefined && r.tenantId !== args.tenantId) {
+        continue;
+      }
+      if (r.startedAt <= args.cutoff) {
+        idsToDelete.push(r.id);
+      }
+    }
+    for (const id of idsToDelete) {
+      this.byId.delete(id);
+    }
+    return idsToDelete.length;
+  }
+
+  /**
+   * `startedAt` alanı `cutoff` değerinden küçük veya eşit olan
+   * (yani cutoff'a kadar olan) job run kayıtlarını sayar. Tenant
+   * filtresi opsiyoneldir. Dry-run sweep'lerde kullanılır.
+   */
+  public countOlderThan(args: {
+    cutoff: string;
+    tenantId?: string | null;
+  }): number {
+    let n = 0;
+    for (const r of this.byId.values()) {
+      if (args.tenantId !== undefined && r.tenantId !== args.tenantId) {
+        continue;
+      }
+      if (r.startedAt <= args.cutoff) n += 1;
+    }
+    return n;
+  }
 }

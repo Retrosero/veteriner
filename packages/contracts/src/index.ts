@@ -81,3 +81,5 @@ export * from "./imaging-order.js";
 export * from "./lab-adapter.js";
 export * from "./error-event.js";
 export * from "./job-run.js";
+export * from "./security-event.js";
+export * from "./log-retention.js";
