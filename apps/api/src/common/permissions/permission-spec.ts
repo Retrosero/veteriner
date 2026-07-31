@@ -12,7 +12,7 @@
  * Toplam 156 permission (FAZ-1 + FAZ-6 tedarikçi/satın alma + FAZ-6 GOAL-067 stok uyarıları kapsamı).
  *
  * @since GOAL-002 (FAZ-0) yetki matrisi
- * @updated GOAL-012 (FAZ-1) RBAC ve izin motoru
+ * @updated GOAL-070 (FAZ-7) fiyat listeleri ve hizmet ücretleri
  */
 
 export const ACTOR_ROLES = [
@@ -207,6 +207,11 @@ export const PERMISSIONS = [
   "auth:password:change",
   "auth:invitation:create",
   "auth:invitation:read",
+  "pricing:price_list:read",
+  "pricing:price_list:create",
+  "pricing:price_list:update",
+  "pricing:price_list:archive",
+  "pricing:price_list:export",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];

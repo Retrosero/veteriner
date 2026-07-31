@@ -129,6 +129,7 @@ export const errorModules = [
   "INTEGRATION",
   "JOB",
   "WORKER",
+  "PRICING",
 ] as const;
 export type ErrorModule = (typeof errorModules)[number];
 

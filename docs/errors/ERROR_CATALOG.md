@@ -311,6 +311,21 @@ bu katalogda yer almasını zorunlu kılar.
 | -------------------- | --------------------------- | ---- | -------- | ------ | ------------------------------------ |
 | `VET-PETSHOP-0001`   | Petshop konfigürasyonu eksik | 500 | critical | server | Petshop ayarlarını kontrol edin.     |
 
+## Fiyat Listesi (PRICING)
+
+| Kod                  | Ad                                          | HTTP | Severity | Kaynak | Çözüm                                                              |
+| -------------------- | ------------------------------------------- | ---- | -------- | ------ | ------------------------------------------------------------------ |
+| `VET-PRICING-0001`   | Fiyat listesi bulunamadı                    | 404  | warning  | server | Liste ID'sini kontrol edin.                                       |
+| `VET-PRICING-0003`   | Ürün için zaten aktif satır var             | 409  | warning  | server | Düzeltme için PATCH /items/:itemId kullanın (append-only).         |
+| `VET-PRICING-0004`   | Geçersiz tarih aralığı                      | 422  | warning  | server | validFrom ≤ validUntil olmalı.                                    |
+| `VET-PRICING-0005`   | customer_specific için customerId zorunlu   | 422  | warning  | server | Müşteriye özel liste oluştururken customerId gönderin.             |
+| `VET-PRICING-0006`   | Yalnızca taslak listede işlem yapılabilir   | 409  | warning  | server | Aktif listede değişiklik için yeni liste oluşturun.                |
+| `VET-PRICING-0007`   | Arşivli/iptal edilmiş kaynakta işlem yok    | 409  | warning  | server | Arşivli listeyi/satırı değiştiremezsiniz.                          |
+| `VET-PRICING-0008`   | Fiyat satırı bulunamadı                     | 404  | warning  | server | Satır ID'sini veya liste ID'sini kontrol edin.                     |
+| `VET-PRICING-0009`   | Arşivli ürüne fiyat satırı eklenemez        | 422  | warning  | server | Ürünü arşivden çıkarın veya farklı ürün seçin.                    |
+| `VET-PRICING-0010`   | Geçersiz fiyat formatı                       | 422  | warning  | server | Pozitif, en fazla 4 ondalık basamak; `^\d+(\.\d{1,4})?$`.          |
+| `VET-PRICING-0011`   | Geçerli fiyat bulunamadı                    | 404  | warning  | server | Belirtilen tarihte ürün için aktif bir fiyat listesi/satırı yok.  |
+
 ## Ödeme (PAYMENT)
 
 | Kod                  | Ad                              | HTTP | Severity | Kaynak | Çözüm                                |

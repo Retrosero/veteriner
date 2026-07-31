@@ -83,6 +83,7 @@ listeye eklenmeli ve `pnpm docs:check` güncellenmelidir.
 | `INTEGRATION` | Entegrasyon (dış API) | `VET-INTEGRATION-0001` |
 | `JOB` | Background job (BullMQ) | `VET-JOB-0001` |
 | `WORKER` | Worker process | `VET-WORKER-0001` |
+| `PRICING` | Fiyat listeleri ve hizmet ücretleri | `VET-PRICING-0001` |
 
 ## 3. Severity Seviyesi
 

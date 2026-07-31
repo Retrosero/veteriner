@@ -2597,24 +2597,97 @@ permissions:
     system_only: false
     applies_to_roles: [OWNER, SUPERADMIN]
 
+  # ----------------------------------------------------------------
+  # PRICING:PRICE_LIST — Fiyat listeleri ve hizmet ücretleri (FAZ-7)
+  # ----------------------------------------------------------------
+  - permission: "pricing:price_list:read"
+    description: "Fiyat listelerini ve fiyat satırlarını görüntüleme."
+    resource_type: price_list
+    action: read
+    tenant_scope: required
+    branch_scope: not_required
+    self_only: false
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+    notes: "Ürün fiyat çözümleme (resolver) endpoint'ini de kapsar."
+
+  - permission: "pricing:price_list:create"
+    description: "Yeni fiyat listesi oluşturma."
+    resource_type: price_list
+    action: create
+    tenant_scope: required
+    branch_scope: not_required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN]
+    notes: "Başlangıç durumu 'draft' olur. customer_specific için customerId zorunlu."
+
+  - permission: "pricing:price_list:update"
+    description: "Fiyat listesi/satırı güncelleme (kısmi), aktifleştirme, iptal, append-only düzeltme."
+    resource_type: price_list
+    action: update
+    tenant_scope: required
+    branch_scope: not_required
+    self_only: false
+    audit: true
+    pii: false
+    amend: true
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN]
+    notes: "Yalnızca draft listede güncelleme. Düzeltme append-only: yeni satır, eski 'superseded'."
+
+  - permission: "pricing:price_list:archive"
+    description: "Fiyat listesi arşivleme (soft delete)."
+    resource_type: price_list
+    action: archive
+    tenant_scope: required
+    branch_scope: not_required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+    notes: "Geçmiş satış fiyatları audit trail'de korunur."
+
+  - permission: "pricing:price_list:export"
+    description: "Fiyat listesi/satırı dışa aktarma (CSV/PDF)."
+    resource_type: price_list
+    action: export
+    tenant_scope: required
+    branch_scope: not_required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+    notes: "Pilot kapsamda export endpoint'i Faz 8'de eklenecek."
+
 # =============================================================================
 # TOPLAMLAR (otomatik hesaplanır, referans için)
 # =============================================================================
 summary:
-  total_permissions: 156
+  total_permissions: 161
   by_action:
-    read: 34
-    create: 27
-    update: 29
-    archive: 16
-    export: 15
+    read: 35
+    create: 28
+    update: 30
+    archive: 17
+    export: 16
     acknowledge: 10
     manage: 2
   by_role:
     SUPERADMIN: 12
-    OWNER: 91
-    VETERINARIAN: 81
-    STAFF: 59
+    OWNER: 94
+    VETERINARIAN: 84
+    STAFF: 60
     PET_OWNER_PORTAL: 20
   by_module:
     common: 6
@@ -2650,3 +2723,4 @@ summary:
     report: 4
     audit: 2
     file: 3
+    pricing: 5
