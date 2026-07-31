@@ -90,6 +90,7 @@ import { LabResultsModule } from "./modules/lab-results/lab-results.module.js";
 import { ImagingOrdersModule } from "./modules/imaging-orders/imaging-orders.module.js";
 import { LabAdaptersModule } from "./modules/lab-adapters/lab-adapters.module.js";
 import { ErrorEventsModule } from "./modules/error-events/error-events.module.js";
+import { OnboardingFeatureModule } from "./modules/onboarding/onboarding.module.js";
 import { JobRunsModule } from "./modules/job-runs/job-runs.module.js";
 import { SecurityEventsModule } from "./modules/security-events/security-events.module.js";
 import { LogRetentionModule } from "./modules/log-retention/log-retention.module.js";
@@ -162,6 +163,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     ImagingOrdersModule,
     LabAdaptersModule,
     ErrorEventsModule,
+    OnboardingFeatureModule,
     JobRunsModule,
     SecurityEventsModule,
     LogRetentionModule,
