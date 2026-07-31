@@ -44,5 +44,6 @@ export * from "./order.js";
 export * from "./prescription.js";
 export * from "./vaccine.js";
 export * from "./vaccine-application.js";
+export * from "./vaccine-card.js";
 export * from "./followup.js";
 export * from "./clinical-record-share.js";

@@ -152,4 +152,40 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-046 ✅ Kontrol randevusu oluşturma (tamamlandı — 2026-07-30)
   - GOAL-047 ✅ Klinik kayıt PDF ve paylaşım (tamamlandı — 2026-07-30)
 - **Faz 5 — Aşı + stok** ⏳ sırada
-  - GOAL-050 ⏳ Aşı kaydı ve stok düşümü
+  - GOAL-050 ⏳ partial — core: aşı kataloğu + tür/kategori/yaş/adım +
+    `isCore`/`totalDurationMonths` türetme + soft archive +
+    tenant izolasyonu + 18/18 vaccines testi + 544/544 api testi
+    geçti. Bu tick'te eklendi: `defaultDose` (protokol düzeyinde ml/dose/
+    mg/drop) + her step için `boosterIntervalDays` ve step-bazlı `dose`
+    override. Sonraki tick: docs/RAG chunk/i18n key parity + Faz 6 stok
+    modülü ile `stockProductId` referansı.
+  - GOAL-051 ⏳ partial — core: aşı uygulama kaydı + atomik stok
+    düşümü + in-memory stock ledger. `vaccineApplication`
+    sözleşmesi (create/amend/cancel/list/byPatient + SKT/stok/tür
+    validasyonu) + `VaccineStockLedger` (decrement + reverse) +
+    service (cross-tenant 404, arşivli protokol 409, tür
+    uyumsuz 422, SKT geçmiş 422, yetersiz stok 422, amend +
+    cancel stok ters kayıt) + controller (POST/GET/PATCH/DELETE)
+    + 24/24 yeni test + 568/568 api testi geçti. Hata kodları
+    VET-VACC-0002/0003/0004/0005/0006/0007/0008. Audit
+    `audit:vaccine.application.create/amend/cancel`. Sonraki
+    tick: docs/RAG chunk/i18n key parity + DB migration
+    (Prisma) + Faz 6 stok modülü ile `stockProductId` referansı
+    gerçek tabloya bağlanacak.
+  - GOAL-052 ⏳ partial — core: aşı kartı. `vaccineCard` sözleşmesi
+    (VaccineCard + VaccineCardEntry + entry status:
+    completed/upcoming/overdue/not_started + tenant portal
+    ayarı) + `vaccine-card.types.ts` (buildCardEntry +
+    resolveEntryStatus + resolveEntryNextDueDate + UTC date
+    yardımcıları) + `VaccineCardsRepository` (tenant portal
+    ayarı in-memory) + `VaccineCardsService` (getVaccineCard +
+    getPortalVaccineCard + getPortalSetting +
+    updatePortalSetting) + 2 controller (VaccineCardsController
+    personel + PortalVaccineCardsController portal) +
+    module wiring + 26/26 yeni test + 594/594 api testi geçti.
+    Personel endpoint: `GET /api/v1/clinic/vaccines/cards/patient/:patientId`
+    + `GET/PUT /api/v1/clinic/vaccines/cards/portal-setting`.
+    Portal endpoint: `GET /api/v1/portal/vaccines/cards/patient/:patientId`
+    (tenant ayarı kapalıysa 403 VET-AUTHZ-0002). Audit
+    `audit:vaccine.card.portal_setting.update`. Sonraki tick:
+    docs/RAG chunk/i18n key parity + PDF/çıktı + DB migration.
