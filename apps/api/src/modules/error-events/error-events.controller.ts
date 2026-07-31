@@ -8,11 +8,19 @@
  * endpoint'i de bu modülden dışa açılır; ayrı bir controller
  * olarak düzenlenmiştir (tenant context'i farklı).
  *
+ * GOAL-103 ile birlikte SUPERADMIN hata merkezine durum yönetimi,
+ * atama, transition log ve fingerprint grupları endpointleri
+ * eklenmiştir.
+ *
  * Endpoint'ler (SUPERADMIN - audit:log:read):
- * - `GET /api/v1/superadmin/error-events`             — Filtreli liste
- * - `GET /api/v1/superadmin/error-events/summary`     — Özet (severity/module)
- * - `GET /api/v1/superadmin/error-events/fingerprints/:fingerprint` — Fingerprint detayı
- * - `GET /api/v1/superadmin/error-events/:id`         — Tek olay detayı
+ * - `GET    /api/v1/superadmin/error-events`                   — Filtreli liste
+ * - `GET    /api/v1/superadmin/error-events/summary`           — Özet (severity/module)
+ * - `GET    /api/v1/superadmin/error-events/groups`            — Fingerprint grupları
+ * - `GET    /api/v1/superadmin/error-events/groups/:fp`        — Grup detayı
+ * - `GET    /api/v1/superadmin/error-events/fingerprints/:fp`  — Fingerprint detayı
+ * - `GET    /api/v1/superadmin/error-events/:id`               — Tek olay detayı
+ * - `GET    /api/v1/superadmin/error-events/:id/transitions`   — Status geçişleri
+ * - `PATCH  /api/v1/superadmin/error-events/:id/status`        — Status güncelle
  *
  * Endpoint'ler (System - frontend raporu, oturum gerekli):
  * - `POST /api/v1/system/error-events`               — Frontend hata raporu
@@ -26,6 +34,7 @@
  *
  * @since GOAL-100 (FAZ-10) merkezi backend hata yakalama core
  *        GOAL-101 (FAZ-10) frontend hata yakalama core
+ *        GOAL-103 (FAZ-10) superadmin hata merkezi core
  */
 
 import {
@@ -34,6 +43,7 @@ import {
   Get,
   Headers,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -48,12 +58,20 @@ import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   clientErrorReportInputSchema,
   errorEventFiltersSchema,
+  errorEventGroupFiltersSchema,
+  errorEventStatusUpdateInputSchema,
   errorEventSummaryQuerySchema,
   type ClientErrorReportInput,
   type ClientErrorReportResponse,
   type ErrorEvent,
   type ErrorEventFilters,
+  type ErrorEventGroup,
+  type ErrorEventGroupFilters,
+  type ErrorEventGroupListResponse,
   type ErrorEventListResponse,
+  type ErrorEventListTransitionsResponse,
+  type ErrorEventStatusUpdateInput,
+  type ErrorEventStatusUpdateResponse,
   type ErrorEventSummary,
 } from "@vetniva/contracts";
 
@@ -72,8 +90,9 @@ export class ErrorEventsController {
     summary: "Hata olayı arama (SUPERADMIN)",
     description:
       "Tüm tenant'ların hata olaylarını filtreli olarak listeler. " +
-      "severity/module/errorCode/fingerprint/tenantId/country/route/" +
-      "from/to/search filtreleri; sayfalama zorunlu.",
+      "severity/module/errorCode/fingerprint/tenantId/branchId/country/" +
+      "release/route/status/assignedToUserId/from/to/search filtreleri; " +
+      "sayfalama zorunlu.",
   })
   @ApiResponse({ status: 200, description: "Liste döner." })
   @ApiResponse({ status: 403, description: "Yetkisiz erişim." })
@@ -100,6 +119,40 @@ export class ErrorEventsController {
     @CurrentActor() actor: ActorContext,
   ): Promise<ErrorEventSummary> {
     return this.service.getErrorEventSummary(query, actor);
+  }
+
+  @Get("groups")
+  @RequirePermissions("audit:log:read")
+  @ApiOperation({
+    operationId: "errorEventGroupList",
+    summary: "Hata grupları listesi (SUPERADMIN)",
+    description:
+      "Fingerprint bazlı tek satır özet: severity/module/errorCode/" +
+      "status/assignedToUserId/eventCount/uniqueTenants/firstSeenAt/" +
+      "lastSeenAt. occurrenceCount DESC sıralı. Durum/atama/released " +
+      "filtresi buradan uygulanır.",
+  })
+  public async groups(
+    @Query(new ZodValidationPipe(errorEventGroupFiltersSchema))
+    query: ErrorEventGroupFilters,
+    @CurrentActor() actor: ActorContext,
+  ): Promise<ErrorEventGroupListResponse> {
+    return this.service.listErrorEventGroups(query, actor);
+  }
+
+  @Get("groups/:fingerprint")
+  @RequirePermissions("audit:log:read")
+  @ApiOperation({
+    operationId: "errorEventGroupDetail",
+    summary: "Hata grubu detayı (SUPERADMIN)",
+    description:
+      "Belirli bir fingerprint için tek satır grup özeti (aynı alanlar).",
+  })
+  public async groupDetail(
+    @Param("fingerprint") fingerprint: string,
+    @CurrentActor() actor: ActorContext,
+  ): Promise<ErrorEventGroup> {
+    return this.service.getErrorEventGroup(fingerprint, actor);
   }
 
   @Get("fingerprints/:fingerprint")
@@ -131,6 +184,49 @@ export class ErrorEventsController {
     @CurrentActor() actor: ActorContext,
   ): Promise<ErrorEvent> {
     return this.service.getErrorEventDetail(id, actor);
+  }
+
+  @Get(":id/transitions")
+  @RequirePermissions("audit:log:read")
+  @ApiOperation({
+    operationId: "errorEventTransitions",
+    summary: "Hata durumu geçişleri (SUPERADMIN)",
+    description:
+      "Bir hata olayının tüm status geçişlerini append-only log'dan " +
+      "tarih sırasıyla döner. Sistem kaynaklı otomatik reopened " +
+      "terfileri de dahildir.",
+  })
+  public async transitions(
+    @Param("id") id: string,
+    @CurrentActor() actor: ActorContext,
+  ): Promise<ErrorEventListTransitionsResponse> {
+    return this.service.listErrorEventTransitions(id, actor);
+  }
+
+  @Patch(":id/status")
+  @RequirePermissions("audit:log:read")
+  @ApiOperation({
+    operationId: "errorEventStatusUpdate",
+    summary: "Hata durumunu güncelle (SUPERADMIN)",
+    description:
+      "Hata olayının durumunu state machine'e uygun şekilde günceller. " +
+      "Geçerli geçişler: new→{investigating,resolved}; " +
+      "investigating→{resolved,new}; resolved→{reopened,investigating}; " +
+      "reopened→{investigating,resolved}. Geçersiz geçişlerde 422. " +
+      "`assignedToUserId` opsiyonel atama yapar; `clearAssignment=true` " +
+      "ile mevcut atama kaldırılır.",
+  })
+  @ApiResponse({ status: 200, description: "Status güncellendi." })
+  @ApiResponse({ status: 404, description: "Hata olayı bulunamadı." })
+  @ApiResponse({ status: 422, description: "Geçersiz durum geçişi." })
+  @ApiResponse({ status: 403, description: "Yetkisiz erişim." })
+  public async updateStatus(
+    @Param("id") id: string,
+    @Body(new ZodValidationPipe(errorEventStatusUpdateInputSchema))
+    body: ErrorEventStatusUpdateInput,
+    @CurrentActor() actor: ActorContext,
+  ): Promise<ErrorEventStatusUpdateResponse> {
+    return this.service.updateErrorEventStatus(id, body, actor);
   }
 }
 

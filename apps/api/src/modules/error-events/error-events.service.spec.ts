@@ -608,3 +608,530 @@ describe("ErrorEventsService.recordClientError", () => {
     expect(repo.findById(withoutRelease.id)?.release).toMatch(/.+/);
   });
 });
+
+// -------------------------------------------------------------------------
+// GOAL-103 — Superadmin hata merkezi: status + firstSeenAt/lastSeenAt
+// -------------------------------------------------------------------------
+
+describe("ErrorEventsService.recordError — GOAL-103 status & timestamps", () => {
+  let service: ErrorEventsService;
+  let repo: ErrorEventsRepository;
+
+  beforeEach(() => {
+    repo = new ErrorEventsRepository();
+    service = new ErrorEventsService(repo);
+  });
+
+  it("yeni kayıt status='new' ve assignedToUserId=null ile başlar", () => {
+    const out = service.recordError(makeInput());
+    const rec = repo.findById(out.id);
+    expect(rec?.status).toBe("new");
+    expect(rec?.assignedToUserId).toBeNull();
+  });
+
+  it("firstSeenAt ilk oluşturulduğunda occurredAt ile aynı set edilir", () => {
+    const out = service.recordError(
+      makeInput({ occurredAt: "2026-07-01T00:00:00.000Z" }),
+    );
+    const rec = repo.findById(out.id);
+    expect(rec?.firstSeenAt).toBe("2026-07-01T00:00:00.000Z");
+    expect(rec?.lastSeenAt).toBe("2026-07-01T00:00:00.000Z");
+  });
+
+  it("lastSeenAt her upsert'te güncellenir, firstSeenAt sabit kalır", () => {
+    const a = service.recordError(
+      makeInput({ occurredAt: "2026-07-01T00:00:00.000Z" }),
+    );
+    const b = service.recordError(
+      makeInput({ occurredAt: "2026-07-05T00:00:00.000Z" }),
+    );
+    const c = service.recordError(
+      makeInput({ occurredAt: "2026-07-10T00:00:00.000Z" }),
+    );
+    expect(a.id).toBe(b.id);
+    expect(b.id).toBe(c.id);
+    const rec = repo.findById(a.id);
+    expect(rec?.firstSeenAt).toBe("2026-07-01T00:00:00.000Z");
+    expect(rec?.lastSeenAt).toBe("2026-07-10T00:00:00.000Z");
+    expect(rec?.occurrenceCount).toBe(3);
+  });
+
+  it("resolved kayıt → yeni hata → otomatik reopened terfisi", async () => {
+    const initial = service.recordError(
+      makeInput({ occurredAt: "2026-07-01T00:00:00.000Z" }),
+    );
+    await service.updateErrorEventStatus(
+      initial.id,
+      { toStatus: "resolved", reason: "Düzeltildi" },
+      SUPERADMIN,
+    );
+    expect(repo.findById(initial.id)?.status).toBe("resolved");
+
+    // yeni hata
+    const after = service.recordError(
+      makeInput({ occurredAt: "2026-07-15T00:00:00.000Z" }),
+    );
+    expect(after.id).toBe(initial.id);
+    expect(repo.findById(initial.id)?.status).toBe("reopened");
+
+    // Sistem kaynaklı otomatik transition log'a yazılır.
+    const transitions = repo.listTransitionsByFingerprint(initial.fingerprint);
+    const auto = transitions.find(
+      (t) => t.fromStatus === "resolved" && t.toStatus === "reopened",
+    );
+    expect(auto).toBeDefined();
+    expect(auto?.actorId).toBe("system");
+    expect(auto?.actorType).toBe("system");
+  });
+});
+
+// -------------------------------------------------------------------------
+// GOAL-103 — isValidTransition pure helper
+// -------------------------------------------------------------------------
+
+import { isValidTransition } from "./error-events.service.js";
+
+describe("isValidTransition", () => {
+  it("new → investigating geçerli", () => {
+    expect(isValidTransition("new", "investigating")).toBe(true);
+  });
+  it("new → resolved geçerli", () => {
+    expect(isValidTransition("new", "resolved")).toBe(true);
+  });
+  it("investigating → resolved geçerli", () => {
+    expect(isValidTransition("investigating", "resolved")).toBe(true);
+  });
+  it("investigating → new geçerli", () => {
+    expect(isValidTransition("investigating", "new")).toBe(true);
+  });
+  it("resolved → reopened geçerli", () => {
+    expect(isValidTransition("resolved", "reopened")).toBe(true);
+  });
+  it("resolved → investigating geçerli", () => {
+    expect(isValidTransition("resolved", "investigating")).toBe(true);
+  });
+  it("reopened → investigating geçerli", () => {
+    expect(isValidTransition("reopened", "investigating")).toBe(true);
+  });
+  it("reopened → resolved geçerli", () => {
+    expect(isValidTransition("reopened", "resolved")).toBe(true);
+  });
+  it("new → reopened geçersiz", () => {
+    expect(isValidTransition("new", "reopened")).toBe(false);
+  });
+  it("resolved → new geçersiz", () => {
+    expect(isValidTransition("resolved", "new")).toBe(false);
+  });
+  it("aynı duruma geçiş geçersiz", () => {
+    expect(isValidTransition("new", "new")).toBe(false);
+    expect(isValidTransition("resolved", "resolved")).toBe(false);
+  });
+});
+
+// -------------------------------------------------------------------------
+// GOAL-103 — updateErrorEventStatus
+// -------------------------------------------------------------------------
+
+describe("ErrorEventsService.updateErrorEventStatus", () => {
+  let service: ErrorEventsService;
+  let repo: ErrorEventsRepository;
+
+  beforeEach(() => {
+    repo = new ErrorEventsRepository();
+    service = new ErrorEventsService(repo);
+  });
+
+  it("new → investigating başarılı + transition log", async () => {
+    const ev = service.recordError(makeInput());
+    const result = await service.updateErrorEventStatus(
+      ev.id,
+      { toStatus: "investigating", reason: "İnceleniyor" },
+      SUPERADMIN,
+    );
+    expect(result.event.status).toBe("investigating");
+    expect(result.transition.fromStatus).toBe("new");
+    expect(result.transition.toStatus).toBe("investigating");
+    expect(result.transition.reason).toBe("İnceleniyor");
+    expect(result.transition.actorId).toBe(SUPERADMIN.actorId);
+  });
+
+  it("investigating → resolved başarılı", async () => {
+    const ev = service.recordError(makeInput());
+    await service.updateErrorEventStatus(
+      ev.id,
+      { toStatus: "investigating" },
+      SUPERADMIN,
+    );
+    const result = await service.updateErrorEventStatus(
+      ev.id,
+      { toStatus: "resolved" },
+      SUPERADMIN,
+    );
+    expect(result.event.status).toBe("resolved");
+  });
+
+  it("resolved → reopened manuel olarak yapılabilir", async () => {
+    const ev = service.recordError(makeInput());
+    await service.updateErrorEventStatus(
+      ev.id,
+      { toStatus: "resolved" },
+      SUPERADMIN,
+    );
+    const result = await service.updateErrorEventStatus(
+      ev.id,
+      { toStatus: "reopened" },
+      SUPERADMIN,
+    );
+    expect(result.event.status).toBe("reopened");
+  });
+
+  it("reopened → investigating başarılı", async () => {
+    const ev = service.recordError(makeInput());
+    await service.updateErrorEventStatus(
+      ev.id,
+      { toStatus: "resolved" },
+      SUPERADMIN,
+    );
+    await service.updateErrorEventStatus(
+      ev.id,
+      { toStatus: "reopened" },
+      SUPERADMIN,
+    );
+    const result = await service.updateErrorEventStatus(
+      ev.id,
+      { toStatus: "investigating" },
+      SUPERADMIN,
+    );
+    expect(result.event.status).toBe("investigating");
+  });
+
+  it("geçersiz geçiş → 422 VET-ERRSTAT-0001", async () => {
+    const ev = service.recordError(makeInput());
+    await expect(
+      service.updateErrorEventStatus(
+        ev.id,
+        { toStatus: "reopened" },
+        SUPERADMIN,
+      ),
+    ).rejects.toMatchObject({
+      errorCode: "VET-ERRSTAT-0001",
+      httpStatus: 422,
+    });
+  });
+
+  it("aynı duruma geçiş → 422", async () => {
+    const ev = service.recordError(makeInput());
+    await expect(
+      service.updateErrorEventStatus(
+        ev.id,
+        { toStatus: "new" },
+        SUPERADMIN,
+      ),
+    ).rejects.toMatchObject({
+      errorCode: "VET-ERRSTAT-0001",
+      httpStatus: 422,
+    });
+  });
+
+  it("bulunamayan id → 404", async () => {
+    await expect(
+      service.updateErrorEventStatus(
+        "err-not-found",
+        { toStatus: "investigating" },
+        SUPERADMIN,
+      ),
+    ).rejects.toMatchObject({
+      errorCode: "VET-AUDIT-0001",
+      httpStatus: 404,
+    });
+  });
+
+  it("non-SUPERADMIN → 403", async () => {
+    const ev = service.recordError(makeInput());
+    await expect(
+      service.updateErrorEventStatus(
+        ev.id,
+        { toStatus: "investigating" },
+        STAFF_A,
+      ),
+    ).rejects.toMatchObject({
+      errorCode: "VET-AUTHZ-0001",
+      httpStatus: 403,
+    });
+  });
+
+  it("assignedToUserId atanır", async () => {
+    const ev = service.recordError(makeInput());
+    const result = await service.updateErrorEventStatus(
+      ev.id,
+      { toStatus: "investigating", assignedToUserId: "usr-sa-2" },
+      SUPERADMIN,
+    );
+    expect(result.event.assignedToUserId).toBe("usr-sa-2");
+  });
+
+  it("clearAssignment=true atamayı kaldırır", async () => {
+    const ev = service.recordError(makeInput());
+    await service.updateErrorEventStatus(
+      ev.id,
+      { toStatus: "investigating", assignedToUserId: "usr-sa-2" },
+      SUPERADMIN,
+    );
+    const result = await service.updateErrorEventStatus(
+      ev.id,
+      { toStatus: "resolved", clearAssignment: true },
+      SUPERADMIN,
+    );
+    expect(result.event.assignedToUserId).toBeNull();
+  });
+});
+
+// -------------------------------------------------------------------------
+// GOAL-103 — listErrorEventTransitions
+// -------------------------------------------------------------------------
+
+describe("ErrorEventsService.listErrorEventTransitions", () => {
+  let service: ErrorEventsService;
+  let repo: ErrorEventsRepository;
+
+  beforeEach(() => {
+    repo = new ErrorEventsRepository();
+    service = new ErrorEventsService(repo);
+  });
+
+  it("tüm geçişleri fingerprint ile döner", async () => {
+    const ev = service.recordError(makeInput());
+    await service.updateErrorEventStatus(
+      ev.id,
+      { toStatus: "investigating" },
+      SUPERADMIN,
+    );
+    await service.updateErrorEventStatus(
+      ev.id,
+      { toStatus: "resolved" },
+      SUPERADMIN,
+    );
+    const out = await service.listErrorEventTransitions(ev.id, SUPERADMIN);
+    expect(out.fingerprint).toBe(ev.fingerprint);
+    expect(out.total).toBe(2);
+    expect(out.items[0]!.fromStatus).toBe("new");
+    expect(out.items[0]!.toStatus).toBe("investigating");
+    expect(out.items[1]!.fromStatus).toBe("investigating");
+    expect(out.items[1]!.toStatus).toBe("resolved");
+  });
+
+  it("otomatik reopened transition'ı da log'a yazılır", async () => {
+    const ev = service.recordError(makeInput());
+    await service.updateErrorEventStatus(
+      ev.id,
+      { toStatus: "resolved" },
+      SUPERADMIN,
+    );
+    // yeni hata (aynı fingerprint)
+    service.recordError(
+      makeInput({ message: "Test hata" }),
+    );
+    const out = await service.listErrorEventTransitions(ev.id, SUPERADMIN);
+    // 1 manuel (resolved) + 1 otomatik (reopened)
+    expect(out.total).toBe(2);
+    const reopened = out.items.find((t) => t.toStatus === "reopened");
+    expect(reopened?.fromStatus).toBe("resolved");
+    expect(reopened?.actorId).toBe("system");
+  });
+
+  it("bulunamayan id → 404", async () => {
+    await expect(
+      service.listErrorEventTransitions("err-x", SUPERADMIN),
+    ).rejects.toMatchObject({
+      errorCode: "VET-AUDIT-0001",
+      httpStatus: 404,
+    });
+  });
+
+  it("non-SUPERADMIN → 403", async () => {
+    const ev = service.recordError(makeInput());
+    await expect(
+      service.listErrorEventTransitions(ev.id, STAFF_A),
+    ).rejects.toMatchObject({
+      errorCode: "VET-AUTHZ-0001",
+      httpStatus: 403,
+    });
+  });
+});
+
+// -------------------------------------------------------------------------
+// GOAL-103 — listErrorEventGroups / getErrorEventGroup
+// -------------------------------------------------------------------------
+
+describe("ErrorEventsService.listErrorEventGroups", () => {
+  let service: ErrorEventsService;
+  let repo: ErrorEventsRepository;
+
+  beforeEach(() => {
+    repo = new ErrorEventsRepository();
+    service = new ErrorEventsService(repo);
+  });
+
+  it("fingerprint grupları occurrenceCount DESC sıralı", async () => {
+    const a = service.recordError(makeInput());
+    service.recordError(makeInput()); // aynı fingerprint
+    service.recordError(makeInput({ errorCode: "VET-CLINIC-0002" })); // farklı
+    const out = await service.listErrorEventGroups(
+      { limit: 50, offset: 0 },
+      SUPERADMIN,
+    );
+    expect(out.total).toBe(2);
+    expect(out.items[0]!.fingerprint).toBe(a.fingerprint);
+    expect(out.items[0]!.eventCount).toBe(2);
+  });
+
+  it("status filtresi", async () => {
+    const a = service.recordError(makeInput());
+    const b = service.recordError(makeInput({ message: "farklı mesaj X" }));
+    await service.updateErrorEventStatus(
+      a.id,
+      { toStatus: "resolved" },
+      SUPERADMIN,
+    );
+    const out = await service.listErrorEventGroups(
+      { status: "resolved", limit: 50, offset: 0 },
+      SUPERADMIN,
+    );
+    expect(out.items.some((g) => g.fingerprint === a.fingerprint)).toBe(true);
+    expect(out.items.some((g) => g.fingerprint === b.fingerprint)).toBe(false);
+  });
+
+  it("severity filtresi", async () => {
+    service.recordError(makeInput({ severity: "error" }));
+    service.recordError(makeInput({ severity: "info", message: "info msg" }));
+    const out = await service.listErrorEventGroups(
+      { severity: "error", limit: 50, offset: 0 },
+      SUPERADMIN,
+    );
+    expect(out.total).toBe(1);
+  });
+
+  it("non-SUPERADMIN → 403", async () => {
+    await expect(
+      service.listErrorEventGroups(
+        { limit: 50, offset: 0 },
+        STAFF_A,
+      ),
+    ).rejects.toMatchObject({
+      errorCode: "VET-AUTHZ-0001",
+      httpStatus: 403,
+    });
+  });
+});
+
+describe("ErrorEventsService.getErrorEventGroup", () => {
+  let service: ErrorEventsService;
+  let repo: ErrorEventsRepository;
+
+  beforeEach(() => {
+    repo = new ErrorEventsRepository();
+    service = new ErrorEventsService(repo);
+  });
+
+  it("fingerprint grubu detayı döner", async () => {
+    const a = service.recordError(makeInput());
+    service.recordError(makeInput());
+    const out = await service.getErrorEventGroup(a.fingerprint, SUPERADMIN);
+    expect(out.fingerprint).toBe(a.fingerprint);
+    expect(out.eventCount).toBe(2);
+    expect(out.status).toBe("new");
+  });
+
+  it("bulunamaz → 404", async () => {
+    await expect(
+      service.getErrorEventGroup("0000000000000000", SUPERADMIN),
+    ).rejects.toMatchObject({
+      errorCode: "VET-AUDIT-0001",
+      httpStatus: 404,
+    });
+  });
+
+  it("non-SUPERADMIN → 403", async () => {
+    const a = service.recordError(makeInput());
+    await expect(
+      service.getErrorEventGroup(a.fingerprint, STAFF_A),
+    ).rejects.toMatchObject({
+      errorCode: "VET-AUTHZ-0001",
+      httpStatus: 403,
+    });
+  });
+});
+
+// -------------------------------------------------------------------------
+// GOAL-103 — Ek filtreler: status / branchId / release / assignedToUserId
+// -------------------------------------------------------------------------
+
+describe("ErrorEventsService.listErrorEvents — GOAL-103 ek filtreler", () => {
+  let service: ErrorEventsService;
+  let repo: ErrorEventsRepository;
+
+  beforeEach(() => {
+    repo = new ErrorEventsRepository();
+    service = new ErrorEventsService(repo);
+  });
+
+  it("status filtresi", async () => {
+    const a = service.recordError(makeInput());
+    service.recordError(makeInput({ message: "ikinci" }));
+    await service.updateErrorEventStatus(
+      a.id,
+      { toStatus: "investigating" },
+      SUPERADMIN,
+    );
+    const out = await service.listErrorEvents(
+      { status: "investigating", limit: 50, offset: 0 },
+      SUPERADMIN,
+    );
+    expect(out.total).toBe(1);
+  });
+
+  it("branchId filtresi", async () => {
+    service.recordError(
+      makeInput({
+        branchId: "11111111-1111-1111-1111-111111111111",
+        errorCode: "VET-CLINIC-0001",
+      }),
+    );
+    service.recordError(
+      makeInput({
+        branchId: "22222222-2222-2222-2222-222222222222",
+        errorCode: "VET-CLINIC-0002",
+      }),
+    );
+    const out = await service.listErrorEvents(
+      { branchId: "11111111-1111-1111-1111-111111111111", limit: 50, offset: 0 },
+      SUPERADMIN,
+    );
+    expect(out.total).toBe(1);
+  });
+
+  it("release filtresi", async () => {
+    service.recordError(makeInput({ release: "1.0.0" }));
+    service.recordError(makeInput({ release: "2.0.0" }));
+    const out = await service.listErrorEvents(
+      { release: "1.0.0", limit: 50, offset: 0 },
+      SUPERADMIN,
+    );
+    expect(out.total).toBe(1);
+  });
+
+  it("assignedToUserId filtresi", async () => {
+    const a = service.recordError(makeInput());
+    service.recordError(makeInput({ message: "başka hata" }));
+    await service.updateErrorEventStatus(
+      a.id,
+      { toStatus: "investigating", assignedToUserId: "usr-sa-7" },
+      SUPERADMIN,
+    );
+    const out = await service.listErrorEvents(
+      { assignedToUserId: "usr-sa-7", limit: 50, offset: 0 },
+      SUPERADMIN,
+    );
+    expect(out.total).toBe(1);
+  });
+});

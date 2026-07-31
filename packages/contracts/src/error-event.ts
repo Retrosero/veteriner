@@ -30,8 +30,13 @@
  * - `context`       : sanitize edilmiş ek bilgi (request body
  *                     alan adları, query, headers, PII mask'lı).
  * - `country`       : TR | GB | SYSTEM.
- * - `occurredAt`    : ISO datetime (UTC).
+ * - `occurredAt`    : ISO datetime (UTC) — en son görülme.
+ * - `firstSeenAt`   : ISO datetime (UTC) — ilk görülme.
+ * - `lastSeenAt`    : ISO datetime (UTC) — son görülme.
  * - `occurrenceCount`: aynı fingerprint'in tekrar sayısı (1+).
+ * - `status`        : SUPERADMIN hata merkezi state machine
+ *                     (new → investigating → resolved → reopened).
+ * - `assignedToUserId`: atanan SUPERADMIN kullanıcı (opsiyonel).
  *
  * @security Context her zaman PII-MASKED; `password`, `token`,
  *   `email`, `phone` gibi alanlar filter katmanında mask'lenir.
@@ -40,6 +45,7 @@
  *   adları ve tipleri.
  *
  * @since GOAL-100 (FAZ-10) merkezi backend hata yakalama core
+ * @updated GOAL-103 (FAZ-10) superadmin hata merkezi core
  */
 
 import { z } from "zod";
@@ -106,6 +112,44 @@ export type ErrorEventActorType = z.infer<typeof errorEventActorTypeSchema>;
 export const errorEventCountrySchema = z.enum(["TR", "GB", "SYSTEM"]);
 export type ErrorEventCountry = z.infer<typeof errorEventCountrySchema>;
 
+/**
+ * Hata olayı durum yönetimi (SUPERADMIN hata merkezi — GOAL-103).
+ * Akış: new → investigating → resolved → reopened (reopened yeniden
+ * investigating'e geçebilir; new ↔ resolved tek adımda da olabilir).
+ *
+ * - `new`         : hata yeni kaydedildi, henüz incelenmedi.
+ * - `investigating`: bir SUPERADMIN hatayı sahiplendi, çalışılıyor.
+ * - `resolved`    : çözüldü olarak işaretlendi; sonradan yeniden
+ *                   görülürse otomatik `reopened`'a terfi eder.
+ * - `reopened`    : `resolved` bir kayıt tekrar hata aldığında
+ *                   otomatik terfi edilir; SUPERADMIN tekrar
+ *                   `investigating`'e alabilir.
+ */
+export const errorEventStatusSchema = z.enum([
+  "new",
+  "investigating",
+  "resolved",
+  "reopened",
+]);
+export type ErrorEventStatus = z.infer<typeof errorEventStatusSchema>;
+
+/** Hata durumu geçiş kaydı (append-only audit). */
+export const errorEventStatusTransitionSchema = z.object({
+  id: z.string(),
+  /** Fingerprint (16 hex) — kayıt ile ilişki. */
+  fingerprint: z.string().length(16),
+  fromStatus: errorEventStatusSchema,
+  toStatus: errorEventStatusSchema,
+  /** Geçişi yapan SUPERADMIN (actor). */
+  actorId: z.string(),
+  actorType: errorEventActorTypeSchema,
+  reason: z.string().max(1000).nullable(),
+  occurredAt: z.string().datetime(),
+});
+export type ErrorEventStatusTransition = z.infer<
+  typeof errorEventStatusTransitionSchema
+>;
+
 /* --------------------------------------------------------------------------
  * Hata olayı girdisi (internal — AllExceptionsFilter'dan çağrılır)
  * --------------------------------------------------------------------------
@@ -162,8 +206,16 @@ export const errorEventSchema = z.object({
   context: z.record(z.unknown()),
   country: errorEventCountrySchema,
   occurredAt: z.string().datetime(),
+  /** İlk görülme zamanı (UTC). */
+  firstSeenAt: z.string().datetime(),
+  /** Son görülme zamanı (UTC) — `occurredAt` ile aynı mantık. */
+  lastSeenAt: z.string().datetime(),
   /** Aynı fingerprint'in toplam tekrar sayısı (1+). */
   occurrenceCount: z.number().int().positive(),
+  /** SUPERADMIN hata merkezi durum yönetimi (GOAL-103). */
+  status: errorEventStatusSchema,
+  /** Atanan SUPERADMIN kullanıcı ID (null = atanmadı). */
+  assignedToUserId: z.string().nullable(),
 });
 export type ErrorEvent = z.infer<typeof errorEventSchema>;
 
@@ -179,11 +231,17 @@ export const errorEventFiltersSchema = z.object({
   errorCode: errorCodeSchema.optional(),
   fingerprint: z.string().length(16).optional(),
   tenantId: z.string().uuid().optional(),
+  branchId: z.string().uuid().optional(),
   country: errorEventCountrySchema.optional(),
+  release: z.string().max(64).optional(),
   route: z.string().max(512).optional(),
-  /** ISO datetime (UTC); occurredAt >= from. */
+  /** SUPERADMIN hata merkezi durum filtresi (GOAL-103). */
+  status: errorEventStatusSchema.optional(),
+  /** Atanan SUPERADMIN kullanıcı ID. */
+  assignedToUserId: z.string().max(100).optional(),
+  /** ISO datetime (UTC); firstSeenAt >= from. */
   from: z.string().datetime().optional(),
-  /** ISO datetime (UTC); occurredAt <= to. */
+  /** ISO datetime (UTC); lastSeenAt <= to. */
   to: z.string().datetime().optional(),
   search: z.string().max(200).optional(),
   sort: z.enum(["asc", "desc"]).optional(),
@@ -199,6 +257,103 @@ export const errorEventListResponseSchema = z.object({
 });
 export type ErrorEventListResponse = z.infer<
   typeof errorEventListResponseSchema
+>;
+
+/* --------------------------------------------------------------------------
+ * Durum yönetimi — GOAL-103 superadmin hata merkezi
+ * --------------------------------------------------------------------------
+ */
+
+/**
+ * Hata durumu güncelleme girdisi. State machine aşağıdaki
+ * geçişlere izin verir; geçersiz durum 422 ile reddedilir.
+ *
+ * - new → investigating | resolved
+ * - investigating → resolved
+ * - resolved → reopened (yeni hata oluştuğunda otomatik)
+ * - reopened → investigating
+ *
+ * `assignedToUserId` opsiyonel; belirtilirse status ile birlikte
+ * atanır. Belirtilmezse mevcut atama korunur (null yapılmaz).
+ * `clearAssignment=true` ile atama kaldırılabilir.
+ */
+export const errorEventStatusUpdateInputSchema = z.object({
+  toStatus: errorEventStatusSchema,
+  reason: z.string().max(1000).optional(),
+  assignedToUserId: z.string().min(1).max(100).optional(),
+  clearAssignment: z.boolean().optional(),
+});
+export type ErrorEventStatusUpdateInput = z.infer<
+  typeof errorEventStatusUpdateInputSchema
+>;
+
+/** Status güncelleme response: event + yeni oluşan transition. */
+export const errorEventStatusUpdateResponseSchema = z.object({
+  event: errorEventSchema,
+  transition: errorEventStatusTransitionSchema,
+});
+export type ErrorEventStatusUpdateResponse = z.infer<
+  typeof errorEventStatusUpdateResponseSchema
+>;
+
+/** Hata durumu geçiş listesi response. */
+export const errorEventListTransitionsResponseSchema = z.object({
+  fingerprint: z.string().length(16),
+  items: z.array(errorEventStatusTransitionSchema),
+  total: z.number().int().nonnegative(),
+});
+export type ErrorEventListTransitionsResponse = z.infer<
+  typeof errorEventListTransitionsResponseSchema
+>;
+
+/* --------------------------------------------------------------------------
+ * Hata grupları (fingerprint bazlı) — GOAL-103
+ * --------------------------------------------------------------------------
+ */
+
+/** Filtreli hata grupları sorgu şeması. */
+export const errorEventGroupFiltersSchema = z.object({
+  severity: errorSeveritySchema.optional(),
+  module: errorEventModuleSchema.optional(),
+  errorCode: errorCodeSchema.optional(),
+  tenantId: z.string().uuid().optional(),
+  branchId: z.string().uuid().optional(),
+  country: errorEventCountrySchema.optional(),
+  release: z.string().max(64).optional(),
+  status: errorEventStatusSchema.optional(),
+  from: z.string().datetime().optional(),
+  to: z.string().datetime().optional(),
+  search: z.string().max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+  offset: z.coerce.number().int().min(0).max(10000).default(0),
+});
+export type ErrorEventGroupFilters = z.infer<
+  typeof errorEventGroupFiltersSchema
+>;
+
+/** Tek bir hata grubu (fingerprint bazlı). */
+export const errorEventGroupSchema = z.object({
+  fingerprint: z.string().length(16),
+  severity: errorSeveritySchema,
+  module: errorEventModuleSchema,
+  errorCode: errorCodeSchema,
+  message: z.string(),
+  status: errorEventStatusSchema,
+  assignedToUserId: z.string().nullable(),
+  eventCount: z.number().int().nonnegative(),
+  uniqueTenants: z.number().int().nonnegative(),
+  firstSeenAt: z.string().datetime(),
+  lastSeenAt: z.string().datetime(),
+});
+export type ErrorEventGroup = z.infer<typeof errorEventGroupSchema>;
+
+/** Hata grupları response. */
+export const errorEventGroupListResponseSchema = z.object({
+  items: z.array(errorEventGroupSchema),
+  total: z.number().int().nonnegative(),
+});
+export type ErrorEventGroupListResponse = z.infer<
+  typeof errorEventGroupListResponseSchema
 >;
 
 /* --------------------------------------------------------------------------

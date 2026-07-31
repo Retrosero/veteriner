@@ -9,18 +9,27 @@
  *   Fingerprint (errorCode + module + normalizeMessage) üretir;
  *   aynı fingerprint için mevcut kayıt varsa occurrenceCount
  *   artırılır. Stack trace yalnızca 5xx + critical için saklanır.
+ *   Kayıt `resolved` durumundaysa otomatik `reopened`'a terfi
+ *   edilir (yeni hata oluştu olarak işaretlenir).
  * - `listErrorEvents`: SUPERADMIN paneli için filtreli arama.
  * - `getErrorEventDetail`: tek kayıt detayı.
  * - `listOccurrencesByFingerprint`: aynı fingerprint'in tüm
  *   kayıtları (zaman çizelgesi).
  * - `getErrorEventSummary`: severity/module/errorCode bazlı
  *   aggregate özet.
+ * - `updateErrorEventStatus` (GOAL-103): state machine
+ *   doğrulaması + transition log + opsiyonel atama.
+ * - `listErrorEventTransitions` (GOAL-103): fingerprint
+ *   bazlı tüm status geçişleri.
+ * - `listErrorEventGroups` / `getErrorEventGroup` (GOAL-103):
+ *   fingerprint grupları (özet ekranı için).
  *
  * @security Tenant filtresi opsiyonel; SUPERADMIN cross-tenant
  *   görür. Ancak PII zaten mask'lı gelir; ek bir sanitization
  *   gerekmez. Stack trace 4xx için null yapılır (bilgi sızdırmaz).
  *
  * @since GOAL-100 (FAZ-10) merkezi backend hata yakalama core
+ * @updated GOAL-103 (FAZ-10) superadmin hata merkezi core
  */
 
 import { Injectable, Logger } from "@nestjs/common";
@@ -36,14 +45,24 @@ import type {
   ErrorEvent,
   ErrorEventCreateInput,
   ErrorEventFilters,
+  ErrorEventGroup,
+  ErrorEventGroupFilters,
+  ErrorEventGroupListResponse,
   ErrorEventListResponse,
+  ErrorEventListTransitionsResponse,
   ErrorEventModule,
+  ErrorEventStatus,
+  ErrorEventStatusTransition,
+  ErrorEventStatusUpdateInput,
+  ErrorEventStatusUpdateResponse,
   ErrorEventSummary,
 } from "@vetniva/contracts";
 
 import {
   toErrorEvent,
+  toErrorEventStatusTransition,
   type ErrorEventRecord,
+  type ErrorEventStatusTransitionRecord,
 } from "../../common/error-events/error-event.types.js";
 import { ErrorEventsRepository } from "./error-events.repository.js";
 
@@ -144,6 +163,28 @@ export function computeFingerprint(
   return h.digest("hex").slice(0, 16);
 }
 
+/* --------------------------------------------------------------------------
+ * State machine — GOAL-103
+ * --------------------------------------------------------------------------
+ */
+
+/** Geçerli status geçişlerini döner. */
+const VALID_TRANSITIONS: Readonly<Record<ErrorEventStatus, ReadonlyArray<ErrorEventStatus>>> = {
+  new: ["investigating", "resolved"],
+  investigating: ["resolved", "new"],
+  resolved: ["reopened", "investigating"],
+  reopened: ["investigating", "resolved"],
+};
+
+/** İki status arasındaki geçişin geçerli olup olmadığını söyler. */
+export function isValidTransition(
+  from: ErrorEventStatus,
+  to: ErrorEventStatus,
+): boolean {
+  if (from === to) return false;
+  return VALID_TRANSITIONS[from].includes(to);
+}
+
 @Injectable()
 export class ErrorEventsService {
   private readonly logger = new Logger(ErrorEventsService.name);
@@ -159,6 +200,9 @@ export class ErrorEventsService {
    * Bir hata olayını persist eder. Fingerprint hesaplanır; aynı
    * fingerprint için mevcut kayıt varsa occurrenceCount artırılır.
    * Stack trace yalnızca 5xx + critical için saklanır.
+   *
+   * Mevcut kayıt `resolved` durumundaysa otomatik `reopened`'a
+   * terfi edilir (sistem kaynaklı geçiş, append-only log'a yazılır).
    *
    * Modül seçimi (öncelik sırasıyla):
    * 1. `derivedModule` parametresi (test override'ı).
@@ -186,6 +230,12 @@ export class ErrorEventsService {
           : null;
 
       const occurredAt = input.occurredAt ?? new Date().toISOString();
+
+      // Mevcut kayıt resolved ise otomatik reopened'a terfi.
+      const existing = this.repo.findByFingerprint(fingerprint);
+      const willReopen =
+        existing !== null && existing.status === "resolved";
+
       const rec = this.repo.upsertByFingerprint({
         fingerprint,
         record: {
@@ -207,6 +257,17 @@ export class ErrorEventsService {
           occurredAt,
         },
       });
+
+      if (willReopen) {
+        // Otomatik terfi: resolved → reopened (sistem kaynaklı).
+        const autoUpdate = this.repo.updateStatus(rec.id, {
+          toStatus: "reopened",
+          actorId: "system",
+          actorType: "system",
+          reason: "Yeni hata oluştu — otomatik reopened terfisi",
+        });
+        return toErrorEvent(autoUpdate?.record ?? rec);
+      }
       return toErrorEvent(rec);
     } catch (err) {
       this.logger.error(
@@ -233,7 +294,11 @@ export class ErrorEventsService {
         context: {},
         country: input.country,
         occurredAt: input.occurredAt ?? new Date().toISOString(),
+        firstSeenAt: input.occurredAt ?? new Date().toISOString(),
+        lastSeenAt: input.occurredAt ?? new Date().toISOString(),
         occurrenceCount: 1,
+        status: "new",
+        assignedToUserId: null,
       };
     }
   }
@@ -266,8 +331,12 @@ export class ErrorEventsService {
       errorCode: filters.errorCode,
       fingerprint: filters.fingerprint,
       tenantId: filters.tenantId,
+      branchId: filters.branchId,
       country: filters.country,
+      release: filters.release,
       route: filters.route,
+      status: filters.status,
+      assignedToUserId: filters.assignedToUserId,
       from: filters.from,
       to: filters.to,
       search: filters.search,
@@ -340,8 +409,8 @@ export class ErrorEventsService {
     const all = this.repo.all().filter((r) => {
       if (filters.module && r.module !== filters.module) return false;
       if (filters.country && r.country !== filters.country) return false;
-      if (filters.from && r.occurredAt < filters.from) return false;
-      if (filters.to && r.occurredAt > filters.to) return false;
+      if (filters.from && r.lastSeenAt < filters.from) return false;
+      if (filters.to && r.lastSeenAt > filters.to) return false;
       return true;
     });
 
@@ -435,6 +504,208 @@ export class ErrorEventsService {
   }
 
   // -------------------------------------------------------------------------
+  // updateErrorEventStatus — GOAL-103
+  // -------------------------------------------------------------------------
+
+  /**
+   * Bir hata olayının durumunu günceller. State machine
+   * doğrulaması yapılır; geçersiz geçişlerde 422 döner. Başarılı
+   * durumda append-only transition log'a yeni kayıt eklenir ve
+   * opsiyonel atama güncellenir.
+   *
+   * İzin: yalnızca SUPERADMIN (audit:log:read) — controller guard
+   * tarafında zorunlu; burada da `requireSuperadmin` ile korunur.
+   */
+  public async updateErrorEventStatus(
+    id: string,
+    input: ErrorEventStatusUpdateInput,
+    actor: ActorContext,
+  ): Promise<ErrorEventStatusUpdateResponse> {
+    this.requireSuperadmin(actor);
+    const rec = this.repo.findById(id);
+    if (!rec) {
+      throw new DomainError({
+        errorCode: "VET-AUDIT-0001",
+        message: "Hata olayı bulunamadı",
+        httpStatus: 404,
+        severity: "warning",
+        i18nKey: "error.VET-AUDIT-0001",
+        details: { id },
+      });
+    }
+    if (!isValidTransition(rec.status, input.toStatus)) {
+      throw new DomainError({
+        errorCode: "VET-ERRSTAT-0001",
+        message: `Geçersiz durum geçişi: ${rec.status} → ${input.toStatus}`,
+        httpStatus: 422,
+        severity: "warning",
+        i18nKey: "error.VET-ERRSTAT-0001",
+        details: { from: rec.status, to: input.toStatus },
+      });
+    }
+    const result = this.repo.updateStatus(id, {
+      toStatus: input.toStatus,
+      actorId: actor.actorId ?? "system",
+      actorType: actor.actorType,
+      reason: input.reason ?? null,
+      assignedToUserId: input.assignedToUserId,
+      clearAssignment: input.clearAssignment,
+    });
+    if (!result) {
+      throw new DomainError({
+        errorCode: "VET-AUDIT-0001",
+        message: "Hata olayı bulunamadı",
+        httpStatus: 404,
+        severity: "warning",
+        i18nKey: "error.VET-AUDIT-0001",
+        details: { id },
+      });
+    }
+    return {
+      event: toErrorEvent(result.record),
+      transition: toErrorEventStatusTransition(result.transition),
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // listErrorEventTransitions — GOAL-103
+  // -------------------------------------------------------------------------
+
+  public async listErrorEventTransitions(
+    id: string,
+    actor: ActorContext,
+  ): Promise<ErrorEventListTransitionsResponse> {
+    this.requireSuperadmin(actor);
+    const rec = this.repo.findById(id);
+    if (!rec) {
+      throw new DomainError({
+        errorCode: "VET-AUDIT-0001",
+        message: "Hata olayı bulunamadı",
+        httpStatus: 404,
+        severity: "warning",
+        i18nKey: "error.VET-AUDIT-0001",
+        details: { id },
+      });
+    }
+    const items = this.repo
+      .listTransitionsByFingerprint(rec.fingerprint)
+      .map(toErrorEventStatusTransition);
+    return {
+      fingerprint: rec.fingerprint,
+      items,
+      total: items.length,
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // listErrorEventGroups / getErrorEventGroup — GOAL-103
+  // -------------------------------------------------------------------------
+
+  /**
+   * Fingerprint grupları (fingerprint başına tek satır). SUPERADMIN
+   * hata merkezi özet ekranı için tasarlandı. Filtreler aynı
+   * search semantiğini uygular; sıralama occurrenceCount DESC.
+   */
+  public async listErrorEventGroups(
+    filters: ErrorEventGroupFilters,
+    actor: ActorContext,
+  ): Promise<ErrorEventGroupListResponse> {
+    this.requireSuperadmin(actor);
+    const all = this.repo.listByFingerprint({
+      severity: filters.severity,
+      module: filters.module,
+      errorCode: filters.errorCode,
+      tenantId: filters.tenantId,
+      branchId: filters.branchId,
+      country: filters.country,
+      release: filters.release,
+      status: filters.status,
+      from: filters.from,
+      to: filters.to,
+      route: undefined,
+    });
+
+    // Filtre: search (message + route).
+    let filtered = all;
+    if (filters.search) {
+      const needle = filters.search.toLowerCase();
+      filtered = filtered.filter(
+        (r) =>
+          r.message.toLowerCase().includes(needle) ||
+          r.route.toLowerCase().includes(needle),
+      );
+    }
+
+    // Benzersiz fingerprint grupları.
+    const byFp = new Map<string, ErrorEventRecord>();
+    for (const r of filtered) {
+      if (!byFp.has(r.fingerprint)) byFp.set(r.fingerprint, r);
+    }
+
+    const items: ErrorEventGroup[] = Array.from(byFp.values())
+      .map((r) => this.toGroup(r, filtered))
+      .sort((a, b) => b.eventCount - a.eventCount);
+
+    const total = items.length;
+    const sliced = items.slice(filters.offset, filters.offset + filters.limit);
+    return { items: sliced, total };
+  }
+
+  /**
+   * Tek fingerprint grubu detayı.
+   */
+  public async getErrorEventGroup(
+    fingerprint: string,
+    actor: ActorContext,
+  ): Promise<ErrorEventGroup> {
+    this.requireSuperadmin(actor);
+    const rec = this.repo.findByFingerprint(fingerprint);
+    if (!rec) {
+      throw new DomainError({
+        errorCode: "VET-AUDIT-0001",
+        message: "Fingerprint için hata olayı bulunamadı",
+        httpStatus: 404,
+        severity: "warning",
+        i18nKey: "error.VET-AUDIT-0001",
+        details: { fingerprint },
+      });
+    }
+    const all = this.repo.all().filter((r) => r.fingerprint === fingerprint);
+    return this.toGroup(rec, all);
+  }
+
+  /** Yardımcı: bir record'u fingerprint grubu özetine dönüştürür. */
+  private toGroup(
+    rec: ErrorEventRecord,
+    all: ErrorEventRecord[],
+  ): ErrorEventGroup {
+    // Sadece aynı fingerprint'in kayıtlarını topla; aksi halde tüm
+    // tenant'ların toplam occurrenceCount'u gruba yansır (bug).
+    const siblings = all.filter((s) => s.fingerprint === rec.fingerprint);
+    const tenants = new Set<string>();
+    for (const s of siblings) {
+      if (s.tenantId) tenants.add(s.tenantId);
+    }
+    const eventCount = siblings.reduce(
+      (sum, s) => sum + s.occurrenceCount,
+      0,
+    );
+    return {
+      fingerprint: rec.fingerprint,
+      severity: rec.severity,
+      module: rec.module,
+      errorCode: rec.errorCode,
+      message: rec.message,
+      status: rec.status,
+      assignedToUserId: rec.assignedToUserId,
+      eventCount,
+      uniqueTenants: tenants.size,
+      firstSeenAt: rec.firstSeenAt,
+      lastSeenAt: rec.lastSeenAt,
+    };
+  }
+
+  // -------------------------------------------------------------------------
   // Helpers
   // -------------------------------------------------------------------------
 
@@ -519,3 +790,6 @@ export class ErrorEventsService {
     };
   }
 }
+
+// Type re-export — testler için.
+export type { ErrorEventStatusTransitionRecord };
