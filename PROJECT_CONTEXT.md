@@ -134,3 +134,36 @@
     hata filtresi iyileştirmesi + güvenlik alarm kuralları
     (GOAL-105) + visibility=shared tenant portal tarafı açma
     (FAZ-15+).
+  - GOAL-106 ⏳ partial — core: PII maskeleme ve log retention.
+    log-retention modülü (8 endpoint: GET list/GET effective/
+    GET :id/PUT/DELETE policy + POST sweeps/GET sweeps list/GET
+    sweep :id) + RetentionPolicy sözleşmesi (tenantId×logType×
+    severity composite key; retentionDays/archiveAfterDays/
+    archiveStorage/redactPii + createdById/createdAt/updatedById/
+    updatedAt) + EffectivePolicy çözümleme (tenantOverride →
+    globalOverride → default) + 6 logType enum (audit_log/
+    error_event/security_event/job_run/notification/request_log)
+    + 3 archiveStorage enum (hot/cold/none) + DEFAULT_RETENTION
+    _DAYS, DEFAULT_ARCHIVE_AFTER_DAYS, DEFAULT_ARCHIVE_STORAGE
+    (KVKK/UK GDPR uyumlu) + 13 Zod şema + 3 retention target
+    (ErrorEvent/SecurityEvent/JobRun) + sweep orchestration
+    (dryRun + tenant×logType×severity bucket; archive zone ve
+    delete zone ayrı hesaplanır) + Sweep geçmişi (append-only)
+    + SUPERADMIN yetkisi (audit:log:read) + PiiMasker entegrasyonu
+    (redactPii hard-coded true) + scheduled sweep helper
+    (runScheduledSweep; system actor) + ErrorEventsRepository/
+    SecurityEventsRepository/JobRunsRepository expireOlderThan +
+    countOlderThan ekleme (cutoff bazlı süpürme) + 27 yeni test
+    (upsert/getById/getByKey/list/delete/effective 4 senaryo
+    tenantOverride + globalOverride öncelik zinciri + sweep
+    dryRun/3 logType paralel/target yok boş bucket/non-superadmin
+    403/global tenant null süpürme/scheduled sweep/listSweeps
+    /detail 404/non-superadmin 403) + 1438/1438 api regresyon
+    (önceki 1411 → +27 yeni) + tsc temiz + ESLint temiz. 17 yeni
+    dosya. Cross-module: PiiMasker (common/logging) + ErrorEvents/
+    SecurityEvents/JobRunsRepository genişletildi. Sonraki tick:
+    docs/RAG chunk/i18n key parity + DB migration (Prisma) +
+    notification/request_log/audit_log target'ları (Faz 10+ audit
+    modülü) + cold storage adapter (production) + scheduled cron
+    registration + tenant bazlı log retention önizleme UI
+    (Faz 11+ RBAC policy admin paneli).
