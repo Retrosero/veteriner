@@ -793,6 +793,62 @@ generated_at: "2026-07-30"
                 api.post._api_v1_inventory_purchase-orders__id_receive,
                 api.post._api_v1_inventory_purchase-orders__id_cancel]
 
+- chunk_id: flow-stock-movement
+  type: flow
+  source: packages/contracts/src/stock-movement.ts
+  entity: stock_movement
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Stok Hareketi ve Atomik Bakiye Akışı (Stock Movement Ledger)"
+  content: |
+    1. `StockMovement` append-only ledger yapısı. Fiziksel
+       silme YOK; düzeltme için `reversal` hareketi
+       üretilir.
+    2. Hareket türleri (9): `purchase` (PO receive'den
+       otomatik), `sale` (POS satış), `clinical_use`
+       (muayene/aşı/ameliyat tüketim), `vaccination` (aşı
+       uygulaması), `return` (iade), `transfer` (çift-kayıt),
+       `count_adjustment` (sayım farkı), `waste` (fire),
+       `reversal` (ters kayıt).
+    3. `direction`: `in` (giriş) | `out` (çıkış).
+       `quantity` (Decimal, >0) zorunlu.
+    4. `transfer` ve `count_adjustment` için `reason` zorunlu
+       (VET-STOCK-0007). `type='system'` için
+       `sourceType` + `sourceId` zorunlu (VET-STOCK-0012).
+    5. Bakiye atomik: ledger'dan `Σ in - Σ out`. Saklanmaz;
+       her sorguda hesaplanır (`/balances` endpoint).
+    6. `service` türünde ürünler için stok hareketi
+       oluşturulamaz (VET-STOCK-0008).
+    7. Arşivlenmiş ürün/lot için hareket oluşturulamaz
+       (VET-STOCK-0006/0009).
+    8. Ters kayıt (POST /:id/reverse): idempotent; zaten ters
+       kaydı olan hareket → 409 VET-STOCK-0010.
+    9. Lot-ürün eşleşmesi kontrolü (VET-STOCK-0011).
+    10. Negatif bakiye uyarısı Faz 7+'da (varsayılan kontrol
+        YOK).
+    11. Audit: `audit:stock_movement.{create,reverse}` (info/
+        warning). Reverse'de `reversedMovementId` +
+        `newMovementId` payload'a eklenir.
+  keywords: [stok hareketi, stock movement, ledger,
+             append-only, atomik bakiye, reversal, ters kayıt,
+             purchase, sale, clinical_use, vaccination,
+             return, transfer, count_adjustment, waste,
+             Decimal]
+  related_chunks: [flow-product-catalog, flow-purchase-order,
+                   flow-inventory-lot, error-VET-STOCK-0001,
+                   error-VET-STOCK-0004, error-VET-STOCK-0007,
+                   error-VET-STOCK-0008, error-VET-STOCK-0010,
+                   error-VET-STOCK-0012]
+  related_pages: []
+  related_api: [api.post._api_v1_inventory_stock-movements,
+                api.get._api_v1_inventory_stock-movements,
+                api.get._api_v1_inventory_stock-movements_balances,
+                api.get._api_v1_inventory_stock-movements__id_,
+                api.post._api_v1_inventory_stock-movements__id_reverse]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
