@@ -69,6 +69,7 @@ import { StockMovementsModule } from "./modules/stock-movements/stock-movements.
 import { ClinicalConsumptionModule } from "./modules/clinical-consumption/clinical-consumption.module.js";
 import { PetshopSalesModule } from "./modules/petshop-sales/petshop-sales.module.js";
 import { PetshopSaleReturnsModule } from "./modules/petshop-sale-returns/petshop-sale-returns.module.js";
+import { ClinicalUsagesModule } from "./modules/clinical-usages/clinical-usages.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 
 @Module({
@@ -117,6 +118,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     ClinicalConsumptionModule,
     PetshopSalesModule,
     PetshopSaleReturnsModule,
+    ClinicalUsagesModule,
   ],
 })
 export class AppModule {}

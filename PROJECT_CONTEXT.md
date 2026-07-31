@@ -356,3 +356,24 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
     InventoryService (lot kontrolü). Sonraki tick: docs/RAG chunk/
     i18n key parity + DB migration (Prisma) + tamamlanmış
     iadelerin ters kayıt (reversal) ile iptali (GOAL-073 kapsamı).
+
+  - GOAL-066 ⏳ partial — core: klinik tüketimden otomatik stok
+    düşümü. clinical-usages modülü (3 endpoint: record/list/get)
+    + 5 sourceType (examination/vaccine_application/surgery/
+    hospitalization/prescription) + idempotency key desteği
+    (aynı key + aynı body → mevcut kayıt, farklı body → 409
+    VET-CLINICAL-USE-0005) + 10/10 yeni test + 846/846 api
+    testi geçti. Her line için purchaseTracked=true ürünlerde
+    StockMovementsService.createSystemMovement(type='clinical_use',
+    quantity=-N) çağrılır. service türünde ürün 422
+    VET-CLINICAL-USE-0004. arşivli ürün 422 VET-CLINICAL-USE-0003.
+    Append-only: kayıtlar üzerinde update/delete yok.
+    Mevcut permission'lar kullanıldı: clinic:stock:read +
+    clinic:stock:decrement. Audit
+    audit:clinical_usage.create. Cross-module:
+    ProductsService + StockMovementsService. Sonraki tick:
+    docs/RAG chunk/i18n key parity + DB migration (Prisma) +
+    mevcut modüllerin (vaccine-applications, prescriptions
+    dispense) bu ortak servisi kullanmaya geçişi (refactor)
+    + Faz 6 Faz 7 Faz 8 sourceType'lardan yeni senaryolar
+    (surgery, hospitalization) için pilot kapsam.
