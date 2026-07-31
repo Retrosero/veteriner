@@ -702,6 +702,97 @@ generated_at: "2026-07-30"
                 api.patch._api_v1_inventory_lots__id_,
                 api.post._api_v1_inventory_lots__id_archive]
 
+- chunk_id: flow-supplier
+  type: flow
+  source: packages/contracts/src/supplier.ts
+  entity: supplier
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Tedarikçi Yönetimi Akışı (Supplier)"
+  content: |
+    1. Tedarikçi (supplier) kataloğu. `type`: `clinic` (klinik
+       tedarikçisi — ilaç/aşı) | `petshop` (petshop tedarikçisi
+       — genel stok) | `general` (her ikisi).
+    2. `code` tenant-içi benzersiz (regex
+       `^[A-Za-z0-9_-]+$`); duplicate → 409 VET-SUPPLIER-0002.
+    3. Vergi bilgisi (`taxId`, `taxOffice`) ve iletişim
+       (`contactInfo`: phone/email/address) opsiyonel.
+    4. Arşivleme: aktif PO varsa FK kırılmaz; zaten arşivli →
+       409 VET-SUPPLIER-0003. Geçmiş PO referansı korunur.
+    5. Audit `audit:supplier.{create,update,archive}`.
+    6. PO (GOAL-062 purchase-orders) bu katalogdan
+       `supplierId` ile bağlanır.
+  keywords: [tedarikçi, supplier, katalog, type, code unique,
+             soft delete, append-only, vergi, iletişim]
+  related_chunks: [glossary-supplier, error-VET-SUPPLIER-0001,
+                   error-VET-SUPPLIER-0002, error-VET-SUPPLIER-0003,
+                   error-VET-SUPPLIER-0004]
+  related_pages: []
+  related_api: [api.post._api_v1_catalog_suppliers,
+                api.get._api_v1_catalog_suppliers,
+                api.get._api_v1_catalog_suppliers__id_,
+                api.patch._api_v1_catalog_suppliers__id_,
+                api.post._api_v1_catalog_suppliers__id_archive]
+
+- chunk_id: flow-purchase-order
+  type: flow
+  source: packages/contracts/src/purchase-order.ts
+  entity: purchase_order
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Satın Alma Siparişi Akışı (Purchase Order)"
+  content: |
+    1. `PurchaseOrder` (PO) yaşam döngüsü: `draft` →
+       `approved` → (`partial` | `received`) | `cancelled`.
+    2. Oluşturma (POST): `supplierId` zorunlu, `lines[]` (min
+       1) zorunlu. Toplam otomatik (Decimal çarpma). Tedarikçi
+       arşivliyse 422 VET-PURCHASE_ORDER-0005.
+    3. Güncelleme (PATCH): yalnızca `status='draft'`
+       güncellenebilir (409 VET-PURCHASE_ORDER-0004). `lines`
+       set edilirse replace.
+    4. Onay (POST /approve): `draft` → `approved`.
+       `approved` olmayan → 409 VET-PURCHASE_ORDER-0002.
+    5. Kabul (POST /receive): `approved` → `partial` veya
+       `received`. Her satır için `receivedQuantity` (≤
+       sipariş miktarı) + `lotId` opsiyonel. Faz 6
+       StockMovement (GOAL-063) `type='purchase'` ile bakiye
+       atomik artırılır. `lotId` set edilirse SKT/raf takibi
+       bağlanır.
+    6. İptal (POST /cancel): `draft`/`approved`/`partial` →
+       `cancelled`. `received` veya zaten `cancelled` →
+       409 VET-PURCHASE_ORDER-0008. Reverse kayıt
+       otomatik üretilmez; manuel StockMovement ile düzeltme.
+    7. Audit: `audit:purchase_order.{create,update,approve,
+       receive,cancel}` (info/warning). Update'te
+       before+after; receive'de `newMovementIds[]` payload'a
+       eklenir.
+  keywords: [satın alma, purchase order, PO, tedarik, tedarikçi,
+             onay, kabul, receive, cancel, status, draft,
+             approved, partial, received, cancelled, line,
+             Decimal, ters kayıt]
+  related_chunks: [flow-supplier, flow-product-catalog,
+                   flow-stock-movement, flow-inventory-lot,
+                   error-VET-PURCHASE_ORDER-0001,
+                   error-VET-PURCHASE_ORDER-0002,
+                   error-VET-PURCHASE_ORDER-0004,
+                   error-VET-PURCHASE_ORDER-0005,
+                   error-VET-PURCHASE_ORDER-0007,
+                   error-VET-PURCHASE_ORDER-0008]
+  related_pages: []
+  related_api: [api.post._api_v1_inventory_purchase-orders,
+                api.get._api_v1_inventory_purchase-orders,
+                api.get._api_v1_inventory_purchase-orders__id_,
+                api.patch._api_v1_inventory_purchase-orders__id_,
+                api.post._api_v1_inventory_purchase-orders__id_approve,
+                api.post._api_v1_inventory_purchase-orders__id_receive,
+                api.post._api_v1_inventory_purchase-orders__id_cancel]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md

@@ -160,27 +160,7 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
 escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) sonraya.
   - GOAL-061 ✅ Depo, raf, lot ve SKT (tamamlandı — 2026-07-30, core: 10baf7, docs/i18n: bu commit). 15 endpoint (5 warehouse + 5 shelf + 5 lot); hiyerarşi Warehouse→Shelf→Lot; warehouse type (clinic/petshop/general); shelf temperatureZone (room/cold/freezer); lot unique productId × tenant; SKT geçmiş kabul edilmez (422 VET-INV-0003); arşivleme sıralı (alt→üst) + aktif lot/raf varsa 409; stok miktarı TUTULMAZ (GOAL-063 StockMovement). Audit udit:inventory.{warehouse,shelf,lot}.{create,update,archive}. Tree endpoint, supplier link, DB migration sonraya.
   - GOAL-060 ✅ Ürün ve hizmet kataloğu (tamamlandı — 2026-07-30, core: 4edbf3c, docs/i18n: bu commit). 5 endpoint (POST/GET list/GET :id/PATCH/POST archive); 5 ProductKind (stock_product/medicine/vaccine/service/consumable); kanal kısıtı (clinicUsage + petshopUsage); vergi (5 taxProfile) + currency izolasyonu; SKU otomatik + tenant unique; arşivleme soft delete (archivedAt set, FK kırılmaz, re-archive yok); Faz 5 vaccineProtocolId decoupled referans. Audit udit:product.{create,update,archive}. Ülke adaptörü Faz 7'de, stok bakiyesi Faz 6 devamında.
-  - GOAL-062 ⏳ partial — core: tedarikçi kataloğu (3 tür:
-    clinic/petshop/general + code unique per-tenant + soft archive +
-    19/19 supplier testi) + satın alma siparişi (5 durum:
-    draft/approved/partial/received/cancelled + 7 endpoint + line
-    item + decimal çarpma/toplam + partial kabul mantığı + 20/20
-    purchase-order testi; 39/39 yeni test + 722/722 api testi
-    geçti). Yeni VET-SUPPLIER-0001/0002/0003/0004 ve
-    VET-PURCHASE_ORDER-0001/0002/0004/0005/0007/0008 hata kodları.
-    10 yeni permission catalog: catalog:supplier:
-    read/create/update/archive + inventory:purchase_order:
-    read/create/update/approve/receive/cancel. Audit
-    udit:supplier.create/update/archive +
-    udit:purchase_order.create/update/approve/receive/cancel.
-    Cross-module: purchase-orders service, supplier varlık/arşiv
-    kontrolü için SuppliersService'e bağımlı. Sonraki tick:
-    docs/RAG chunk/i18n key parity + DB migration (Prisma) +
-    Faz 6 stok hareketleri (GOAL-063) ile StockMovement
-    üretimi (lot/SKT girişi receivePurchaseOrder'da) +
-    PurchaseOrderLine'a lotId referansı + mevcut
-    appointment-reminders testindeki regression (1 test,
-    bizim eklediğimiz kodla ilgisiz, önceden var) düzeltmesi.
+  - GOAL-062 ✅ Tedarikçi ve satın alma (tamamlandı — 2026-07-30, core: 770dec0, docs/i18n: bu commit). 12 endpoint (5 supplier + 7 PO); supplier 3 tür (clinic/petshop/general) + code unique; PO state machine (draft→approved→partial|received | cancelled); Decimal toplam; receive ile StockMovement (GOAL-063) 	ype='purchase' atomik bakiye + lot/SKT bağlama; iptal sonrası otomatik ters kayıt YOK (manuel reversal). Audit udit:supplier.* + udit:purchase_order.{create,update,approve,receive,cancel}. Supplier doc'ları başka pencerede yazılmıştı (5 dosya); bu commit'te PO doc'ları (7) + AI_CHUNKS eklendi.
   - GOAL-063 ⏳ partial — core: 9 türlü stok hareketi (purchase, sale,
     clinical_use, vaccination, return, transfer, count_adjustment,
     waste, reversal) + append-only ledger + atomik bakiye hesabı.
