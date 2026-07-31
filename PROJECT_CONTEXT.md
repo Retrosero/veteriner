@@ -705,3 +705,21 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
 - State machine: draft → pending_review → approved; approved → amended + yeni draft revision (her amendment revision++).
 - Permissions: create/update/submit/approve clinic:lab:enter_result; read/history clinic:lab:read; amend clinic:lab:amend.
 - Docs/i18n/RAG chunk/field glossary/cross-ref henüz eklenmedi (sonraki tick).
+
+## GOAL-093 görüntüleme isteği ve raporu ⏳ partial
+- Contract: packages/contracts/src/imaging-order.ts (12 schema/type) + index export.
+- Domain: apps/api/src/common/imaging-orders/imaging-order.types.ts (ImagingOrderRecord + ImagingReportRecord + toImagingOrder + toImagingReport).
+- Repository: apps/api/src/modules/imaging-orders/imaging-orders.repository.ts (in-memory Map; tenant-scoped; reportRevisions append-only).
+- Service: apps/api/src/modules/imaging-orders/imaging-orders.service.ts (createImagingOrder / scheduleImagingOrder / performImagingOrder / reportImagingOrder / approveReport / amendReport / completeImagingOrder / cancelImagingOrder).
+  - Dahili görüntüleme kataloğu (11 varsayılan test: XR-THX, XR-ABD, XR-EXT, US-ABD, US-CARD, CT-THX, CT-ABD, MRI-BRAIN, MRI-SPINE, ENDO-GI + 1 pasif); tenant-scoped genişletme sonraki tick'te `imaging-tests` modülüne taşınacak.
+  - Katalog snapshot (code, name, modality, bodyPart, price) order üzerinde dondurulur.
+  - Rapor: append-only revision listesi, onaylanmış rapor değiştirilemez, amend ile yeni revision oluşur. portalVisible flag'i ile portal görünürlüğü ayrıca kontrol edilir.
+- Controller: imaging-orders.controller.ts — 11 endpoint (POST/GET list/GET :id + POST :id/schedule|perform|report|approve-report|amend-report|complete|cancel) Zod validation + PermissionsGuard ile.
+- Module: ImagingOrdersModule app.module.ts içinde kablolu.
+- Testler: imaging-orders.service.spec.ts 23/23 yeşil; full regression 1195/1195 api testleri (1172 → 1195, +23).
+- State machine: ordered → scheduled → performed → reported/amended → completed; ordered|scheduled → cancelled.
+- Error kodları: VET-IMG-0001 (not found 404), VET-IMG-0002 (invalid state transition 409), VET-IMG-0003 (katalog yok 422), VET-IMG-0004 (katalog pasif 422), VET-IMG-0006 (rapor onayı yanlış durum 409), VET-IMG-0007 (rapor yok 422), VET-IMG-0008 (zaten onaylı 409), VET-IMG-0009 (rapor düzeltme yanlış durum 409), VET-AUTHZ-0001 (cross-tenant 403).
+- Permissions: create/schedule/complete/cancel clinic:imaging:order; read clinic:imaging:read; perform clinic:imaging:perform; report/amend/approve clinic:imaging:report|amend.
+- 8 audit event: audit:imgorder.{create,schedule,perform,report,approve_report,amend_report,complete,cancel}.
+- Cross-module: AuditService (global modül).
+- Docs/i18n/RAG chunk/field glossary/cross-ref henüz eklenmedi (sonraki tick).
