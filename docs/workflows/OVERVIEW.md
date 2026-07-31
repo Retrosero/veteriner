@@ -135,6 +135,24 @@ eklenecek:
 
 Lab, görüntüleme, superadmin, notification, dosya servisi, vb.
 
+## Faz 11 (GOAL-110+) — Dokümantasyon ve AI asistanı temeli
+
+9 anahtar iş akışı için uçtan uca kullanıcı yönergeleri:
+
+- `owner_create.md` — Hasta sahibi ekleme (GOAL-020)
+- `patient_create.md` — Hayvan ekleme (GOAL-021)
+- `appointment_create.md` — Randevu oluşturma (GOAL-031)
+- `examination_start.md` — Muayene başlatma (GOAL-040)
+- `vaccination_record.md` — Aşı kaydı (GOAL-051)
+- `petshop_sale.md` — Petshop satışı (GOAL-064)
+- `payment_collection.md` — Tahsilat (GOAL-072)
+- `hospitalization_open.md` — Yatış açma (GOAL-084)
+- `lab_result_entry.md` — Laboratuvar sonucu (GOAL-092)
+
+Her akış; amaç, aktör, tetikleyici, adımlar, tenant
+izolasyonu, audit, hata senaryoları ve ilgili doküman
+referanslarını içerir.
+
 ## Akış şablonu
 
 Yeni bir akış eklemek için `docs/domain/CLINICAL_FLOWS.md` dosyasındaki

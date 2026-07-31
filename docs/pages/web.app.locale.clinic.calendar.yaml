@@ -1,0 +1,92 @@
+page_id: web.app.locale.clinic.calendar
+route: "/[locale]/clinic/calendar"
+module: clinic
+title_key: clinic.calendar.title
+purpose:
+  tr-TR: "Klinik takvimini gün/hafta/ay görünümünde gösterir. Randevular, bloklar ve boş slotlar."
+  en-GB: "Shows clinic calendar in day/week/month view. Appointments, blocks, free slots."
+allowed_roles:
+  - VETERINARIAN
+  - STAFF
+required_permissions:
+  - "clinic:appointment:read"
+prerequisites:
+  - "Aktif tenant üyeliği."
+fields:
+  - key: view
+    label_key: clinic.calendar.view
+    description:
+      tr-TR: "day | week | month."
+      en-GB: "day | week | month."
+    type: enum
+    required: true
+  - key: filters.veterinarianId
+    label_key: clinic.calendar.filters.veterinarian
+    description:
+      tr-TR: "Belirli bir veteriner hekimin takvimini göster."
+      en-GB: "Show calendar of a specific veterinarian."
+    type: string
+    required: false
+  - key: filters.branchId
+    label_key: clinic.calendar.filters.branch
+    description:
+      tr-TR: "Belirli bir şubenin takvimini göster."
+      en-GB: "Show calendar of a specific branch."
+    type: string
+    required: false
+  - key: filters.date
+    label_key: clinic.calendar.filters.date
+    description:
+      tr-TR: "Görünüm başlangıç tarihi (YYYY-MM-DD)."
+      en-GB: "View start date (YYYY-MM-DD)."
+    type: date
+    required: true
+  - key: appointments
+    label_key: clinic.calendar.appointments
+    description:
+      tr-TR: "Randevular; startAt, endAt, patientName, veterinarianName, status kolonları."
+      en-GB: "Appointments; startAt, endAt, patientName, veterinarianName, status columns."
+    type: array
+    required: true
+actions:
+  - key: view_appointment
+    description:
+      tr-TR: "Randevu detayına git."
+      en-GB: "Go to appointment detail."
+    permission: "clinic:appointment:read"
+  - key: create_appointment
+    description:
+      tr-TR: "Yeni randevu oluştur."
+      en-GB: "Create new appointment."
+    permission: "clinic:appointment:create"
+  - key: drag_to_reschedule
+    description:
+      tr-TR: "Sürükle-bırak ile randevu saatini değiştir."
+      en-GB: "Drag-and-drop to reschedule appointment."
+    permission: "clinic:appointment:update"
+step_by_step:
+  tr-TR:
+    - "Tarayıcıdan /<locale>/clinic/calendar adresine git."
+    - "Görünüm tipini seç (gün/hafta/ay)."
+    - "Tarih seçici ile ilgilendiğiniz güne/haftaya/aya gidin."
+    - "Yeni randevu için boş bir slota tıkla veya 'Yeni Randevu' butonuna bas."
+    - "Mevcut randevuyu sürükleyerek başka bir saate taşıyabilirsin."
+  en-GB:
+    - "Navigate to /<locale>/clinic/calendar in the browser."
+    - "Select view type (day/week/month)."
+    - "Use the date picker to navigate to the day/week/month."
+    - "Click an empty slot or 'New Appointment' button for a new appointment."
+    - "Drag an existing appointment to reschedule."
+possible_errors:
+  - code: VET-AUTHZ-0001
+    tr-TR: "Yetkisiz."
+    en-GB: "Not authorized."
+related_pages: []
+related_api:
+  - "GET /api/v1/calendar/appointments"
+  - "POST /api/v1/calendar/appointments"
+keywords:
+  tr-TR: [takvim, randevu, calendar, gün, hafta, ay, slot]
+  en-GB: [calendar, appointment, day, week, month, slot]
+version: "1.0.0"
+last_verified_at: 2026-07-31

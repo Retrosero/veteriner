@@ -1,0 +1,78 @@
+page_id: web.app.locale.clinic.patients
+route: "/[locale]/clinic/patients"
+module: clinic
+title_key: clinic.patients.title
+purpose:
+  tr-TR: "Klinikteki tüm hayvanları listeler. Tür, ırk, mikroçip, sahibe göre filtreleme."
+  en-GB: "Lists all patients in the clinic. Filter by species, breed, microchip, owner."
+allowed_roles:
+  - VETERINARIAN
+  - STAFF
+required_permissions:
+  - "clinic:patient:read"
+prerequisites:
+  - "Aktif tenant üyeliği."
+fields:
+  - key: filters.species
+    label_key: clinic.patients.filters.species
+    description:
+      tr-TR: "dog | cat | bird."
+      en-GB: "dog | cat | bird."
+    type: enum
+    required: false
+  - key: filters.ownerId
+    label_key: clinic.patients.filters.owner
+    description:
+      tr-TR: "Belirli bir sahibin hayvanlarını göster."
+      en-GB: "Show patients of a specific owner."
+    type: string
+    required: false
+  - key: filters.microchip
+    label_key: clinic.patients.filters.microchip
+    description:
+      tr-TR: "Mikroçip numarası ile ara."
+      en-GB: "Search by microchip number."
+    type: string
+    required: false
+  - key: list.items
+    label_key: clinic.patients.list.items
+    description:
+      tr-TR: "Hayvan kayıtları; name, species, breed, sex, microchip, ownerName, birthDate kolonları."
+      en-GB: "Patient records; name, species, breed, sex, microchip, ownerName, birthDate columns."
+    type: array
+    required: true
+actions:
+  - key: view_detail
+    description:
+      tr-TR: "Hayvan detayına git."
+      en-GB: "Go to patient detail."
+    permission: "clinic:patient:read"
+  - key: create
+    description:
+      tr-TR: "Yeni hayvan ekle."
+      en-GB: "Add new patient."
+    permission: "clinic:patient:create"
+step_by_step:
+  tr-TR:
+    - "Tarayıcıdan /<locale>/clinic/patients adresine git."
+    - "Tür, sahip veya mikroçip filtresi seç."
+    - "Listeden bir hayvana tıklayarak detayı aç."
+    - "Yeni hayvan için 'Ekle' butonuna tıkla."
+  en-GB:
+    - "Navigate to /<locale>/clinic/patients in the browser."
+    - "Filter by species, owner, or microchip."
+    - "Click a patient to open detail."
+    - "Click 'Add' for a new patient."
+possible_errors:
+  - code: VET-AUTHZ-0001
+    tr-TR: "Yetkisiz."
+    en-GB: "Not authorized."
+related_pages:
+  - web.app.locale.clinic.patients.new
+related_api:
+  - "GET /api/v1/patient/patients"
+keywords:
+  tr-TR: [hayvan, hasta, pet, patient, arama, filtre]
+  en-GB: [animal, patient, pet, search, filter]
+version: "1.0.0"
+last_verified_at: 2026-07-31

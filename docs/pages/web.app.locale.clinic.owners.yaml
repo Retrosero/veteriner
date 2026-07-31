@@ -1,0 +1,65 @@
+page_id: web.app.locale.clinic.owners
+route: "/[locale]/clinic/owners"
+module: clinic
+title_key: clinic.owners.title
+purpose:
+  tr-TR: "Klinikteki tüm hasta sahiplerini listeler. Arama, filtreleme, sayfalama."
+  en-GB: "Lists all patient owners in the clinic. Search, filter, pagination."
+allowed_roles:
+  - VETERINARIAN
+  - STAFF
+  - OWNER
+required_permissions:
+  - "clinic:owner:read"
+prerequisites:
+  - "Aktif tenant üyeliği."
+fields:
+  - key: filters.search
+    label_key: clinic.owners.filters.search
+    description:
+      tr-TR: "Ad, telefon, e-posta, TCKN/VKN üzerinden arama."
+      en-GB: "Search by name, phone, email, TCKN/VKN."
+    type: string
+    required: false
+  - key: list.items
+    label_key: clinic.owners.list.items
+    description:
+      tr-TR: "Sahip kayıtları; firstName, lastName, phone, email, taxId, createdAt kolonları."
+      en-GB: "Owner records; firstName, lastName, phone, email, taxId, createdAt columns."
+    type: array
+    required: true
+actions:
+  - key: view_detail
+    description:
+      tr-TR: "Sahip detayına git."
+      en-GB: "Go to owner detail."
+    permission: "clinic:owner:read"
+  - key: create
+    description:
+      tr-TR: "Yeni sahip ekle."
+      en-GB: "Add new owner."
+    permission: "clinic:owner:create"
+step_by_step:
+  tr-TR:
+    - "Tarayıcıdan /<locale>/clinic/owners adresine git."
+    - "Arama kutusuna ad, telefon veya TCKN gir."
+    - "Listeden bir sahibe tıklayarak detay sayfasını aç."
+    - "Yeni sahip için 'Ekle' butonuna tıkla."
+  en-GB:
+    - "Navigate to /<locale>/clinic/owners in the browser."
+    - "Enter name, phone, or TCKN in the search box."
+    - "Click an owner to open the detail page."
+    - "Click 'Add' for a new owner."
+possible_errors:
+  - code: VET-AUTHZ-0001
+    tr-TR: "Yetkisiz."
+    en-GB: "Not authorized."
+related_pages:
+  - web.app.locale.clinic.owners.new
+related_api:
+  - "GET /api/v1/owner/owners"
+keywords:
+  tr-TR: [hasta sahibi, müşteri, owner, arama, filtre]
+  en-GB: [patient owner, customer, owner, search, filter]
+version: "1.0.0"
+last_verified_at: 2026-07-31
