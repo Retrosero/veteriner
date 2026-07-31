@@ -80,6 +80,7 @@ import { SurgeryPlansModule } from "./modules/surgery-plans/surgery-plans.module
 import { ConsentsModule } from "./modules/consents/consents.module.js";
 import { CashRegisterModule } from "./modules/cash-register/cash-register.module.js";
 import { AnesthesiaModule } from "./modules/anesthesia/anesthesia.module.js";
+import { OperationNotesModule } from "./modules/operation-notes/operation-notes.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 
 @Module({
@@ -139,6 +140,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     ConsentsModule,
     CashRegisterModule,
     AnesthesiaModule,
+    OperationNotesModule,
   ],
 })
 export class AppModule {}

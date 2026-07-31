@@ -70,3 +70,5 @@ export * from "./stock-alert.js";
 export * from "./pricing.js";
 export * from "./cash-register.js";
 export * from "./anesthesia.js";
+export * from "./operation-note.js";
+export * from "./operation-note.js";

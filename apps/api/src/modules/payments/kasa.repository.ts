@@ -101,6 +101,33 @@ export class KasaRepository {
     return out;
   }
 
+  /**
+   * Tenant'ın belirli bir zaman aralığında gerçekleşen tüm kasa
+   * kayıtları. GOAL-074 (FAZ-7) kasa ve gün sonu: bir oturumun
+   * açık olduğu zaman aralığı içindeki hareketleri getirir.
+   * `branchId` şu an `KasaEntryRecord` üzerinde taşınmaz; bu
+   * nedenle parametre olarak alınır ama filtre olarak
+   * uygulanmaz — caller session üzerinden daraltma
+   * yapabilir. Yine de API yüzeyi ileriye dönük uyumlu
+   * tutulur.
+   */
+  public listForSessionRange(
+    tenantId: string,
+    _branchId: string,
+    openedAt: string,
+    closedAtOrNow: string,
+  ): KasaEntryRecord[] {
+    const out: KasaEntryRecord[] = [];
+    for (const rec of this.byId.values()) {
+      if (rec.tenantId !== tenantId) continue;
+      if (rec.occurredAt < openedAt) continue;
+      if (rec.occurredAt > closedAtOrNow) continue;
+      out.push(rec);
+    }
+    out.sort((a, b) => a.occurredAt.localeCompare(b.occurredAt));
+    return out;
+  }
+
   /** Test yardımcısı. */
   public clear(): void {
     this.byId.clear();
