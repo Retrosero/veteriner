@@ -230,3 +230,19 @@
     docs/RAG chunk/i18n key parity + frontend wizard komponenti
     (Next.js chat + step navigation) + DB migration yok
     (statik kod) + LLM zenginleştirme (Faz 12+).
+  - GOAL-118 ⏳ partial — core: doküman-kod CI doğrulaması.
+    3 eksik scanner testi bu commit'te eklendi (96e942e):
+    api.test.ts (8 test: prefix birleşim, sub-path docKey,
+    dinamik segment, prefix'siz controller, method çeşitliliği,
+    eksik dizin, docKey formatı), permissions.test.ts (8 test:
+    tek/üç segment, dedup, Node builtin eleme, Tailwind eleme,
+    frontend tarama, boş katkı), web.test.ts (7 test: kök
+    path, [locale] dönüşümü, iç içe dinamik, .ts uzantısı,
+    docKey formatı, eksik/boş dizin). Web scanner'a Türkçe
+    başlık eklendi. 23 yeni test + 42/42 docs-check regresyon
+    (önceki 19) + tsc temiz. Sonraki tick: docs/RAG chunk/i18n
+    key parity + scanner çıktı normalizasyonu (method büyük
+    harf + docKey tire) + page version freshness kontrolü
+    (katalog) + rate limit/timeout + i18n key parity scanner
+    + Markdown lint (markdownlint) + CI strict modu
+    (`--strict` ile uyarıları hata say).
