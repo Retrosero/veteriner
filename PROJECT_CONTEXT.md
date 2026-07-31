@@ -156,7 +156,8 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-051 ✅ Aşı uygulama kaydı (tamamlandı — 2026-07-30)
   - GOAL-052 ✅ Aşı kartı (tamamlandı — 2026-07-30, core: `2b7cc84`, docs/i18n: bu commit). 4 personel endpoint + 1 portal endpoint; species filter (all/other→tüm takvimler); status çözümleme (overdue/upcoming/completed/not_started); tenant `portalVaccineCardEnabled` portal ayarı; in-memory derive (DB göçünde materialized view planı); cross-tenant patient → 404 VET-CLINIC-0001. PDF/çıktı ve owner-pet eşleşmesi guard katmanı sonraya.
   - GOAL-053 ✅ Aşı hatırlatma job'u (tamamlandı — 2026-07-30, core: 763f2f, docs/i18n: bu commit). 4 endpoint; schedule/cancel/reschedule hook'ları; in-process queue + 3 denemelik exponential backoff; tenant config (daysBeforeDue 1-90 + channels 1-3, default 7 gün + sms+in_app); consent-aware dispatch (sms/email consent yoksa atla); idempotent + double-send korumalı; multi-tenant processDue. BullMQ geçişi FAZ-10'a, otomatik cron FAZ-10'a.
-  - GOAL-054 ✅ Aşı amendment ve düzeltme (tamamlandı — 2026-07-30, core: 7c42ba, docs/i18n: bu commit). 1 endpoint (PATCH); status='active' şartı; düzeltilebilir alanlar dose/nextDueDate/notes/lot; lot değişiminde atomik ters kayıt + yeni düşüm (SKT 422 VET-VACC-0010, yetersiz stok 422 VET-VACC-0009, aktif değil 409 VET-VACC-0007); mendReason zorunlu; append-only (status='amended', fiziksel silme yok); audit udit:vaccine.application.amend (warning, before snapshot + lotChange). Reminder hook escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) sonraya.
+  - GOAL-054 ✅ Aşı amendment ve düzeltme (tamamlandı — 2026-07-30, core: 7c42ba, docs/i18n: bu commit). 1 endpoint (PATCH); status='active' şartı; düzeltilebilir alanlar dose/nextDueDate/notes/lot; lot değişiminde atomik ters kayıt + yeni düşüm (SKT 422 VET-VACC-0010, yetersiz stok 422 VET-VACC-0009, aktif değil 409 VET-VACC-0007); mendReason zorunlu; append-only (status='amended', fiziksel silme yok); audit udit:vaccine.application.amend (warning, before snapshot + lotChange). Reminder hook 
+escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) sonraya.
   - GOAL-061 ⏳ partial — core: depo, raf ve lot tanımları.
     `inventory` sözleşmesi (Warehouse + Shelf + StockLot +
     3 tür: clinic/petshop/general + raf temperatureZone:
@@ -194,40 +195,7 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
     bağlantısı + lokasyon ağacı için tree endpoint.
 
 - **Faz 6 — Klinik + petshop ortak stok/petshop** ⏳ sırada
-  - GOAL-060 ⏳ partial — core: ürün ve hizmet kataloğu. product
-    s�zle�mesi (ProductKind: stock_product/medicine/vaccine/service/
-    consumable + ProductUnit � 11 + ProductTaxProfile + ProductCurrency
-    + SKU/barkod unique per-tenant + auto-SKU prd-{kindChar}{6} +
-    vaccine t�r�nde accineProtocolId Faz 5 referans� + medicine
-    t�r�nde 
-equiresPrescription/controlledDrug UK ila�
-    reg�lasyonu i�in) + products.types.ts (ProductRecord +
-    toProduct + normalizeDecimalString + generateSku) +
-    ProductsRepository (in-memory Map + bySku + byBarcode
-    index + nextSkuCounter) + ProductsService (createProduct
-    SKU/barkod unique + auto-SKU + audit info + Decimal
-    normalizasyon + 422 VET-VALIDATION-0010 invalid price;
-    listProducts kind/kinds/clinic/petshop/search/category/active
-    filtreleri; getProduct cross-tenant null; updateProduct k�smi
-    + ar�ivli kay�t 409 VET-PRODUCT-0004 + SKU/barkod de�i�imi
-    unique kontrol� + null=barkod temizle + audit info;
-    archiveProduct soft delete + active=false + zaten ar�ivli
-    409 VET-PRODUCT-0003 + audit warning) + ProductsController
-    (5 endpoint + Zod validation + PermissionsGuard) + module
-    wiring (AppModule entegrasyonu) + 5 yeni permission
-    catalog:product:read/create/update/archive/export
-    (PERMISSION_CATALOG.yaml + permission-spec.ts union +
-    OWNER +5, VETERINARIAN +1, STAFF +4) + 26/26 yeni test +
-    655/655 api testi ge�ti. Hata kodlar�: VET-PRODUCT-0001
-    (bulunamad�), VET-PRODUCT-0002 (SKU/barkod duplicate),
-    VET-PRODUCT-0003 (zaten ar�ivli), VET-PRODUCT-0004
-    (ar�ivli g�ncellenemez), VET-VALIDATION-0010 (invalid
-    price), VET-AUTHZ-0001 (cross-tenant). Audit
-    udit:product.create/update/archive. Sonraki tick:
-    docs/RAG chunk/i18n key parity + DB migration (Prisma) +
-    Faz 6 stok mod�l� ile ger�ek stockProductId referans�
-    + Faz 5 vaccine protokol� tam entegrasyonu.
-
+  - GOAL-060 ✅ Ürün ve hizmet kataloğu (tamamlandı — 2026-07-30, core: 4edbf3c, docs/i18n: bu commit). 5 endpoint (POST/GET list/GET :id/PATCH/POST archive); 5 ProductKind (stock_product/medicine/vaccine/service/consumable); kanal kısıtı (clinicUsage + petshopUsage); vergi (5 taxProfile) + currency izolasyonu; SKU otomatik + tenant unique; arşivleme soft delete (archivedAt set, FK kırılmaz, re-archive yok); Faz 5 vaccineProtocolId decoupled referans. Audit udit:product.{create,update,archive}. Ülke adaptörü Faz 7'de, stok bakiyesi Faz 6 devamında.
   - GOAL-062 ⏳ partial — core: tedarikçi kataloğu (3 tür:
     clinic/petshop/general + code unique per-tenant + soft archive +
     19/19 supplier testi) + satın alma siparişi (5 durum:

@@ -540,6 +540,59 @@ generated_at: "2026-07-30"
   related_pages: []
   related_api: [api.patch._api_v1_clinic_vaccines_applications__id_]
 
+- chunk_id: flow-product-catalog
+  type: flow
+  source: packages/contracts/src/product.ts
+  entity: product
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Ürün ve Hizmet Kataloğu Akışı (Product Catalog)"
+  content: |
+    1. Klinik + petshop ortak kataloğa yeni ürün/hizmet
+       eklenir. `ProductKind`: `stock_product` | `medicine` |
+       `vaccine` | `service` | `consumable`.
+    2. SKU verilmediyse otomatik `PRD-<tenant8>-NNNNNN`
+       üretilir; tenant içinde SKU ve barkod benzersizdir
+       (arşivlenmiş kayıt hariç). Duplicate → 409
+       VET-PRODUCT-0002.
+    3. `kind='vaccine'` ise Faz 5 `vaccineProtocolId` ile
+       referans tutulur; katalog ayrı, Faz 5 kendi
+       protokolünü yönetir (decoupled referans).
+    4. `taxProfile` (none/standard/reduced/zero/exempt) +
+       `currency` (TRY/GBP) ile vergi/para birimi izolasyonu.
+       Ülke adaptörü Faz 7'de bağlanacak.
+    5. `clinicUsage` + `petshopUsage` alanları kanal kısıtı
+       (ortak satılabilir vs sadece klinik vs sadece petshop).
+    6. Arama/listeleme: `GET /api/v1/catalog/products` ile
+       `kind`/`kinds`/`clinic`/`petshop`/`search`/`category`/
+       `active`/`limit`/`offset`/`sort`/`order` filtreleri.
+       Default `active=true` → arşivlenmemiş kayıtlar.
+    7. Güncelleme: PATCH ile partial update; arşivli kayıt
+       güncellenemez (409 VET-PRODUCT-0004). SKU/barkod
+       değişirse unique kontrolü.
+    8. Arşivleme: `POST /archive` ile soft delete
+       (`archivedAt` set); kayıt korunur. Geçmiş satış/alış
+       FK kırılmaz (audit trail). Re-archive YOK; yeni ürün
+       oluşturulur.
+    9. Audit: `audit:product.{create,update,archive}` (info/
+       warning). Update'te before+after snapshot; SKU/barkod
+       değişiminde before/after.
+  keywords: [ürün kataloğu, product, hizmet, petshop, klinik,
+             SKU, barkod, arşiv, taxProfile, currency,
+             clinicUsage, petshopUsage, vaccineProtocolId]
+  related_chunks: [glossary-product, error-VET-PRODUCT-0001,
+                   error-VET-PRODUCT-0002, error-VET-PRODUCT-0003,
+                   error-VET-PRODUCT-0004]
+  related_pages: []
+  related_api: [api.post._api_v1_catalog_products,
+                api.get._api_v1_catalog_products,
+                api.get._api_v1_catalog_products__id_,
+                api.patch._api_v1_catalog_products__id_,
+                api.post._api_v1_catalog_products__id_archive]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
