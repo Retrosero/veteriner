@@ -12,6 +12,11 @@
  * atama, transition log ve fingerprint grupları endpointleri
  * eklenmiştir.
  *
+ * GOAL-104 ile birlikte hata atama ve çözüm notları endpointleri
+ * eklenmiştir. Notlar, destek bağlantıları, atama ve birleşik
+ * audit log endpointleri SUPERADMIN hata merkezinin operasyonel
+ * ihtiyaçlarını karşılar; her aksiyon append-only log'a yazılır.
+ *
  * Endpoint'ler (SUPERADMIN - audit:log:read):
  * - `GET    /api/v1/superadmin/error-events`                   — Filtreli liste
  * - `GET    /api/v1/superadmin/error-events/summary`           — Özet (severity/module)
@@ -21,6 +26,13 @@
  * - `GET    /api/v1/superadmin/error-events/:id`               — Tek olay detayı
  * - `GET    /api/v1/superadmin/error-events/:id/transitions`   — Status geçişleri
  * - `PATCH  /api/v1/superadmin/error-events/:id/status`        — Status güncelle
+ * - `GET    /api/v1/superadmin/error-events/:id/notes`         — Çözüm notları listesi
+ * - `POST   /api/v1/superadmin/error-events/:id/notes`         — Çözüm notu ekle
+ * - `GET    /api/v1/superadmin/error-events/:id/support-links` — Destek bağlantıları
+ * - `POST   /api/v1/superadmin/error-events/:id/support-links` — Destek bağlantısı ekle
+ * - `PATCH  /api/v1/superadmin/error-events/:id/assignment`    — Atama/unassign
+ * - `GET    /api/v1/superadmin/error-events/:id/assignments`   — Atama geçmişi
+ * - `GET    /api/v1/superadmin/error-events/:id/audit-log`     — Birleşik audit log
  *
  * Endpoint'ler (System - frontend raporu, oturum gerekli):
  * - `POST /api/v1/system/error-events`               — Frontend hata raporu
@@ -35,6 +47,7 @@
  * @since GOAL-100 (FAZ-10) merkezi backend hata yakalama core
  *        GOAL-101 (FAZ-10) frontend hata yakalama core
  *        GOAL-103 (FAZ-10) superadmin hata merkezi core
+ *        GOAL-104 (FAZ-10) hata atama ve çözüm notları core
  */
 
 import {
@@ -57,22 +70,35 @@ import { RequirePermissions } from "../../common/decorators/require-permissions.
 import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   clientErrorReportInputSchema,
+  errorEventAssignmentInputSchema,
   errorEventFiltersSchema,
   errorEventGroupFiltersSchema,
+  errorEventNoteCreateInputSchema,
   errorEventStatusUpdateInputSchema,
   errorEventSummaryQuerySchema,
+  errorEventSupportLinkInputSchema,
   type ClientErrorReportInput,
   type ClientErrorReportResponse,
   type ErrorEvent,
+  type ErrorEventAssignmentInput,
+  type ErrorEventAssignmentListResponse,
+  type ErrorEventAssignmentResponse,
+  type ErrorEventAuditLogResponse,
   type ErrorEventFilters,
   type ErrorEventGroup,
   type ErrorEventGroupFilters,
   type ErrorEventGroupListResponse,
   type ErrorEventListResponse,
   type ErrorEventListTransitionsResponse,
+  type ErrorEventNote,
+  type ErrorEventNoteCreateInput,
+  type ErrorEventNoteListResponse,
   type ErrorEventStatusUpdateInput,
   type ErrorEventStatusUpdateResponse,
   type ErrorEventSummary,
+  type ErrorEventSupportLink,
+  type ErrorEventSupportLinkInput,
+  type ErrorEventSupportLinkListResponse,
 } from "@vetniva/contracts";
 
 import { ErrorEventsService } from "./error-events.service.js";
@@ -227,6 +253,189 @@ export class ErrorEventsController {
     @CurrentActor() actor: ActorContext,
   ): Promise<ErrorEventStatusUpdateResponse> {
     return this.service.updateErrorEventStatus(id, body, actor);
+  }
+
+  // -------------------------------------------------------------------------
+  // Çözüm notu — GOAL-104
+  // -------------------------------------------------------------------------
+
+  @Get(":id/notes")
+  @RequirePermissions("audit:log:read")
+  @ApiOperation({
+    operationId: "errorEventNoteList",
+    summary: "Hata çözüm notları (SUPERADMIN)",
+    description:
+      "Bir hata olayının tüm çözüm notlarını createdAt artan sırada " +
+      "döner. Append-only; silinemez veya düzeltilemez (düzeltme " +
+      "yeni not ile yapılır).",
+  })
+  @ApiResponse({ status: 200, description: "Not listesi." })
+  @ApiResponse({ status: 404, description: "Hata olayı bulunamadı." })
+  @ApiResponse({ status: 403, description: "Yetkisiz erişim." })
+  public async listNotes(
+    @Param("id") id: string,
+    @CurrentActor() actor: ActorContext,
+  ): Promise<ErrorEventNoteListResponse> {
+    return this.service.listErrorEventNotes(id, actor);
+  }
+
+  @Post(":id/notes")
+  @RequirePermissions("audit:log:read")
+  @ApiOperation({
+    operationId: "errorEventNoteAdd",
+    summary: "Hata çözüm notu ekle (SUPERADMIN)",
+    description:
+      "Hata olayına yeni bir çözüm notu ekler. `authorId`/`authorType` " +
+      "aktör bağlamından türetilir. `body` PII mask'lı saklanır.",
+  })
+  @ApiResponse({ status: 201, description: "Not eklendi." })
+  @ApiResponse({ status: 404, description: "Hata olayı bulunamadı." })
+  @ApiResponse({ status: 422, description: "Geçersiz not içeriği." })
+  @ApiResponse({ status: 403, description: "Yetkisiz erişim." })
+  public async addNote(
+    @Param("id") id: string,
+    @Body(new ZodValidationPipe(errorEventNoteCreateInputSchema))
+    body: ErrorEventNoteCreateInput,
+    @CurrentActor() actor: ActorContext,
+  ): Promise<ErrorEventNote> {
+    const note = await this.service.addErrorEventNote(id, body, actor);
+    return {
+      id: note.id,
+      fingerprint: note.fingerprint,
+      authorId: note.authorId,
+      authorType: note.authorType,
+      body: note.body,
+      visibility: note.visibility,
+      createdAt: note.createdAt,
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // Destek kaydı bağlantısı — GOAL-104
+  // -------------------------------------------------------------------------
+
+  @Get(":id/support-links")
+  @RequirePermissions("audit:log:read")
+  @ApiOperation({
+    operationId: "errorEventSupportLinkList",
+    summary: "Hata destek bağlantıları (SUPERADMIN)",
+    description:
+      "Bir hata olayına bağlanan JIRA/Linear/Zendesk/GitHub destek " +
+      "kayıtlarını createdAt artan sırada döner.",
+  })
+  @ApiResponse({ status: 200, description: "Bağlantı listesi." })
+  @ApiResponse({ status: 404, description: "Hata olayı bulunamadı." })
+  @ApiResponse({ status: 403, description: "Yetkisiz erişim." })
+  public async listSupportLinks(
+    @Param("id") id: string,
+    @CurrentActor() actor: ActorContext,
+  ): Promise<ErrorEventSupportLinkListResponse> {
+    return this.service.listErrorEventSupportLinks(id, actor);
+  }
+
+  @Post(":id/support-links")
+  @RequirePermissions("audit:log:read")
+  @ApiOperation({
+    operationId: "errorEventSupportLinkAdd",
+    summary: "Hata destek bağlantısı ekle (SUPERADMIN)",
+    description:
+      "Hata olayına yeni bir destek kaydı bağlantısı ekler. Sistem, " +
+      "externalId, url veya title alanlarından en az biri zorunludur.",
+  })
+  @ApiResponse({ status: 201, description: "Bağlantı eklendi." })
+  @ApiResponse({ status: 404, description: "Hata olayı bulunamadı." })
+  @ApiResponse({ status: 422, description: "Geçersiz bağlantı." })
+  @ApiResponse({ status: 403, description: "Yetkisiz erişim." })
+  public async addSupportLink(
+    @Param("id") id: string,
+    @Body(new ZodValidationPipe(errorEventSupportLinkInputSchema))
+    body: ErrorEventSupportLinkInput,
+    @CurrentActor() actor: ActorContext,
+  ): Promise<ErrorEventSupportLink> {
+    const link = await this.service.addErrorEventSupportLink(id, body, actor);
+    return {
+      id: link.id,
+      fingerprint: link.fingerprint,
+      system: link.system,
+      externalId: link.externalId,
+      url: link.url,
+      title: link.title,
+      createdById: link.createdById,
+      createdByType: link.createdByType,
+      createdAt: link.createdAt,
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // Atama — GOAL-104
+  // -------------------------------------------------------------------------
+
+  @Patch(":id/assignment")
+  @RequirePermissions("audit:log:read")
+  @ApiOperation({
+    operationId: "errorEventAssign",
+    summary: "Hata ataması (SUPERADMIN)",
+    description:
+      "Hata olayını geliştirici/sorumluya atar veya mevcut atamayı " +
+      "kaldırır. Status değiştirmez; salt atama aksiyonu izlenir. " +
+      "`assigneeId` ile atama; `unassign=true` ile atama kaldırma. " +
+      "En az biri zorunludur.",
+  })
+  @ApiResponse({ status: 200, description: "Atama güncellendi." })
+  @ApiResponse({ status: 404, description: "Hata olayı bulunamadı." })
+  @ApiResponse({ status: 422, description: "Geçersiz atama." })
+  @ApiResponse({ status: 403, description: "Yetkisiz erişim." })
+  public async assign(
+    @Param("id") id: string,
+    @Body(new ZodValidationPipe(errorEventAssignmentInputSchema))
+    body: ErrorEventAssignmentInput,
+    @CurrentActor() actor: ActorContext,
+  ): Promise<ErrorEventAssignmentResponse> {
+    return this.service.assignErrorEvent(id, body, actor);
+  }
+
+  @Get(":id/assignments")
+  @RequirePermissions("audit:log:read")
+  @ApiOperation({
+    operationId: "errorEventAssignmentList",
+    summary: "Hata atama geçmişi (SUPERADMIN)",
+    description:
+      "Bir hata olayının tüm atama kayıtlarını assignedAt artan sırada " +
+      "döner. Append-only; her atama/unassign yeni kayıt oluşturur.",
+  })
+  @ApiResponse({ status: 200, description: "Atama geçmişi." })
+  @ApiResponse({ status: 404, description: "Hata olayı bulunamadı." })
+  @ApiResponse({ status: 403, description: "Yetkisiz erişim." })
+  public async listAssignments(
+    @Param("id") id: string,
+    @CurrentActor() actor: ActorContext,
+  ): Promise<ErrorEventAssignmentListResponse> {
+    return this.service.listErrorEventAssignments(id, actor);
+  }
+
+  // -------------------------------------------------------------------------
+  // Birleşik audit log — GOAL-104
+  // -------------------------------------------------------------------------
+
+  @Get(":id/audit-log")
+  @RequirePermissions("audit:log:read")
+  @ApiOperation({
+    operationId: "errorEventAuditLog",
+    summary: "Hata birleşik audit log (SUPERADMIN)",
+    description:
+      "Bir hata olayının tüm aksiyonlarını (status transition + not + " +
+      "destek bağlantısı + atama + occurrence_recorded) occurredAt " +
+      "artan sırada birleşik timeline olarak döner. UI `action` " +
+      "discriminator'ı ile render eder.",
+  })
+  @ApiResponse({ status: 200, description: "Audit log." })
+  @ApiResponse({ status: 404, description: "Hata olayı bulunamadı." })
+  @ApiResponse({ status: 403, description: "Yetkisiz erişim." })
+  public async auditLog(
+    @Param("id") id: string,
+    @CurrentActor() actor: ActorContext,
+  ): Promise<ErrorEventAuditLogResponse> {
+    return this.service.listErrorEventAuditLog(id, actor);
   }
 }
 

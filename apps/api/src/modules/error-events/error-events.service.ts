@@ -24,12 +24,24 @@
  * - `listErrorEventGroups` / `getErrorEventGroup` (GOAL-103):
  *   fingerprint grupları (özet ekranı için).
  *
+ * GOAL-104 ile birlikte eklenen iş kuralları:
+ * - `addErrorEventNote` / `listErrorEventNotes`: çözüm notları
+ *   (append-only, PII mask'lı, SUPERADMIN yetkisi).
+ * - `addErrorEventSupportLink` / `listErrorEventSupportLinks`:
+ *   JIRA/Linear/Zendesk/GitHub destek bağlantıları.
+ * - `assignErrorEvent` / `unassignErrorEvent`: atama aksiyonu
+ *   (status değiştirmez; sadece atama geçmişine kayıt düşer).
+ * - `listErrorEventAssignments`: atama geçmişi.
+ * - `listErrorEventAuditLog`: status transition + not + destek
+ *   bağlantısı + atama aksiyonlarını occurredAt artan sırada
+ *   birleşik timeline olarak döner.
+ *
  * @security Tenant filtresi opsiyonel; SUPERADMIN cross-tenant
  *   görür. Ancak PII zaten mask'lı gelir; ek bir sanitization
  *   gerekmez. Stack trace 4xx için null yapılır (bilgi sızdırmaz).
  *
  * @since GOAL-100 (FAZ-10) merkezi backend hata yakalama core
- * @updated GOAL-103 (FAZ-10) superadmin hata merkezi core
+ * @updated GOAL-104 (FAZ-10) hata atama ve çözüm notları core
  */
 
 import { Injectable, Logger } from "@nestjs/common";
@@ -43,6 +55,12 @@ import type {
   ClientErrorReportInput,
   ClientErrorReportResponse,
   ErrorEvent,
+  ErrorEventAssignmentInput,
+  ErrorEventAssignmentListResponse,
+  ErrorEventAssignmentResponse,
+  ErrorEventAuditAction,
+  ErrorEventAuditEntry,
+  ErrorEventAuditLogResponse,
   ErrorEventCreateInput,
   ErrorEventFilters,
   ErrorEventGroup,
@@ -51,18 +69,29 @@ import type {
   ErrorEventListResponse,
   ErrorEventListTransitionsResponse,
   ErrorEventModule,
+  ErrorEventNoteCreateInput,
+  ErrorEventNoteListResponse,
   ErrorEventStatus,
   ErrorEventStatusTransition,
   ErrorEventStatusUpdateInput,
   ErrorEventStatusUpdateResponse,
   ErrorEventSummary,
+  ErrorEventSupportLinkInput,
+  ErrorEventSupportLinkListResponse,
 } from "@vetniva/contracts";
 
 import {
+  UNASSIGNED,
   toErrorEvent,
+  toErrorEventAssignment,
+  toErrorEventNote,
   toErrorEventStatusTransition,
+  toErrorEventSupportLink,
+  type ErrorEventAssignmentRecordInternal,
+  type ErrorEventNoteRecord,
   type ErrorEventRecord,
   type ErrorEventStatusTransitionRecord,
+  type ErrorEventSupportLinkRecord,
 } from "../../common/error-events/error-event.types.js";
 import { ErrorEventsRepository } from "./error-events.repository.js";
 
@@ -788,6 +817,394 @@ export class ErrorEventsService {
       id: event.id,
       fingerprint: event.fingerprint,
     };
+  }
+
+  // -------------------------------------------------------------------------
+  // Çözüm notu — GOAL-104
+  // -------------------------------------------------------------------------
+
+  /**
+   * Bir hata olayına çözüm notu ekler. `id` üzerinden kayıt
+   * bulunur, fingerprint türetilir. `authorId`/`authorType` aktör
+   * bağlamından gelir (istemci tarafı gönderemez). `body` PII
+   * mask'lı saklanır; notlar append-only'dir.
+   *
+   * İzin: yalnızca SUPERADMIN (audit:log:read).
+   */
+  public async addErrorEventNote(
+    id: string,
+    input: Omit<ErrorEventNoteCreateInput, "visibility"> & {
+      visibility?: ErrorEventNoteCreateInput["visibility"];
+    },
+    actor: ActorContext,
+  ): Promise<ErrorEventNoteRecord> {
+    this.requireSuperadmin(actor);
+    const rec = this.repo.findById(id);
+    if (!rec) {
+      throw new DomainError({
+        errorCode: "VET-AUDIT-0001",
+        message: "Hata olayı bulunamadı",
+        httpStatus: 404,
+        severity: "warning",
+        i18nKey: "error.VET-AUDIT-0001",
+        details: { id },
+      });
+    }
+    const safeBody = this.maskString(input.body, 4000);
+    if (!safeBody) {
+      throw new DomainError({
+        errorCode: "VET-ERRNOTE-0001",
+        message: "Not içeriği zorunludur ve en fazla 4000 karakter olabilir",
+        httpStatus: 422,
+        severity: "warning",
+        i18nKey: "error.VET-ERRNOTE-0001",
+      });
+    }
+    return this.repo.addNote({
+      fingerprint: rec.fingerprint,
+      authorId: actor.actorId ?? "system",
+      authorType: actor.actorType,
+      body: safeBody,
+      visibility: input.visibility ?? "internal",
+    });
+  }
+
+  /**
+   * Bir hata olayının tüm çözüm notlarını createdAt artan sırada
+   * döner. `id` üzerinden kayıt bulunur, fingerprint türetilir.
+   *
+   * İzin: yalnızca SUPERADMIN (audit:log:read).
+   */
+  public async listErrorEventNotes(
+    id: string,
+    actor: ActorContext,
+  ): Promise<ErrorEventNoteListResponse> {
+    this.requireSuperadmin(actor);
+    const rec = this.repo.findById(id);
+    if (!rec) {
+      throw new DomainError({
+        errorCode: "VET-AUDIT-0001",
+        message: "Hata olayı bulunamadı",
+        httpStatus: 404,
+        severity: "warning",
+        i18nKey: "error.VET-AUDIT-0001",
+        details: { id },
+      });
+    }
+    const items = this.repo
+      .listNotesByFingerprint(rec.fingerprint)
+      .map(toErrorEventNote);
+    return {
+      fingerprint: rec.fingerprint,
+      items,
+      total: items.length,
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // Destek kaydı bağlantısı — GOAL-104
+  // -------------------------------------------------------------------------
+
+  /**
+   * Bir hata olayına JIRA/Linear/Zendesk/GitHub destek kaydı
+   * bağlantısı ekler. Sistem + externalId + url + title opsiyonel
+   * kombinasyonu kabul edilir (en az bir tanımlayıcı zorunlu).
+   *
+   * İzin: yalnızca SUPERADMIN (audit:log:read).
+   */
+  public async addErrorEventSupportLink(
+    id: string,
+    input: ErrorEventSupportLinkInput,
+    actor: ActorContext,
+  ): Promise<ErrorEventSupportLinkRecord> {
+    this.requireSuperadmin(actor);
+    const rec = this.repo.findById(id);
+    if (!rec) {
+      throw new DomainError({
+        errorCode: "VET-AUDIT-0001",
+        message: "Hata olayı bulunamadı",
+        httpStatus: 404,
+        severity: "warning",
+        i18nKey: "error.VET-AUDIT-0001",
+        details: { id },
+      });
+    }
+    return this.repo.addSupportLink({
+      fingerprint: rec.fingerprint,
+      system: input.system,
+      externalId: input.externalId ?? null,
+      url: input.url ?? null,
+      title: input.title ?? null,
+      createdById: actor.actorId ?? "system",
+      createdByType: actor.actorType,
+    });
+  }
+
+  /**
+   * Bir hata olayının tüm destek bağlantılarını createdAt artan
+   * sırada döner.
+   *
+   * İzin: yalnızca SUPERADMIN (audit:log:read).
+   */
+  public async listErrorEventSupportLinks(
+    id: string,
+    actor: ActorContext,
+  ): Promise<ErrorEventSupportLinkListResponse> {
+    this.requireSuperadmin(actor);
+    const rec = this.repo.findById(id);
+    if (!rec) {
+      throw new DomainError({
+        errorCode: "VET-AUDIT-0001",
+        message: "Hata olayı bulunamadı",
+        httpStatus: 404,
+        severity: "warning",
+        i18nKey: "error.VET-AUDIT-0001",
+        details: { id },
+      });
+    }
+    const items = this.repo
+      .listSupportLinksByFingerprint(rec.fingerprint)
+      .map(toErrorEventSupportLink);
+    return {
+      fingerprint: rec.fingerprint,
+      items,
+      total: items.length,
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // Atama — GOAL-104
+  // -------------------------------------------------------------------------
+
+  /**
+   * Bir hata olayını geliştirici/sorumluya atar. Append-only kayıt
+   * düşer; mevcut atama geçmişi korunur. Status değiştirmez
+   * (sadece atama). Hata olayının `assignedToUserId` alanı en son
+   * atamayı yansıtır.
+   *
+   * - `assigneeId`  : yeni atanan kişi ID.
+   * - `unassign=true`: mevcut atama kaldırılır (UNASSIGNED sentetik
+   *                    kaydı düşer; `assignedToUserId` null olur).
+   *
+   * İzin: yalnızca SUPERADMIN (audit:log:read).
+   */
+  public async assignErrorEvent(
+    id: string,
+    input: ErrorEventAssignmentInput,
+    actor: ActorContext,
+  ): Promise<ErrorEventAssignmentResponse> {
+    this.requireSuperadmin(actor);
+    const rec = this.repo.findById(id);
+    if (!rec) {
+      throw new DomainError({
+        errorCode: "VET-AUDIT-0001",
+        message: "Hata olayı bulunamadı",
+        httpStatus: 404,
+        severity: "warning",
+        i18nKey: "error.VET-AUDIT-0001",
+        details: { id },
+      });
+    }
+    const isUnassign = input.unassign === true;
+    const assigneeId = isUnassign ? UNASSIGNED : input.assigneeId ?? "";
+    if (!assigneeId) {
+      throw new DomainError({
+        errorCode: "VET-ERRNOTE-0001",
+        message: "assigneeId veya unassign=true zorunludur",
+        httpStatus: 422,
+        severity: "warning",
+        i18nKey: "error.VET-ERRNOTE-0001",
+      });
+    }
+    const assignment = this.repo.addAssignment({
+      fingerprint: rec.fingerprint,
+      assigneeId,
+      assignedById: actor.actorId ?? "system",
+      assignedByType: actor.actorType,
+      reason: input.reason ?? null,
+    });
+    // Güncellenmiş event'i tekrar oku (assignedToUserId değişmiş olabilir).
+    const updated = this.repo.findById(id);
+    return {
+      event: toErrorEvent(updated ?? rec),
+      assignment: toErrorEventAssignment(assignment),
+    };
+  }
+
+  /**
+   * Bir hata olayının tüm atama geçmişini assignedAt artan sırada
+   * döner.
+   *
+   * İzin: yalnızca SUPERADMIN (audit:log:read).
+   */
+  public async listErrorEventAssignments(
+    id: string,
+    actor: ActorContext,
+  ): Promise<ErrorEventAssignmentListResponse> {
+    this.requireSuperadmin(actor);
+    const rec = this.repo.findById(id);
+    if (!rec) {
+      throw new DomainError({
+        errorCode: "VET-AUDIT-0001",
+        message: "Hata olayı bulunamadı",
+        httpStatus: 404,
+        severity: "warning",
+        i18nKey: "error.VET-AUDIT-0001",
+        details: { id },
+      });
+    }
+    const items = this.repo
+      .listAssignmentsByFingerprint(rec.fingerprint)
+      .map(toErrorEventAssignment);
+    return {
+      fingerprint: rec.fingerprint,
+      items,
+      total: items.length,
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // Birleşik audit log — GOAL-104
+  // -------------------------------------------------------------------------
+
+  /**
+   * Bir fingerprint için tüm aksiyonları (status transition + not +
+   * destek bağlantısı + atama) occurredAt artan sırada birleşik
+   * timeline olarak döner. Sistem kaynaklı otomatik `reopened`
+   * terfileri de dahildir (occurrence_recorded action'ı).
+   *
+   * `details` alanı aksiyona göre farklı şekil alır; UI
+   * `action` discriminator'ı ile render eder.
+   *
+   * İzin: yalnızca SUPERADMIN (audit:log:read).
+   */
+  public async listErrorEventAuditLog(
+    id: string,
+    actor: ActorContext,
+  ): Promise<ErrorEventAuditLogResponse> {
+    this.requireSuperadmin(actor);
+    const rec = this.repo.findById(id);
+    if (!rec) {
+      throw new DomainError({
+        errorCode: "VET-AUDIT-0001",
+        message: "Hata olayı bulunamadı",
+        httpStatus: 404,
+        severity: "warning",
+        i18nKey: "error.VET-AUDIT-0001",
+        details: { id },
+      });
+    }
+    const entries: ErrorEventAuditEntry[] = [];
+    // Status transitions.
+    for (const t of this.repo.listTransitionsByFingerprint(rec.fingerprint)) {
+      entries.push({
+        id: t.id,
+        fingerprint: t.fingerprint,
+        action: "status_transition",
+        occurredAt: t.occurredAt,
+        actorId: t.actorId,
+        actorType: t.actorType,
+        details: {
+          fromStatus: t.fromStatus,
+          toStatus: t.toStatus,
+          reason: t.reason,
+        },
+      });
+    }
+    // Notlar.
+    for (const n of this.repo.listNotesByFingerprint(rec.fingerprint)) {
+      entries.push({
+        id: n.id,
+        fingerprint: n.fingerprint,
+        action: "note_added",
+        occurredAt: n.createdAt,
+        actorId: n.authorId,
+        actorType: n.authorType,
+        details: {
+          noteId: n.id,
+          visibility: n.visibility,
+          bodyPreview: n.body.slice(0, 200),
+        },
+      });
+    }
+    // Destek bağlantıları.
+    for (const s of this.repo.listSupportLinksByFingerprint(rec.fingerprint)) {
+      entries.push({
+        id: s.id,
+        fingerprint: s.fingerprint,
+        action: "support_link_added",
+        occurredAt: s.createdAt,
+        actorId: s.createdById,
+        actorType: s.createdByType,
+        details: {
+          supportLinkId: s.id,
+          system: s.system,
+          externalId: s.externalId,
+          url: s.url,
+          title: s.title,
+        },
+      });
+    }
+    // Atamalar.
+    for (const a of this.repo.listAssignmentsByFingerprint(rec.fingerprint)) {
+      const unassigned = a.assigneeId === UNASSIGNED;
+      entries.push({
+        id: a.id,
+        fingerprint: a.fingerprint,
+        action: "assignment_changed",
+        occurredAt: a.assignedAt,
+        actorId: a.assignedById,
+        actorType: a.assignedByType,
+        details: {
+          assignmentId: a.id,
+          assigneeId: unassigned ? null : a.assigneeId,
+          unassigned,
+          reason: a.reason,
+        },
+      });
+    }
+    // resolved → reopened otomatik terfiler (resolved-status görünce
+    // occurrence_recorded olarak yeniden yazılır).
+    for (const t of this.repo.listTransitionsByFingerprint(rec.fingerprint)) {
+      if (t.toStatus === "reopened" && t.actorId === "system") {
+        entries.push({
+          id: `${t.id}-occ`,
+          fingerprint: t.fingerprint,
+          action: "occurrence_recorded",
+          occurredAt: t.occurredAt,
+          actorId: t.actorId,
+          actorType: t.actorType,
+          details: { transitionId: t.id, reason: t.reason },
+        });
+      }
+    }
+    entries.sort((a, b) => a.occurredAt.localeCompare(b.occurredAt));
+    return {
+      fingerprint: rec.fingerprint,
+      items: entries,
+      total: entries.length,
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // String sanitizer (notlar için)
+  // -------------------------------------------------------------------------
+
+  /**
+   * String'i PII mask'ler ve uzunluk sınırı uygular. Boş
+   * string veya mask sonrası boşalan içerik null döner.
+   */
+  private maskString(s: string, maxLen: number): string | null {
+    if (typeof s !== "string") return null;
+    const trimmed = s.trim();
+    if (!trimmed) return null;
+    let masked: string;
+    try {
+      masked = this.masker.maskString(trimmed) ?? trimmed;
+    } catch {
+      masked = trimmed;
+    }
+    return masked.slice(0, maxLen);
   }
 }
 

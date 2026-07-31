@@ -45,7 +45,7 @@
  *   adları ve tipleri.
  *
  * @since GOAL-100 (FAZ-10) merkezi backend hata yakalama core
- * @updated GOAL-103 (FAZ-10) superadmin hata merkezi core
+ * @updated GOAL-104 (FAZ-10) hata atama ve çözüm notları core
  */
 
 import { z } from "zod";
@@ -459,4 +459,244 @@ export const clientErrorReportResponseSchema = z.object({
 });
 export type ClientErrorReportResponse = z.infer<
   typeof clientErrorReportResponseSchema
+>;
+
+/* --------------------------------------------------------------------------
+ * GOAL-104 — Hata atama ve çözüm notları
+ * --------------------------------------------------------------------------
+ *
+ * Aşağıdaki şemalar dosyanın sonuna konumlandırıldı; çünkü
+ * yukarıdaki `errorEventSchema` ve `errorEventStatusUpdateResponseSchema`
+ * gibi şemalara atıf verirler. ActorType ve Status gibi erken
+ * enum'lar zaten yukarıda tanımlı.
+ */
+
+/**
+ * Çözüm notunun kime görünür olduğunu belirler.
+ * - `internal` : yalnızca SUPERADMIN ekibi görür (varsayılan).
+ * - `shared`   : tenant SUPERADMIN'ı ile birlikte ilgili tenant'ın
+ *                yönetici rolü de görebilir (kullanıcı tarafı FAZ-15+).
+ *                Şu an yalnızca `internal` set'lenir; `shared` ileri
+ *                goal'lerde tenant portal tarafına açılacak şekilde
+ *                sözleşmeye dahil edildi.
+ */
+export const errorEventNoteVisibilitySchema = z.enum(["internal", "shared"]);
+export type ErrorEventNoteVisibility = z.infer<
+  typeof errorEventNoteVisibilitySchema
+>;
+
+/**
+ * Destek kaydı (support ticket) bağlantısı harici sistemi.
+ * - `jira`     : JIRA issue.
+ * - `linear`   : Linear issue.
+ * - `zendesk`  : Zendesk ticket.
+ * - `github`   : GitHub issue/PR.
+ * - `internal` : dahili takip kaydı (ID/URL olmadan).
+ * - `other`    : diğer (url zorunlu).
+ */
+export const errorEventSupportSystemSchema = z.enum([
+  "jira",
+  "linear",
+  "zendesk",
+  "github",
+  "internal",
+  "other",
+]);
+export type ErrorEventSupportSystem = z.infer<
+  typeof errorEventSupportSystemSchema
+>;
+
+/**
+ * Hata olayına eklenen çözüm notu. Append-only; silinemez
+ * (düzeltme yeni not ile yapılır). `authorId` istemciden alınmaz;
+ * aktör bağlamından türetilir.
+ */
+export const errorEventNoteSchema = z.object({
+  id: z.string(),
+  /** Hata fingerprint (16 hex) — kayıt ile ilişki. */
+  fingerprint: z.string().length(16),
+  authorId: z.string().min(1).max(100),
+  authorType: errorEventActorTypeSchema,
+  body: z.string().min(1).max(4000),
+  visibility: errorEventNoteVisibilitySchema,
+  createdAt: z.string().datetime(),
+});
+export type ErrorEventNote = z.infer<typeof errorEventNoteSchema>;
+
+/** Çözüm notu oluşturma girdisi. */
+export const errorEventNoteCreateInputSchema = z.object({
+  body: z.string().min(1).max(4000),
+  visibility: errorEventNoteVisibilitySchema.default("internal"),
+});
+export type ErrorEventNoteCreateInput = z.infer<
+  typeof errorEventNoteCreateInputSchema
+>;
+
+/** Çözüm notu listesi response. */
+export const errorEventNoteListResponseSchema = z.object({
+  fingerprint: z.string().length(16),
+  items: z.array(errorEventNoteSchema),
+  total: z.number().int().nonnegative(),
+});
+export type ErrorEventNoteListResponse = z.infer<
+  typeof errorEventNoteListResponseSchema
+>;
+
+/**
+ * Hata olayına bağlanan destek kaydı (JIRA/Linear/Zendesk/GitHub vb.).
+ * `externalId` sistem spesifikasyonuna göre opsiyonel olabilir
+ * (internal için boş bırakılabilir); `url` en az biri doluysa kabul.
+ */
+export const errorEventSupportLinkSchema = z.object({
+  id: z.string(),
+  fingerprint: z.string().length(16),
+  system: errorEventSupportSystemSchema,
+  externalId: z.string().max(100).nullable(),
+  url: z.string().url().nullable(),
+  title: z.string().max(200).nullable(),
+  createdById: z.string().min(1).max(100),
+  createdByType: errorEventActorTypeSchema,
+  createdAt: z.string().datetime(),
+});
+export type ErrorEventSupportLink = z.infer<
+  typeof errorEventSupportLinkSchema
+>;
+
+/** Destek kaydı bağlantısı oluşturma girdisi. */
+export const errorEventSupportLinkInputSchema = z
+  .object({
+    system: errorEventSupportSystemSchema,
+    externalId: z.string().max(100).optional(),
+    url: z.string().url().optional(),
+    title: z.string().max(200).optional(),
+  })
+  .refine(
+    (v) =>
+      v.externalId !== undefined ||
+      v.url !== undefined ||
+      v.title !== undefined,
+    {
+      message:
+        "externalId, url veya title alanlarından en az biri zorunludur",
+      path: ["externalId"],
+    },
+  );
+export type ErrorEventSupportLinkInput = z.infer<
+  typeof errorEventSupportLinkInputSchema
+>;
+
+/** Destek kaydı bağlantısı listesi response. */
+export const errorEventSupportLinkListResponseSchema = z.object({
+  fingerprint: z.string().length(16),
+  items: z.array(errorEventSupportLinkSchema),
+  total: z.number().int().nonnegative(),
+});
+export type ErrorEventSupportLinkListResponse = z.infer<
+  typeof errorEventSupportLinkListResponseSchema
+>;
+
+/**
+ * Hata olayına ait atama geçmişi. Append-only; her atama yeni
+ * kayıt oluşturur (iptal `unassigned` atanır). Status değişiminden
+ * bağımsızdır; salt atama aksiyonu izlenir.
+ */
+export const errorEventAssignmentRecordSchema = z.object({
+  id: z.string(),
+  fingerprint: z.string().length(16),
+  /** Atanan SUPERADMIN kullanıcı ID. `unassigned` özel değeri atama kaldırma anlamına gelir. */
+  assigneeId: z.string().min(1).max(100),
+  assignedById: z.string().min(1).max(100),
+  assignedByType: errorEventActorTypeSchema,
+  reason: z.string().max(1000).nullable(),
+  assignedAt: z.string().datetime(),
+});
+export type ErrorEventAssignmentRecord = z.infer<
+  typeof errorEventAssignmentRecordSchema
+>;
+
+/**
+ * Atama işlem girdisi. `assigneeId` ile atama yapılır;
+ * `unassign=true` ile atama kaldırılır (mevcut atamanın üzerine
+ * yeni bir `unassigned` kaydı düşülür).
+ */
+export const errorEventAssignmentInputSchema = z
+  .object({
+    assigneeId: z.string().min(1).max(100).optional(),
+    reason: z.string().max(1000).optional(),
+    unassign: z.boolean().optional(),
+  })
+  .refine((v) => Boolean(v.assigneeId) || v.unassign === true, {
+    message:
+      "assigneeId veya unassign=true alanlarından en az biri zorunludur",
+    path: ["assigneeId"],
+  });
+export type ErrorEventAssignmentInput = z.infer<
+  typeof errorEventAssignmentInputSchema
+>;
+
+/** Atama response (yeni atama kaydı + güncellenmiş event). */
+export const errorEventAssignmentResponseSchema = z.object({
+  event: errorEventSchema,
+  assignment: errorEventAssignmentRecordSchema,
+});
+export type ErrorEventAssignmentResponse = z.infer<
+  typeof errorEventAssignmentResponseSchema
+>;
+
+/** Atama listesi response. */
+export const errorEventAssignmentListResponseSchema = z.object({
+  fingerprint: z.string().length(16),
+  items: z.array(errorEventAssignmentRecordSchema),
+  total: z.number().int().nonnegative(),
+});
+export type ErrorEventAssignmentListResponse = z.infer<
+  typeof errorEventAssignmentListResponseSchema
+>;
+
+/**
+ * Audit log aksiyon tipleri. Status transitions, notlar, destek
+ * bağlantıları ve atamalar aynı timeline üzerinde sıralanır.
+ */
+export const errorEventAuditActionSchema = z.enum([
+  /** Status geçişi (resolved→reopened dahil). */
+  "status_transition",
+  /** Yeni çözüm notu eklendi. */
+  "note_added",
+  /** Yeni destek bağlantısı eklendi. */
+  "support_link_added",
+  /** Atama güncellendi (atama + unassign). */
+  "assignment_changed",
+  /** Yeni hata oluştu (resolved→reopened otomatik terfi). */
+  "occurrence_recorded",
+]);
+export type ErrorEventAuditAction = z.infer<
+  typeof errorEventAuditActionSchema
+>;
+
+/**
+ * Birleşik audit entry. `details` alanı aksiyona göre farklı
+ * şekil alır; UI katmanı `action` discriminator'ı ile render eder.
+ */
+export const errorEventAuditEntrySchema = z.object({
+  id: z.string(),
+  fingerprint: z.string().length(16),
+  action: errorEventAuditActionSchema,
+  occurredAt: z.string().datetime(),
+  actorId: z.string(),
+  actorType: errorEventActorTypeSchema,
+  /** Aksiyon tipine göre farklı alanlar; payload serbest. */
+  details: z.record(z.unknown()),
+});
+export type ErrorEventAuditEntry = z.infer<
+  typeof errorEventAuditEntrySchema
+>;
+
+/** Birleşik audit log response. */
+export const errorEventAuditLogResponseSchema = z.object({
+  fingerprint: z.string().length(16),
+  items: z.array(errorEventAuditEntrySchema),
+  total: z.number().int().nonnegative(),
+});
+export type ErrorEventAuditLogResponse = z.infer<
+  typeof errorEventAuditLogResponseSchema
 >;

@@ -11,24 +11,41 @@
  * repository içi tam yapı (fingerprint, occurrenceCount, vb.)
  * iken ErrorEvent API'ye dönen public shape'tir.
  *
+ * GOAL-104 ile birlikte eklenen kayıtlar:
+ * - `ErrorEventNoteRecord`         : çözüm notları (append-only).
+ * - `ErrorEventSupportLinkRecord`  : destek bağlantıları.
+ * - `ErrorEventAssignmentRecord`   : atama geçmişi.
+ *
  * @security `context` alanı PII mask'lı payload taşır; record
  *   tarafında bu garanti zaten uygulanır (mask'lenmemiş context
  *   kabul edilmez). `stack` yalnızca 5xx + critical için saklanır.
  *
  * @since GOAL-100 (FAZ-10) merkezi backend hata yakalama core
- * @updated GOAL-103 (FAZ-10) superadmin hata merkezi core
+ * @updated GOAL-104 (FAZ-10) hata atama ve çözüm notları core
  */
 
 import type {
   ErrorEvent,
   ErrorEventActorType,
+  ErrorEventAssignmentRecord,
   ErrorEventCountry,
   ErrorEventCreateInput,
   ErrorEventModule,
+  ErrorEventNote,
   ErrorEventStatus,
   ErrorEventStatusTransition,
+  ErrorEventSupportLink,
 } from "@vetniva/contracts";
 import type { ErrorCode, ErrorSeverity } from "@vetniva/contracts";
+
+/** Yerel not görünürlüğü tipi (contracts'tan türetilir). */
+export type ErrorEventNoteVisibility =
+  ErrorEventNote["visibility"];
+
+/** Yerel destek sistemi tipi (contracts'tan türetilir). */
+export type ErrorEventSupportSystem = NonNullable<
+  ErrorEventSupportLink["system"]
+>;
 
 /* --------------------------------------------------------------------------
  * Persist edilmiş kayıt
@@ -79,6 +96,63 @@ export interface ErrorEventStatusTransitionRecord {
   occurredAt: string;
 }
 
+/* --------------------------------------------------------------------------
+ * Çözüm notu — GOAL-104
+ * --------------------------------------------------------------------------
+ */
+
+/** Çözüm notu repository kaydı. Append-only; silinemez. */
+export interface ErrorEventNoteRecord {
+  id: string;
+  fingerprint: string;
+  authorId: string;
+  authorType: ErrorEventActorType;
+  body: string;
+  visibility: ErrorEventNoteVisibility;
+  createdAt: string;
+}
+
+/* --------------------------------------------------------------------------
+ * Destek kaydı bağlantısı — GOAL-104
+ * --------------------------------------------------------------------------
+ */
+
+/** Destek kaydı bağlantısı repository kaydı. */
+export interface ErrorEventSupportLinkRecord {
+  id: string;
+  fingerprint: string;
+  system: ErrorEventSupportSystem;
+  externalId: string | null;
+  url: string | null;
+  title: string | null;
+  createdById: string;
+  createdByType: ErrorEventActorType;
+  createdAt: string;
+}
+
+/* --------------------------------------------------------------------------
+ * Atama geçmişi — GOAL-104
+ * --------------------------------------------------------------------------
+ */
+
+/**
+ * Atama geçmişi repository kaydı. Append-only; her atama/kaldırma
+ * aksiyonu yeni kayıt oluşturur. `assigneeId === "unassigned"`
+ * atama kaldırma anlamına gelir (özel sentetik değer).
+ */
+export interface ErrorEventAssignmentRecordInternal {
+  id: string;
+  fingerprint: string;
+  assigneeId: string;
+  assignedById: string;
+  assignedByType: ErrorEventActorType;
+  reason: string | null;
+  assignedAt: string;
+}
+
+/** Unassign sentetik assignee değeri. */
+export const UNASSIGNED = "unassigned" as const;
+
 export type {
   ErrorEvent,
   ErrorEventCreateInput,
@@ -87,6 +161,9 @@ export type {
   ErrorEventCountry,
   ErrorEventStatus,
   ErrorEventStatusTransition,
+  ErrorEventNote,
+  ErrorEventSupportLink,
+  ErrorEventAssignmentRecord,
   ErrorCode,
   ErrorSeverity,
 };
@@ -137,5 +214,59 @@ export function toErrorEventStatusTransition(
     actorType: rec.actorType,
     reason: rec.reason,
     occurredAt: rec.occurredAt,
+  };
+}
+
+/* --------------------------------------------------------------------------
+ * Record → public dönüşüm — GOAL-104
+ * --------------------------------------------------------------------------
+ */
+
+/** Çözüm notu record → public şema. */
+export function toErrorEventNote(rec: ErrorEventNoteRecord): ErrorEventNote {
+  return {
+    id: rec.id,
+    fingerprint: rec.fingerprint,
+    authorId: rec.authorId,
+    authorType: rec.authorType,
+    body: rec.body,
+    visibility: rec.visibility,
+    createdAt: rec.createdAt,
+  };
+}
+
+/** Destek bağlantısı record → public şema. */
+export function toErrorEventSupportLink(
+  rec: ErrorEventSupportLinkRecord,
+): ErrorEventSupportLink {
+  return {
+    id: rec.id,
+    fingerprint: rec.fingerprint,
+    system: rec.system,
+    externalId: rec.externalId,
+    url: rec.url,
+    title: rec.title,
+    createdById: rec.createdById,
+    createdByType: rec.createdByType,
+    createdAt: rec.createdAt,
+  };
+}
+
+/**
+ * Atama kaydı (internal) → public şema. `unassigned` sentetik
+ * assignee değeri olduğu gibi bırakılır; UI katmanı görüntüleme
+ * sırasında "Atama kaldırıldı" gibi render eder.
+ */
+export function toErrorEventAssignment(
+  rec: ErrorEventAssignmentRecordInternal,
+): ErrorEventAssignmentRecord {
+  return {
+    id: rec.id,
+    fingerprint: rec.fingerprint,
+    assigneeId: rec.assigneeId,
+    assignedById: rec.assignedById,
+    assignedByType: rec.assignedByType,
+    reason: rec.reason,
+    assignedAt: rec.assignedAt,
   };
 }

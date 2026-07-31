@@ -1135,3 +1135,432 @@ describe("ErrorEventsService.listErrorEvents — GOAL-103 ek filtreler", () => {
     expect(out.total).toBe(1);
   });
 });
+
+// -------------------------------------------------------------------------
+// GOAL-104 — Hata atama ve çözüm notları
+// -------------------------------------------------------------------------
+
+describe("ErrorEventsService.addErrorEventNote — GOAL-104", () => {
+  let service: ErrorEventsService;
+  let repo: ErrorEventsRepository;
+
+  beforeEach(() => {
+    repo = new ErrorEventsRepository();
+    service = new ErrorEventsService(repo);
+  });
+
+  it("çözüm notu ekler; authorId/authorType aktör bağlamından gelir", async () => {
+    const a = service.recordError(makeInput());
+    const note = await service.addErrorEventNote(
+      a.id,
+      { body: "Bu hata DB deadlock'tan kaynaklanıyor." },
+      SUPERADMIN,
+    );
+    expect(note.fingerprint).toBe(a.fingerprint);
+    expect(note.authorId).toBe("usr-super-1");
+    expect(note.authorType).toBe("user");
+    expect(note.visibility).toBe("internal");
+    expect(note.body).toContain("DB deadlock");
+  });
+
+  it("not body PII içerikleri mask'lenir (email/TCKN)", async () => {
+    const a = service.recordError(makeInput());
+    const note = await service.addErrorEventNote(
+      a.id,
+      {
+        body: "Müşteri email test@example.com TCKN 12345678901 ile loglanmış",
+      },
+      SUPERADMIN,
+    );
+    expect(note.body).not.toContain("test@example.com");
+    expect(note.body).not.toContain("12345678901");
+    expect(note.body).toContain("***@***");
+    expect(note.body).toContain("***");
+  });
+
+  it("visibility=shared kabul eder", async () => {
+    const a = service.recordError(makeInput());
+    const note = await service.addErrorEventNote(
+      a.id,
+      { body: "tenant yönetimine açık not", visibility: "shared" },
+      SUPERADMIN,
+    );
+    expect(note.visibility).toBe("shared");
+  });
+
+  it("append-only; birden fazla not eklenebilir", async () => {
+    const a = service.recordError(makeInput());
+    await service.addErrorEventNote(a.id, { body: "ilk not" }, SUPERADMIN);
+    const second = await service.addErrorEventNote(
+      a.id,
+      { body: "ikinci not" },
+      SUPERADMIN,
+    );
+    const list = await service.listErrorEventNotes(a.id, SUPERADMIN);
+    expect(list.total).toBe(2);
+    expect(list.items[0]?.body).toBe("ilk not");
+    expect(list.items[1]?.id).toBe(second.id);
+  });
+
+  it("bulunamayan id → 404", async () => {
+    await expect(
+      service.addErrorEventNote(
+        "err-9999999",
+        { body: "x" },
+        SUPERADMIN,
+      ),
+    ).rejects.toMatchObject({
+      errorCode: "VET-AUDIT-0001",
+      httpStatus: 404,
+    });
+  });
+
+  it("non-SUPERADMIN → 403", async () => {
+    const a = service.recordError(makeInput());
+    await expect(
+      service.addErrorEventNote(a.id, { body: "x" }, STAFF_A),
+    ).rejects.toMatchObject({
+      errorCode: "VET-AUTHZ-0001",
+      httpStatus: 403,
+    });
+  });
+});
+
+describe("ErrorEventsService.addErrorEventSupportLink — GOAL-104", () => {
+  let service: ErrorEventsService;
+  let repo: ErrorEventsRepository;
+
+  beforeEach(() => {
+    repo = new ErrorEventsRepository();
+    service = new ErrorEventsService(repo);
+  });
+
+  it("JIRA externalId ile destek bağlantısı ekler", async () => {
+    const a = service.recordError(makeInput());
+    const link = await service.addErrorEventSupportLink(
+      a.id,
+      { system: "jira", externalId: "VET-1234" },
+      SUPERADMIN,
+    );
+    expect(link.system).toBe("jira");
+    expect(link.externalId).toBe("VET-1234");
+    expect(link.url).toBeNull();
+    expect(link.createdById).toBe("usr-super-1");
+  });
+
+  it("GitHub url ile destek bağlantısı ekler", async () => {
+    const a = service.recordError(makeInput());
+    const link = await service.addErrorEventSupportLink(
+      a.id,
+      { system: "github", url: "https://github.com/vetniva/issues/42" },
+      SUPERADMIN,
+    );
+    expect(link.system).toBe("github");
+    expect(link.url).toBe("https://github.com/vetniva/issues/42");
+    expect(link.externalId).toBeNull();
+  });
+
+  it("title opsiyonel olarak eklenir", async () => {
+    const a = service.recordError(makeInput());
+    const link = await service.addErrorEventSupportLink(
+      a.id,
+      {
+        system: "linear",
+        externalId: "VET-1",
+        title: "Veritabanı deadlock çözümü",
+      },
+      SUPERADMIN,
+    );
+    expect(link.title).toBe("Veritabanı deadlock çözümü");
+  });
+
+  it("append-only; birden fazla bağlantı eklenebilir", async () => {
+    const a = service.recordError(makeInput());
+    await service.addErrorEventSupportLink(
+      a.id,
+      { system: "jira", externalId: "VET-1" },
+      SUPERADMIN,
+    );
+    await service.addErrorEventSupportLink(
+      a.id,
+      { system: "github", url: "https://x.com" },
+      SUPERADMIN,
+    );
+    const list = await service.listErrorEventSupportLinks(a.id, SUPERADMIN);
+    expect(list.total).toBe(2);
+  });
+
+  it("bulunamayan id → 404", async () => {
+    await expect(
+      service.addErrorEventSupportLink(
+        "err-9999999",
+        { system: "jira", externalId: "VET-1" },
+        SUPERADMIN,
+      ),
+    ).rejects.toMatchObject({
+      errorCode: "VET-AUDIT-0001",
+      httpStatus: 404,
+    });
+  });
+
+  it("non-SUPERADMIN → 403", async () => {
+    const a = service.recordError(makeInput());
+    await expect(
+      service.addErrorEventSupportLink(
+        a.id,
+        { system: "jira", externalId: "VET-1" },
+        STAFF_A,
+      ),
+    ).rejects.toMatchObject({
+      errorCode: "VET-AUTHZ-0001",
+      httpStatus: 403,
+    });
+  });
+});
+
+describe("ErrorEventsService.assignErrorEvent — GOAL-104", () => {
+  let service: ErrorEventsService;
+  let repo: ErrorEventsRepository;
+
+  beforeEach(() => {
+    repo = new ErrorEventsRepository();
+    service = new ErrorEventsService(repo);
+  });
+
+  it("atama yapar; assignedToUserId güncellenir", async () => {
+    const a = service.recordError(makeInput());
+    const out = await service.assignErrorEvent(
+      a.id,
+      { assigneeId: "usr-dev-7", reason: "veritabanı ekibi" },
+      SUPERADMIN,
+    );
+    expect(out.assignment.assigneeId).toBe("usr-dev-7");
+    expect(out.assignment.assignedById).toBe("usr-super-1");
+    expect(out.assignment.reason).toBe("veritabanı ekibi");
+    expect(out.event.assignedToUserId).toBe("usr-dev-7");
+  });
+
+  it("unassign=true mevcut atamayı kaldırır", async () => {
+    const a = service.recordError(makeInput());
+    await service.assignErrorEvent(
+      a.id,
+      { assigneeId: "usr-dev-1" },
+      SUPERADMIN,
+    );
+    const out = await service.assignErrorEvent(
+      a.id,
+      { unassign: true, reason: "dev-1 izinli" },
+      SUPERADMIN,
+    );
+    expect(out.assignment.assigneeId).toBe("unassigned");
+    expect(out.event.assignedToUserId).toBeNull();
+  });
+
+  it("atama geçmişi append-only saklanır", async () => {
+    const a = service.recordError(makeInput());
+    await service.assignErrorEvent(a.id, { assigneeId: "usr-1" }, SUPERADMIN);
+    await service.assignErrorEvent(a.id, { assigneeId: "usr-2" }, SUPERADMIN);
+    await service.assignErrorEvent(a.id, { unassign: true }, SUPERADMIN);
+    const list = await service.listErrorEventAssignments(a.id, SUPERADMIN);
+    expect(list.total).toBe(3);
+    expect(list.items[0]?.assigneeId).toBe("usr-1");
+    expect(list.items[1]?.assigneeId).toBe("usr-2");
+    expect(list.items[2]?.assigneeId).toBe("unassigned");
+  });
+
+  it("status değişikliği yapmaz (atama salt atama)", async () => {
+    const a = service.recordError(makeInput());
+    const out = await service.assignErrorEvent(
+      a.id,
+      { assigneeId: "usr-1" },
+      SUPERADMIN,
+    );
+    expect(out.event.status).toBe("new");
+  });
+
+  it("ne assigneeId ne unassign → 422", async () => {
+    const a = service.recordError(makeInput());
+    await expect(
+      service.assignErrorEvent(a.id, { reason: "yok" }, SUPERADMIN),
+    ).rejects.toMatchObject({
+      errorCode: "VET-ERRNOTE-0001",
+      httpStatus: 422,
+    });
+  });
+
+  it("bulunamayan id → 404", async () => {
+    await expect(
+      service.assignErrorEvent(
+        "err-9999999",
+        { assigneeId: "usr-1" },
+        SUPERADMIN,
+      ),
+    ).rejects.toMatchObject({
+      errorCode: "VET-AUDIT-0001",
+      httpStatus: 404,
+    });
+  });
+
+  it("non-SUPERADMIN → 403", async () => {
+    const a = service.recordError(makeInput());
+    await expect(
+      service.assignErrorEvent(a.id, { assigneeId: "usr-1" }, STAFF_A),
+    ).rejects.toMatchObject({
+      errorCode: "VET-AUTHZ-0001",
+      httpStatus: 403,
+    });
+  });
+});
+
+describe("ErrorEventsService.listErrorEventAuditLog — GOAL-104", () => {
+  let service: ErrorEventsService;
+  let repo: ErrorEventsRepository;
+
+  beforeEach(() => {
+    repo = new ErrorEventsRepository();
+    service = new ErrorEventsService(repo);
+  });
+
+  it("status transition + not + support + atama birleşik sıralanır", async () => {
+    const a = service.recordError(makeInput());
+    await service.updateErrorEventStatus(
+      a.id,
+      { toStatus: "investigating", reason: "bakalım" },
+      SUPERADMIN,
+    );
+    await service.addErrorEventNote(
+      a.id,
+      { body: "DB deadlock" },
+      SUPERADMIN,
+    );
+    await service.addErrorEventSupportLink(
+      a.id,
+      { system: "jira", externalId: "VET-9" },
+      SUPERADMIN,
+    );
+    await service.assignErrorEvent(
+      a.id,
+      { assigneeId: "usr-1" },
+      SUPERADMIN,
+    );
+    const log = await service.listErrorEventAuditLog(a.id, SUPERADMIN);
+    expect(log.fingerprint).toBe(a.fingerprint);
+    // 4 aksiyon var: status, not, support, atama
+    expect(log.total).toBe(4);
+    const actions = log.items.map((e) => e.action).sort();
+    expect(actions).toEqual(
+      [
+        "assignment_changed",
+        "note_added",
+        "status_transition",
+        "support_link_added",
+      ].sort(),
+    );
+  });
+
+  it("occurredAt artan sırada döner", async () => {
+    const a = service.recordError(makeInput());
+    await service.addErrorEventNote(a.id, { body: "not" }, SUPERADMIN);
+    await service.assignErrorEvent(
+      a.id,
+      { assigneeId: "usr-1" },
+      SUPERADMIN,
+    );
+    const log = await service.listErrorEventAuditLog(a.id, SUPERADMIN);
+    const times = log.items.map((e) => e.occurredAt);
+    const sorted = [...times].sort();
+    expect(times).toEqual(sorted);
+  });
+
+  it("occurrence_recorded resolved→reopened otomatik terfisinde eklenir", async () => {
+    const a = service.recordError(makeInput());
+    // Çöz → yeni hata oluşunca reopened terfisi.
+    await service.updateErrorEventStatus(
+      a.id,
+      { toStatus: "resolved", reason: "geçici çözüm" },
+      SUPERADMIN,
+    );
+    // Aynı fingerprint için yeni kayıt → reopened terfisi.
+    service.recordError(
+      makeInput({
+        occurredAt: "2026-07-30T12:30:00.000Z",
+        userId: "usr-vet-2",
+      }),
+    );
+    const log = await service.listErrorEventAuditLog(a.id, SUPERADMIN);
+    const occ = log.items.find((e) => e.action === "occurrence_recorded");
+    expect(occ).toBeDefined();
+    expect(occ?.details["transitionId"]).toBeDefined();
+  });
+
+  it("details payload'ı aksiyona göre şekillenir", async () => {
+    const a = service.recordError(makeInput());
+    await service.updateErrorEventStatus(
+      a.id,
+      { toStatus: "resolved", reason: "geçici çözüm" },
+      SUPERADMIN,
+    );
+    await service.addErrorEventNote(
+      a.id,
+      { body: "test" },
+      SUPERADMIN,
+    );
+    const log = await service.listErrorEventAuditLog(a.id, SUPERADMIN);
+    const statusItem = log.items.find((e) => e.action === "status_transition");
+    const noteItem = log.items.find((e) => e.action === "note_added");
+    expect(statusItem?.details["fromStatus"]).toBe("new");
+    expect(statusItem?.details["toStatus"]).toBe("resolved");
+    expect(statusItem?.details["reason"]).toBe("geçici çözüm");
+    expect(noteItem?.details["noteId"]).toBeDefined();
+    expect(noteItem?.details["visibility"]).toBe("internal");
+  });
+
+  it("bulunamayan id → 404", async () => {
+    await expect(
+      service.listErrorEventAuditLog("err-9999999", SUPERADMIN),
+    ).rejects.toMatchObject({
+      errorCode: "VET-AUDIT-0001",
+      httpStatus: 404,
+    });
+  });
+
+  it("non-SUPERADMIN → 403", async () => {
+    const a = service.recordError(makeInput());
+    await expect(
+      service.listErrorEventAuditLog(a.id, STAFF_A),
+    ).rejects.toMatchObject({
+      errorCode: "VET-AUTHZ-0001",
+      httpStatus: 403,
+    });
+  });
+});
+
+describe("PiiMasker.maskString — GOAL-104 not gövdesi için", () => {
+  it("email mask'ler", async () => {
+    const { PiiMasker } = await import("../../common/logging/pii-masker.js");
+    const m = new PiiMasker();
+    expect(m.maskString("İletişim: test@example.com")).toBe(
+      "İletişim: ***@***",
+    );
+  });
+
+  it("TCKN mask'ler (11 hane)", async () => {
+    const { PiiMasker } = await import("../../common/logging/pii-masker.js");
+    const m = new PiiMasker();
+    expect(m.maskString("TCKN 12345678901 idi")).toBe("TCKN *** idi");
+  });
+
+  it("telefon mask'ler (10+ hane)", async () => {
+    const { PiiMasker } = await import("../../common/logging/pii-masker.js");
+    const m = new PiiMasker();
+    expect(m.maskString("Ara: +90 555 123 4567 lütfen")).toContain("***");
+  });
+
+  it("IBAN mask'ler", async () => {
+    const { PiiMasker } = await import("../../common/logging/pii-masker.js");
+    const m = new PiiMasker();
+    expect(
+      m.maskString("IBAN: TR123456789012345678901234 idi"),
+    ).toContain("***");
+  });
+});

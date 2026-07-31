@@ -25,21 +25,35 @@
  * - `search()` filtresine `status`, `branchId`, `release`,
  *   `assignedToUserId` eklenmiştir.
  *
+ * GOAL-104 ile birlikte eklenen yapı:
+ * - Çözüm notları: `notesByFingerprint` Map'i (append-only).
+ * - Destek bağlantıları: `supportLinksByFingerprint` Map'i.
+ * - Atama geçmişi: `assignmentsByFingerprint` Map'i
+ *   (assignee + unassign aksiyonları ayrı kayıt).
+ * - Yardımcı metotlar: `addNote`, `listNotes`, `addSupportLink`,
+ *   `listSupportLinks`, `addAssignment`, `listAssignments`.
+ *
  * @since GOAL-100 (FAZ-10) merkezi backend hata yakalama core
- * @updated GOAL-103 (FAZ-10) superadmin hata merkezi core
+ * @updated GOAL-104 (FAZ-10) hata atama ve çözüm notları core
  */
 
 import { Injectable } from "@nestjs/common";
 
 import type {
+  ErrorEventAssignmentRecordInternal,
+  ErrorEventNoteRecord,
+  ErrorEventNoteVisibility,
   ErrorEventRecord,
   ErrorEventStatusTransitionRecord,
+  ErrorEventSupportLinkRecord,
 } from "../../common/error-events/error-event.types.js";
+import { UNASSIGNED } from "../../common/error-events/error-event.types.js";
 import type {
   ErrorEventCountry,
   ErrorEventModule,
   ErrorEventActorType,
   ErrorEventStatus,
+  ErrorEventSupportSystem,
 } from "@vetniva/contracts";
 import type { ErrorCode, ErrorSeverity } from "@vetniva/contracts";
 
@@ -74,6 +88,36 @@ export interface ErrorEventStatusUpdate {
   clearAssignment?: boolean | undefined;
 }
 
+/** Çözüm notu ekleme argümanları. */
+export interface ErrorEventNoteCreate {
+  fingerprint: string;
+  authorId: string;
+  authorType: ErrorEventActorType;
+  body: string;
+  visibility: ErrorEventNoteVisibility;
+}
+
+/** Destek bağlantısı ekleme argümanları. */
+export interface ErrorEventSupportLinkCreate {
+  fingerprint: string;
+  system: ErrorEventSupportSystem;
+  externalId: string | null;
+  url: string | null;
+  title: string | null;
+  createdById: string;
+  createdByType: ErrorEventActorType;
+}
+
+/** Atama kaydı ekleme argümanları. */
+export interface ErrorEventAssignmentCreate {
+  fingerprint: string;
+  /** Hedef atanan kişi; UNASSIGNED sentetik değeri ile atama kaldırma. */
+  assigneeId: string;
+  assignedById: string;
+  assignedByType: ErrorEventActorType;
+  reason: string | null;
+}
+
 @Injectable()
 export class ErrorEventsRepository {
   /** key: id → error event. */
@@ -85,9 +129,27 @@ export class ErrorEventsRepository {
     string,
     ErrorEventStatusTransitionRecord[]
   >();
+  /** fingerprint → çözüm notu listesi (append-only — GOAL-104). */
+  private readonly notesByFingerprint = new Map<
+    string,
+    ErrorEventNoteRecord[]
+  >();
+  /** fingerprint → destek bağlantısı listesi (GOAL-104). */
+  private readonly supportLinksByFingerprint = new Map<
+    string,
+    ErrorEventSupportLinkRecord[]
+  >();
+  /** fingerprint → atama geçmişi (append-only — GOAL-104). */
+  private readonly assignmentsByFingerprint = new Map<
+    string,
+    ErrorEventAssignmentRecordInternal[]
+  >();
   /** Global id counter'lar. */
   private readonly counter = { n: 0 };
   private readonly transitionCounter = { n: 0 };
+  private readonly noteCounter = { n: 0 };
+  private readonly supportLinkCounter = { n: 0 };
+  private readonly assignmentCounter = { n: 0 };
 
   public nextId(): string {
     this.counter.n += 1;
@@ -97,6 +159,21 @@ export class ErrorEventsRepository {
   public nextTransitionId(): string {
     this.transitionCounter.n += 1;
     return `trn-${String(this.transitionCounter.n).padStart(10, "0")}`;
+  }
+
+  public nextNoteId(): string {
+    this.noteCounter.n += 1;
+    return `note-${String(this.noteCounter.n).padStart(8, "0")}`;
+  }
+
+  public nextSupportLinkId(): string {
+    this.supportLinkCounter.n += 1;
+    return `sup-${String(this.supportLinkCounter.n).padStart(8, "0")}`;
+  }
+
+  public nextAssignmentId(): string {
+    this.assignmentCounter.n += 1;
+    return `asn-${String(this.assignmentCounter.n).padStart(8, "0")}`;
   }
 
   /**
@@ -314,6 +391,130 @@ export class ErrorEventsRepository {
     return [...(this.transitionsByFingerprint.get(fingerprint) ?? [])];
   }
 
+  /* ------------------------------------------------------------------------
+   * Çözüm notu — GOAL-104
+   * ------------------------------------------------------------------------
+   */
+
+  /**
+   * Yeni çözüm notu ekler. Append-only; mevcut notlar etkilenmez.
+   * Sıralama: createdAt artan. UI tarafı desc ile gösterir.
+   */
+  public addNote(input: ErrorEventNoteCreate): ErrorEventNoteRecord {
+    const rec: ErrorEventNoteRecord = {
+      id: this.nextNoteId(),
+      fingerprint: input.fingerprint,
+      authorId: input.authorId,
+      authorType: input.authorType,
+      body: input.body,
+      visibility: input.visibility,
+      createdAt: new Date().toISOString(),
+    };
+    const list = this.notesByFingerprint.get(input.fingerprint) ?? [];
+    list.push(rec);
+    this.notesByFingerprint.set(input.fingerprint, list);
+    return rec;
+  }
+
+  /** Bir fingerprint'in tüm notlarını createdAt artan sırada döner. */
+  public listNotesByFingerprint(
+    fingerprint: string,
+  ): ErrorEventNoteRecord[] {
+    return [...(this.notesByFingerprint.get(fingerprint) ?? [])];
+  }
+
+  /** Tek bir notu id üzerinden döner (test/düzeltme için). */
+  public findNoteById(id: string): ErrorEventNoteRecord | null {
+    for (const list of this.notesByFingerprint.values()) {
+      for (const n of list) {
+        if (n.id === id) return n;
+      }
+    }
+    return null;
+  }
+
+  /* ------------------------------------------------------------------------
+   * Destek kaydı bağlantısı — GOAL-104
+   * ------------------------------------------------------------------------
+   */
+
+  /** Yeni destek bağlantısı ekler. */
+  public addSupportLink(
+    input: ErrorEventSupportLinkCreate,
+  ): ErrorEventSupportLinkRecord {
+    const rec: ErrorEventSupportLinkRecord = {
+      id: this.nextSupportLinkId(),
+      fingerprint: input.fingerprint,
+      system: input.system,
+      externalId: input.externalId,
+      url: input.url,
+      title: input.title,
+      createdById: input.createdById,
+      createdByType: input.createdByType,
+      createdAt: new Date().toISOString(),
+    };
+    const list = this.supportLinksByFingerprint.get(input.fingerprint) ?? [];
+    list.push(rec);
+    this.supportLinksByFingerprint.set(input.fingerprint, list);
+    return rec;
+  }
+
+  /** Bir fingerprint'in tüm destek bağlantılarını döner. */
+  public listSupportLinksByFingerprint(
+    fingerprint: string,
+  ): ErrorEventSupportLinkRecord[] {
+    return [...(this.supportLinksByFingerprint.get(fingerprint) ?? [])];
+  }
+
+  /* ------------------------------------------------------------------------
+   * Atama geçmişi — GOAL-104
+   * ------------------------------------------------------------------------
+   */
+
+  /**
+   * Yeni atama kaydı ekler. `assigneeId === UNASSIGNED` ile atama
+   * kaldırma anlamına gelir. Append-only; mevcut kayıtlar korunur.
+   *
+   * Yan etki: `byId` içindeki ilgili kaydın `assignedToUserId`
+   * alanı güncellenir (en son atama = kaydın güncel durumu). UNASSIGNED
+   * ise null yapılır.
+   */
+  public addAssignment(
+    input: ErrorEventAssignmentCreate,
+  ): ErrorEventAssignmentRecordInternal {
+    const rec: ErrorEventAssignmentRecordInternal = {
+      id: this.nextAssignmentId(),
+      fingerprint: input.fingerprint,
+      assigneeId: input.assigneeId,
+      assignedById: input.assignedById,
+      assignedByType: input.assignedByType,
+      reason: input.reason,
+      assignedAt: new Date().toISOString(),
+    };
+    const list = this.assignmentsByFingerprint.get(input.fingerprint) ?? [];
+    list.push(rec);
+    this.assignmentsByFingerprint.set(input.fingerprint, list);
+
+    // İlgili ErrorEvent'in assignedToUserId alanını güncelle.
+    const eventId = this.byFingerprint.get(input.fingerprint);
+    if (eventId) {
+      const ev = this.byId.get(eventId);
+      if (ev) {
+        ev.assignedToUserId =
+          input.assigneeId === UNASSIGNED ? null : input.assigneeId;
+        this.byId.set(eventId, ev);
+      }
+    }
+    return rec;
+  }
+
+  /** Bir fingerprint'in tüm atama geçmişini assignedAt artan sırada döner. */
+  public listAssignmentsByFingerprint(
+    fingerprint: string,
+  ): ErrorEventAssignmentRecordInternal[] {
+    return [...(this.assignmentsByFingerprint.get(fingerprint) ?? [])];
+  }
+
   /**
    * Test yardımcısı. Tüm state'i temizler.
    */
@@ -321,7 +522,13 @@ export class ErrorEventsRepository {
     this.byId.clear();
     this.byFingerprint.clear();
     this.transitionsByFingerprint.clear();
+    this.notesByFingerprint.clear();
+    this.supportLinksByFingerprint.clear();
+    this.assignmentsByFingerprint.clear();
     this.counter.n = 0;
     this.transitionCounter.n = 0;
+    this.noteCounter.n = 0;
+    this.supportLinkCounter.n = 0;
+    this.assignmentCounter.n = 0;
   }
 }
