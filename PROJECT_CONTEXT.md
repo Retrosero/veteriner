@@ -704,3 +704,23 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
 - Full api regression: anesthesia + diğer tüm modüller 1036/1036 yeşil; cash-register spec hataları PARALEL agent'a ait, bu commit kapsamında değil
 - tsc --noEmit temiz
 - Docs/RAG chunks/i18n/cross-ref: sonraki tick'lere ertelendi
+
+## GOAL-084 yatış ve kafes yönetimi ⏳ partial
+
+- Yeni modul: apps/api/src/modules/hospitalization/ (controller, service, repository, module, spec, index)
+- Yeni tipler: apps/api/src/common/hospitalization/hospitalization.types.ts
+- Yeni contract: packages/contracts/src/hospitalization.ts (exported via index)
+- 3 varlık tek modülde: Cage + Hospitalization + CageAssignment
+- Endpointler: POST/GET /api/v1/clinic/cages, GET/PATCH :id; POST/GET /api/v1/clinic/hospitalizations, GET/PATCH :id, POST :id/admit|discharge|cancel, POST :id/cage-assignments, POST cage-assignments/:id/end
+- 5 status: planned → admitted → active → discharged | cancelled
+- 8 cage kind: dog_small/medium/large, cat, exotic, isolation, icu, recovery, other
+- Zaman çakışması: aynı cageId için [from, to] aralıkları kesişen iki CageAssignment olamaz (409 VET-HOSP-0009); ayrıca aynı yatış için açık assignment yalnız bir tane (VET-HOSP-0011)
+- Taburcu: tüm açık cage assignment'lar to set edilerek sonlandırılır
+- 8 audit event: cage.create/update, hospitalization.create/update/admit/discharge/cancel, cage_assign/cage_end
+- 13 hata kodu: VET-HOSP-0001/0002/0003/0004/0005/0006/0007/0008/0009/0010/0011/0012/0013
+- Permissions: clinic:hospitalization:read + admit + discharge (mevcut catalog'da)
+- Cross-tenant idor → null/404, cross-tenant create 403 VET-AUTHZ-0001
+- Test: 20/20 yeni spec geçti
+- Full api regression: 1074/1074 yeşil, 8 skipped, 0 hata
+- tsc --noEmit temiz
+- Docs/RAG chunks/i18n/cross-ref: sonraki tick'lere ertelendi
