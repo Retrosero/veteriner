@@ -1207,6 +1207,54 @@ generated_at: "2026-07-30"
                 api.get._api_v1_payments_reversals__reversalId_,
                 api.get._api_v1_payments__id_reversals_summary]
 
+- chunk_id: flow-cash-register
+  type: flow
+  source: packages/contracts/src/cash-register.ts
+  entity: cash_register_session
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Kasa ve Gün Sonu Akışı (Cash Register)"
+  content: |
+    1. Kasa session'ı: açma (`status='open'`) → kapatma
+       (`status='closed'`). Tenant başına tek aktif session.
+    2. Açma: `cashierId` + `openingBalance` (Decimal, ≥0) +
+       `currency`. Aktif session varsa → 409 VET-CASH-0001.
+    3. Kapatma: `actualBalance` (gerçek sayım) zorunlu;
+       `expectedBalance` otomatik hesaplanır; `difference` =
+       `actual - expected`. Negatif fark için `notes`
+       zorunlu (VET-CASH-0003).
+    4. Yeniden açma (reopen): kapatılmış session düzeltme
+       için `status='open'`. Aynı anda açık başka session
+       varsa → 409.
+    5. Hareketler: `payment` (in) + `payment_reversal` (out)
+       + `manual` (in/out). Faz 7 tahsilat (GOAL-072) +
+       ters kayıt (GOAL-073) otomatik hareket yaratır.
+    6. Özet: `expectedBalance = openingBalance + totalIn -
+       totalOut`. `actualBalance` yalnız kapatılmış
+       session'larda.
+    7. Audit: `audit:cash_register.session.{open,close,
+       reopen}` (info/warning). Close'da `expectedBalance` +
+       `actualBalance` + `difference` + `notes` payload.
+    8. Faz 8'de session raporu export (PDF/CSV).
+  keywords: [kasa, cash register, session, açılış, kapanış,
+             gün sonu, openingBalance, expectedBalance,
+             difference, kasa hareketi, payment, reversal]
+  related_chunks: [flow-payment, flow-payment-reversal,
+                   error-VET-CASH-0001, error-VET-CASH-0002,
+                   error-VET-CASH-0003]
+  related_pages: []
+  related_api: [api.post._api_v1_cash-register_sessions,
+                api.get._api_v1_cash-register_sessions,
+                api.get._api_v1_cash-register_sessions_current,
+                api.get._api_v1_cash-register_sessions__id_,
+                api.post._api_v1_cash-register_sessions__id_close,
+                api.post._api_v1_cash-register_sessions__id_reopen,
+                api.get._api_v1_cash-register_sessions__id_movements,
+                api.get._api_v1_cash-register_sessions__id_summary]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
