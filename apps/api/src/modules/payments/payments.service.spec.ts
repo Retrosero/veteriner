@@ -19,11 +19,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
 
+import { KasaRepository } from "./kasa.repository.js";
+import { PaymentReversalsRepository } from "./payment-reversals.repository.js";
 import { PaymentsService } from "./payments.service.js";
 import { PaymentsRepository } from "./payments.repository.js";
 import type {
   PaymentCreateInput,
-  PaymentReverseInput,
+  PaymentReversalCreateInput,
+  PaymentReverseReason,
 } from "@vetniva/contracts";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
@@ -89,12 +92,16 @@ function makePaymentInput(
 describe("PaymentsService", () => {
   let service: PaymentsService;
   let repo: PaymentsRepository;
+  let reversals: PaymentReversalsRepository;
+  let kasa: KasaRepository;
   let audit: AuditService;
 
   beforeEach(() => {
     repo = new PaymentsRepository();
+    reversals = new PaymentReversalsRepository();
+    kasa = new KasaRepository();
     audit = makeAudit();
-    service = new PaymentsService(repo, audit);
+    service = new PaymentsService(repo, reversals, kasa, audit);
   });
 
   // ---------------------------------------------------------------------------
@@ -299,7 +306,7 @@ describe("PaymentsService", () => {
   });
 
   // ---------------------------------------------------------------------------
-  // reversePayment
+  // reversePayment (GOAL-072 + GOAL-073)
   // ---------------------------------------------------------------------------
 
   describe("reversePayment", () => {
@@ -312,13 +319,15 @@ describe("PaymentsService", () => {
       const reversed = await service.reversePayment(
         TENANT_A,
         created.id,
-        { reason: "iptal" } as PaymentReverseInput,
+        { reason: "customer_request" } as PaymentReversalCreateInput,
         STAFF_A,
       );
       expect(reversed.status).toBe("reversed");
       expect(reversed.reversedAt).not.toBeNull();
       expect(reversed.reversedBy).toBe("usr-staff-a");
-      expect(reversed.reverseReason).toBe("iptal");
+      expect(reversed.reverseReason).toBe("customer_request");
+      expect(reversed.reversedAmount).toBe("100");
+      expect(reversed.effectiveAmount).toBe("0");
       expect(audit.recordSimple).toHaveBeenCalledWith(
         "audit:payment.reverse",
         "payment",
@@ -339,14 +348,14 @@ describe("PaymentsService", () => {
       await service.reversePayment(
         TENANT_A,
         created.id,
-        { reason: "ilk" } as PaymentReverseInput,
+        { reason: "customer_request" } as PaymentReversalCreateInput,
         STAFF_A,
       );
       await expect(
         service.reversePayment(
           TENANT_A,
           created.id,
-          { reason: "ikinci" } as PaymentReverseInput,
+          { reason: "customer_request" } as PaymentReversalCreateInput,
           STAFF_A,
         ),
       ).rejects.toMatchObject({
@@ -360,13 +369,207 @@ describe("PaymentsService", () => {
         service.reversePayment(
           TENANT_A,
           "00000000-0000-0000-0000-000000000000",
-          { reason: "x" } as PaymentReverseInput,
+          { reason: "customer_request" } as PaymentReversalCreateInput,
           STAFF_A,
         ),
       ).rejects.toMatchObject({
         errorCode: "VET-PAYMENT-0001",
         httpStatus: 404,
       });
+    });
+
+    // -------------------------------------------------------------------------
+    // GOAL-073: kısmi ters kayıt + neden + kasa etkisi + yetki
+    // -------------------------------------------------------------------------
+
+    it("GOAL-073: kısmi ters kayıt → status partially_reversed", async () => {
+      const created = await service.createPayment(
+        TENANT_A,
+        makePaymentInput({ amount: "100" }),
+        STAFF_A,
+      );
+      const partial = await service.reversePayment(
+        TENANT_A,
+        created.id,
+        {
+          amount: "30",
+          reason: "customer_request",
+        } as PaymentReversalCreateInput,
+        STAFF_A,
+      );
+      expect(partial.status).toBe("partially_reversed");
+      expect(partial.reversedAmount).toBe("30");
+      expect(partial.effectiveAmount).toBe("70");
+    });
+
+    it("GOAL-073: kısmi sonra tam ters kayıt → kalan = 0, status reversed", async () => {
+      const created = await service.createPayment(
+        TENANT_A,
+        makePaymentInput({ amount: "100" }),
+        STAFF_A,
+      );
+      await service.reversePayment(
+        TENANT_A,
+        created.id,
+        {
+          amount: "40",
+          reason: "customer_request",
+        } as PaymentReversalCreateInput,
+        STAFF_A,
+      );
+      const final = await service.reversePayment(
+        TENANT_A,
+        created.id,
+        {
+          reason: "customer_request",
+        } as PaymentReversalCreateInput,
+        STAFF_A,
+      );
+      expect(final.status).toBe("reversed");
+      expect(final.reversedAmount).toBe("100");
+      expect(final.effectiveAmount).toBe("0");
+    });
+
+    it("GOAL-073: kümülatif ters kayıt toplamı orijinali aşamaz 422 VET-PAYMENT-0008", async () => {
+      const created = await service.createPayment(
+        TENANT_A,
+        makePaymentInput({ amount: "100" }),
+        STAFF_A,
+      );
+      await service.reversePayment(
+        TENANT_A,
+        created.id,
+        { amount: "80", reason: "customer_request" } as PaymentReversalCreateInput,
+        STAFF_A,
+      );
+      await expect(
+        service.reversePayment(
+          TENANT_A,
+          created.id,
+          { amount: "30", reason: "customer_request" } as PaymentReversalCreateInput,
+          STAFF_A,
+        ),
+      ).rejects.toMatchObject({
+        errorCode: "VET-PAYMENT-0008",
+        httpStatus: 422,
+      });
+    });
+
+    it("GOAL-073: amount > 1000 TRY + STAFF → 403 VET-PAYMENT-0010", async () => {
+      const created = await service.createPayment(
+        TENANT_A,
+        makePaymentInput({ amount: "2000" }),
+        STAFF_A,
+      );
+      await expect(
+        service.reversePayment(
+          TENANT_A,
+          created.id,
+          { reason: "customer_request" } as PaymentReversalCreateInput,
+          STAFF_A,
+        ),
+      ).rejects.toMatchObject({
+        errorCode: "VET-PAYMENT-0010",
+        httpStatus: 403,
+      });
+    });
+
+    it("GOAL-073: amount > 1000 TRY + OWNER → başarılı", async () => {
+      const OWNER: ActorContext = {
+        ...STAFF_A,
+        actorId: "usr-owner-a",
+        role: "OWNER",
+      };
+      const created = await service.createPayment(
+        TENANT_A,
+        makePaymentInput({ amount: "2000" }),
+        STAFF_A,
+      );
+      const out = await service.reversePayment(
+        TENANT_A,
+        created.id,
+        { reason: "customer_request" } as PaymentReversalCreateInput,
+        OWNER,
+      );
+      expect(out.status).toBe("reversed");
+    });
+
+    it("GOAL-073: neden kodu enum'a map edilir (bilinmeyen → other)", async () => {
+      const created = await service.createPayment(
+        TENANT_A,
+        makePaymentInput(),
+        STAFF_A,
+      );
+      const reversal = await service.reversePayment(
+        TENANT_A,
+        created.id,
+        {
+          reason: "bilinmeyen sebep" as unknown as PaymentReverseReason,
+          cashRegisterEffect: false,
+        } as unknown as PaymentReversalCreateInput,
+        STAFF_A,
+      );
+      expect(reversal.status).toBe("reversed");
+      // Get the actual reversal record
+      const items = await service.listPaymentReversals(
+        TENANT_A,
+        { paymentId: created.id, limit: 10, offset: 0 },
+        STAFF_A,
+      );
+      expect(items.items[0]?.reason).toBe("other");
+    });
+
+    it("GOAL-073: cashRegisterEffect=false → kasa debit atlanmaz ama create credit var", async () => {
+      const created = await service.createPayment(
+        TENANT_A,
+        makePaymentInput({ method: "cash", amount: "500" }),
+        STAFF_A,
+      );
+      // cash credit balance before reverse
+      const balBefore = kasa.getBalance(TENANT_A, "cash");
+      expect(balBefore).toBe("500");
+      await service.reversePayment(
+        TENANT_A,
+        created.id,
+        {
+          reason: "customer_request",
+          cashRegisterEffect: false,
+        } as PaymentReversalCreateInput,
+        STAFF_A,
+      );
+      const balAfter = kasa.getBalance(TENANT_A, "cash");
+      // cashRegisterEffect=false → kasa etkisi oluşmaz
+      expect(balAfter).toBe("500");
+    });
+
+    it("GOAL-073: ters kayıt arama + özet", async () => {
+      const created = await service.createPayment(
+        TENANT_A,
+        makePaymentInput({ amount: "100" }),
+        STAFF_A,
+      );
+      await service.reversePayment(
+        TENANT_A,
+        created.id,
+        { amount: "30", reason: "customer_request" } as PaymentReversalCreateInput,
+        STAFF_A,
+      );
+      const list = await service.listPaymentReversals(
+        TENANT_A,
+        { paymentId: created.id, limit: 10, offset: 0 },
+        STAFF_A,
+      );
+      expect(list.total).toBe(1);
+      expect(list.items[0]?.amount).toBe("30");
+
+      const summary = await service.getPaymentReversalSummary(
+        TENANT_A,
+        created.id,
+        STAFF_A,
+      );
+      expect(summary?.totalReversed).toBe("30");
+      expect(summary?.remainingAmount).toBe("70");
+      expect(summary?.reversalCount).toBe(1);
     });
   });
 

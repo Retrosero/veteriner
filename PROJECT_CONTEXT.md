@@ -501,6 +501,46 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
     kısmi tahsilat (GOAL-073) + Faz 7 kasa/gün sonu (GOAL-074)
     + Faz 7 müşteri borç/alacak (GOAL-075).
 
+  - GOAL-073 ⏳ partial — core: tahsilat iptal ve ters kayıt
+    (kısmi ters kayıt + neden kodu + kasa etkisi + OWNER
+    yetkisi). `payment-reversal` sözleşmesi: PaymentReversal +
+    PaymentReversalCreateInput (amount? + reason enum + note +
+    cashRegisterEffect) + 6 neden kodu (customer_request /
+    chargeback / duplicate / system_error / pricing_error /
+    other) + PaymentReversalSummary + PaymentReversalFilters.
+    Payment schema'ya `reversedAmount` + `effectiveAmount`
+    eklendi; status enum'a `partially_reversed` eklendi.
+    PaymentReversalRecord (in-memory; byPayment + bySource
+    indeksleri + sumReversedForPayment). KasaRepository
+    (in-memory; cash/card/bank/other hesaplar; signed decimal;
+    append-only; payment_method → kasa_account eşleme).
+    reversePayment genişletildi: amount opsiyonel (default
+    = kalan); 0 → 422 VET-PAYMENT-0007; kümülatif aşım →
+    422 VET-PAYMENT-0008; amount > 1000 TRY için OWNER zorunlu
+    (403 VET-PAYMENT-0010); tam → status='reversed' +
+    audit:payment.reverse (warning); kısmi →
+    status='partially_reversed' + audit:payment.partial_reverse
+    (info). createPayment kasa credit + audit
+    audit:payment.create. Kasa etkisi (cashRegisterEffect=true)
+    credit/debit olarak ledger'a yazılır.
+    listPaymentReversals + getPaymentReversalDetail +
+    getPaymentReversalSummary (reverse listesi + özet).
+    Controller 3 yeni endpoint (reversals list/get + summary)
+    + mevcut reverse opsiyonel amount kabul eder.
+    22/22 yeni/düzeltilmiş test + 966/966 api testi geçti
+    (1 pre-existing flaky appointment-reminders testi hariç).
+    Audit: audit:payment.partial_reverse (info) + mevcut
+    audit:payment.reverse (warning). Cross-module: KasaRepository
+    + PaymentReversalsRepository. Sonraki tick: docs/RAG
+    chunk/i18n key parity + DB migration (Prisma) + Faz 7
+    kasa/gün sonu (GOAL-074) ile kasa servisi bağlantısı +
+    sale service'lerle cross-module validasyon (clinic_sale /
+    petshop_sale varlık kontrolü) + tahsilat iade için
+    ödeme reversal tarafında müşteri/tedarikçi ayrımı
+    (sales return vs purchase return) + Faz 7 müşteri
+    borç/alacak (GOAL-075) ile effectiveAmount üzerinden
+    hesap özeti.
+
   - GOAL-077 ⏳ partial — core: e-SMM adapter sözleşmesi. esmm
     modülü (6 endpoint: create/list/get/submit/retry/cancel) +
     3 belge türü (e_fatura / e_arsiv / e_irsaliye) + 6 durum
@@ -522,3 +562,21 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
     eklendi; kısmi ters kayıt / etkin tutar mantığı). Bu
     tick'te yazdığım payments modülü çakışma nedeniyle trash'e
     gönderildi; mevcut payments modülü kullanılıyor.
+
+  - GOAL-076 ⏳ partial — core: temel finans raporları. reports
+    modülü (4 endpoint: daily-sales/payment-methods/
+    open-balances/export) + 3 rapor tipi (daily_sales/
+    payment_methods/open_balances) + JSON/CSV dışa aktarma +
+    8/8 yeni test + 967/967 api testi geçti. Cross-module:
+    ClinicSalesService + PetshopSalesService + PaymentsService
+    (read-only). Günlük satış: clinic + petshop completed
+    toplamı. Tahsilat yöntemi: yöntem bazlı kırılım (reversed
+    payment hariç). Açık bakiye: tamamlanmış sales'in
+    ödenmemiş kalan tutarı. Export audit:report.export
+    üretir (info). Mevcut permission'lar kullanıldı:
+    clinic:report:financial:read + clinic:report:export.
+    Sonraki tick: docs/RAG chunk/i18n key parity + DB
+    migration (Prisma aggregate) + Faz 8 ürün/hizmet
+    kırılımı raporu + Faz 8 veteriner bazlı işlem raporu
+    + Faz 8 stok hareketleri raporu + Faz 10 superadmin
+    raporları.
