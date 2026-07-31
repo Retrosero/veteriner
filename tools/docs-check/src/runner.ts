@@ -7,6 +7,8 @@
  *
  * GOAL-004: VET- formatı hata kodu taraması.
  * GOAL-005: AI chunks tarayıcısı ve tutarlılık kontrolü.
+ * GOAL-112: Alan sözlüğü tarayıcısı; yeni alan dokümansızsa hata.
+ *          Permission check warning→error sertleştirildi.
  */
 
 import fg from "fast-glob";
@@ -17,6 +19,7 @@ import { scanApiRoutes } from "./scanners/api.js";
 import { scanErrorCodes } from "./scanners/error-codes.js";
 import { scanPermissions } from "./scanners/permissions.js";
 import { scanAiChunks } from "./scanners/ai-chunks.js";
+import { scanFields } from "./scanners/fields.js";
 import { readDocFiles } from "./scanners/docs.js";
 import type { Issue, RouteInfo } from "./types.js";
 
@@ -28,6 +31,8 @@ export type RunResult = {
     errorCodesLegacy: number;
     permissions: number;
     aiChunks: number;
+    fieldRefs: number;
+    fieldIds: number;
   };
   issues: Issue[];
 };
@@ -45,6 +50,7 @@ export async function run(root: string): Promise<RunResult> {
   const errorCodes = await scanErrorCodes(root);
   const permissions: string[] = await scanPermissions(root);
   const aiChunksResult = await scanAiChunks(root);
+  const fieldRefs = await scanFields(root);
 
   const issues: Issue[] = [...aiChunksResult.issues];
 
@@ -90,13 +96,16 @@ export async function run(root: string): Promise<RunResult> {
     });
   }
 
-  // 4) Permission referansları matriste var mı?
+  // 4) Permission referansları katalogda var mı?
+  // GOAL-112: Bu kontrol artık ERROR seviyesinde. Yeni permission
+  // eklenirken PERMISSION_CATALOG.yaml + PERMISSION_MATRIX.md güncel
+  // tutulmalıdır; aksi halde CI kırılır.
   for (const perm of permissions) {
     if (!docs.permissions.has(perm)) {
       issues.push({
-        severity: "warning",
+        severity: "error",
         path: `permission:${perm}`,
-        message: `Permission matrisi girdisi yok: docs/permissions/PERMISSION_MATRIX.md`,
+        message: `Permission matrisi girdisi yok: docs/permissions/PERMISSION_CATALOG.yaml veya PERMISSION_MATRIX.md`,
       });
     }
   }
@@ -117,6 +126,33 @@ export async function run(root: string): Promise<RunResult> {
     }
   }
 
+  // 6) Alan referansları sözlükte var mı? (GOAL-112)
+  // Kodda tanımlı alanlar fields.yaml kataloğunda karşılığı yoksa
+  // CI hata verir. Yeni alan eklenirken fields.yaml + FIELD_GLOSSARY.md
+  // senkron tutulmalıdır.
+  for (const ref of fieldRefs) {
+    if (!docs.fieldIds.has(ref.fieldId)) {
+      issues.push({
+        severity: "error",
+        path: `field:${ref.fieldId}`,
+        message: `Alan sözlüğünde kayıt yok: docs/fields/fields.yaml (referans: ${ref.file})`,
+      });
+    }
+  }
+
+  // 6b) Sözlükte tanımlı olup kodda hiç referansı olmayan alanlar
+  //     (orphan) — uyarı düzeyinde. Bu alanlar kullanılmıyor olabilir.
+  const referencedFieldIds = new Set(fieldRefs.map((r) => r.fieldId));
+  for (const fieldId of docs.fieldIds) {
+    if (!referencedFieldIds.has(fieldId)) {
+      issues.push({
+        severity: "warning",
+        path: `field:${fieldId}`,
+        message: `Alan sözlüğünde tanımlı ancak kodda referansı yok (orphan): docs/fields/fields.yaml`,
+      });
+    }
+  }
+
   // fast-glob kullanımı referansı (lint uyarısını bastırır)
   void fg;
 
@@ -128,6 +164,8 @@ export async function run(root: string): Promise<RunResult> {
       errorCodesLegacy: errorCodes.legacyCodes.length,
       permissions: permissions.length,
       aiChunks: aiChunksResult.chunks,
+      fieldRefs: fieldRefs.length,
+      fieldIds: docs.fieldIds.size,
     },
     issues,
   };

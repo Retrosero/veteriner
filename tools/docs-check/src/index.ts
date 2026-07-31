@@ -38,7 +38,10 @@ run(root).then((result) => {
   process.stdout.write(
     `Permission referansı: ${result.scanned.permissions}\n`,
   );
-  process.stdout.write(`AI chunk: ${result.scanned.aiChunks}\n\n`);
+  process.stdout.write(`AI chunk: ${result.scanned.aiChunks}\n`);
+  process.stdout.write(
+    `Alan referansı: ${result.scanned.fieldRefs} (katalog: ${result.scanned.fieldIds})\n\n`,
+  );
 
   if (result.issues.length === 0) {
     process.stdout.write(green("✓ Tüm kontroller geçti.\n"));

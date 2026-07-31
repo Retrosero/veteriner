@@ -2,14 +2,17 @@
  * @file AI Help controller.
  * @module apps/api/modules/ai/ai.controller
  *
- * @description Context-aware AI help endpoint'i. Kullanıcının
- * doğal dil sorusunu alır, retrieval yapar, sonuçları döner.
- * LLM çağrısı (cevap üretimi) Faz 11+ ile eklenecek.
+ * @description Context-aware AI help endpoint'i (GOAL-115).
+ * Kullanıcının doğal dil sorusunu alır, retrieval yapar,
+ * context-aware cevap üretir. LLM çağrısı Faz 12+ ile
+ * eklenecek; Faz 11'de template-based answer üretimi.
  *
  * @security Tenant filtresi zorunlu. PII içeren chunk'lar
- *   yalnızca yetkili rollere açık (FAZ-0'da no-op).
+ *   yalnızca yetkili rollere açık. Cross-tenant retrieval
+ *   kapatıldı.
  *
  * @since GOAL-005 (FAZ-0) dokümantasyon ve AI bilgi havuzu
+ * @updated GOAL-115 (FAZ-11) context-aware help endpoint
  */
 
 import {
@@ -20,40 +23,40 @@ import {
   Logger,
   Post,
 } from "@nestjs/common";
+import { z } from "zod";
 
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   RetrieveRequest,
   RetrieveResponse,
 } from "../../common/ai/chunk.types.js";
 import { RetrievalService } from "../../common/ai/retrieval.service.js";
 
-/**
- * Help request gövdesi. Frontend'den gelen doğal dil
- * sorusu + kullanıcı context'i.
- */
-interface HelpRequestBody {
-  query: string;
-  locale: "tr-TR" | "en-GB";
-  currentPage?: string;
-  selectedEntity?: string;
-  topK?: number;
-}
+/** Help request Zod şeması (input validation). */
+const helpRequestSchema = z.object({
+  query: z.string().min(3).max(500),
+  locale: z.enum(["tr-TR", "en-GB"]),
+  currentPage: z.string().max(256).optional(),
+  selectedEntity: z.string().max(256).optional(),
+  topK: z.number().int().min(1).max(20).optional(),
+});
 
-/**
- * Help response gövdesi. Retrieval sonuçları + metadata.
- */
+/** Help response gövdesi. */
 interface HelpResponseBody {
   query_id: string;
   chunks: RetrieveResponse["chunks"];
   duration_ms: number;
-  /** LLM tarafından üretilen cevap (Faz 11+'da). */
-  answer?: string;
+  /** Context-aware üretilen cevap. */
+  answer: string;
   /** Kaynak chunk'lar (UI'da referans olarak gösterilir). */
   sources: Array<{
     chunk_id: string;
     title: string;
     snippet: string;
   }>;
+  /** Üretim kaynağı (template | retrieval | hybrid). */
+  generationSource: "template" | "retrieval" | "hybrid";
 }
 
 @Controller("api/v1/ai")
@@ -63,23 +66,24 @@ export class AiController {
   constructor(private readonly retrieval: RetrievalService) {}
 
   /**
-   * `POST /api/v1/ai/help` — kullanıcı sorusunu yanıtla.
-   *
-   * FAZ-0: retrieval sonuçlarını döner, LLM çağrısı yok.
-   * Faz 11+: LLM ile cevap üretimi + kaynak gösterimi.
+   * `POST /api/v1/ai/help` — kullanıcı sorusunu context-aware
+   * yanıtla (GOAL-115). Retrieval + template-based answer
+   * üretimi yapar; LLM entegrasyonu Faz 12+ ile eklenecek.
    */
   @Post("help")
   @HttpCode(HttpStatus.OK)
   public async help(
-    @Body() body: HelpRequestBody,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    // @CurrentUser() user: AuthenticatedUser, // GOAL-011+'da eklenecek
+    @Body() rawBody: unknown,
+    @CurrentActor() actor: ActorContext,
   ): Promise<HelpResponseBody> {
-    // Tenant ID, user ID ve role henüz auth context'ten
-    // gelmiyor (GOAL-011+'da). FAZ-0 için placeholder.
-    const tenantId = "tnt-placeholder";
-    const userId = "usr-placeholder";
-    const role = "STAFF";
+    // Input validation (Zod).
+    const body = helpRequestSchema.parse(rawBody);
+
+    // Tenant filtresi: actor.tenantId null ise (system /
+    // pre-auth) cross-tenant retrieval kapatılır.
+    const tenantId = actor.tenantId ?? "system";
+    const userId = actor.actorId ?? "anonymous";
+    const role = actor.role ?? "STAFF";
 
     const request: RetrieveRequest = {
       query: body.query,
@@ -98,11 +102,23 @@ export class AiController {
 
     const result = await this.retrieval.retrieve(request);
 
+    // Template-based answer üretimi (Faz 11+). LLM entegrasyonu
+    // Faz 12+ ile bu kısım değiştirilecek.
+    const answer = this.composeAnswer({
+      query: body.query,
+      chunks: result.chunks,
+      locale: body.locale,
+      role,
+      currentPage: body.currentPage,
+    });
+
     this.logger.log({
       msg: "ai.help.request",
       query_id: result.query_id,
       query: body.query.slice(0, 100),
       locale: body.locale,
+      tenant_id: tenantId,
+      role,
       results: result.chunks.length,
       duration_ms: result.duration_ms,
     });
@@ -111,12 +127,50 @@ export class AiController {
       query_id: result.query_id,
       chunks: result.chunks,
       duration_ms: result.duration_ms,
-      // answer LLM tarafından Faz 11+'da üretilecek.
+      answer,
       sources: result.chunks.slice(0, 3).map((c) => ({
         chunk_id: c.chunk_id,
         title: c.metadata.title,
         snippet: c.content.slice(0, 200),
       })),
+      generationSource:
+        result.chunks.length > 0
+          ? answer.length > 50
+            ? "hybrid"
+            : "retrieval"
+          : "template",
     };
+  }
+
+  /**
+   * Basit template-based answer üretimi. Retrieval sonuçlarından
+   * en yüksek skorlu chunk'ın title + content özetini döner.
+   * LLM entegrasyonu Faz 12+'da bu fonksiyonun yerini alır.
+   */
+  private composeAnswer(args: {
+    query: string;
+    chunks: RetrieveResponse["chunks"];
+    locale: "tr-TR" | "en-GB";
+    role: string;
+    currentPage?: string | undefined;
+  }): string {
+    if (args.chunks.length === 0) {
+      return args.locale === "tr-TR"
+        ? "Bu konu için uygun bir kaynak bulunamadı. Lütfen daha spesifik bir soru sorun veya klinik personeline danışın."
+        : "No relevant resource found for this topic. Please ask a more specific question or consult clinic staff.";
+    }
+
+    const top = args.chunks[0]!;
+    const isTr = args.locale === "tr-TR";
+
+    if (args.currentPage) {
+      return isTr
+        ? `"${args.currentPage}" sayfasındaki sorunuza ilişkin en uygun kaynak: **${top.metadata.title}**.\n\n${top.content.slice(0, 300)}…\n\nDaha fazla bilgi için kaynak chunk'ları inceleyin veya klinik personeline danışın.`
+        : `For your question on "${args.currentPage}", the most relevant resource is: **${top.metadata.title}**.\n\n${top.content.slice(0, 300)}…\n\nFor more details, review the source chunks or consult clinic staff.`;
+    }
+
+    return isTr
+      ? `Sorunuza en uygun kaynak: **${top.metadata.title}**.\n\n${top.content.slice(0, 300)}…`
+      : `Most relevant resource: **${top.metadata.title}**.\n\n${top.content.slice(0, 300)}…`;
   }
 }

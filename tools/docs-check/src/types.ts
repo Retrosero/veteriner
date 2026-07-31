@@ -2,9 +2,9 @@
  * @file Denetleyici tipleri.
  * @module @vetniva/docs-check/types
  *
- * @description Route, hata kodu, permission, AI chunk ve
+ * @description Route, hata kodu, permission, AI chunk, alan ve
  * issue tipleri. GOAL-004 ile VET- formatı, GOAL-005 ile
- * AI chunks desteği eklendi.
+ * AI chunks desteği, GOAL-112 ile alan sözlüğü eklendi.
  */
 
 export type RouteInfo = {
@@ -25,4 +25,6 @@ export type DocInventory = {
   errorCodes: Set<string>;
   permissions: Set<string>;
   aiChunks: Set<string>;
+  /** `entity.field` formatında alan kimlikleri (GOAL-112). */
+  fieldIds: Set<string>;
 };

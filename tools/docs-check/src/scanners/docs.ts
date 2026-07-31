@@ -30,6 +30,7 @@ export async function readDocFiles(docsRoot: string): Promise<DocInventory> {
     errorCodes: new Set(),
     permissions: new Set(),
     aiChunks: new Set(),
+    fieldIds: new Set(),
   };
 
   const pageYmls = await fg(["pages/**/*.yaml", "pages/**/*.yml"], {
@@ -103,6 +104,33 @@ export async function readDocFiles(docsRoot: string): Promise<DocInventory> {
       }
     } catch {
       // Parse hatası ai-chunks scanner tarafından raporlanır.
+    }
+  }
+
+  // fields.yaml — alan sözlüğü envanteri (GOAL-112).
+  // Machine-readable format; her entity.fields[].id değeri
+  // "<entity>.<field>" formatında alan kimliğidir.
+  const fieldsPath = path.join(docsRoot, "fields/fields.yaml");
+  const fieldsText = await tryRead(fieldsPath);
+  if (fieldsText) {
+    try {
+      const parsed = yaml.load(fieldsText) as {
+        entities?: Array<{
+          fields?: Array<{ id?: string }>;
+        }>;
+      };
+      if (parsed && Array.isArray(parsed.entities)) {
+        for (const entity of parsed.entities) {
+          if (!entity || !Array.isArray(entity.fields)) continue;
+          for (const f of entity.fields) {
+            if (f && typeof (f as { id?: string }).id === "string") {
+              inv.fieldIds.add((f as { id: string }).id);
+            }
+          }
+        }
+      }
+    } catch {
+      // Parse hatası alanlar scanner tarafından raporlanır.
     }
   }
 
