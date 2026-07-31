@@ -541,6 +541,25 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
     borç/alacak (GOAL-075) ile effectiveAmount üzerinden
     hesap özeti.
 
+  - GOAL-075 ⏳ partial — core: müşteri borç ve alacak görünümü.
+    customer-balances modülü (2 endpoint: getSummary +
+    listTransactions) + `customer-balance` sözleşmesi
+    (CustomerBalanceSummary + CustomerTransaction + 2 tür
+    sale/payment) + payment.effectiveAmount entegrasyonu
+    (ters kayıt sonrası kalan tutar) + payment.status=
+    partially_reversed dahil edilmesi + 6/6 yeni test +
+    973/973 api testi geçti. ownerId bazlı; ClinicSales +
+    PetshopSales + PaymentsService read-only kullanır.
+    totalSaleAmount, totalPaidAmount, totalReversedAmount,
+    totalNetAmount, openAmount = net - paid. Cross-module
+    validations: saleIdSet ile satışa bağlı tahsilat filtre.
+    Mevcut permission: clinic:report:financial:read.
+    Sonraki tick: docs/RAG chunk/i18n key parity + DB
+    migration (Prisma) + tenant bazlı (ownerId olmadan)
+    tüm müşterilerin toplam borç/alacak raporu + portal
+    entegrasyonu (sahip kendi bakiyesini görebilir) +
+    audit + çoklu para birimi.
+
   - GOAL-077 ⏳ partial — core: e-SMM adapter sözleşmesi. esmm
     modülü (6 endpoint: create/list/get/submit/retry/cancel) +
     3 belge türü (e_fatura / e_arsiv / e_irsaliye) + 6 durum
