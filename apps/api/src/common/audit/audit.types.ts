@@ -39,7 +39,9 @@ export type AuditAction =
   | "assign_role"
   | "format_currency"
   | "send"
-  | "receive";
+  | "receive"
+  | "refresh"
+  | "acknowledge";
 
 /**
  * Audit event'i başlatan aktör tipi.

@@ -253,6 +253,16 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-STOCK-0011`     | Lot ile ürün eşleşmiyor         | 422  | warning  | server | Lot, doğru ürüne ait olmalı.        |
 | `VET-STOCK-0012`     | Sistem hareketi source eksik    | 422  | warning  | server | sourceType ve sourceId zorunlu.      |
 
+## Stok Uyarıları (STOCK_ALERT) — GOAL-067
+
+| Kod                  | Mesaj                             | HTTP | Severity | Alan  | Çözüm önerisi                                  |
+| -------------------- | --------------------------------- | ---- | -------- | ----- | ----------------------------------------------- |
+| `VET-STOCK_ALERT-0001` | Uyarı bulunamadı                | 404  | info     | server | Ürün/lot için aktif uyarı yok; refresh deneyin. |
+| `VET-STOCK_ALERT-0002` | Zaten acknowledge edilmiş        | 409  | info     | server | Acknowledge idempotent'tır; tekrar çağrılabilir. |
+| `VET-STOCK_ALERT-0003` | Çözülmüş uyarı ack edilemez     | 422  | info     | server | Stok eşiğin üstüne çıktı; uyarı kapandı.       |
+| `VET-STOCK_ALERT-0004` | Yenileme sırasında hata         | 500  | critical | server | Ürün/lot verisi tutarsız; support'a bildirin.   |
+| `VET-STOCK_ALERT-0005` | Ürün arşivli uyarı oluşturulamaz | 409  | warning  | server | Arşivli ürün için düşük stok uyarısı hesaplanmaz.|
+
 ## Klinik Tüketim (CLINICAL_CONSUMPTION) — GOAL-066
 
 | Kod                            | Ad                              | HTTP | Severity | Kaynak | Çözüm                                |

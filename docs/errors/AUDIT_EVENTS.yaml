@@ -647,6 +647,21 @@ system:
       actor: [job]
       description: "Stok SKT kontrol job'u çalıştı."
 
+  stock_alert:
+    - event: "audit:stock_alert.refresh"
+      action: read
+      severity: info
+      pii: false
+      actor: [user, system]
+      description: "Düşük stok ve SKT uyarıları yeniden hesaplandı (refresh)."
+
+    - event: "audit:stock_alert.acknowledge"
+      action: acknowledge
+      severity: info
+      pii: false
+      actor: [user]
+      description: "Düşük stok veya SKT uyarısı acknowledge edildi (görüldü)."
+
     - event: "audit:job.kvkk_anonymize"
       action: erase
       severity: critical

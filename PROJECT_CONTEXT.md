@@ -377,3 +377,40 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
     dispense) bu ortak servisi kullanmaya geçişi (refactor)
     + Faz 6 Faz 7 Faz 8 sourceType'lardan yeni senaryolar
     (surgery, hospitalization) için pilot kapsam.
+
+  - GOAL-067 ⏳ partial — core: düşük stok ve SKT uyarıları.
+    stock-alerts modülü (6 endpoint: listLowStock /
+    listExpiringLots / refresh / summary / ackLowStock /
+    ackExpiringLot) + on-demand compute mimarisi
+    (computeLowStock + computeExpiringLots, transient sonuç)
+    + ack'lar ayrı StockAlertAcksRepository'de tutulur (soft
+    delete korunur, append-only ack repository). Ürün
+    kataloğuna `lowStockThreshold: string|null` eklendi
+    (FAZ-6 GOAL-067 eklentisi). Severity: warning/critical
+    (düşük stok; qty<=0 critical); warning/critical/expired
+    (SKT; 8-30/1-7/<=0 gün). Acknowledge idempotent
+    (status active→acknowledged, no-op acknowledged);
+    resolved → 422 VET-STOCK_ALERT-0003; bulunamadı → 404
+    VET-STOCK_ALERT-0001. Refresh ack'ları korur (default)
+    veya resetAcknowledgements=true ile sıfırlar; audit
+    audit:stock_alert.refresh (info). Summary dashboard
+    için hızlı bakış (lowStock/critical/expiring/criticalLot/
+    expiredLot/acknowledgedX). 29/29 yeni test + 875/875 api
+    testi geçti (type-check temiz). 5 yeni hata kodu
+    VET-STOCK_ALERT-0001-0005. 3 yeni permission:
+    inventory:stock_alert:read (OWNER, VETERINARIAN, STAFF) +
+    inventory:stock_alert:acknowledge (OWNER, VETERINARIAN,
+    STAFF) + inventory:stock_alert:export (OWNER). Audit
+    audit:stock_alert.refresh + audit:stock_alert.acknowledge.
+    Cross-module: ProductsService (lowStockThreshold +
+    arşiv kontrolü) + InventoryService (lot listesi +
+    archivedAt filtresi) + StockMovementsService
+    (listBalances ile net bakiye). Sonraki tick:
+    docs/RAG chunk/i18n key parity + DB migration (Prisma)
+    + Bildirim job'u (FAZ-10 BullMQ + tenant config:
+    daysBeforeDue 1-90 + channels) + Faz 7 ile
+    petshop/sale kanalı üzerinden kasa personeline
+    SMS/email/in-app dispatch + Faz 8 dashboard kartları
+    için React UI + reaktif hook'lar (stok hareketi
+    oluşturulduğunda / lot arşivlendiğinde otomatik
+    refresh tetikleme).

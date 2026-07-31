@@ -59,6 +59,12 @@ export interface ProductRecord {
   vaccineProtocolId: string | null;
   requiresPrescription: boolean;
   controlledDrug: boolean;
+  /**
+   * Düşük stok uyarı eşiği (FAZ-6 GOAL-067). Decimal string;
+   * `null` ise ürün için düşük stok uyarısı hesaplanmaz.
+   * `currentQuantity <= lowStockThreshold` ise uyarı oluşur.
+   */
+  lowStockThreshold: string | null;
   notes: string | null;
   active: boolean;
   createdAt: string;
@@ -99,6 +105,7 @@ export function toProduct(rec: ProductRecord): Product {
     vaccineProtocolId: rec.vaccineProtocolId,
     requiresPrescription: rec.requiresPrescription,
     controlledDrug: rec.controlledDrug,
+    lowStockThreshold: rec.lowStockThreshold,
     notes: rec.notes,
     active: rec.active,
     createdAt: rec.createdAt,

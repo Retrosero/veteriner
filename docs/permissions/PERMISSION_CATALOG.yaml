@@ -1930,6 +1930,57 @@ permissions:
     applies_to_roles: [OWNER]
 
   # ----------------------------------------------------------------
+  # INVENTORY:STOCK_ALERT — Düşük stok ve SKT uyarıları (GOAL-067)
+  # ----------------------------------------------------------------
+  - permission: "inventory:stock_alert:read"
+    description: >
+      Düşük stok ve SKT uyarılarını listeleme ve dashboard
+      özetini görüntüleme. Uyarılar tenant-scoped; ürün
+      lowStockThreshold + net stok bakiyesi + lot SKT'sinden
+      hesaplanır.
+    resource_type: stock_alert
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "inventory:stock_alert:acknowledge"
+    description: >
+      Düşük stok veya SKT uyarısını görüldü işaretleme.
+      İdempotent; status='active' → 'acknowledged'. Resolved
+      uyarı acknowledge edilemez (422 VET-STOCK_ALERT-0003).
+    resource_type: stock_alert
+    action: acknowledge
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "inventory:stock_alert:export"
+    description: >
+      Düşük stok ve SKT uyarılarını dışa aktarma (CSV/PDF).
+      Uygulama ileride (FAZ-7+).
+    resource_type: stock_alert
+    action: export
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  # ----------------------------------------------------------------
   # CATALOG:SUPPLIER — Tedarikçi kataloğu (GOAL-062)
   # ----------------------------------------------------------------
   - permission: "catalog:supplier:read"
@@ -2550,20 +2601,20 @@ permissions:
 # TOPLAMLAR (otomatik hesaplanır, referans için)
 # =============================================================================
 summary:
-  total_permissions: 123
+  total_permissions: 156
   by_action:
-    read: 33
+    read: 34
     create: 27
     update: 29
     archive: 16
-    export: 14
-    amend: 9
+    export: 15
+    acknowledge: 10
     manage: 2
   by_role:
     SUPERADMIN: 12
-    OWNER: 88
-    VETERINARIAN: 79
-    STAFF: 57
+    OWNER: 91
+    VETERINARIAN: 81
+    STAFF: 59
     PET_OWNER_PORTAL: 20
   by_module:
     common: 6
@@ -2589,6 +2640,7 @@ summary:
     petshop_config: 2
     petshop_product: 5
     catalog_product: 5
+    inventory: 31
     petshop_stock: 5
     petshop_sale: 4
     clinic_payment: 3

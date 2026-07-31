@@ -89,6 +89,10 @@ export class ProductsService {
       input.salePrice,
       "salePrice",
     );
+    // 1b) Düşük stok eşiği (FAZ-6 GOAL-067).
+    const lowStockThreshold = this.normalizeCreateThresholdOrThrow(
+      input.lowStockThreshold,
+    );
 
     // 2) SKU: verildiyse unique kontrolü; yoksa otomatik üret.
     const sku = input.sku ?? null;
@@ -155,6 +159,7 @@ export class ProductsService {
         input.kind === "vaccine" ? input.vaccineProtocolId ?? null : null,
       requiresPrescription: input.requiresPrescription,
       controlledDrug: input.controlledDrug,
+      lowStockThreshold,
       notes: input.notes ?? null,
       active: true,
       createdAt: nowIso,
@@ -191,6 +196,7 @@ export class ProductsService {
         hasSalePrice: record.salePrice !== null,
         currency: record.currency,
         vaccineProtocolId: record.vaccineProtocolId,
+        hasLowStockThreshold: record.lowStockThreshold !== null,
       },
     );
 
@@ -281,6 +287,10 @@ export class ProductsService {
       input.salePrice,
       "salePrice",
     );
+    // Düşük stok eşiği (update: undefined veya null olabilir).
+    const lowStockThreshold = this.normalizeUpdateThresholdOrThrow(
+      input.lowStockThreshold,
+    );
 
     // SKU unique kontrolü.
     if (input.sku !== undefined && input.sku !== existing.sku) {
@@ -339,6 +349,8 @@ export class ProductsService {
       patch.requiresPrescription = input.requiresPrescription;
     if (input.controlledDrug !== undefined)
       patch.controlledDrug = input.controlledDrug;
+    if (input.lowStockThreshold !== undefined)
+      patch.lowStockThreshold = lowStockThreshold;
     if (input.notes !== undefined) patch.notes = input.notes;
 
     const nowIso = new Date().toISOString();
@@ -539,5 +551,41 @@ export class ProductsService {
       });
     }
     return normalized;
+  }
+
+  /**
+   * Create akışında düşük stok eşiği (FAZ-6 GOAL-067) normalize
+   * eder. `undefined` → null. Geçersiz format → 422 VET-VALIDATION-0010.
+   * Pozitif sayı zorunlu (0 anlamsız; eşik 0 ise zaten daima uyarı).
+   */
+  private normalizeCreateThresholdOrThrow(
+    value: string | undefined,
+  ): string | null {
+    if (value === undefined) return null;
+    const normalized = normalizeDecimalString(value);
+    if (normalized === null) {
+      throw new DomainError({
+        errorCode: "VET-VALIDATION-0010",
+        message: "lowStockThreshold geçersiz format",
+        httpStatus: 422,
+        severity: "warning",
+        i18nKey: "error.VET-VALIDATION-0010",
+        details: { field: "lowStockThreshold", value },
+      });
+    }
+    return normalized;
+  }
+
+  /**
+   * Update akışında düşük stok eşiği normalize eder. `null`
+   * kabul edilir (eşiği temizle, uyarı hesaplanmasın). `undefined`
+   * → undefined (dokunma). Geçersiz format → 422.
+   */
+  private normalizeUpdateThresholdOrThrow(
+    value: string | null | undefined,
+  ): string | null | undefined {
+    if (value === undefined) return undefined;
+    if (value === null) return null;
+    return this.normalizeCreateThresholdOrThrow(value);
   }
 }

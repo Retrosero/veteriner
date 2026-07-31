@@ -112,6 +112,7 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     vaccineProtocolId: null,
     requiresPrescription: false,
     controlledDrug: false,
+    lowStockThreshold: null,
     notes: null,
     active: true,
     createdAt: "2026-07-30T00:00:00.000Z",

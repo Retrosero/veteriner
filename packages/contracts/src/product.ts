@@ -94,6 +94,10 @@ export type ProductCurrency = z.infer<typeof productCurrencySchema>;
  *   referans (Faz 5).
  * - `requiresPrescription` yalnızca `kind=medicine` için boolean.
  * - `controlledDrug` opsiyonel boolean (kontrollü ilaç; UK için).
+ * - `lowStockThreshold` opsiyonel decimal string (FAZ-6 GOAL-067
+ *   düşük stok uyarı eşiği). null/undefined ise ürün için
+ *   düşük stok uyarısı hesaplanmaz; aksi halde `currentQuantity
+ *   <= threshold` ise uyarı oluşur.
  * - `notes` opsiyonel serbest not.
  */
 export const productCreateInputSchema = z
@@ -115,6 +119,10 @@ export const productCreateInputSchema = z
     vaccineProtocolId: z.string().min(1).max(100).optional(),
     requiresPrescription: z.boolean().optional().default(false),
     controlledDrug: z.boolean().optional().default(false),
+    lowStockThreshold: z
+      .string()
+      .regex(/^\d+(\.\d{1,4})?$/)
+      .optional(),
     notes: z.string().max(2000).optional(),
   })
   .refine(
@@ -159,6 +167,11 @@ export const productUpdateInputSchema = z
     purchaseTracked: z.boolean().optional(),
     requiresPrescription: z.boolean().optional(),
     controlledDrug: z.boolean().optional(),
+    lowStockThreshold: z
+      .string()
+      .regex(/^\d+(\.\d{1,4})?$/)
+      .nullable()
+      .optional(),
     notes: z.string().max(2000).nullable().optional(),
   })
   .refine(
@@ -188,6 +201,7 @@ export const productSchema = z.object({
   vaccineProtocolId: z.string().nullable(),
   requiresPrescription: z.boolean(),
   controlledDrug: z.boolean(),
+  lowStockThreshold: z.string().nullable(),
   notes: z.string().nullable(),
   active: z.boolean(),
   createdAt: z.string().datetime(),

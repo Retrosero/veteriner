@@ -42,6 +42,7 @@ export interface ProductPatch {
   purchaseTracked?: boolean | undefined;
   requiresPrescription?: boolean | undefined;
   controlledDrug?: boolean | undefined;
+  lowStockThreshold?: string | null | undefined;
   notes?: string | null | undefined;
   active?: boolean | undefined;
   updatedAt?: string | undefined;
