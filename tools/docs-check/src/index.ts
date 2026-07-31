@@ -40,7 +40,10 @@ run(root).then((result) => {
   );
   process.stdout.write(`AI chunk: ${result.scanned.aiChunks}\n`);
   process.stdout.write(
-    `Alan referansı: ${result.scanned.fieldRefs} (katalog: ${result.scanned.fieldIds})\n\n`,
+    `Alan referansı: ${result.scanned.fieldRefs} (katalog: ${result.scanned.fieldIds})\n`,
+  );
+  process.stdout.write(
+    `i18n locale: ${result.scanned.i18nLocales} dosya tarandı\n\n`,
   );
 
   if (result.issues.length === 0) {

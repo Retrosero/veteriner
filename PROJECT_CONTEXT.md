@@ -261,9 +261,22 @@
     path, [locale] dönüşümü, iç içe dinamik, .ts uzantısı,
     docKey formatı, eksik/boş dizin). Web scanner'a Türkçe
     başlık eklendi. 23 yeni test + 42/42 docs-check regresyon
-    (önceki 19) + tsc temiz. Sonraki tick: docs/RAG chunk/i18n
-    key parity + scanner çıktı normalizasyonu (method büyük
-    harf + docKey tire) + page version freshness kontrolü
-    (katalog) + rate limit/timeout + i18n key parity scanner
-    + Markdown lint (markdownlint) + CI strict modu
+    (önceki 19) + tsc temiz. **İkinci core tick (bu commit):**
+    i18n key parity tarayıcısı eklendi (GOAL-118 next-tick
+    maddesi). `tools/docs-check/src/scanners/i18n.ts` — `tr-TR`
+    referans alınarak `en-GB` (ve eklenen diğer locale) ile iç
+    içe anahtar düzleştirmesi yaparak karşılaştırır; eksik
+    anahtar `error`, fazlalık `warning`. JSON parse hatası
+    dosya-bazlı `error` üretir. Runner entegrasyonu: 2 yeni
+    stat alanı (`overrides`, `i18nLocales`) + `overrides.byRoute
+    .size` düzeltmesi + `route.method ?? "Get"` tip guard
+    (TypeScript hataları giderildi). Index çıktısına "i18n
+    locale: N dosya tarandı" satırı. 10 yeni i18n testi
+    (boş dizin, locale yok, düz/nested anahtar, eksik/fazlalık,
+    3+ locale, geçersiz JSON, array primitive, tek locale) +
+    52/52 docs-check regresyon (önceki 42) + tsc temiz.
+    Sonraki tick: docs/RAG chunk üretim dokümanı + scanner
+    çıktı normalizasyonu (method büyük harf + docKey tire) +
+    page version freshness kontrolü (katalog) + rate limit/
+    timeout + Markdown lint (markdownlint) + CI strict modu
     (`--strict` ile uyarıları hata say).

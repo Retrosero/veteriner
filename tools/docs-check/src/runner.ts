@@ -9,6 +9,9 @@
  * GOAL-005: AI chunks tarayıcısı ve tutarlılık kontrolü.
  * GOAL-112: Alan sözlüğü tarayıcısı; yeni alan dokümansızsa hata.
  *          Permission check warning→error sertleştirildi.
+ * GOAL-118: i18n key parity tarayıcısı (tr-TR/en-GB). Eksik
+ *           anahtar error; fazlalık warning. Override desteği
+ *           pilot kapsamı dışı route'lar içindir.
  */
 
 import fg from "fast-glob";
@@ -21,6 +24,12 @@ import { scanPermissions } from "./scanners/permissions.js";
 import { scanAiChunks } from "./scanners/ai-chunks.js";
 import { scanFields } from "./scanners/fields.js";
 import { readDocFiles } from "./scanners/docs.js";
+import { scanI18nParity } from "./scanners/i18n.js";
+import {
+  isOverridden,
+  loadOverrides,
+  overrideReason,
+} from "./load-overrides.js";
 import type { Issue, RouteInfo } from "./types.js";
 
 export type RunResult = {
@@ -33,6 +42,9 @@ export type RunResult = {
     aiChunks: number;
     fieldRefs: number;
     fieldIds: number;
+    overrides: number;
+    /** Taranan i18n locale dosyası sayısı (GOAL-118). */
+    i18nLocales: number;
   };
   issues: Issue[];
 };
@@ -40,6 +52,12 @@ export type RunResult = {
 export async function run(root: string): Promise<RunResult> {
   const docsRoot = path.join(root, "docs");
   const docs = await readDocFiles(docsRoot);
+
+  // Opt-out listesi (pilot kapsamı dışı endpoint'ler).
+  // Dosya yoksa veya parse hatası varsa boş set.
+  const overrides = await loadOverrides(
+    path.join(root, "tools/docs-check/overrides.json"),
+  );
 
   const webRoutes: RouteInfo[] = await scanWebRoutes(
     path.join(root, "apps/web"),
@@ -51,11 +69,16 @@ export async function run(root: string): Promise<RunResult> {
   const permissions: string[] = await scanPermissions(root);
   const aiChunksResult = await scanAiChunks(root);
   const fieldRefs = await scanFields(root);
+  // i18n parity: packages/i18n/src/locales/*.json dosyaları arası
+  // anahtar tutarlılığı (GOAL-118). Eksik anahtar error, fazlalık
+  // warning. Çıktı issues listesine eklenir.
+  const i18nResult = await scanI18nParity(path.join(root, "packages"));
 
-  const issues: Issue[] = [...aiChunksResult.issues];
+  const issues: Issue[] = [...aiChunksResult.issues, ...i18nResult.issues];
 
   // 1) Web route'lar için page knowledge YAML varlık kontrolü.
   for (const route of webRoutes) {
+    if (isOverridden(overrides.byRoute, "Web", route.path)) continue;
     if (!docs.pageFiles.has(route.docKey)) {
       issues.push({
         severity: "error",
@@ -67,11 +90,21 @@ export async function run(root: string): Promise<RunResult> {
 
   // 2) API route'lar için OpenAPI veya api docs varlık kontrolü.
   for (const route of apiRoutes) {
+    // Override: pilot-deferred, deprecated, internal-only.
+    // `route.method` tipten ötürü `string | undefined`; API scanner
+    // her zaman set eder, ancak type guard için fallback kullanıyoruz.
+    const method = route.method ?? "Get";
+    if (isOverridden(overrides.byRoute, method, route.path)) {
+      continue;
+    }
     if (!docs.apiFiles.has(route.docKey)) {
+      const reason = overrideReason(overrides.byRoute, method, route.path);
       issues.push({
         severity: "error",
         path: route.path,
-        message: `API route için doküman eksik: docs/api/${route.docKey}.md`,
+        message: `API route için doküman eksik: docs/api/${route.docKey}.md${
+          reason ? ` (override var ama match etmedi: ${reason})` : ""
+        }`,
       });
     }
   }
@@ -166,6 +199,8 @@ export async function run(root: string): Promise<RunResult> {
       aiChunks: aiChunksResult.chunks,
       fieldRefs: fieldRefs.length,
       fieldIds: docs.fieldIds.size,
+      overrides: overrides.byRoute.size,
+      i18nLocales: i18nResult.locales.length,
     },
     issues,
   };
