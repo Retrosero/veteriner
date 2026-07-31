@@ -1030,6 +1030,57 @@ generated_at: "2026-07-30"
                 api.post._api_v1_inventory_stock-alerts_low-stock__productId_acknowledge,
                 api.post._api_v1_inventory_stock-alerts_expiring-lots__lotId_acknowledge]
 
+- chunk_id: flow-pricing
+  type: flow
+  source: packages/contracts/src/pricing.ts
+  entity: price_list
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Fiyat Listesi ve Fiyat Çözümleme Akışı (Pricing)"
+  content: |
+    1. `PriceList` tenant-scoped fiyat kataloğu. `type`:
+       `standard` (default) | `promotional` | `contract`.
+    2. Aktif liste: `POST /:id/activate` ile aktifleştir.
+       Aynı `type`+`currency` aktif liste otomatik
+       deaktive olur (zincir).
+    3. `PriceListItem`: `productId` × `price` (Decimal) ×
+       `minQuantity` (default 1) + opsiyonel `ownerId`
+       (müşteri-özel).
+    4. `GET /products/{productId}/price` ile fiyat çözümleme
+       sırası:
+       a) `ownerId` set + aktif listede müşteri-özel item
+          (contract_owner).
+       b) `quantity >= minQuantity` olan aktif item
+          (standard/promotional).
+       c) Product.salePrice (ürün kataloğu default).
+    5. Ülke adaptörü Faz 7'de: TRY/GBP, KDV/GST.
+    6. Audit: `audit:price_list.{create,update,activate,
+       archive}` + `audit:price_list_item.{create,update,
+       cancel}` (info/warning).
+    7. Geçmiş fatura/satış FK kırılmaz (soft delete).
+    8. Faz 7 klinik satış (GOAL-071) `saleLine.priceListItemId`
+       referansı; Faz 7 tahsilat (GOAL-072) fiyat çözümleme.
+  keywords: [fiyat listesi, price list, pricing, çözümleme,
+             miktar kademeli, müşteri-özel, kontrat, TRY, GBP,
+             KDV, zincir]
+  related_chunks: [flow-product-catalog, error-VET-PRICING-0001,
+                   error-VET-PRICING-0003, error-VET-PRICING-0005]
+  related_pages: []
+  related_api: [api.post._api_v1_pricing_lists,
+                api.get._api_v1_pricing_lists,
+                api.get._api_v1_pricing_lists__id_,
+                api.patch._api_v1_pricing_lists__id_,
+                api.post._api_v1_pricing_lists__id_activate,
+                api.post._api_v1_pricing_lists__id_archive,
+                api.post._api_v1_pricing_lists__id_items,
+                api.get._api_v1_pricing_lists__id_items,
+                api.patch._api_v1_pricing_lists__id_items__itemId_,
+                api.post._api_v1_pricing_lists__id_items__itemId_cancel,
+                api.get._api_v1_pricing_products__productId_price]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
