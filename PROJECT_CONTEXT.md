@@ -22,9 +22,8 @@
     olaylarını ErrorEventsService.recordError'a yönlendirir).
     Sonraki tick: docs/RAG chunk/i18n key parity + DB
     migration (Prisma) + atama/çözüm notları (GOAL-104) +
-    güvenlik alarm kuralları (GOAL-105) + tenant bazlı hata
-    filtresi iyileştirmesi + frontend hata yakalama
-    (GOAL-101) entegrasyonu + severity=kayıt kuralı
+    tenant bazlı hata filtresi iyileştirmesi + frontend hata
+    yakalama (GOAL-101) entegrasyonu + severity=kayıt kuralı
     konfigürabləşdirməsi.
   - GOAL-101 ⏳ partial — core: frontend hata yakalama.
     Next.js error boundary'leri (route [locale]/error.tsx +
@@ -100,10 +99,10 @@
     4 + 11 helper) + 1346/1346 api regresyon + tsc temiz.
     Mevcut permission: audit:log:read. Sonraki tick: docs/RAG
     chunk/i18n key parity + DB migration (Prisma) + atama/çözüm
-    notları (GOAL-104) + güvenlik alarm kuralları (GOAL-105) +
-    SUPERADMIN panel frontend (Next.js: hata listesi + grup +
-    detay ekranı) + severity=kayıt kuralı konfigürabləşdirməsi
-    + tenant bazlı hata filtresi iyileştirmesi.
+    notları (GOAL-104) + SUPERADMIN panel frontend (Next.js:
+    hata listesi + grup + detay ekranı) + severity=kayıt kuralı
+    konfigürabləşdirməsi + tenant bazlı hata filtresi
+    iyileştirmesi.
   - GOAL-104 ⏳ partial — core: hata atama, çözüm notu, destek
     bağlantısı ve birleşik audit log. 6 yeni endpoint (POST/GET
     /:id/notes, POST/GET /:id/support-links, PATCH/GET /:id
@@ -131,9 +130,31 @@
     frontend (atama UI + not editörü + destek bağlantısı modal
     + audit timeline) + RBAC permission granülerleştirme
     (atama:write, note:write, support:write) + tenant bazlı
-    hata filtresi iyileştirmesi + güvenlik alarm kuralları
-    (GOAL-105) + visibility=shared tenant portal tarafı açma
-    (FAZ-15+).
+    hata filtresi iyileştirmesi + visibility=shared tenant
+    portal tarafı açma (FAZ-15+).
+  - GOAL-105 ✅ Güvenlik logları ve alarm kuralları (tamamlandı
+    — 2026-07-31, core+docs: 9680ad3). 4 endpoint (GET list
+    superadmin / GET summary / GET :id detail / POST client
+    report system) + 5 type (failed_login /
+    unauthorized_access_attempt / suspicious_export /
+    role_change / tenant_isolation_breach_attempt) +
+    SecurityAlertAdapter interface (Noop default + Slack/
+    PagerDuty/Email override) + fingerprint (16 hex, type +
+    module + normalizeMessage) + occurrenceCount +
+    firstSeenAt/lastSeenAt + critical severity → alarm
+    adapter (alertSent=true, tekrar tetiklemez) + SUPERADMIN
+    yetkisi (audit:log:read) + moduleFromRoute helper (path →
+    modül) + PII mask context'ten geçer (PiiMasker) + tenant
+    /branch/userId/actorType/requestId/country/ipAddress/
+    userAgentHash aktör bağlamından türetilir (istemciye
+    güvenilmez) + 36/36 yeni test (recordSecurityEvent 17 /
+    listSecurityEvents 4 / getSecurityEventDetail 3 /
+    getSecurityEventSummary 3 / recordClientSecurityEvent 2 /
+    fingerprint 3 / repo 1 / NoopSecurityAlertAdapter 1) +
+    1302/1302 api regresyon + tsc temiz. Cross-module:
+    ErrorEventsService.moduleFromRoute + PiiMasker paylaşılır.
+    **GOAL-105 core+docs TAMAMLANDI; FAZ-10 hata merkezi
+    güvenlik ayağı hazır.**
   - GOAL-106 ⏳ partial — core: PII maskeleme ve log retention.
     log-retention modülü (8 endpoint: GET list/GET effective/
     GET :id/PUT/DELETE policy + POST sweeps/GET sweeps list/GET
