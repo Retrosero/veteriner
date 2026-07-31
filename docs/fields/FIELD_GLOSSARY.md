@@ -690,3 +690,319 @@ branch.ts) tanımlıdır.
 | `search` | string | Ad/ırk/mikroçip case-insensitive substring (1-200 karakter) |
 | `limit` | int | Default 20, max 200 |
 | `offset` | int | Default 0, max 10000 |
+
+---
+
+## Muayene alanları (GOAL-040)
+
+> **İlgili modül:** `examination`
+> **Sözleşme:** `packages/contracts/src/examination.ts`
+> **Veri modeli:** `docs/domain/DOMAIN_GLOSSARY.md#examination`
+
+### id (UUID, zorunlu)
+
+DB üretir.
+
+### patientId (UUID, zorunlu)
+
+- **FK:** `patients.id`
+- **Açıklama:** Muayene edilen hasta.
+
+### veterinarianId (UUID, zorunlu)
+
+- **FK:** `users.id`
+- **Açıklama:** Muayeneyi yapan veteriner hekim.
+
+### branchId (UUID, zorunlu)
+
+- **FK:** `branches.id`
+- **Açıklama:** İşlemin yapıldığı şube.
+
+### appointmentId (UUID, opsiyonel)
+
+- **FK:** `appointments.id`
+- **Açıklama:** Bağlı randevu (varsa). Walk-in için null.
+
+### kind (enum, zorunlu)
+
+- **Değerler:** `general` | `vaccination` | `surgery` |
+  `followup` | `lab` | `imaging`
+- **Açıklama:** Muayene türü. UI'da renk ve ikon değişir.
+
+### status (enum, zorunlu)
+
+- **Değerler:** `in_progress` | `completed` | `cancelled`
+- **Default:** `in_progress`
+- **State machine:** in_progress → completed (imza); herhangi
+  → cancelled (iptal).
+- **İmza sonrası:** Düzeltme için amendment gerekir.
+
+### startedAt (timestamptz, zorunlu)
+
+- **Default:** now
+- **Açıklama:** Muayene başlangıç zamanı.
+
+### completedAt (timestamptz, opsiyonel)
+
+- **Açıklama:** İmza zamanı. Status `completed` ise zorunlu.
+
+### signedBy (UUID, opsiyonel)
+
+- **FK:** `users.id`
+- **Açıklama:** İmzalayan kişi. Status `completed` ise zorunlu.
+
+### notes (string, opsiyonel)
+
+- **Tip:** max 4000 karakter
+- **PII:** hayır
+- **Açıklama:** Genel serbest not (SOAP'tan ayrı).
+
+### chiefComplaint (string, opsiyonel)
+
+- **Tip:** max 500 karakter
+- **Açıklama:** Sahibinin ana şikâyeti (Subjective'in kısa özeti).
+
+### diagnosis (string, opsiyonel)
+
+- **Tip:** max 2000 karakter
+- **Açıklama:** Serbest teşhis metni. Yapılandırılmış teşhis
+  için `diagnoses` ilişkili tablo kullanılır (GOAL-043).
+
+### treatmentPlan (string, opsiyonel)
+
+- **Tip:** max 4000 karakter
+- **Açıklama:** Tedavi planı metni. Yapılandırılmış order'lar
+  için `orders` ilişkili tablo kullanılır (GOAL-044).
+
+### followupDate (date, opsiyonel)
+
+- **Açıklama:** Kontrol randevusu tarihi. Varsa otomatik
+  `followups` kaydı oluşturulur (GOAL-046).
+
+### ExaminationSearchQuery filtreleri
+
+| Ad | Tip | Açıklama |
+| --- | --- | --- |
+| `patientId` | UUID | Hasta filtresi |
+| `veterinarianId` | UUID | Veteriner filtresi |
+| `branchId` | UUID | Şube filtresi |
+| `kind` | enum | Tür filtresi |
+| `status` | enum | Durum filtresi |
+| `from` | ISO datetime | `startedAt >= from` |
+| `to` | ISO datetime | `startedAt <= to` |
+| `search` | string | chiefComplaint/diagnosis/treatmentPlan'da case-insensitive substring |
+| `limit` | int | Default 20, max 200 |
+| `offset` | int | Default 0, max 10000 |
+
+---
+
+## SOAP alanları (GOAL-041)
+
+> **İlgili modül:** `soap`
+> **Sözleşme:** `packages/contracts/src/soap.ts`
+
+### id (UUID, zorunlu)
+
+DB üretir.
+
+### examinationId (UUID, zorunlu)
+
+- **FK:** `examinations.id`
+- **Açıklama:** Bağlı muayene. Her muayene için 1 SOAP notu.
+
+### subjective (string, zorunlu)
+
+- **Tip:** max 8000 karakter
+- **PII:** evet (sahibinin anlattığı bilgiler; telefon,
+  e-posta mask'lenir)
+- **Açıklama:** "S" — Subjective. Sahibinin anlattığı
+  şikâyet, öykü, gözlem.
+
+### objective (string, zorunlu)
+
+- **Tip:** max 8000 karakter
+- **Açıklama:** "O" — Objective. Muayene sırasındaki
+  bulgular (fiziksel muayene, laboratuvar, görüntüleme).
+
+### assessment (string, zorunlu)
+
+- **Tip:** max 4000 karakter
+- **Açıklama:** "A" — Assessment. Ön değerlendirme / teşhis
+  özeti.
+
+### plan (string, zorunlu)
+
+- **Tip:** max 8000 karakter
+- **Açıklama:** "P" — Plan. Tedavi planı, ilaç, diyet,
+  egzersiz, kontrol.
+
+### signedAt (timestamptz, opsiyonel)
+
+- **Açıklama:** SOAP imza zamanı. Status `completed` ise zorunlu.
+
+### signedBy (UUID, opsiyonel)
+
+- **FK:** `users.id`
+- **Açıklama:** SOAP imzalayan kişi.
+
+### amendmentReason (string, opsiyonel)
+
+- **Tip:** max 1000 karakter
+- **Açıklama:** Düzeltme nedeni. `examinations.amend`
+  endpoint'i ile kullanılır.
+
+---
+
+## Vital bulgular (GOAL-042)
+
+> **İlgili modül:** `vitals`
+> **Sözleşme:** `packages/contracts/src/vitals.ts`
+
+### id (UUID, zorunlu)
+
+### examinationId (UUID, zorunlu)
+
+- **FK:** `examinations.id`
+
+### temperatureC (decimal, opsiyonel)
+
+- **Birim:** °C
+- **Range:** 30.0 - 45.0
+- **Açıklama:** Vücut sıcaklığı (Celsius).
+
+### heartRateBpm (int, opsiyonel)
+
+- **Birim:** bpm (beats per minute)
+- **Range:** 30 - 300
+- **Açıklama:** Kalp atım hızı.
+
+### respiratoryRateRpm (int, opsiyonel)
+
+- **Birim:** rpm (respirations per minute)
+- **Range:** 5 - 120
+- **Açıklama:** Solunum hızı.
+
+### weightKg (decimal, opsiyonel)
+
+- **Birim:** kg
+- **Range:** 0.01 - 200.0
+- **Açıklama:** Vücut ağırlığı.
+
+### systolicMmHg (int, opsiyonel)
+
+- **Birim:** mmHg
+- **Range:** 50 - 300
+- **Açıklama:** Sistolik kan basıncı (kan basıncı ölçüm cihazı varsa).
+
+### diastolicMmHg (int, opsiyonel)
+
+- **Birim:** mmHg
+- **Range:** 30 - 200
+- **Açıklama:** Diyastolik kan basıncı.
+
+### bodyConditionScore (decimal, opsiyonel)
+
+- **Range:** 1.0 - 9.0
+- **Açıklama:** BCS (1 = kaşektik, 5 = ideal, 9 = obez).
+
+### measuredAt (timestamptz, zorunlu)
+
+- **Default:** now
+- **Açıklama:** Ölçüm zamanı.
+
+---
+
+## Aşı uygulama (GOAL-051)
+
+> **İlgili modül:** `vaccine`
+> **Sözleşme:** `packages/contracts/src/vaccine.ts`
+
+### id (UUID, zorunlu)
+
+### patientId (UUID, zorunlu)
+
+- **FK:** `patients.id`
+
+### vaccineId (UUID, zorunlu)
+
+- **FK:** `vaccines.id` (katalog).
+
+### protocolId (UUID, opsiyonel)
+
+- **FK:** `vaccine_protocols.id`
+- **Açıklama:** Bağlı protokol (takip için).
+
+### lotId (UUID, opsiyonel)
+
+- **FK:** `inventory_lots.id`
+- **Açıklama:** Kullanılan lot. Stok düşümü bu lot'tan yapılır.
+
+### appliedAt (timestamptz, zorunlu)
+
+- **Default:** now
+
+### route (enum, zorunlu)
+
+- **Değerler:** `subcutaneous` | `intramuscular` | `intranasal` |
+  `oral` | `other`
+
+### site (string, opsiyonel)
+
+- **Tip:** max 100 karakter
+- **Açıklama:** Uygulama bölgesi (ör. "sağ arka bacak").
+
+### dose (string, opsiyonel)
+
+- **Tip:** max 64 karakter
+- **Açıklama:** Doz (ör. "1 ml", "1/2 tablet").
+
+### nextDueAt (date, opsiyonel)
+
+- **Açıklama:** Sonraki hatırlatma/doz tarihi. Protokolün
+  `boosterIntervalDays`'ından otomatik hesaplanır.
+
+### status (enum, zorunlu)
+
+- **Değerler:** `applied` | `amended`
+- **Default:** `applied`
+- **Açıklama:** Düzeltme sonrası `amended` + amendment
+  kaydı.
+
+---
+
+## Genel tipler
+
+### Sayfa (pagination)
+
+| Ad | Tip | Default | Aralık | Açıklama |
+| --- | --- | --- | --- | --- |
+| `limit` | int | 50 | 1-200 | Sayfa başına kayıt |
+| `offset` | int | 0 | 0-10000 | Atlanan kayıt sayısı |
+
+### Para (currency)
+
+| Ad | Tip | Default | Açıklama |
+| --- | --- | --- | --- |
+| `amount` | Decimal | — | Tutar (2 ondalık, > 0) |
+| `currency` | enum | `TRY` | `TRY` \| `GBP` \| `USD` \| `EUR` |
+
+### Tarih/saat (datetime)
+
+| Ad | Tip | Format | Açıklama |
+| --- | --- | --- | --- |
+| `date` | date | `YYYY-MM-DD` | Tarih (saat yok) |
+| `datetime` | ISO 8601 | `2026-07-31T16:00:00.000Z` | UTC datetime (service); TIMESTAMPTZ (DB) |
+
+### PII alanları (mask'lenir)
+
+| Alan | Mask formatı | Açıklama |
+| --- | --- | --- |
+| `email` | `u***@e******.com` | E-posta |
+| `phone` | `+90*******` | Telefon (E.164) |
+| `taxId` (TCKN) | `1**********` | TCKN (11 hane) |
+| `taxId` (VKN) | `1********` | VKN (10 hane) |
+| `iban` | `TR** **** **** **** **** **** **` | IBAN |
+| `microchip` | `mask'lı değil` (unique olduğu için) | Mikroçip |
+
+PII mask context'ten geçirilir; tüm log + audit +
+notification payload'larında uygulanır.
