@@ -755,3 +755,17 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
 - Error kodları: VET-LABORD-0001 (not found 404), VET-LABORD-0002 (invalid state transition 409), VET-LABORD-0003 (labtest not found 422), VET-LABORD-0004 (labtest inactive 422), VET-AUTHZ-0001 (cross-tenant 403).
 - Permissions: POST/GET list/:id clinic:lab:read|order; POST :id/collect clinic:lab:collect_sample; POST :id/complete clinic:lab:enter_result; POST :id/cancel clinic:lab:order.
 - Docs/i18n/RAG chunk/field glossary/cross-ref henüz eklenmedi (sonraki tick).
+
+## GOAL-092 laboratuvar sonuçları ⏳ partial
+- Contract: packages/contracts/src/lab-result.ts (13 schema/type) + index export.
+- Domain: pps/api/src/common/lab-results/lab-result.types.ts (LabResultRecord + toLabResult + toLabResultRevision).
+- Repository: pps/api/src/modules/lab-results/lab-results.repository.ts (in-memory Map; revision counter; activeByOrder).
+- Service: pps/api/src/modules/lab-results/lab-results.service.ts (createLabResult / updateLabResult / submitForReview / approveLabResult / amendLabResult).
+  - Cross-module: LabOrdersService.getLabOrderDetail ile order guard + unit/referenceRange snapshot.
+- Controller: lab-results.controller.ts — POST/GET/PATCH /api/v1/clinic/lab-orders/:orderId/result + /history, /submit, /approve, /amend.
+- Module: LabResultsModule LabOrdersModule import eder, pp.module.ts içinde kablolu.
+- Testler: lab-results.service.spec.ts 23/23 yeşil; full regression 1172/1172 api testleri (1149 → 1172, +23).
+- Error kodları: VET-LABRES-0001 (not found 404), VET-LABRES-0002 (invalid state 409), VET-LABRES-0003 (already exists 409), VET-LABRES-0004 (order not processing/completed 422), VET-LABRES-0005 (cancelled order 422), VET-AUTHZ-0001 (cross-tenant 403).
+- State machine: draft → pending_review → approved; approved → amended + yeni draft revision (her amendment revision++).
+- Permissions: create/update/submit/approve clinic:lab:enter_result; read/history clinic:lab:read; amend clinic:lab:amend.
+- Docs/i18n/RAG chunk/field glossary/cross-ref henüz eklenmedi (sonraki tick).
