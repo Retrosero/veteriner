@@ -1856,6 +1856,50 @@ generated_at: "2026-07-30"
                 api.post._api_v1_clinic_imaging-orders__id_complete,
                 api.post._api_v1_clinic_imaging-orders__id_cancel]
 
+- chunk_id: flow-lab-adapter
+  type: flow
+  source: packages/contracts/src/lab-adapter.ts
+  entity: lab_adapter
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Cihaz ve Dış Laboratuvar Adaptör Sözleşmesi (Pilot)"
+  content: |
+    1. Dış cihaz/laboratuvar adaptör sözleşmesi — Faz 7-9
+       in-memory. Faz 14'te gerçek HL7/FHIR entegrasyonu.
+    2. `LabAdapter` registry: `id` + `name` + `modality`
+       (lab/imaging) + `format` (hl7/fhir/astm/
+       proprietary) + `endpoint`.
+    3. Export: lab order → dış adapter. Async; status
+       pending/processing/completed/failed/cancelled.
+    4. Import: dış adapter → lab result. Async; rawPayload
+       (base64) parse edilir.
+    5. Retry: failed → pending; attemptCount++; 3 deneme
+       sonrası kalıcı failed.
+    6. Tenant-scoped; cross-tenant → 404.
+    7. Audit: `audit:lab_adapter_export.{create,retry,
+       cancel}` + `audit:lab_adapter_import.create`
+       (info/warning).
+    8. Faz 14: PACS/DICOM gateway, IDEXX Catalyst,
+       Vetlab HL7 bridge vb. adapter'lar.
+  keywords: [cihaz adapter, dış laboratuvar, HL7, FHIR,
+             ASTM, lab order export, lab result import,
+             PACS, DICOM, IDEXX]
+  related_chunks: [flow-lab-order, flow-lab-result,
+                   flow-imaging-order, error-VET-LAB-ADAPTER-0001]
+  related_pages: []
+  related_api: [api.post._api_v1_clinic_lab-orders__labOrderId_adapter-exports,
+                api.get._api_v1_clinic_lab-adapter-exports,
+                api.get._api_v1_clinic_lab-adapter-exports__id_,
+                api.post._api_v1_clinic_lab-adapter-exports__id_retry,
+                api.post._api_v1_clinic_lab-adapter-exports__id_cancel,
+                api.post._api_v1_clinic_lab-orders__labOrderId_adapter-imports,
+                api.get._api_v1_clinic_lab-adapter-imports,
+                api.get._api_v1_clinic_lab-adapter-imports__id_,
+                api.get._api_v1_clinic_lab-adapters]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
