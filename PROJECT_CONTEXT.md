@@ -455,3 +455,27 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
 - 8 audit event: audit:imgorder.{create,schedule,perform,report,approve_report,amend_report,complete,cancel}.
 - Cross-module: AuditService (global modül).
 - Docs/i18n/RAG chunk/field glossary/cross-ref henüz eklenmedi (sonraki tick).
+
+## GOAL-094 cihaz ve dış laboratuvar adapter altyapısı ⏳ partial
+- Yeni modül: apps/api/src/modules/lab-adapters/ (controller, service, repository, module, spec, index).
+- Yeni tipler: apps/api/src/common/lab-adapters/lab-adapter.types.ts (LabAdapter interface + LabAdapterExportRecord + LabAdapterImportRecord + toLabAdapterExport / toLabAdapterImport).
+- Yeni contract: packages/contracts/src/lab-adapter.ts (20+ Zod şema/tip + index export).
+- 2 mock adapter: MockLabDeviceAdapter (in_clinic_device) + MockExternalLabAdapter (external_lab). Her ikisi idempotencyKey ile duplicate order üretmez; simulateFailure=true ile rejected simülasyonu (test/ops).
+- Endpointler (9 REST):
+  - POST /api/v1/clinic/lab-orders/:labOrderId/adapter-exports (exportOrder)
+  - GET /api/v1/clinic/lab-adapter-exports (listExports)
+  - GET /api/v1/clinic/lab-adapter-exports/:id (getExport)
+  - POST /api/v1/clinic/lab-adapter-exports/:id/retry (retryExport)
+  - POST /api/v1/clinic/lab-adapter-exports/:id/cancel (cancelExport)
+  - POST /api/v1/clinic/lab-orders/:labOrderId/adapter-imports (importResult)
+  - GET /api/v1/clinic/lab-adapter-imports (listImports)
+  - GET /api/v1/clinic/lab-adapter-imports/:id (getImport)
+  - GET /api/v1/clinic/lab-adapters (listAdapters)
+- İş kuralları: exportOrder idempotency (aynı key → mevcut kayıt döner HTTP idempotency); accepted sonrası aynı adapterType ile yeni export 409 VET-LABADAPTER-0006; retry yalnız failed/rejected (409 VET-LABADAPTER-0007); cancel accepted iptal edilemez (409 VET-LABADAPTER-0008); importResult rawPayload içinde readings + value varsa otomatik labResult mapping (status=applied + mappedResultId), aksi received veya rejected.
+- Hata kodları: 10 yeni — VET-LABADAPTER-0001 (export not found 404) / -0002 (unknown adapter 422) / -0003 (lab order not found 404) / -0004 (cancelled order export 422) / -0005 (import not found 404) / -0006 (accepted exists 409) / -0007 (only failed/rejected retry 409) / -0008 (accepted cancel 409) / -0009 (cancelled order import 422) / VET-AUTHZ-0001 (cross-tenant 403 mevcut).
+- 4 audit event: audit:lab_adapter_export.create / .retry / .cancel + audit:lab_adapter_import.create.
+- Permissions: mevcut katalogdan — clinic:lab:order (export/retry/cancel), clinic:lab:read (list/get), clinic:lab:enter_result (import). Yeni permission eklenmedi.
+- Cross-tenant IDOR → null/404. Cross-tenant create → 403 VET-AUTHZ-0001.
+- Test: 29/29 yeni spec yeşil (1 placeholder skipped). Full api regression 1224/1224 yeşil, 9 skipped, 0 hata. tsc --noEmit temiz.
+- Docs/i18n/RAG chunk/field glossary/cross-ref: sonraki tick'lere ertelendi.
+- Sonraki: docs/RAG chunk/i18n key parity + DB migration (Prisma) + Faz 13+ gerçek provider entegrasyonu (Idexx/Heska/Reflab/...) + tenant-bazlı adapter konfigürasyonu + Faz 8 React UI + adapter auto-discovery (heartbeat/health check).
