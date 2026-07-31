@@ -40,6 +40,7 @@ export type PaymentMethod = z.infer<typeof paymentMethodSchema>;
 
 export const paymentStatusSchema = z.enum([
   "completed",
+  "partially_reversed",
   "reversed",
 ]);
 export type PaymentStatus = z.infer<typeof paymentStatusSchema>;
@@ -89,9 +90,25 @@ export const paymentCreateInputSchema = z.object({
 });
 export type PaymentCreateInput = z.infer<typeof paymentCreateInputSchema>;
 
-/** Ters kayıt isteği. */
+/**
+ * Ters kayıt isteği (GOAL-073).
+ * - `amount` opsiyonel: verilirse kısmi ters kayıt; default =
+ *   kalan tutar.
+ * - `reason` zorunlu (string, serbest metin — geriye dönük
+ *   uyumluluk için). GOAL-073 ayrıca neden kodu enum'unu
+ *   payment-reversal.ts sözleşmesinde sunar (yeniden
+ *   doğrulama için); bu alan birebir uyumludur.
+ * - `note` opsiyonel.
+ * - `cashRegisterEffect` default true.
+ */
 export const paymentReverseInputSchema = z.object({
+  amount: z
+    .string()
+    .regex(/^\d+(\.\d{1,4})?$/, "Geçersiz tutar")
+    .optional(),
   reason: z.string().min(1).max(2000),
+  note: z.string().max(2000).optional(),
+  cashRegisterEffect: z.boolean().optional().default(true),
 });
 export type PaymentReverseInput = z.infer<typeof paymentReverseInputSchema>;
 
@@ -112,6 +129,14 @@ export const paymentSchema = z.object({
   reference: z.string().nullable(),
   notes: z.string().nullable(),
   status: paymentStatusSchema,
+  /** Kümülatif ters kayıt tutarı (>= 0). GOAL-073. */
+  reversedAmount: z.string(),
+  /**
+   * Net (kalan) tutar = amount - reversedAmount. Sıfır ise
+   * status='reversed', sıfırdan büyük ise 'partially_reversed'
+   * veya 'completed'.
+   */
+  effectiveAmount: z.string(),
   reversedAt: z.string().datetime().nullable(),
   reversedBy: z.string().nullable(),
   reverseReason: z.string().nullable(),

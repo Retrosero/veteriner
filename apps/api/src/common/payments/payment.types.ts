@@ -49,6 +49,10 @@ export interface PaymentRecord {
   reference: string | null;
   notes: string | null;
   status: PaymentStatus;
+  /** Kümülatif ters kayıt tutarı (>= 0). GOAL-073. */
+  reversedAmount: string;
+  /** Net (kalan) tutar = amount - reversedAmount. GOAL-073. */
+  effectiveAmount: string;
   reversedAt: string | null;
   reversedBy: string | null;
   reverseReason: string | null;
@@ -79,6 +83,8 @@ export function toPayment(rec: PaymentRecord): Payment {
     reference: rec.reference,
     notes: rec.notes,
     status: rec.status,
+    reversedAmount: rec.reversedAmount,
+    effectiveAmount: rec.effectiveAmount,
     reversedAt: rec.reversedAt,
     reversedBy: rec.reversedBy,
     reverseReason: rec.reverseReason,

@@ -500,3 +500,25 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
     (clinic_sale / petshop_sale varlık kontrolü) + Faz 7
     kısmi tahsilat (GOAL-073) + Faz 7 kasa/gün sonu (GOAL-074)
     + Faz 7 müşteri borç/alacak (GOAL-075).
+
+  - GOAL-077 ⏳ partial — core: e-SMM adapter sözleşmesi. esmm
+    modülü (6 endpoint: create/list/get/submit/retry/cancel) +
+    3 belge türü (e_fatura / e_arsiv / e_irsaliye) + 6 durum
+    (draft/pending/accepted/rejected/failed/cancelled) +
+    EsmmAdapter interface + MockEsmmAdapter implementasyonu
+    + manuel belge numarası (MVP) + idempotency key
+    (mock duplicate üretmez) + provider cancel hook + 10/10
+    yeni test + 951/951 api testi geçti. Hata kodları
+    VET-ESMM-0001/0002/0003/0004/0005. Mevcut permission
+    audit:log:read kullanıldı. Audit
+    audit:esmm_document.create/submit/retry/cancel.
+    Sonraki tick: docs/RAG chunk/i18n key parity + DB
+    migration (Prisma) + gerçek provider implementasyonu
+    (Faz 13+) + Faz 7 kasa etkisi (GOAL-074 ile entegrasyon)
+    + Faz 7 e-SMM provider adapter (Faz 13+) + Faz 13
+    resmî entegrasyonlar.
+  - GOAL-072 (not) — başka session tarafından payments modülü
+    genişletildi (reversedAmount + effectiveAmount alanları
+    eklendi; kısmi ters kayıt / etkin tutar mantığı). Bu
+    tick'te yazdığım payments modülü çakışma nedeniyle trash'e
+    gönderildi; mevcut payments modülü kullanılıyor.

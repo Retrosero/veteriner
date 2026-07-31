@@ -73,7 +73,7 @@ import { ClinicalUsagesModule } from "./modules/clinical-usages/clinical-usages.
 import { StockAlertsModule } from "./modules/stock-alerts/stock-alerts.module.js";
 import { PricingModule } from "./modules/pricing/pricing.module.js";
 import { ClinicSalesModule } from "./modules/clinic-sales/clinic-sales.module.js";
-import { PaymentsModule } from "./modules/payments/payments.module.js";
+import { EsmmModule } from "./modules/esmm/esmm.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 
 @Module({
@@ -126,7 +126,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     StockAlertsModule,
     PricingModule,
     ClinicSalesModule,
-    PaymentsModule,
+    EsmmModule,
   ],
 })
 export class AppModule {}

@@ -24,6 +24,8 @@ import type {
 /** Patch tipi. */
 export interface PaymentPatch {
   status?: PaymentStatus | undefined;
+  reversedAmount?: string | undefined;
+  effectiveAmount?: string | undefined;
   reversedAt?: string | null | undefined;
   reversedBy?: string | null | undefined;
   reverseReason?: string | null | undefined;
