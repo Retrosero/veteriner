@@ -163,38 +163,7 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
   - GOAL-062 ✅ Tedarikçi ve satın alma (tamamlandı — 2026-07-30, core: 770dec0, docs/i18n: bu commit). 12 endpoint (5 supplier + 7 PO); supplier 3 tür (clinic/petshop/general) + code unique; PO state machine (draft→approved→partial|received | cancelled); Decimal toplam; receive ile StockMovement (GOAL-063) 	ype='purchase' atomik bakiye + lot/SKT bağlama; iptal sonrası otomatik ters kayıt YOK (manuel reversal). Audit udit:supplier.* + udit:purchase_order.{create,update,approve,receive,cancel}. Supplier doc'ları başka pencerede yazılmıştı (5 dosya); bu commit'te PO doc'ları (7) + AI_CHUNKS eklendi.
   - GOAL-063 ✅ Stok hareketleri ve sayım (tamamlandı — 2026-07-30, core: 8d78c74, docs/i18n: bu commit). 5 endpoint (create/list/balances/get/reverse); 9 hareket türü (purchase/sale/clinical_use/vaccination/return/transfer/count_adjustment/waste/reversal); append-only ledger + atomik bakiye (saklanmaz, her sorguda hesaplanır); reversal idempotent (VET-STOCK-0010); service ürün için stok YOK (VET-STOCK-0008); arşivli ürün/lot engelli (VET-STOCK-0006/0009). Audit udit:stock_movement.{create,reverse}. PO receive + Petshop sale + Klinik tüketim bu ledger'a yazar.
   - GOAL-064 ✅ Petshop POS (tamamlandı — 2026-07-30, core: 9c754e7, docs/i18n: bu commit). 6 endpoint (POST/GET list/GET :id/PATCH/POST complete/POST cancel); state machine draft→completed|cancelled; line item (productId × quantity × unitPrice); complete ile atomik StockMovement (type='sale', direction='out'); cancel/completed'da reversal hareketi (stok iade); müşteri ownerId opsiyonel; Faz 7 payments entegrasyonu sonra. Audit udit:petshop_sale.{create,update,complete,cancel}. Tam iade GOAL-065 (petshop-sale-returns).
-  - GOAL-065 ⏳ partial — core: petshop satış iadesi. petshop-sale-returns
-    modülü (`petshopSaleReturn` sözleşmesi: PetshopSaleReturn +
-    PetshopSaleReturnLine + status: draft/completed/cancelled +
-    refundMethod: cash/card/transfer) + PetshopSaleReturnsRepository
-    (in-memory Map + byId/byOriginalSale indeksleri) +
-    PetshopSaleReturnsService (createReturn / listReturns /
-    getReturnDetail / completeReturn / cancelReturn) +
-    PetshopSaleReturnsController (5 endpoint: POST list, GET list,
-    GET :id, POST :id/complete, POST :id/cancel) + module wiring
-    (PetshopSalesModule + ProductsModule + InventoryModule +
-    StockMovementsModule + AuditModule) + 20/20 yeni test + 810/810
-    api testi geçti. Yeni hata kodları VET-RETURN-0001/0002/0003/
-    0004/0005/0006/0007/0008/0009/0010/0011. İş kuralları: yalnızca
-    `completed` orijinal satışlara izin (VET-RETURN-0002); iade
-    miktarı orijinal satılan miktarı aşamaz (kısmi iade toplam
-    takibi, VET-RETURN-0003); orijinal satır + ürün eşleşmesi
-    zorunlu (VET-RETURN-0004); lot belirtilen satırlarda lot mevcut +
-    arşivsiz + ürün eşleşmesi (VET-RETURN-0006/0007/0008). Tamamla:
-    her satır için StockMovementsService.createSystemMovement
-    (type='return', +N, lotId ile) — purchaseTracked ürünler için.
-    Tamamlanmış iade iptal edilemez (VET-RETURN-0010; ayrı ters
-    kayıt gerekir). Mevcut permission'lar kullanıldı: petshop:sale:
-    read + petshop:sale:refund. Audit audit:petshop_sale_return.
-    create/complete/cancel. Cross-module: PetshopSalesRepository
-    (orijinal satış/satır varlık), ProductsService (ürün +
-    purchaseTracked), InventoryService (lot varlık/arşiv/ürün
-    eşleşmesi), StockMovementsService (return hareketi). Sonraki
-    tick: docs/RAG chunk/i18n key parity + DB migration (Prisma) +
-    tahsilat ters kaydı (GOAL-073 entegrasyonu) + müşteri/tedarikçi
-    iade ayrımı (sales return vs purchase return) + GOAL-067 dış
-    lokasyon stok uyarılarına return lot bilgisi bağlama.
-
+  - GOAL-065 ✅ Petshop satış iadesi (tamamlandı — 2026-07-30, core: 503aa14, docs/i18n: bu commit). 5 endpoint (POST/GET list/GET :id/POST complete/POST cancel); state draft→completed|cancelled; orijinal petshop_sale'a bağlı; miktar orijinal satılanı aşamaz (VET-RETURN-0008); complete ile StockMovement (type='return', direction='in'); refundMethod (cash/card/credit) Faz 7 PaymentReversal (GOAL-073) + customer-balances (GOAL-075) entegre. Audit udit:petshop_sale_return.{create,complete,cancel}.
   - GOAL-066 ⏳ partial — core: klinik tüketimden otomatik stok
     düşümü. clinical-consumption modülü (5 context:
     examination/prescription/vaccination/surgery/hospitalization

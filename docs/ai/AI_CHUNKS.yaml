@@ -899,6 +899,55 @@ generated_at: "2026-07-30"
                 api.post._api_v1_petshop_sales__id_complete,
                 api.post._api_v1_petshop_sales__id_cancel]
 
+- chunk_id: flow-petshop-sale-return
+  type: flow
+  source: packages/contracts/src/petshop-sale-return.ts
+  entity: petshop_sale_return
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Petshop Satış İadesi Akışı (Petshop Sale Return)"
+  content: |
+    1. Petshop satış iadesi (return) — orijinal `petshop_sale`
+       kaydına bağlı. State: `draft` → `completed` |
+       `cancelled`.
+    2. Oluşturma (POST): `originalSaleId` + `lines[]` (her
+       line `originalLineId` + `productId` + `quantity` ≤
+       orijinal satılan + `unitPrice`) zorunlu. `reason`
+       zorunlu (denetim).
+    3. Tamamlama (POST /complete): `draft` → `completed`.
+       Her line için atomik `StockMovement`
+       (`type='return'`, `direction='in'`) üretilir; bakiye
+       geri alınır. Faz 7'de ödeme iadesi (`PaymentReversal`
+       GOAL-073) entegre edilir.
+    4. İptal (POST /cancel): `draft` veya `completed` →
+       `cancelled`. `completed` ise her line için
+       `reversal` hareketi (iadeyi geri al).
+    5. Line item: orijinal satılan miktarı aşamaz
+       (VET-RETURN-0008).
+    6. Ödeme iadesi yöntemi (`refundMethod`): `cash` (nakit
+       iade) | `card` (karta iade) | `credit` (müşteri
+       bakiyesine — GOAL-075 customer-balances).
+    7. Audit: `audit:petshop_sale_return.{create,complete,
+       cancel}`. Complete'de `newMovementIds[]` +
+       `refundMethod`, cancel'de reversal payload.
+    8. İade edilen iade (ters kayıt) iptal edildiğinde Faz 6
+       StockMovement `type='reversal'` ile denkleşir.
+  keywords: [iade, return, petshop satış, refund, reversal,
+             müşteri bakiyesi, Decimal, orijinal satış]
+  related_chunks: [flow-petshop-sale, flow-stock-movement,
+                   flow-payment-reversal, error-VET-RETURN-0001,
+                   error-VET-RETURN-0002, error-VET-RETURN-0003,
+                   error-VET-RETURN-0008]
+  related_pages: []
+  related_api: [api.post._api_v1_petshop_sales_returns,
+                api.get._api_v1_petshop_sales_returns,
+                api.get._api_v1_petshop_sales_returns__id_,
+                api.post._api_v1_petshop_sales_returns__id_complete,
+                api.post._api_v1_petshop_sales_returns__id_cancel]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
