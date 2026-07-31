@@ -104,3 +104,33 @@
     SUPERADMIN panel frontend (Next.js: hata listesi + grup +
     detay ekranı) + severity=kayıt kuralı konfigürabləşdirməsi
     + tenant bazlı hata filtresi iyileştirmesi.
+  - GOAL-104 ⏳ partial — core: hata atama, çözüm notu, destek
+    bağlantısı ve birleşik audit log. 6 yeni endpoint (POST/GET
+    /:id/notes, POST/GET /:id/support-links, PATCH/GET /:id
+    /assignment, GET /:id/audit-log) + ErrorEventNoteRecord
+    (append-only notlar) + ErrorEventSupportLinkRecord (JIRA/
+    Linear/Zendesk/GitHub/internal/other) + ErrorEventAssignment
+    RecordInternal (assigneeId + unassign sentetik) + 5 audit
+    action tipi (status_transition/note_added/support_link_added
+    /assignment_changed/occurrence_recorded) + PiiMasker.maskString
+    (email/TCKN/telefon/IBAN/kart regex mask) + not body PII
+    mask'tan geçer + authorId/authorType aktör bağlamından
+    türetilir (istemciye güvenilmez) + visibility=internal|
+    shared + UNASSIGNED sentetik assigneeId + append-only atama
+    geçmişi (her atama/unassign yeni kayıt) + 29 yeni test
+    (note 6: ekleme/PII mask/visibility/append-only/404/403,
+    support link 6: JIRA/GitHub/title/append-only/404/403,
+    assignment 7: atama/unassign/append-only/status
+    değişmez/422/404/403, audit log 6: birleşik/occurredAt sıra
+    /occurrence_recorded/details/404/403, PiiMasker 4:
+    email/TCKN/telefon/IBAN) + 1375/1375 api regresyon + tsc
+    temiz. Mevcut permission: audit:log:read. Yeni hata kodu:
+    VET-ERRNOTE-0001 (422). Cross-module: ErrorEventsService
+    + repository genişletildi. Sonraki tick: docs/RAG chunk/
+    i18n key parity + DB migration (Prisma) + SUPERADMIN panel
+    frontend (atama UI + not editörü + destek bağlantısı modal
+    + audit timeline) + RBAC permission granülerleştirme
+    (atama:write, note:write, support:write) + tenant bazlı
+    hata filtresi iyileştirmesi + güvenlik alarm kuralları
+    (GOAL-105) + visibility=shared tenant portal tarafı açma
+    (FAZ-15+).
