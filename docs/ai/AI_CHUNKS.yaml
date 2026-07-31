@@ -349,23 +349,42 @@ generated_at: "2026-07-30"
 
 - chunk_id: flow-vaccination
   type: flow
-  source: docs/domain/CLINICAL_FLOWS.md
+  source: packages/contracts/src/vaccination.ts
+  entity: vaccination
   locale: tr-TR
-  version: "1.0.0"
+  version: "1.1.0"
   last_verified_at: 2026-07-30
   confidence: high
   pii: false
-  title: "Aşı Uygulama Akışı"
+  title: "Aşı Uygulama Akışı (Vaccination Record)"
   content: |
-    1. Veteriner, hayvana uygulanacak aşı için muayene açar
-       (randevu veya doğrudan).
-    2. Klinik order'da "aşı" tipinde order oluşturur.
-    3. Lot seçilir; SKT kontrolü otomatik yapılır.
-    4. Aşı uygulanır; stok otomatik düşer (lot bazlı).
-    5. Aşı kartı oluşturulur (aşı_kart.md).
-    6. Audit event yazılır: `audit:vaccination.create`.
-  keywords: [aşı, akış, vaccination, stok, lot]
-  related_chunks: [glossary-vaccination, glossary-stock, error-VET-VACC-0001, error-VET-VACC-0002, error-VET-VACC-0003]
+    1. Veteriner, muayene sırasında aşı uygulaması kaydeder
+       (randevuya bağlı veya doğrudan).
+    2. `POST /api/v1/clinic/vaccinations` ile
+       `VaccinationCreateInput` gönderilir: `patientId`,
+       `protocolId` (aşı kataloğu — GOAL-050), `vaccineName`,
+       `dose`, `lotNumber`, opsiyonel `manufacturer`,
+       `administeredAt`, `notes`.
+    3. Service, hasta + protokol cross-tenant doğrular;
+       `lotNumber` aynı tenant + protokol altında tekil
+       olmalı (iptal edilmişler sayılmaz). Duplicate → 409
+       `VET-VACC-0003`.
+    4. `nextDueAt` protokolün adımlarından otomatik türetilir:
+       2+ step → ikinci step farkı; tek step +
+       `boosterIntervalDays` → ondan; aksi hâlde null.
+    5. Kayıt `status='administered'` ile repo'ya yazılır;
+       audit `audit:vaccination.create` (info) yayınlanır.
+    6. İptal gerekirse `POST /api/v1/clinic/vaccinations/{id}
+       /cancel` ile `status='cancelled'` + `cancelledAt` +
+       `cancellationReason` set edilir; kayıt korunur (fiziksel
+       silme YOK). Zaten iptal → 409 `VET-VACC-0008`. Audit
+       `audit:vaccination.cancel` (warning).
+    7. `GET /api/v1/clinic/patients/{id}/vaccinations/next-due`
+       ve `/overdue` ile hastanın gelecek/geçmiş aşı takibi
+       yapılır.
+  keywords: [aşı, akış, vaccination, kayıt, lot, protokol,
+             nextDueAt, iptal, append-only, tenant-scoped]
+  related_chunks: [glossary-vaccine-protocol, glossary-vaccination, error-VET-VACC-0003, error-VET-VACC-0004, error-VET-VACC-0008]
   related_pages: []
   related_api: []
 

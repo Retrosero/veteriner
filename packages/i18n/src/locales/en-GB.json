@@ -235,6 +235,7 @@
     "VET-VACC-0002": "This lot has expired. Please select a new lot.",
     "VET-VACC-0003": "Insufficient stock. Please add stock or use a different lot.",
     "VET-VACC-0004": "Vaccination protocol not found.",
+    "VET-VACC-0008": "This vaccination record is already cancelled.",
     "VET-PRESC-0001": "Prescription not found.",
     "VET-PRESC-0002": "Prescription has expired. Please perform a new examination.",
     "VET-PRESC-0003": "Prescription could not be dispensed. Stock or permission issue.",

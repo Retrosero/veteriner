@@ -186,6 +186,7 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-VACC-0002`      | Lot süresi dolmuş           | 422  | warning  | server | Yeni lotlu aşı seçin.                 |
 | `VET-VACC-0003`      | Yetersiz stok               | 422  | warning  | server | Stok ekleme veya farklı lot kullanın. |
 | `VET-VACC-0004`      | Aşı protokolü bulunamadı   | 404  | warning  | server | Protokol kataloğunu kontrol edin.    |
+| `VET-VACC-0008`      | Aşı kaydı zaten iptal       | 409  | warning  | server | İptal edilmiş kayıt yeniden iptal edilemez. |
 
 ## Reçete (PRESC)
 

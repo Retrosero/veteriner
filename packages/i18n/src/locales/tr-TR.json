@@ -235,6 +235,7 @@
     "VET-VACC-0002": "Bu lotun son kullanma tarihi geçmiş. Lütfen yeni lotlu aşı seçin.",
     "VET-VACC-0003": "Yetersiz stok. Lütfen stok ekleyin veya farklı bir lot kullanın.",
     "VET-VACC-0004": "Aşı protokolü bulunamadı.",
+    "VET-VACC-0008": "Bu aşı kaydı zaten iptal edilmiş.",
     "VET-PRESC-0001": "Reçete bulunamadı.",
     "VET-PRESC-0002": "Reçete süresi dolmuş. Lütfen yeniden muayene yapın.",
     "VET-PRESC-0003": "Reçete dağıtılamadı. Stok veya yetki sorunu olabilir.",

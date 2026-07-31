@@ -153,19 +153,7 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-047 ✅ Klinik kayıt PDF ve paylaşım (tamamlandı — 2026-07-30)
 - **Faz 5 — Aşı + stok** ⏳ sırada
   - GOAL-050 ✅ Aşı kataloğu ve protokoller (tamamlandı — 2026-07-30)
-  - GOAL-051 ⏳ partial — core: aşı uygulama kaydı + atomik stok
-    düşümü + in-memory stock ledger. `vaccineApplication`
-    sözleşmesi (create/amend/cancel/list/byPatient + SKT/stok/tür
-    validasyonu) + `VaccineStockLedger` (decrement + reverse) +
-    service (cross-tenant 404, arşivli protokol 409, tür
-    uyumsuz 422, SKT geçmiş 422, yetersiz stok 422, amend +
-    cancel stok ters kayıt) + controller (POST/GET/PATCH/DELETE)
-    + 24/24 yeni test + 568/568 api testi geçti. Hata kodları
-    VET-VACC-0002/0003/0004/0005/0006/0007/0008. Audit
-    `audit:vaccine.application.create/amend/cancel`. Sonraki
-    tick: docs/RAG chunk/i18n key parity + DB migration
-    (Prisma) + Faz 6 stok modülü ile `stockProductId` referansı
-    gerçek tabloya bağlanacak.
+  - GOAL-051 ✅ Aşı uygulama kaydı (tamamlandı — 2026-07-30)
   - GOAL-052 ⏳ partial — core: aşı kartı. `vaccineCard` sözleşmesi
     (VaccineCard + VaccineCardEntry + entry status:
     completed/upcoming/overdue/not_started + tenant portal
