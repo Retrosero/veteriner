@@ -746,3 +746,24 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
 - Full api regression: 1093/1093 yeşil, 8 skipped, 0 hata
 - tsc --noEmit temiz
 - Docs/RAG chunks/i18n/cross-ref: sonraki tick'lere ertelendi
+
+## GOAL-086 gözlem ve taburcu özeti ⏳ partial
+
+- Yeni modul: apps/api/src/modules/discharge-summaries/ (controller, service, repository, module, spec, index)
+- Yeni tipler: apps/api/src/common/discharge-summaries/discharge-summary.types.ts
+- Yeni contract: packages/contracts/src/discharge-summary.ts (exported via index)
+- Cross-module: HospitalizationModule (yatış var mı + status kontrolü)
+- 2 varlık: Observation (append-only gözlem) + DischargeSummary (draft → finalized → amended)
+- Endpointler: POST/GET /api/v1/clinic/hospitalizations/:id/observations, GET :id; POST/GET /api/v1/clinic/discharge-summaries, GET :id, PATCH :id, POST :id/finalize|amend|portal-share
+- 7 observation kind: vital / exam / behavior / intake / output / treatment / note
+- 3 discharge status: draft (düzenlenebilir) → finalized (locked) → amended (yeni revision)
+- Append-only: Observation (silme/düzeltme yok); DischargeSummary amendment ile yeni draft revision oluşur (parentId)
+- Portal share: finalized özet portalShared=true yapılabilir (VET-DSUM-0007 yanlış durumda red)
+- 8 audit event: observation.create/update, discharge_summary.create/update/finalize/amend/portal/share
+- 14 hata kodu: VET-DSUM-0001/0002/0003/0004/0005/0006/0007/0008/0009/0010/0011/0012/0013/0014
+- Permissions: clinic:hospitalization:read + add_note + discharge (mevcut katalog)
+- Cross-tenant idor → null/404, cross-tenant create 403 VET-AUTHZ-0001
+- Test: 14/14 yeni spec geçti
+- Full api regression: 1107/1107 yeşil, 8 skipped, 0 hata
+- tsc --noEmit temiz
+- Docs/RAG chunks/i18n/cross-ref: sonraki tick'lere ertelendi
