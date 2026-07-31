@@ -6210,3 +6210,99 @@ generated_at: "2026-07-30"
     - "GET /api/v1/superadmin/security-events/summary"
     - "GET /api/v1/superadmin/security-events/{id}"
     - "POST /api/v1/system/security-events"
+
+# -----------------------------------------------------------------------------
+# GLOSSARY (ek) — Log Retention (GOAL-106)
+# -----------------------------------------------------------------------------
+# Source: apps/api/src/modules/log-retention +
+#         packages/contracts/src/log-retention.ts
+# 6 logType × 4 severity. Tenant override › global override › default
+# zincir. redactPii her zaman true.
+
+- chunk_id: glossary-log-retention
+  type: glossary
+  source: packages/contracts/src/log-retention.ts
+  entity: log_retention
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-31
+  confidence: high
+  pii: false
+  title: "Log Retention ve Arþivleme"
+  content: |
+    Log retention, audit_log/error_event/security_event/job_run/
+    notification/request_log türündeki log kayýtlarýnýn
+    tenant + logType + severity bazýnda retention süresi +
+    arþiv stratejisini tanýmlayan policy'dir. Effective
+    policy tenantOverride › globalOverride › default
+    zinciriyle çözülür. Default retention matrisi: audit_log
+    365-1825 gün, error_event 30-365, security_event
+    365-2555 (~7 yýl KVKK/UK GDPR), job_run 7-90, notification
+    30-180, request_log 7-90. Arþiv storage hot/cold/none;
+    archiveAfterDays retention sýnýrýndan kaç gün önce
+    cold storage'a taþýnacaðýný belirler. `redactPii` alaný
+    servis tarafýndan her zaman true yapýlýr (caller override
+    edemez) — KVKK/UK GDPR uyumu için. Sweep append-only
+    history'de expired/archived/deleted sayýlarý + bucket
+    bazlý logType/severity kýrýlýmý saklanýr.
+  keywords: [log retention, arþivleme, retention policy, sweep,
+             KVKK, UK GDPR, PII mask, default retention,
+             tenant override, global override, cold storage,
+             audit:log_retention.*]
+  related_chunks: [flow-log-retention-sweep,
+                   glossary-error-event, glossary-security-event,
+                   glossary-job-run]
+  related_pages: [web.superadmin.locale.log-retention]
+  related_api:
+    - "GET /api/v1/superadmin/log-retention/policies"
+    - "GET /api/v1/superadmin/log-retention/policies/effective"
+    - "PUT /api/v1/superadmin/log-retention/policies"
+    - "DELETE /api/v1/superadmin/log-retention/policies/{id}"
+    - "POST /api/v1/superadmin/log-retention/sweeps"
+    - "GET /api/v1/superadmin/log-retention/sweeps"
+    - "GET /api/v1/superadmin/log-retention/sweeps/{id}"
+
+# -----------------------------------------------------------------------------
+# FLOW — Log Retention Sweep (GOAL-106)
+# -----------------------------------------------------------------------------
+# Effective policy çözümü + target repository expire/archive/sil.
+
+- chunk_id: flow-log-retention-sweep
+  type: flow
+  source: apps/api/src/modules/log-retention/log-retention.service.ts
+  entity: log_retention
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-31
+  confidence: high
+  pii: false
+  title: "Log Retention Sweep Akýþý"
+  content: |
+    SUPERADMIN `POST /api/v1/superadmin/log-retention/sweeps`
+    ile sweep tetikler. Service tüm bilinen tenant'lar ×
+    logType × severity kombinasyonlarý için effective policy
+    çözer: tenantOverride varsa onu kullanýr; yoksa
+    globalOverride; o da yoksa `DEFAULT_RETENTION_DAYS` +
+    `DEFAULT_ARCHIVE_AFTER_DAYS` + `DEFAULT_ARCHIVE_STORAGE`
+    sabitleri uygulanýr. Her bucket için cutoff hesaplanýr
+    (þimdi - retentionDays); `archive=true` ise target
+    repository üzerinden arþive taþýnýr (cold storage
+    adapter varsa) veya silinir. Sonuçlar append-only
+    `RetentionSweepResult` kaydýnda bucket bazlý
+    expired/archived/deleted sayýlarý + totals ile saklanýr.
+    `dryRun=true` ise gerçek iþlem yapýlmaz; sadece count
+    döner.
+
+    `redactPii` her zaman true (caller override edemez); tüm
+    arþivlenecek payload `PiiMasker`'dan geçirilir.
+
+    Permission: `audit:log:read` (SUPERADMIN).
+  keywords: [sweep, retention, arþivleme, cutoff, dryRun,
+             cold storage, expired, archived, deleted,
+             audit:log_retention.sweep_trigger]
+  related_chunks: [glossary-log-retention]
+  related_pages: [web.superadmin.locale.log-retention]
+  related_api:
+    - "POST /api/v1/superadmin/log-retention/sweeps"
+    - "GET /api/v1/superadmin/log-retention/sweeps"
+    - "GET /api/v1/superadmin/log-retention/sweeps/{id}"
