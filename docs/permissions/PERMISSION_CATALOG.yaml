@@ -1863,6 +1863,73 @@ permissions:
     applies_to_roles: [OWNER]
 
   # ----------------------------------------------------------------
+  # INVENTORY:CLINICAL_CONSUMPTION — Klinik tüketim (GOAL-066)
+  # ----------------------------------------------------------------
+  # Muayene/aşı/ameliyat/yatış sırasında kullanılan ürünlerin
+  # klinik tüketim kaydı. Reçete dispense anında otomatik
+  # tetiklenir. Stok düşümü ve ters kayıt buradan yapılır.
+  # ----------------------------------------------------------------
+  - permission: "inventory:clinical_consumption:read"
+    description: >-
+      Klinik tüketim kayıtlarını görüntüleme (muayene/aşı/
+      ameliyat/yatış/reçete bağlamında kullanılan ürünler).
+    resource_type: clinical_consumption
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "inventory:clinical_consumption:create"
+    description: >-
+      Manuel klinik tüketim kaydı oluşturma. Stok düşümü
+      StockMovementsService.createSystemMovement üzerinden
+      yapılır; reçete dispense gibi sistem akışları bu
+      permission'a ihtiyaç duymaz.
+    resource_type: clinical_consumption
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "inventory:clinical_consumption:cancel"
+    description: >-
+      Klinik tüketim kaydını iptal etme. Her satır için
+      ters kayıt oluşturularak stok bakiyesi geri getirilir.
+    resource_type: clinical_consumption
+    action: cancel
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: true
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN]
+
+  - permission: "inventory:clinical_consumption:export"
+    description: "Klinik tüketim kayıtlarını dışa aktarma (CSV/PDF)."
+    resource_type: clinical_consumption
+    action: export
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  # ----------------------------------------------------------------
   # CATALOG:SUPPLIER — Tedarikçi kataloğu (GOAL-062)
   # ----------------------------------------------------------------
   - permission: "catalog:supplier:read"

@@ -253,6 +253,18 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-STOCK-0011`     | Lot ile ürün eşleşmiyor         | 422  | warning  | server | Lot, doğru ürüne ait olmalı.        |
 | `VET-STOCK-0012`     | Sistem hareketi source eksik    | 422  | warning  | server | sourceType ve sourceId zorunlu.      |
 
+## Klinik Tüketim (CLINICAL_CONSUMPTION) — GOAL-066
+
+| Kod                            | Ad                              | HTTP | Severity | Kaynak | Çözüm                                |
+| ------------------------------ | ------------------------------- | ---- | -------- | ------ | ------------------------------------ |
+| `VET-CLINICAL_CONSUMPTION-0001`| Tüketim kaydı bulunamadı        | 404  | warning  | server | Tüketim kaydı ID'sini kontrol edin.  |
+| `VET-CLINICAL_CONSUMPTION-0002`| Geçersiz/sıfır tüketim miktarı  | 422  | warning  | server | Pozitif bir miktar girin.             |
+| `VET-CLINICAL_CONSUMPTION-0003`| Vaccination için lot zorunlu    | 422  | warning  | server | Aşı uygulamasında her satır için lot girin. |
+| `VET-CLINICAL_CONSUMPTION-0004`| Ürün/lot bulunamadı veya eşleşmiyor | 404/422 | warning | server | Ürün/lot ID'sini kontrol edin.     |
+| `VET-CLINICAL_CONSUMPTION-0005`| İptal nedeni zorunlu            | 422  | warning  | server | cancelReason girin.                  |
+| `VET-CLINICAL_CONSUMPTION-0006`| Tüketim zaten iptal edilmiş      | 409  | warning  | server | Yalnız aktif kayıtlar iptal edilebilir. |
+| `VET-CLINICAL_CONSUMPTION-0007`| Arşivli/hizmet ürünü için tüketim olamaz | 409 | warning | server | Aktif ve stock türünde ürün kullanın. |
+
 ## Envanter (INVENTORY) — Depo, Raf, Lot
 
 | Kod                  | Ad                              | HTTP | Severity | Kaynak | Çözüm                                |

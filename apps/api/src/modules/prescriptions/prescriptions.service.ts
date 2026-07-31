@@ -38,6 +38,7 @@ import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import type {
+  ClinicalConsumptionLine,
   Prescription,
   PrescriptionCancelInput,
   PrescriptionCreateInput,
@@ -46,6 +47,7 @@ import type {
 } from "@vetniva/contracts";
 
 import { ExaminationsService } from "../examinations/examinations.service.js";
+import { ClinicalConsumptionService } from "../clinical-consumption/clinical-consumption.service.js";
 
 import {
   toPrescription,
@@ -63,6 +65,7 @@ export class PrescriptionsService {
   public constructor(
     private readonly repo: PrescriptionsRepository,
     private readonly examinations: ExaminationsService,
+    private readonly clinicalConsumption: ClinicalConsumptionService,
     private readonly audit: AuditService,
   ) {}
 
@@ -255,6 +258,40 @@ export class PrescriptionsService {
       });
     }
 
+    // GOAL-066: Reçete dispans anında ürün referansı taşıyan
+    // kalemler için otomatik klinik tüketim kaydı oluştur
+    // (stoktan düşüm). Ürün referansı olmayan kalemler (serbest
+    // metin ilaç talimatı) için no-op.
+    const consumptionLines: ClinicalConsumptionLine[] = [];
+    for (const item of updated.items) {
+      if (item.productId && item.dispensedQuantity) {
+        consumptionLines.push({
+          productId: item.productId,
+          lotId: item.dispensedLotId,
+          quantity: item.dispensedQuantity,
+        });
+      }
+    }
+    if (consumptionLines.length > 0) {
+      try {
+        await this.clinicalConsumption.recordForPrescription(
+          tenantId,
+          updated.id,
+          updated.patientId,
+          consumptionLines,
+          actor,
+        );
+      } catch (err) {
+        // Tüketim oluşturulamazsa dispans yine de başarılı sayılır
+        // (reçete dağıtıldı; stok düşümü sonra düzeltilebilir).
+        // Hata loglanır; operatör UI'da uyarı görür.
+        this.logger.warn(
+          `Prescription ${updated.id} dispans klinik tüketim oluşturulamadı: ` +
+            (err instanceof Error ? err.message : String(err)),
+        );
+      }
+    }
+
     await this.audit.recordSimple(
       "audit:prescription.dispense",
       "prescription",
@@ -266,6 +303,7 @@ export class PrescriptionsService {
         before: { status: existing.status, dispensedAt: existing.dispensedAt },
         after: { status: updated.status, dispensedAt: updated.dispensedAt },
         dispensedBy: updated.dispensedBy,
+        clinicalConsumptionLines: consumptionLines.length,
       },
     );
 

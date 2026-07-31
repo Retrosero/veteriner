@@ -57,6 +57,12 @@ export type PrescriptionRoute = z.infer<typeof prescriptionRouteSchema>;
 /**
  * Reçete kalemi (ilaç/ürün + dozaj). Bir reçetede en az 1 kalem
  * bulunmalıdır (service katmanı 422 ile reddeder).
+ *
+ * GOAL-066 (FAZ-6) klinik tüketim entegrasyonu: reçete dispans
+ * anında ürün stoğundan otomatik düşüm yapılabilmesi için kalem
+ * isteğe bağlı olarak ürün ve miktar referansı taşıyabilir.
+ * `productId` verilmeyen kalemler serbest metin reçete olarak
+ * kalır; stok etkisi olmaz.
  */
 export const prescriptionItemSchema = z.object({
   drugName: z.string().min(1).max(200),
@@ -69,6 +75,27 @@ export const prescriptionItemSchema = z.object({
   durationDays: z.number().int().min(1).max(365),
   route: prescriptionRouteSchema,
   instructions: z.string().max(2000).optional(),
+  /**
+   * İsteğe bağlı ürün referansı (Product.id; GOAL-060). Verildiğinde
+   * reçete dispans anında bu üründen stok düşülür (clinical_use).
+   * `dispensedQuantity` ile birlikte verilmelidir.
+   */
+  productId: z.string().min(1).max(100).optional(),
+  /**
+   * Dispans anında stoktan düşülecek miktar (Decimal string; ör.
+   * "1", "0.5", "30"). `productId` ile birlikte verilir; pilot
+   * kapsamda pozitif ondalık (4 hane).
+   */
+  dispensedQuantity: z
+    .string()
+    .regex(/^\d+(\.\d{1,4})?$/)
+    .optional(),
+  /**
+   * Dispans anında kullanılacak lot (opsiyonel). Vaccination dışı
+   * bağlamlarda lot opsiyoneldir; verildiğinde lot-ürün eşleşmesi
+   * kontrol edilir.
+   */
+  dispensedLotId: z.string().min(1).max(100).optional(),
 });
 export type PrescriptionItem = z.infer<typeof prescriptionItemSchema>;
 

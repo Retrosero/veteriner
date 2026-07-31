@@ -56,3 +56,4 @@ export * from "./purchase-order.js";
 export * from "./petshop-sale.js";
 export * from "./petshop-sale-return.js";
 export * from "./stock-movement.js";
+export * from "./clinical-consumption.js";

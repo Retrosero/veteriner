@@ -18,6 +18,7 @@ import type { AuditService } from "../../common/audit/audit.service.js";
 import type { Examination } from "@vetniva/contracts";
 
 import type { ExaminationsService } from "../examinations/examinations.service.js";
+import type { ClinicalConsumptionService } from "../clinical-consumption/clinical-consumption.service.js";
 
 import { PrescriptionsService } from "./prescriptions.service.js";
 import { PrescriptionsRepository } from "./prescriptions.repository.js";
@@ -95,6 +96,15 @@ function makeExaminations(): ExaminationsService {
   } as unknown as ExaminationsService;
 }
 
+function makeClinicalConsumption(): ClinicalConsumptionService {
+  // GOAL-066: reçete dispans anında klinik tüketim oluşturma
+  // entegrasyonu için no-op stub. Ürün referanssız items için
+  // recordForPrescription çağrılmaz; çağrılırsa null döner.
+  return {
+    recordForPrescription: vi.fn().mockResolvedValue(null),
+  } as unknown as ClinicalConsumptionService;
+}
+
 function makeAudit(): AuditService {
   return {
     record: vi.fn().mockResolvedValue({ eventId: "ev-1" }),
@@ -132,6 +142,7 @@ describe("PrescriptionsService", () => {
   let service: PrescriptionsService;
   let repo: PrescriptionsRepository;
   let examinations: ExaminationsService;
+  let clinicalConsumption: ClinicalConsumptionService;
   let audit: AuditService;
 
   beforeEach(() => {
@@ -140,8 +151,14 @@ describe("PrescriptionsService", () => {
     seedExamination(TENANT_B, EXAM_ID_B, PATIENT_ID_A, VET_USER_ID_A);
     repo = new PrescriptionsRepository();
     examinations = makeExaminations();
+    clinicalConsumption = makeClinicalConsumption();
     audit = makeAudit();
-    service = new PrescriptionsService(repo, examinations, audit);
+    service = new PrescriptionsService(
+      repo,
+      examinations,
+      clinicalConsumption,
+      audit,
+    );
   });
 
   afterEach(() => {
