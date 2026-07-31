@@ -214,3 +214,19 @@
     index entegrasyonu (FAZ-12+ retrieval için) + chunk dedup
     stratejisi (hash/content-based) + LLM metadata enrichment
     opsiyonel.
+  - GOAL-117 ⏳ partial — core: ilk kullanım asistanı.
+    common/onboarding modülü (2 endpoint: POST ask + GET
+    scenarios) + OnboardingService (10 senaryo: hasta sahibi/
+    hasta/randevu/aşı/stok/petshop/tahsilat/lab/portal/
+    superadmin) + role-bazlı (SUPERADMIN/OWNER/VETERINARIAN/
+    STAFF/PET_OWNER_PORTAL) + modül-bazlı senaryo filtre +
+    tetikleyici eşleşmesi (substring + word-prefix, 4+ char,
+    TR/EN) + tıbbi reddi (medical/dosage/diagnosis/treatment
+    kategorize; "<rakam>+birim" regex'i dosage için) +
+    currentPage bonus + currentPage bonus + 24/24 yeni test +
+    1463/1463 api regresyon. Commit: 50b7083. Tasarım:
+    LLM yok, template-based; teşhis/tedavi/doz ASLA üretmez.
+    Cross-module: ModuleKey, ActorContext. Sonraki tick:
+    docs/RAG chunk/i18n key parity + frontend wizard komponenti
+    (Next.js chat + step navigation) + DB migration yok
+    (statik kod) + LLM zenginleştirme (Faz 12+).
