@@ -1731,6 +1731,47 @@ generated_at: "2026-07-30"
                 api.get._api_v1_clinic_lab-tests__id_,
                 api.patch._api_v1_clinic_lab-tests__id_]
 
+- chunk_id: flow-lab-order
+  type: flow
+  source: packages/contracts/src/lab-order.ts
+  entity: lab_order
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Laboratuvar İsteği ve Numune Akışı (Lab Order)"
+  content: |
+    1. Lab order (LabOrder). State: `ordered` →
+       `sample_collected` → `in_progress` → `completed` |
+       `cancelled`.
+    2. Priority: `routine` (default) | `urgent` | `stat`.
+    3. Collect: numune alımı (`specimenId` + `volumeMl`
+       opsiyonel); status `sample_collected`.
+    4. Start: cihaz adapter (GOAL-094) ile iş emri
+       gönderimi (Faz 14); `deviceId` set edilir.
+    5. Complete: sonuçlar (GOAL-092) bu endpoint ile
+       veya sonradan girilebilir.
+    6. Cancel: `ordered`/`sample_collected`/`in_progress`
+       → `cancelled`. Numune alındıysa iptal notu
+       zorunlu.
+    7. Tenant-scoped; cross-tenant → 404.
+    8. Audit: `audit:lab_order.{create,collect,start,
+       complete,cancel}` (info/warning).
+  keywords: [laboratuvar isteği, lab order, numune, collect,
+             start, complete, cihaz adapter, öncelik,
+             urgent, stat]
+  related_chunks: [flow-lab-test, flow-lab-result,
+                   flow-lab-adapter, error-VET-LAB-ORDER-0001]
+  related_pages: []
+  related_api: [api.post._api_v1_clinic_lab-orders,
+                api.get._api_v1_clinic_lab-orders,
+                api.get._api_v1_clinic_lab-orders__id_,
+                api.post._api_v1_clinic_lab-orders__id_collect,
+                api.post._api_v1_clinic_lab-orders__id_start,
+                api.post._api_v1_clinic_lab-orders__id_complete,
+                api.post._api_v1_clinic_lab-orders__id_cancel]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
