@@ -370,3 +370,25 @@ equiresPrescription/controlledDrug UK ila�
     desteği + negatif bakiye kontrolü (yetersiz stok 422
     VET-STOCK-0002) + StockMovementPatch endpoint (notes/reason
     düzeltme).
+
+  - GOAL-064 ⏳ partial — core: petshop POS. petshop-sales modülü
+    (6 endpoint: create/list/get/update/complete/cancel) + 3 durum
+    (draft/completed/cancelled) + line items (ürün + miktar + birim
+    fiyat + satır indirimi) + global indirim + tahsilat yöntemi
+    (cash/card/transfer) + 14/14 yeni test + 790/790 api testi geçti
+    (önceki appointment-reminders regression'ı da düzelmiş).
+    Stok entegrasyonu: completeSale'de her satır için
+    StockMovementsService.createSystemMovement(type='sale') çağrısı
+    (purchaseTracked ürünler için); cancelSale'de tamamlanmış
+    satışlar için 	ype='reversal' hareketi. Yeni hata kodları
+    VET-SALE-0001/0002/0003/0004/0005/0006. Mevcut permission'lar
+    kullanıldı: petshop:sale:read/create + petshop:sale:refund.
+    Audit udit:petshop_sale.create/update/complete/cancel.
+    Cross-module: ProductsService (ürün varlık/arşiv) +
+    StockMovementsService (sale/reversal hareketleri).
+    Sonraki tick: docs/RAG chunk/i18n key parity + DB migration
+    (Prisma) + barkod hızlı arama endpoint'i
+    GET /petshop/products/by-barcode/:barcode + fiş çıktısı
+    (PDF/termal) + çoklu ödeme (taksit) + Faz 7 tahsilat
+    entegrasyonu (GOAL-072) + Faz 6 iade (GOAL-065) için
+    refund-specific endpoint.
