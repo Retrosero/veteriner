@@ -49,18 +49,35 @@ function parseArgs(argv: ReadonlyArray<string>): CliArgs {
       const v = argv[++i];
       return v;
     };
-    if (a === "--base") { const v = consume(); args.base = v ?? args.base; }
-    else if (a.startsWith("--base=")) args.base = a.split("=")[1] ?? args.base;
-    else if (a === "--token") { const v = consume(); args.token = v ?? args.token; }
-    else if (a.startsWith("--token=")) args.token = a.split("=")[1] ?? args.token;
-    else if (a === "--tenant") { const v = consume(); args.tenant = v ?? args.tenant; }
-    else if (a.startsWith("--tenant=")) args.tenant = a.split("=")[1] ?? args.tenant;
-    else if (a === "--branch") { const v = consume(); args.branch = v ?? args.branch; }
-    else if (a.startsWith("--branch=")) args.branch = a.split("=")[1] ?? args.branch;
-    else if (a === "--operator") { const v = consume(); args.operator = v ?? args.operator; }
-    else if (a.startsWith("--operator=")) args.operator = a.split("=")[1] ?? args.operator;
-    else if (a === "--out") { const v = consume(); args.out = v ?? args.out; }
-    else if (a.startsWith("--out=")) args.out = a.split("=")[1] ?? args.out;
+    if (a === "--base") {
+      const v = consume();
+      args.base = v ?? args.base;
+    } else if (a.startsWith("--base="))
+      args.base = a.split("=")[1] ?? args.base;
+    else if (a === "--token") {
+      const v = consume();
+      args.token = v ?? args.token;
+    } else if (a.startsWith("--token="))
+      args.token = a.split("=")[1] ?? args.token;
+    else if (a === "--tenant") {
+      const v = consume();
+      args.tenant = v ?? args.tenant;
+    } else if (a.startsWith("--tenant="))
+      args.tenant = a.split("=")[1] ?? args.tenant;
+    else if (a === "--branch") {
+      const v = consume();
+      args.branch = v ?? args.branch;
+    } else if (a.startsWith("--branch="))
+      args.branch = a.split("=")[1] ?? args.branch;
+    else if (a === "--operator") {
+      const v = consume();
+      args.operator = v ?? args.operator;
+    } else if (a.startsWith("--operator="))
+      args.operator = a.split("=")[1] ?? args.operator;
+    else if (a === "--out") {
+      const v = consume();
+      args.out = v ?? args.out;
+    } else if (a.startsWith("--out=")) args.out = a.split("=")[1] ?? args.out;
     else if (a === "--scenario") {
       const v = consume() ?? "";
       if (v === "all" || (SCENARIO_KEYS as ReadonlyArray<string>).includes(v)) {
@@ -85,9 +102,7 @@ async function main(): Promise<void> {
   };
 
   const scenarios =
-    args.scenario === "all"
-      ? SCENARIOS
-      : [getScenario(args.scenario)];
+    args.scenario === "all" ? SCENARIOS : [getScenario(args.scenario)];
 
   const runAt = new Date().toISOString();
   const scenarioResults = [];

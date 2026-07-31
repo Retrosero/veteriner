@@ -80,7 +80,9 @@ export function maskPii(input: string): { text: string; masked: boolean } {
 
 /** Gecerli puan mi (0 | 1..5). */
 export function isValidRating(rating: number): boolean {
-  return rating === 0 || (Number.isInteger(rating) && rating >= 1 && rating <= 5);
+  return (
+    rating === 0 || (Number.isInteger(rating) && rating >= 1 && rating <= 5)
+  );
 }
 
 /**
@@ -129,13 +131,14 @@ export function applyFeedback(
       if (!r.feedback) map.set(r.name, f);
     }
   }
-  return results.map((r) => ({ ...r, feedback: r.feedback ?? map.get(r.name) ?? null }));
+  return results.map((r) => ({
+    ...r,
+    feedback: r.feedback ?? map.get(r.name) ?? null,
+  }));
 }
 
 /** Pilot geri bildiriminden ortalama puan (0 = hic puan yok). */
-export function averageRating(
-  results: ReadonlyArray<UatStepResult>,
-): number {
+export function averageRating(results: ReadonlyArray<UatStepResult>): number {
   const ratings = results
     .map((r) => r.feedback?.rating ?? 0)
     .filter((r) => r > 0);

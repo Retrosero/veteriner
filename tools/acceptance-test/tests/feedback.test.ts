@@ -23,10 +23,12 @@ import type { UatStepResult } from "../src/types.js";
 
 describe("maskPii", () => {
   it("email maskelenir", () => {
-    const r = maskPii("bana ula[email protected] yazin");
-    expect(r.masked).toBe(true);
-    expect(r.text).not.toContain("[email protected]");
-    expect(r.text).toContain("@***");
+    const r = maskPii("mail: foo at bar dot com");
+    expect(r.text).toBe("mail: foo at bar dot com");
+    // gercek email formati
+    const r2 = maskPii("hello: " + "user" + "@" + "host" + ".io");
+    expect(r2.masked).toBe(true);
+    expect(r2.text).toContain("@***");
   });
   it("TCKN maskelenir", () => {
     const r = maskPii("TC 12345678950");
@@ -127,14 +129,32 @@ describe("adim istatistikleri", () => {
   });
   it("averageRating ortalama alir", () => {
     const r = averageRating([
-      makeResult({ reviewer: "a", comment: "", rating: 4, unnecessary: false, occurredAt: "" }),
-      makeResult({ reviewer: "a", comment: "", rating: 2, unnecessary: false, occurredAt: "" }),
+      makeResult({
+        reviewer: "a",
+        comment: "",
+        rating: 4,
+        unnecessary: false,
+        occurredAt: "",
+      }),
+      makeResult({
+        reviewer: "a",
+        comment: "",
+        rating: 2,
+        unnecessary: false,
+        occurredAt: "",
+      }),
     ]);
     expect(r).toBe(3);
   });
   it("unnecessaryCount sadece unnecessary=true olanlari sayar", () => {
     const count = unnecessaryCount([
-      makeResult({ reviewer: "a", comment: "", rating: 0, unnecessary: true, occurredAt: "" }),
+      makeResult({
+        reviewer: "a",
+        comment: "",
+        rating: 0,
+        unnecessary: true,
+        occurredAt: "",
+      }),
       makeResult(null),
     ]);
     expect(count).toBe(1);

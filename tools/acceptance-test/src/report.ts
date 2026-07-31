@@ -40,17 +40,13 @@ export function summarize(result: UatRunResult): ReportSummary {
     (s, sc) => s + sc.totalDurationMs,
     0,
   );
-  const totalSteps = result.scenarios.reduce(
-    (s, sc) => s + sc.steps.length,
-    0,
-  );
+  const totalSteps = result.scenarios.reduce((s, sc) => s + sc.steps.length, 0);
   const averageStepDurationMs =
     totalSteps === 0
       ? 0
       : Math.round(
           result.scenarios.reduce(
-            (s, sc) =>
-              s + sc.steps.reduce((ss, st) => ss + st.durationMs, 0),
+            (s, sc) => s + sc.steps.reduce((ss, st) => ss + st.durationMs, 0),
             0,
           ) / totalSteps,
         );
@@ -144,14 +140,17 @@ export function reportToMarkdown(result: UatRunResult): string {
 
   const blocks = result.scenarios.map(renderScenarioBlock);
   const failures = result.scenarios.flatMap((s) =>
-    s.steps.filter((st) => !st.passed).map((st) => `- \`${s.scenario}/${st.name}\`: status=${st.status} hata=${st.error ?? "yok"}`),
+    s.steps
+      .filter((st) => !st.passed)
+      .map(
+        (st) =>
+          `- \`${s.scenario}/${st.name}\`: status=${st.status} hata=${st.error ?? "yok"}`,
+      ),
   );
   const footerLines: string[] = [
     ``,
     `## Basarisiz Adimlar`,
-    failures.length === 0
-      ? `_Hic basarisiz adim yok._`
-      : failures.join("\n"),
+    failures.length === 0 ? `_Hic basarisiz adim yok._` : failures.join("\n"),
     ``,
     `## Notlar`,
     ``,

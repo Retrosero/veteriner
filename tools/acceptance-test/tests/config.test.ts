@@ -17,11 +17,7 @@ import {
   listScenarioKeys,
   scenariosByPriority,
 } from "../src/config.js";
-import type {
-  HttpMethod,
-  UatScenarioConfig,
-  UatStep,
-} from "../src/types.js";
+import type { HttpMethod, UatScenarioConfig, UatStep } from "../src/types.js";
 
 const VALID_METHODS: ReadonlyArray<HttpMethod> = [
   "GET",
@@ -57,15 +53,20 @@ describe("SCENARIOS katalogu", () => {
     }
   });
 
-  it("POST adimlari expectStatus=201 bekler", () => {
+  it("POST adimlari expectStatus=200 veya 201 bekler", () => {
     for (const s of SCENARIOS) {
       for (const step of s.steps) {
         if (step.method === "POST") {
-          expect(
+          // Cancel/discharge gibi state-change endpoint'leri
+          // 200 donebilir; create endpoint'leri 201 doner.
+          const ok =
+            step.expectStatus === 200 ||
             step.expectStatus === 201 ||
-              (Array.isArray(step.expectStatus) &&
-                step.expectStatus.includes(201)),
-            `${s.key}/${step.name} POST status`,
+            (Array.isArray(step.expectStatus) &&
+              step.expectStatus.some((s) => s === 200 || s === 201));
+          expect(
+            ok,
+            `${s.key}/${step.name} POST status (got ${JSON.stringify(step.expectStatus)})`,
           ).toBe(true);
         }
       }
@@ -135,7 +136,9 @@ describe("SCENARIOS katalogu", () => {
 describe("Senaryo icerik dogrulamalari", () => {
   it("yeni_owner_patient: ownerId ve patientId olusturulur", () => {
     const s = getScenario("new_owner_patient");
-    const createOwner = s.steps.find((st: UatStep) => st.name === "create_owner");
+    const createOwner = s.steps.find(
+      (st: UatStep) => st.name === "create_owner",
+    );
     const createPatient = s.steps.find(
       (st: UatStep) => st.name === "create_patient",
     );
@@ -143,12 +146,13 @@ describe("Senaryo icerik dogrulamalari", () => {
     expect(JSON.stringify(createPatient?.body)).toContain("{ownerId}");
   });
 
-  it("appointment: {ownerId}/{patientId} placeholder'lari onceki adimlardan gelir", () => {
+  it("appointment: {patientId}/{branchId} placeholder'lari onceki adimlardan gelir", () => {
     const s = getScenario("appointment");
     expect(s.steps[0].name).toBe("list_calendar_today");
-    // create_appointment {patientId} icermeli
+    // create_appointment body'sinde {patientId} ve {branchId} var
     const create = s.steps[1];
-    expect(create.path).toContain("{patientId}");
+    expect(JSON.stringify(create.body)).toContain("{patientId}");
+    expect(JSON.stringify(create.body)).toContain("{branchId}");
   });
 
   it("portal: approve adimi {appointmentId} placeholder'i kullanir", () => {

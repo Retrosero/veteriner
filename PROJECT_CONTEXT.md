@@ -1,59 +1,61 @@
 ﻿# Proje Bağlamı
+
     (GOAL-103) + tenant bazlı job kuyruğu görünümü.
-  - GOAL-094 ✅ Cihaz ve dış laboratuvar adaptör sözleşmesi (tamamlandı — 2026-07-30, core: 6c235bd, docs/i18n: bu commit). 9 endpoint (export/import + retry/cancel + adapters list); 4 format (HL7/FHIR/ASTM/proprietary); modality lab/imaging; async export/import + 3 retry; tenant-scoped. Audit udit:lab_adapter_export.* + udit:lab_adapter_import.create. Gerçek HL7/FHIR/PACS entegrasyonu Faz 14+ planı. **FAZ-9 TAMAMLANDI (GOAL-090 → 094, 5/5 docs).**
-  - GOAL-093 ✅ Görüntüleme isteği ve raporu (tamamlandı — 2026-07-30, core: 8cf7ad1, docs/i18n: bu commit). 10 endpoint (POST/GET list/GET :id/POST :id/schedule/perform/report/approve-report/amend-report/complete/cancel); 5 modality (xray/ultrasound/ct/mri/dental_xray); state ordered→scheduled→performed→reported→completed|cancelled; PACS/DICOM imageIds[]; report findings+impression+recommendations; amend append-only. Audit udit:imaging_order.*. PACS gerçek entegrasyonu Faz 14+ cihaz adapter (GOAL-094).
-  - GOAL-092 ✅ Laboratuvar sonuçları (tamamlandı — 2026-07-30, core: 8782ef3, docs/i18n: bu commit). 7 endpoint (POST/GET/GET history/PATCH/POST submit/POST approve/POST amend); state draft→submitted→approved|amended; analyte bazlı + 5 abnormal flag + reference range; submit tüm draft; approve uzman onayı; amend append-only (amendedFromId). Audit udit:lab_result.*.
-  - GOAL-091 ✅ Laboratuvar isteği ve numune (tamamlandı — 2026-07-30, core: 473836, docs/i18n: bu commit). 7 endpoint (POST/GET list/GET :id/POST :id/collect/start/complete/cancel); state ordered→sample_collected→in_progress→completed|cancelled; 3 öncelik (routine/urgent/stat); specimenId + volumeMl opsiyonel; start cihaz adapter (Faz 14) üzerinden iş emri. Audit udit:lab_order.*. Sonuç (GOAL-092) complete ile veya sonradan.
-  - GOAL-090 ✅ Laboratuvar test kataloğu (tamamlandı — 2026-07-30, core: 6e92831, docs/i18n: bu commit). 4 endpoint (POST/GET list/GET :id/PATCH); 8 kategori (hematology/biochemistry/microbiology/parasitology/urinalysis/cytology/imaging/other) + 6 specimenType; referenceRanges analyte+unit+low+high; tatHours + price; update snapshot. Audit udit:lab_test.*. Cihaz adapter (GOAL-094) ayrı goal.
+
+- GOAL-094 ✅ Cihaz ve dış laboratuvar adaptör sözleşmesi (tamamlandı — 2026-07-30, core: 6c235bd, docs/i18n: bu commit). 9 endpoint (export/import + retry/cancel + adapters list); 4 format (HL7/FHIR/ASTM/proprietary); modality lab/imaging; async export/import + 3 retry; tenant-scoped. Audit udit:lab_adapter_export.* + udit:lab_adapter_import.create. Gerçek HL7/FHIR/PACS entegrasyonu Faz 14+ planı. **FAZ-9 TAMAMLANDI (GOAL-090 → 094, 5/5 docs).**
+- GOAL-093 ✅ Görüntüleme isteği ve raporu (tamamlandı — 2026-07-30, core: 8cf7ad1, docs/i18n: bu commit). 10 endpoint (POST/GET list/GET :id/POST :id/schedule/perform/report/approve-report/amend-report/complete/cancel); 5 modality (xray/ultrasound/ct/mri/dental_xray); state ordered→scheduled→performed→reported→completed|cancelled; PACS/DICOM imageIds[]; report findings+impression+recommendations; amend append-only. Audit udit:imaging_order.*. PACS gerçek entegrasyonu Faz 14+ cihaz adapter (GOAL-094).
+- GOAL-092 ✅ Laboratuvar sonuçları (tamamlandı — 2026-07-30, core: 8782ef3, docs/i18n: bu commit). 7 endpoint (POST/GET/GET history/PATCH/POST submit/POST approve/POST amend); state draft→submitted→approved|amended; analyte bazlı + 5 abnormal flag + reference range; submit tüm draft; approve uzman onayı; amend append-only (amendedFromId). Audit udit:lab_result.*.
+- GOAL-091 ✅ Laboratuvar isteği ve numune (tamamlandı — 2026-07-30, core: 473836, docs/i18n: bu commit). 7 endpoint (POST/GET list/GET :id/POST :id/collect/start/complete/cancel); state ordered→sample_collected→in_progress→completed|cancelled; 3 öncelik (routine/urgent/stat); specimenId + volumeMl opsiyonel; start cihaz adapter (Faz 14) üzerinden iş emri. Audit udit:lab_order.*. Sonuç (GOAL-092) complete ile veya sonradan.
+- GOAL-090 ✅ Laboratuvar test kataloğu (tamamlandı — 2026-07-30, core: 6e92831, docs/i18n: bu commit). 4 endpoint (POST/GET list/GET :id/PATCH); 8 kategori (hematology/biochemistry/microbiology/parasitology/urinalysis/cytology/imaging/other) + 6 specimenType; referenceRanges analyte+unit+low+high; tatHours + price; update snapshot. Audit udit:lab_test.*. Cihaz adapter (GOAL-094) ayrı goal.
 - **Faz 10 — Hata merkezi** ⏳ sırada
   - GOAL-100 ⏳ partial — core: merkezi backend hata yakalama.
     error-events modülü (4 endpoint: list/summary/
     byFingerprint/:id) + AllExceptionsFilter entegrasyonu (5xx
-    + critical; 4xx kayıt dışı) + ErrorEvent sözleşmesi
-    (request_id/tenant/branch/user/module/route/release/
-    severity/fingerprint/sanitized context) + 37 modül enum
-    (auth/clinic/lab/inventory/...) + fingerprint üretimi
-    (errorCode + module + normalizeMessage) + duplicate
-    gruplama (occurrenceCount) + SUPERADMIN yetkisi
-    (`audit:log:read`) + moduleFromRoute helper (path →
-    modül) + PII mask context'ten geçer + 4xx için stack null.
-    32/32 yeni test + 1256/1256 api regresyon geçti.
-    Cross-module: AllExceptionsFilter (5xx + critical hata
-    olaylarını ErrorEventsService.recordError'a yönlendirir).
-    Sonraki tick: docs/RAG chunk/i18n key parity + DB
-    migration (Prisma) + atama/çözüm notları (GOAL-104) +
-    tenant bazlı hata filtresi iyileştirmesi + frontend hata
-    yakalama (GOAL-101) entegrasyonu + severity=kayıt kuralı
-    konfigürabləşdirməsi.
+    - critical; 4xx kayıt dışı) + ErrorEvent sözleşmesi
+      (request_id/tenant/branch/user/module/route/release/
+      severity/fingerprint/sanitized context) + 37 modül enum
+      (auth/clinic/lab/inventory/...) + fingerprint üretimi
+      (errorCode + module + normalizeMessage) + duplicate
+      gruplama (occurrenceCount) + SUPERADMIN yetkisi
+      (`audit:log:read`) + moduleFromRoute helper (path →
+      modül) + PII mask context'ten geçer + 4xx için stack null.
+      32/32 yeni test + 1256/1256 api regresyon geçti.
+      Cross-module: AllExceptionsFilter (5xx + critical hata
+      olaylarını ErrorEventsService.recordError'a yönlendirir).
+      Sonraki tick: docs/RAG chunk/i18n key parity + DB
+      migration (Prisma) + atama/çözüm notları (GOAL-104) +
+      tenant bazlı hata filtresi iyileştirmesi + frontend hata
+      yakalama (GOAL-101) entegrasyonu + severity=kayıt kuralı
+      konfigürabləşdirməsi.
   - GOAL-101 ⏳ partial — core: frontend hata yakalama.
     Next.js error boundary'leri (route [locale]/error.tsx +
     global-error.tsx) + error-reporter (PII sanitizer:
     email/TCKN/telefon/CC mask; maxQueueSize 50; dedup window
     1 sn; flush interval 2 sn; sendBeacon sayfa unload'ında) +
     api-error-integration (apiRequest failure otomatik raporlama
-    + severity mapping 5xx→error, 4xx→warning) + backend
-    SystemErrorEventsController (POST /api/v1/system/error-events
-    — auth placeholder, oturum açmış tüm kullanıcılar) +
-    ErrorEventsService.recordClientError (actor bağlamından
-    tenant/branch/userId/actorType türetir; istemciye güvenmez)
-    + clientErrorReportInputSchema sözleşmesi (severity/
-    errorCode/message/stack/context/route/occurredAt/release/
-    country) + clientErrorReportResponseSchema (id + fingerprint
-    korelasyon) + 41/41 frontend yeni test (error-reporter
-    24, api-error-integration 9, error boundary 4+4) +
-    error-events backend 42/42 (önceki 32 + 10 yeni
-    recordClientError testi: tenant/branch/userId türetme,
-    default errorCode TR_FE_0001, actorType portal_user,
-    info/critical stack, PII mask'lı context, occurredAt/release
-    override) + 1266/1266 api regresyon + 46/46 web
-    regresyon. SendBeacon sayfa kapatma anında sync flush
-    yapar; navigator yoksa atlanır. Reporter hiçbir koşulda
-    throw etmez. Cross-module: ErrorEventsService + repository
-    paylaşılır. Sonraki tick: docs/RAG chunk/i18n key parity +
-    Next.js client instrumentation.ts hook (unhandledrejection
-    global yakalama) + sentry/otel adapter opsiyonel +
-    SUPERADMIN panel frontend (GOAL-103) + rate limit
-    (token bucket per user) + retry/backoff stratejisi.
+    - severity mapping 5xx→error, 4xx→warning) + backend
+      SystemErrorEventsController (POST /api/v1/system/error-events
+      — auth placeholder, oturum açmış tüm kullanıcılar) +
+      ErrorEventsService.recordClientError (actor bağlamından
+      tenant/branch/userId/actorType türetir; istemciye güvenmez)
+    - clientErrorReportInputSchema sözleşmesi (severity/
+      errorCode/message/stack/context/route/occurredAt/release/
+      country) + clientErrorReportResponseSchema (id + fingerprint
+      korelasyon) + 41/41 frontend yeni test (error-reporter
+      24, api-error-integration 9, error boundary 4+4) +
+      error-events backend 42/42 (önceki 32 + 10 yeni
+      recordClientError testi: tenant/branch/userId türetme,
+      default errorCode TR_FE_0001, actorType portal_user,
+      info/critical stack, PII mask'lı context, occurredAt/release
+      override) + 1266/1266 api regresyon + 46/46 web
+      regresyon. SendBeacon sayfa kapatma anında sync flush
+      yapar; navigator yoksa atlanır. Reporter hiçbir koşulda
+      throw etmez. Cross-module: ErrorEventsService + repository
+      paylaşılır. Sonraki tick: docs/RAG chunk/i18n key parity +
+      Next.js client instrumentation.ts hook (unhandledrejection
+      global yakalama) + sentry/otel adapter opsiyonel +
+      SUPERADMIN panel frontend (GOAL-103) + rate limit
+      (token bucket per user) + retry/backoff stratejisi.
   - GOAL-102 ⏳ partial — core: background job ve entegrasyon
     logları. job-runs modülü (8 endpoint: POST start/POST
     :id/finish/POST :id/retry/GET list/GET summary/GET
@@ -67,16 +69,16 @@
     integration) + failed → dead_letter otomatik terfi
     (attempt >= maxAttempts) + parentRunId retry zinciri +
     durationMs hesabı + PII mask input/output (PiiMasker
-    + truncate >100 key) + attemptsByKey view + dead-letter
-    view + summary aggregate (status + queue + 24h dead +
-    oldestRunning) + 40/40 yeni test + 1306/1306 api
-    regresyon geçti. SUPERADMIN yetkisi audit:log:read.
-    Cross-module: PiiMasker (common/logging); AuditService
-    ileride eklenecek. Sonraki tick: docs/RAG chunk/i18n
-    key parity + DB migration (Prisma) + cross-correlation
-    (ErrorEvents + JobRuns) + auto caller (BullMQ worker
-    integration) + Faz 10+ superadmin panel frontend
-    (GOAL-103) + tenant bazlı job kuyruğu görünümü.
+    - truncate >100 key) + attemptsByKey view + dead-letter
+      view + summary aggregate (status + queue + 24h dead +
+      oldestRunning) + 40/40 yeni test + 1306/1306 api
+      regresyon geçti. SUPERADMIN yetkisi audit:log:read.
+      Cross-module: PiiMasker (common/logging); AuditService
+      ileride eklenecek. Sonraki tick: docs/RAG chunk/i18n
+      key parity + DB migration (Prisma) + cross-correlation
+      (ErrorEvents + JobRuns) + auto caller (BullMQ worker
+      integration) + Faz 10+ superadmin panel frontend
+      (GOAL-103) + tenant bazlı job kuyruğu görünümü.
   - GOAL-103 ⏳ partial — core: superadmin hata merkezi. Status
     yönetimi (new → investigating → resolved → reopened) +
     state machine validation (12 geçerli, geri kalan 422) +
@@ -125,13 +127,13 @@
     email/TCKN/telefon/IBAN) + 1375/1375 api regresyon + tsc
     temiz. Mevcut permission: audit:log:read. Yeni hata kodu:
     VET-ERRNOTE-0001 (422). Cross-module: ErrorEventsService
-    + repository genişletildi. Sonraki tick: docs/RAG chunk/
-    i18n key parity + DB migration (Prisma) + SUPERADMIN panel
-    frontend (atama UI + not editörü + destek bağlantısı modal
-    + audit timeline) + RBAC permission granülerleştirme
-    (atama:write, note:write, support:write) + tenant bazlı
-    hata filtresi iyileştirmesi + visibility=shared tenant
-    portal tarafı açma (FAZ-15+).
+    - repository genişletildi. Sonraki tick: docs/RAG chunk/
+      i18n key parity + DB migration (Prisma) + SUPERADMIN panel
+      frontend (atama UI + not editörü + destek bağlantısı modal
+    - audit timeline) + RBAC permission granülerleştirme
+      (atama:write, note:write, support:write) + tenant bazlı
+      hata filtresi iyileştirmesi + visibility=shared tenant
+      portal tarafı açma (FAZ-15+).
   - GOAL-105 ✅ Güvenlik logları ve alarm kuralları (tamamlandı
     — 2026-07-31, core+docs: 9680ad3). 4 endpoint (GET list
     superadmin / GET summary / GET :id detail / POST client
@@ -164,30 +166,30 @@
     updatedAt) + EffectivePolicy çözümleme (tenantOverride →
     globalOverride → default) + 6 logType enum (audit_log/
     error_event/security_event/job_run/notification/request_log)
-    + 3 archiveStorage enum (hot/cold/none) + DEFAULT_RETENTION
-    _DAYS, DEFAULT_ARCHIVE_AFTER_DAYS, DEFAULT_ARCHIVE_STORAGE
-    (KVKK/UK GDPR uyumlu) + 13 Zod şema + 3 retention target
-    (ErrorEvent/SecurityEvent/JobRun) + sweep orchestration
-    (dryRun + tenant×logType×severity bucket; archive zone ve
-    delete zone ayrı hesaplanır) + Sweep geçmişi (append-only)
-    + SUPERADMIN yetkisi (audit:log:read) + PiiMasker entegrasyonu
-    (redactPii hard-coded true) + scheduled sweep helper
-    (runScheduledSweep; system actor) + ErrorEventsRepository/
-    SecurityEventsRepository/JobRunsRepository expireOlderThan +
-    countOlderThan ekleme (cutoff bazlı süpürme) + 27 yeni test
-    (upsert/getById/getByKey/list/delete/effective 4 senaryo
-    tenantOverride + globalOverride öncelik zinciri + sweep
-    dryRun/3 logType paralel/target yok boş bucket/non-superadmin
-    403/global tenant null süpürme/scheduled sweep/listSweeps
-    /detail 404/non-superadmin 403) + 1438/1438 api regresyon
-    (önceki 1411 → +27 yeni) + tsc temiz + ESLint temiz. 17 yeni
-    dosya. Cross-module: PiiMasker (common/logging) + ErrorEvents/
-    SecurityEvents/JobRunsRepository genişletildi. Sonraki tick:
-    docs/RAG chunk/i18n key parity + DB migration (Prisma) +
-    notification/request_log/audit_log target'ları (Faz 10+ audit
-    modülü) + cold storage adapter (production) + scheduled cron
-    registration + tenant bazlı log retention önizleme UI
-    (Faz 11+ RBAC policy admin paneli).
+    - 3 archiveStorage enum (hot/cold/none) + DEFAULT_RETENTION
+      _DAYS, DEFAULT_ARCHIVE_AFTER_DAYS, DEFAULT_ARCHIVE_STORAGE
+      (KVKK/UK GDPR uyumlu) + 13 Zod şema + 3 retention target
+      (ErrorEvent/SecurityEvent/JobRun) + sweep orchestration
+      (dryRun + tenant×logType×severity bucket; archive zone ve
+      delete zone ayrı hesaplanır) + Sweep geçmişi (append-only)
+    - SUPERADMIN yetkisi (audit:log:read) + PiiMasker entegrasyonu
+      (redactPii hard-coded true) + scheduled sweep helper
+      (runScheduledSweep; system actor) + ErrorEventsRepository/
+      SecurityEventsRepository/JobRunsRepository expireOlderThan +
+      countOlderThan ekleme (cutoff bazlı süpürme) + 27 yeni test
+      (upsert/getById/getByKey/list/delete/effective 4 senaryo
+      tenantOverride + globalOverride öncelik zinciri + sweep
+      dryRun/3 logType paralel/target yok boş bucket/non-superadmin
+      403/global tenant null süpürme/scheduled sweep/listSweeps
+      /detail 404/non-superadmin 403) + 1438/1438 api regresyon
+      (önceki 1411 → +27 yeni) + tsc temiz + ESLint temiz. 17 yeni
+      dosya. Cross-module: PiiMasker (common/logging) + ErrorEvents/
+      SecurityEvents/JobRunsRepository genişletildi. Sonraki tick:
+      docs/RAG chunk/i18n key parity + DB migration (Prisma) +
+      notification/request_log/audit_log target'ları (Faz 10+ audit
+      modülü) + cold storage adapter (production) + scheduled cron
+      registration + tenant bazlı log retention önizleme UI
+      (Faz 11+ RBAC policy admin paneli).
 - **Faz 11 — Dokümantasyon ve AI asistanı temeli** ⏳ sırada
   - GOAL-110 ✅ Sayfa kataloğu (tamamlandı — 2026-07-31, core+docs:
     cfef786). docs/pages/*.yaml envanteri + page_id şeması.
@@ -269,7 +271,7 @@
     anahtar `error`, fazlalık `warning`. JSON parse hatası
     dosya-bazlı `error` üretir. Runner entegrasyonu: 2 yeni
     stat alanı (`overrides`, `i18nLocales`) + `overrides.byRoute
-    .size` düzeltmesi + `route.method ?? "Get"` tip guard
+.size` düzeltmesi + `route.method ?? "Get"` tip guard
     (TypeScript hataları giderildi). Index çıktısına "i18n
     locale: N dosya tarandı" satırı. 10 yeni i18n testi
     (boş dizin, locale yok, düz/nested anahtar, eksik/fazlalık,
@@ -286,10 +288,24 @@
     yapı (kimliksiz) + 4 kullanıcı (2 OWNER + 1 VET + 1 STAFF) +
     2 demo owner + 2 demo patient; idempotent upsert; prod
     guard; env-only parolalar; audit:tenant.seed_pilot.
-  - GOAL-121 ⏳ partial — docs only (57f506d). 10 pilot UAT
-    senaryosu dokümanı (yeni müşteri/hayvan, randevu, muayene,
-    aşı, petshop satışı, tahsilat, ameliyat, yatış, lab, portal).
-    Core (kabul testi scriptleri) FAZ-12+ tick'lerinde.
+  - GOAL-121 ⏳ partial — core: pilot kabul testi altyapısı.
+    tools/acceptance-test modülü (10 senaryo + runner + report
+    + 2 CLI) + 10 senaryo (yeni müşteri/hayvan, randevu, muayene,
+    aşı, petshop satışı, tahsilat, ameliyat, yatış, lab, portal) +
+    UatScenarioConfig/Step/Feedback/Result/RunResult sözleşmesi +
+    placeholder çözümü (self-ref tespiti + URL pattern extract
+    + ownerId/patientId/... alias) + expectField doğrulaması +
+    süre/hata/başarı kayıt + feedback PII mask (email/TCKN/tel/
+    IBAN/kart) + Markdown + JSON rapor (özet tablo + senaryo
+    bloku + başarısız adımlar) + 2 CLI (run + report) + 74/74
+    vitest (config 14 + runner 26 + feedback 17 + report 14 +
+    smoke 3) + tsc temiz. Sonraki tick: docs/RAG chunk/i18n key
+    parity + gerçek pilot ortamda 10 senaryonun canlı çalıştırma
+    + pilot geri bildirim formu (UI) + senaryo başına warm-up/
+    cool-down + senaryolar arası sıralı context (initialContext
+    runner'da mevcut; CLI'a opsiyonel) + cross-tenant pilot
+    (çoklu tenant) + kabul kriteri sözlüğü (her senaryo için
+    PASS koşulu).
   - GOAL-122 ⏳ partial — core: performans ve yük testi altyapısı.
     tools/load-test modülü (config + thresholds + report +
     generator + k6-shared + 2 CLI: validate/report) + 7 senaryo
@@ -309,26 +325,26 @@
     buildReport allPassed + reportToMarkdown tablo + ihlal +
     reportToJson; generator 12: K6_SHARED_TEMPLATE + senaryo
     import + options + check + POST body inline + PI_BODY_REGEX
-    + writeAllScripts + diske yazılan = generated; smoke 1:
-    uçtan uca üretim → summary → evaluate → rapor yazma → dosya
-    okuma doğrulama) + tsc temiz + build temiz + 7 k6 .js
-    dosyası `node --check` ile syntax temiz. Production-ready
-    k6 binary gerekli (winget install k6). Cross-module:
-    PiiMasker (FAZ-10) ile aynı PII regex'leri kullanılır;
-    ErrorEventsService.moduleFromRoute (FAZ-10) ile
-    superadmin/error_center senaryosu entegre. Sonraki tick:
-    docs/RAG chunk üretim dokümanı + i18n key parity +
-    docs/operations/PERFORMANCE.md (k6 kurulumu + env
-    değişkenleri + threshold override) + pilot ortamda gerçek
-    k6 run + rapor ekleme + threshold konfigürabləşdirməsi
-    (env'den override) + senaryo başına warm-up/cool-down +
-    rate limit testi (FAZ-13+) + çoklu-tenant seed ile
-    paralel test (FAZ-14+).
+    - writeAllScripts + diske yazılan = generated; smoke 1:
+      uçtan uca üretim → summary → evaluate → rapor yazma → dosya
+      okuma doğrulama) + tsc temiz + build temiz + 7 k6 .js
+      dosyası `node --check` ile syntax temiz. Production-ready
+      k6 binary gerekli (winget install k6). Cross-module:
+      PiiMasker (FAZ-10) ile aynı PII regex'leri kullanılır;
+      ErrorEventsService.moduleFromRoute (FAZ-10) ile
+      superadmin/error_center senaryosu entegre. Sonraki tick:
+      docs/RAG chunk üretim dokümanı + i18n key parity +
+      docs/operations/PERFORMANCE.md (k6 kurulumu + env
+      değişkenleri + threshold override) + pilot ortamda gerçek
+      k6 run + rapor ekleme + threshold konfigürabləşdirməsi
+      (env'den override) + senaryo başına warm-up/cool-down +
+      rate limit testi (FAZ-13+) + çoklu-tenant seed ile
+      paralel test (FAZ-14+).
   - GOAL-123 ⏳ partial — docs only (57f506d). OWASP ASVS
     doğrulama listesi (kimlik doğrulama + yetkilendirme + IDOR
-    + XSS + CSRF + SQL injection + dosya yükleme + rate limit +
-    tenant izolasyonu). Core (security test scriptleri +
-    severity rapor) FAZ-12+ tick'lerinde.
+    - XSS + CSRF + SQL injection + dosya yükleme + rate limit +
+      tenant izolasyonu). Core (security test scriptleri +
+      severity rapor) FAZ-12+ tick'lerinde.
   - GOAL-124 ⏳ partial — docs only (57f506d). PostgreSQL +
     object storage otomatik yedekleme prosedürü + RPO/RTO
     hedefleri dokümanı. Core (backup/restore script + gerçek

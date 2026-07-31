@@ -12,10 +12,7 @@
 import { describe, expect, it } from "vitest";
 
 import { SCENARIOS } from "../src/config.js";
-import {
-  buildReport,
-  runScenario,
-} from "../src/index.js";
+import { buildReport, runScenario } from "../src/index.js";
 import type {
   HttpMethod,
   UatFetch,

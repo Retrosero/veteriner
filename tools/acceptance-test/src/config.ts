@@ -174,8 +174,7 @@ export const SCENARIOS: ReadonlyArray<UatScenarioConfig> = [
   {
     key: "vaccination",
     title: "Asi uygulamasi ve asi karti",
-    description:
-      "Veteriner: asi uygulama kaydi ac, asi kartini goruntule.",
+    description: "Veteriner: asi uygulama kaydi ac, asi kartini goruntule.",
     module: "vaccination",
     actorRole: "VETERINARIAN",
     priority: 2,
@@ -245,8 +244,7 @@ export const SCENARIOS: ReadonlyArray<UatScenarioConfig> = [
   {
     key: "collection",
     title: "Tahsilat",
-    description:
-      "Kasa: tahsilat kaydi ac ve dogrula.",
+    description: "Kasa: tahsilat kaydi ac ve dogrula.",
     module: "payment",
     actorRole: "STAFF",
     priority: 1,
@@ -278,8 +276,7 @@ export const SCENARIOS: ReadonlyArray<UatScenarioConfig> = [
   {
     key: "surgery",
     title: "Ameliyat planlama ve tamamlama",
-    description:
-      "Veteriner: ameliyat plani ac, baslat, tamamla.",
+    description: "Veteriner: ameliyat plani ac, baslat, tamamla.",
     module: "surgery",
     actorRole: "VETERINARIAN",
     priority: 2,
@@ -317,8 +314,7 @@ export const SCENARIOS: ReadonlyArray<UatScenarioConfig> = [
   {
     key: "hospitalization",
     title: "Yatis ve kafes yonetimi",
-    description:
-      "Veteriner: yatis ac, kafese yerlestir, taburcu et.",
+    description: "Veteriner: yatis ac, kafese yerlestir, taburcu et.",
     module: "hospitalization",
     actorRole: "VETERINARIAN",
     priority: 2,
@@ -356,8 +352,7 @@ export const SCENARIOS: ReadonlyArray<UatScenarioConfig> = [
   {
     key: "laboratory",
     title: "Laboratuvar istegi",
-    description:
-      "Veteriner: lab istegi ac, numune al, tamamla.",
+    description: "Veteriner: lab istegi ac, numune al, tamamla.",
     module: "lab",
     actorRole: "VETERINARIAN",
     priority: 2,

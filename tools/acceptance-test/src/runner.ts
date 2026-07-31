@@ -82,24 +82,25 @@ export const PLACEHOLDER_NOT_FOUND = "UAT-PLACEHOLDER-0002";
 /**
  * Path/body icindeki {xxx} placeholder'larini context map'i
  * kullanarak cozer. Cozulemeyen anahtar hata firlatir.
+ * Self-ref tespiti: degerin kendisi de placeholder formatinda
+ * ise ve icerideki anahtar disaridaki ile ayniysa hata.
  */
 export function resolvePlaceholders(
   input: string,
   context: Readonly<Record<string, string>>,
 ): string {
-  // {xxx} desenlerini bul ve sirayla degistir. Dairekisel
-  // referans tespiti: ayni placeholder kendi degerine
-  // referans veriyorsa hata firlat (selfRefSet ile takip).
-  const seen = new Set<string>();
   return input.replace(/\{([a-zA-Z0-9_]+)\}/g, (_match, key: string) => {
-    if (seen.has(key)) {
-      throw new Error(`${PLACEHOLDER_SELF_REF}: self-ref ${key}`);
-    }
     const val = context[key];
     if (val === undefined || val === "") {
       throw new Error(`${PLACEHOLDER_NOT_FOUND}: ${key}`);
     }
-    seen.add(key);
+    // Self-ref: deger placeholder formatinda ve ayni anahtar
+    if (val.length > 2 && val.startsWith("{") && val.endsWith("}")) {
+      const inner = val.slice(1, -1);
+      if (inner === key) {
+        throw new Error(`${PLACEHOLDER_SELF_REF}: ${key}`);
+      }
+    }
     return val;
   });
 }
@@ -147,11 +148,11 @@ export function readField(body: unknown, path: string): unknown {
   return cur;
 }
 
-/** Alan truthy mi (string icin bos degil, obje/array icin dolu). */
+/** Alan truthy mi (string icin bos degil, obje/array icin dolu, sayi icin pozitif). */
 export function isTruthyField(value: unknown): boolean {
   if (value === null || value === undefined) return false;
   if (typeof value === "string") return value.length > 0;
-  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value === "number") return Number.isFinite(value) && value !== 0;
   if (typeof value === "boolean") return value;
   if (Array.isArray(value)) return value.length > 0;
   if (typeof value === "object") return Object.keys(value).length > 0;
@@ -174,16 +175,49 @@ const EXTRACT_FIELDS: ReadonlyArray<string> = [
   "vaccineApplicationId",
 ];
 
+/**
+ * URL son eki -> context anahtari eslemesi. create_X
+ * response'undaki id ayni zamanda X baglaminda kullanilir.
+ * Ornek: POST /api/v1/clinic/owners -> context.ownerId.
+ */
+const URL_TO_CONTEXT: ReadonlyArray<readonly [RegExp, string]> = [
+  [/owners\/?$/, "ownerId"],
+  [/patients\/?$/, "patientId"],
+  [/appointments\/?$/, "appointmentId"],
+  [/examinations\/?$/, "examinationId"],
+  [/vaccines\/applications\/?$/, "vaccineApplicationId"],
+  [/sales\/?$/, "saleId"],
+  [/payments\/?$/, "paymentId"],
+  [/surgery-plans\/?$/, "surgeryId"],
+  [/hospitalizations\/?$/, "hospitalizationId"],
+  [/lab-orders\/?$/, "labOrderId"],
+  [/portal-appointments\/requests\/?$/, "portalRequestId"],
+];
+
 /** Body'den standart id alanlarini toplayip context'e yazar. */
 export function extractIds(
   body: unknown,
   context: Record<string, string>,
+  url?: string,
 ): void {
   if (!body || typeof body !== "object") return;
   for (const f of EXTRACT_FIELDS) {
     const v = readField(body, f);
     if (typeof v === "string" && v.length > 0) {
       context[f] = v;
+    }
+  }
+  // URL'den ek parent baglami: create response'taki id,
+  // sonraki adimin parent placeholder'i olarak kullanilir.
+  if (url && typeof body === "object") {
+    const idField = readField(body, "id");
+    if (typeof idField === "string" && idField.length > 0) {
+      for (const [pattern, key] of URL_TO_CONTEXT) {
+        if (pattern.test(url)) {
+          context[key] = idField;
+          break;
+        }
+      }
     }
   }
 }
@@ -254,7 +288,8 @@ async function runStep(
   let resolvedBody: unknown = step.body;
   try {
     url = resolvePlaceholders(step.path, context);
-    resolvedBody = step.body === undefined ? undefined : resolveDeep(step.body, context);
+    resolvedBody =
+      step.body === undefined ? undefined : resolveDeep(step.body, context);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return {
@@ -276,7 +311,7 @@ async function runStep(
       headers: buildAuthHeaders(auth),
     });
     const durationMs = now().getTime() - startedAt.getTime();
-    extractIds(res.body, context);
+    extractIds(res.body, context, fullUrl);
     const fieldFound =
       step.expectField === undefined
         ? null
@@ -364,7 +399,8 @@ export async function runScenario(
     finishedAt: finishedAt.toISOString(),
     totalDurationMs: finishedAt.getTime() - startedAt.getTime(),
     steps: stepResults,
-    allPassed: failedCount === 0 && stepResults.length === scenario.steps.length,
+    allPassed:
+      failedCount === 0 && stepResults.length === scenario.steps.length,
     passedCount,
     failedCount,
     unnecessaryCount,

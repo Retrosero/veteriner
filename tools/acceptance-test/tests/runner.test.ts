@@ -72,15 +72,13 @@ describe("resolvePlaceholders", () => {
   });
 
   it("birden fazla placeholder", () => {
-    expect(
-      resolvePlaceholders("{a}/{b}", { a: "1", b: "2" }),
-    ).toBe("1/2");
+    expect(resolvePlaceholders("{a}/{b}", { a: "1", b: "2" })).toBe("1/2");
   });
 
   it("self-ref tespit edilir", () => {
-    expect(() =>
-      resolvePlaceholders("{x}", { x: "{x}" }),
-    ).toThrow(PLACEHOLDER_SELF_REF);
+    expect(() => resolvePlaceholders("{x}", { x: "{x}" })).toThrow(
+      PLACEHOLDER_SELF_REF,
+    );
   });
 
   it("bulunamayan placeholder hata firlatir", () => {
@@ -101,10 +99,7 @@ describe("resolveDeep", () => {
 
   it("ic ice objeleri cozer", () => {
     expect(
-      resolveDeep(
-        { a: { b: ["{x}", "{y}"] } },
-        { x: "1", y: "2" },
-      ),
+      resolveDeep({ a: { b: ["{x}", "{y}"] } }, { x: "1", y: "2" }),
     ).toEqual({ a: { b: ["1", "2"] } });
   });
 
@@ -201,7 +196,8 @@ describe("buildAuthHeaders", () => {
 
 describe("runScenario", () => {
   it("iki basarili adim, placeholder cozumu ve id toplama", async () => {
-    const calls: Array<{ method: HttpMethod; url: string; body?: unknown }> = [];
+    const calls: Array<{ method: HttpMethod; url: string; body?: unknown }> =
+      [];
     const fetchFn: UatFetch = async (method, url, init) => {
       calls.push({ method, url, body: init.body });
       if (url.endsWith("/owners")) {
@@ -266,17 +262,23 @@ describe("runScenario", () => {
   });
 
   it("placeholder bulunamayinca hata mesajinda hata kodu var", async () => {
-    // body'de {ownerId} var ama fetch'ten id donmez
+    // 1. adim basarili (status 201 + expectField yok sayilir),
+    // body bos doner; 2. adim {ownerId} bulamaz ve kirilir.
+    const scenarioNoExpect: UatScenarioConfig = {
+      ...baseScenario,
+      steps: [
+        { ...baseScenario.steps[0], expectField: undefined } as UatStep,
+        baseScenario.steps[1],
+      ],
+    };
     const fetchFn: UatFetch = async () => ({ status: 201, body: {} });
     const res = await runScenario({
-      scenario: baseScenario,
+      scenario: scenarioNoExpect,
       baseUrl: "http://api.test",
       auth,
       fetchFn,
     });
-    expect(res.steps[0].passed).toBe(false);
-    // expectField="id" yok, o yuzden fieldFound null
-    // ama status dogru; id'yi extract etmeyizse 2. adim placeholder hata verir
+    expect(res.steps[0].passed).toBe(true);
     expect(res.steps[1].error).toMatch(PLACEHOLDER_NOT_FOUND);
   });
 

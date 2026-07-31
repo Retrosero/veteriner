@@ -56,7 +56,12 @@ async function main(): Promise<void> {
   // eslint-disable-next-line no-console
   console.log(
     JSON.stringify(
-      { in: inFile, md: mdFile, json: jsonFile, scenarios: result.scenarios.length },
+      {
+        in: inFile,
+        md: mdFile,
+        json: jsonFile,
+        scenarios: result.scenarios.length,
+      },
       null,
       2,
     ),
