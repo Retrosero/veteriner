@@ -6,22 +6,7 @@
   - GOAL-072 ✅ Tahsilat (tamamlandı — 2026-07-30, core: 564dff3, docs/i18n: bu commit). 4 ana endpoint (POST/GET list/GET :id/POST :id/reverse); 2 sourceType (clinic_sale/petshop_sale) + 4 method (cash/card/bank_transfer/other); kısmi tahsilat (toplam > sale → 422 VET-PAYMENT-0002); ters kayıt (PaymentReversal — GOAL-073 docs ayrı). Audit udit:payment.{create,reverse}. Kasa etkisi Faz 8 (GOAL-074).
   - GOAL-073 ✅ Tahsilat iptal ve ters kayıt (tamamlandı — 2026-07-30, core: d18d45a, docs/i18n: bu commit). 3 reversal endpoint (GET reversals list/GET :id/GET :id/summary); 5 reasonCode (refund/customer_request/error/duplicate/other); çoklu ters kayıt (kısmi düzeltme, totalReversed <= paymentAmount); kasa etkisi 'out' (Faz 7 cash-register entegrasyonu). Audit udit:payment.reverse (warning). Ters kayıt oluşturma POST /payments/{id}/reverse (GOAL-072).
   - GOAL-075 ✅ Müşteri borç ve alacak görünümü (tamamlandı — 2026-07-30, core: 903870b, docs/i18n: bu commit). 2 endpoint (GET owner balance/GET owner transactions); atomic hesaplama (cache'lenmez); totalDebit (tahsil edilmemiş), totalCredit (refund credit + manuel), netBalance (negatif = kredi bakiye); 6 transaction source. Faz 7 tahsilat (GOAL-072) + ters kayıt (GOAL-073) + petshop refund credit (GOAL-065) + manuel dahil. Audit yok (salt okunur).
-  - GOAL-077 ⏳ partial — core: e-SMM adapter sözleşmesi. esmm
-    modülü (6 endpoint: create/list/get/submit/retry/cancel) +
-    3 belge türü (e_fatura / e_arsiv / e_irsaliye) + 6 durum
-    (draft/pending/accepted/rejected/failed/cancelled) +
-    EsmmAdapter interface + MockEsmmAdapter implementasyonu
-    + manuel belge numarası (MVP) + idempotency key
-    (mock duplicate üretmez) + provider cancel hook + 10/10
-    yeni test + 951/951 api testi geçti. Hata kodları
-    VET-ESMM-0001/0002/0003/0004/0005. Mevcut permission
-    audit:log:read kullanıldı. Audit
-    audit:esmm_document.create/submit/retry/cancel.
-    Sonraki tick: docs/RAG chunk/i18n key parity + DB
-    migration (Prisma) + gerçek provider implementasyonu
-    (Faz 13+) + Faz 7 kasa etkisi (GOAL-074 ile entegrasyon)
-    + Faz 7 e-SMM provider adapter (Faz 13+) + Faz 13
-    resmî entegrasyonlar.
+  - GOAL-077 ✅ e-SMM adaptör sözleşmesi (tamamlandı — 2026-07-30, core: de5b8e4, docs/i18n: bu commit). 6 endpoint (POST/GET list/GET :id/POST :id/submit/POST :id/retry/POST :id/cancel); 3 documentType (invoice/dispatch/receipt); state machine draft→pending→submitted→accepted|rejected|failed; pilot/mock (Faz 13 GOAL-130 gerçek GİB); Audit udit:esmm.document.{create,submit,retry,cancel}. FAZ-7 KAPANDI.
   - GOAL-072 (not) — başka session tarafından payments modülü
     genişletildi (reversedAmount + effectiveAmount alanları
     eklendi; kısmi ters kayıt / etkin tutar mantığı). Bu

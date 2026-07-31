@@ -1328,6 +1328,49 @@ generated_at: "2026-07-30"
                 api.get._api_v1_reports_open-balances,
                 api.post._api_v1_reports_export]
 
+- chunk_id: flow-esmm
+  type: flow
+  source: packages/contracts/src/esmm.ts
+  entity: esmm_document
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "e-SMM Belge Adaptör Sözleşmesi (Pilot)"
+  content: |
+    1. e-SMM (e-Belge) adaptör sözleşmesi — FAZ-7'de
+       pilot/mock. Gerçek GİB entegrasyonu Faz 13
+       (GOAL-130).
+    2. `documentType`: `invoice` (e-Fatura) | `dispatch`
+       (e-İrsaliye) | `receipt` (e-Makbuz).
+    3. Status: `draft` → `pending` → `submitted` →
+       `accepted` | `rejected` | `failed`. `cancelled`
+       ayrıca.
+    4. `submit` → mock pilot (Faz 13 GİB API).
+    5. `retry` → `failed`/`rejected` → `pending`,
+       `attemptCount++`.
+    6. `cancel` → `draft`/`pending`/`failed` → `cancelled`.
+       `accepted` iptal edilemez (GİB tarafı kilitli).
+    7. `sourceType`: `clinic_sale` | `petshop_sale` | ...
+    8. Audit: `audit:esmm.document.{create,submit,retry,
+       cancel}` (info/warning).
+    9. Tenant-scoped; cross-tenant → 404.
+    10. Faz 13'te gerçek GİB API entegrasyonu: UBL XML,
+        digital signature, GİB API endpoint'leri.
+  keywords: [e-SMM, e-Fatura, e-İrsaliye, e-Makbuz, GİB,
+             belge, documentType, submit, retry, cancel,
+             pilot, mock, UBL, XML, adaptör]
+  related_chunks: [flow-clinic-sale, flow-petshop-sale,
+                   flow-payment, error-VET-ESMM-0001]
+  related_pages: []
+  related_api: [api.post._api_v1_esmm_documents,
+                api.get._api_v1_esmm_documents,
+                api.get._api_v1_esmm_documents__id_,
+                api.post._api_v1_esmm_documents__id_submit,
+                api.post._api_v1_esmm_documents__id_retry,
+                api.post._api_v1_esmm_documents__id_cancel]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
