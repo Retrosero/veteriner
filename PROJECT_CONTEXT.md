@@ -280,3 +280,66 @@
     page version freshness kontrolü (katalog) + rate limit/
     timeout + Markdown lint (markdownlint) + CI strict modu
     (`--strict` ile uyarıları hata say).
+- **Faz 12 — Pilot, güvenlik ve üretime hazırlık** ⏳ sırada
+  - GOAL-120 ✅ Pilot tenant kurulumu (tamamlandı — 2026-07-31,
+    core+docs: 8bef0c2). PilotSeedService + PILOT_SEED sabit
+    yapı (kimliksiz) + 4 kullanıcı (2 OWNER + 1 VET + 1 STAFF) +
+    2 demo owner + 2 demo patient; idempotent upsert; prod
+    guard; env-only parolalar; audit:tenant.seed_pilot.
+  - GOAL-121 ⏳ partial — docs only (57f506d). 10 pilot UAT
+    senaryosu dokümanı (yeni müşteri/hayvan, randevu, muayene,
+    aşı, petshop satışı, tahsilat, ameliyat, yatış, lab, portal).
+    Core (kabul testi scriptleri) FAZ-12+ tick'lerinde.
+  - GOAL-122 ⏳ partial — core: performans ve yük testi altyapısı.
+    tools/load-test modülü (config + thresholds + report +
+    generator + k6-shared + 2 CLI: validate/report) + 7 senaryo
+    kataloğu (patient_search/calendar/patient_timeline/
+    stock_query/pos/report/error_center; her biri API steps +
+    threshold spec + profil önerisi) + 4 yük profili (smoke/
+    pilot/first_100/stress) + 7 k6 .js scripti (src/k6/ altında
+    paylaşılan shared.js + her senaryo için GET/POST/PATCH/PUT/
+    DELETE helper) + k6 shared.js (authHeaders +
+    assertTenantBoundary + maskString + vetGet/Post/Put/Patch/
+    Delete) + tenant boundary check (X-Tenant-Id response
+    header doğrulaması) + PII no-leak regex check + 55/55
+    vitest testi (config 16: senaryo sayısı + key unique +
+    path /api/v1 + POST body + profil shape; thresholds 18:
+    readMetricNumber + extractMetrics RPS + checkThreshold
+    p95/p99/errorRate/minRps + evaluateScenario; report 8:
+    buildReport allPassed + reportToMarkdown tablo + ihlal +
+    reportToJson; generator 12: K6_SHARED_TEMPLATE + senaryo
+    import + options + check + POST body inline + PI_BODY_REGEX
+    + writeAllScripts + diske yazılan = generated; smoke 1:
+    uçtan uca üretim → summary → evaluate → rapor yazma → dosya
+    okuma doğrulama) + tsc temiz + build temiz + 7 k6 .js
+    dosyası `node --check` ile syntax temiz. Production-ready
+    k6 binary gerekli (winget install k6). Cross-module:
+    PiiMasker (FAZ-10) ile aynı PII regex'leri kullanılır;
+    ErrorEventsService.moduleFromRoute (FAZ-10) ile
+    superadmin/error_center senaryosu entegre. Sonraki tick:
+    docs/RAG chunk üretim dokümanı + i18n key parity +
+    docs/operations/PERFORMANCE.md (k6 kurulumu + env
+    değişkenleri + threshold override) + pilot ortamda gerçek
+    k6 run + rapor ekleme + threshold konfigürabləşdirməsi
+    (env'den override) + senaryo başına warm-up/cool-down +
+    rate limit testi (FAZ-13+) + çoklu-tenant seed ile
+    paralel test (FAZ-14+).
+  - GOAL-123 ⏳ partial — docs only (57f506d). OWASP ASVS
+    doğrulama listesi (kimlik doğrulama + yetkilendirme + IDOR
+    + XSS + CSRF + SQL injection + dosya yükleme + rate limit +
+    tenant izolasyonu). Core (security test scriptleri +
+    severity rapor) FAZ-12+ tick'lerinde.
+  - GOAL-124 ⏳ partial — docs only (57f506d). PostgreSQL +
+    object storage otomatik yedekleme prosedürü + RPO/RTO
+    hedefleri dokümanı. Core (backup/restore script + gerçek
+    restore testi) FAZ-12+ tick'lerinde.
+  - GOAL-125 ⏳ partial — docs only (57f506d). Tenant veri
+    dışa aktarma prosedürü + izin matrisi + audit gereksinimleri
+    dokümanı. Core (export script + test) FAZ-12+ tick'lerinde.
+  - GOAL-126 ✅ KVKK ve veri yaşam döngüsü (tamamlandı —
+    2026-07-31, core+docs: 8bef0c2). KVKK service
+    (anonymize/erase/restrict/export) + tenant kvkk
+    endpoint'leri + audit:kvkk.*.
+  - GOAL-127 ✅ Production release ve rollback (tamamlandı —
+    2026-07-31, core+docs: 8bef0c2). Release checklist +
+    rollback runbook + smoke test gate.

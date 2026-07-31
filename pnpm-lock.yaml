@@ -454,6 +454,28 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@20.19.43)(jsdom@25.0.1)(terser@5.49.0)
 
+  tools/load-test:
+    dependencies:
+      js-yaml:
+        specifier: ^4.1.0
+        version: 4.3.0
+    devDependencies:
+      '@types/js-yaml':
+        specifier: ^4.0.9
+        version: 4.0.9
+      '@types/node':
+        specifier: ^20.11.0
+        version: 20.19.43
+      tsx:
+        specifier: ^4.7.0
+        version: 4.23.1
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@20.19.43)(jsdom@25.0.1)(terser@5.49.0)
+
   tools/rag-chunk-producer:
     dependencies:
       js-yaml:
