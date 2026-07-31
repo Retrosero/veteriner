@@ -482,3 +482,21 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
     tahsilat (GOAL-072) ile sale üzerinden payment bağlantısı
     + Faz 7 kısmi tahsilat (GOAL-073) + Faz 8 ameliyat (GOAL-080)
     ile surgery order sourceType.
+
+  - GOAL-072 ⏳ partial — core: tahsilat (payment). payments modülü
+    (4 endpoint: create/list/get/reverse) + 4 yöntem (cash/card/
+    bank_transfer/other) + 2 sourceType (clinic_sale/petshop_sale)
+    + idempotency key (aynı key + aynı body → mevcut kayıt,
+    farklı body → 409 VET-PAYMENT-0005) + ters kayıt (reversal)
+    + 14/14 yeni test + 941/941 api testi geçti. Decimal
+    normalizasyon 4 ondalık; amount=0 reddedilir 422
+    VET-PAYMENT-0006. Kısmi tahsilat: aynı sourceId'ye birden
+    fazla payment bağlanabilir (toplam kontrolü Faz 7 kısmi
+    tahsilat GOAL-073'te detaylanır). Audit
+    audit:payment.create/reverse. Mevcut permission'lar
+    kullanıldı: clinic:payment:create/read/reverse. Sonraki
+    tick: docs/RAG chunk/i18n key parity + DB migration
+    (Prisma) + sale service'lerle cross-module validasyon
+    (clinic_sale / petshop_sale varlık kontrolü) + Faz 7
+    kısmi tahsilat (GOAL-073) + Faz 7 kasa/gün sonu (GOAL-074)
+    + Faz 7 müşteri borç/alacak (GOAL-075).
