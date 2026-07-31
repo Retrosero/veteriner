@@ -315,6 +315,33 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
     iade ayrımı (sales return vs purchase return) + GOAL-067 dış
     lokasyon stok uyarılarına return lot bilgisi bağlama.
 
+  - GOAL-066 ⏳ partial — core: klinik tüketimden otomatik stok
+    düşümü. clinical-consumption modülü (5 context:
+    examination/prescription/vaccination/surgery/hospitalization
+    + recorded/cancelled durum + 4 endpoint: POST/GET list/GET
+    :id/POST :id/cancel + her satır için
+    StockMovementsService.createSystemMovement(type='clinical_use'
+    veya 'vaccination') + cancel'de her satır için
+    reverseMovement ile ters kayıt + vaccination için lot zorunlu
+    + service/arşivli ürün reddi + cross-tenant 403) +
+    prescriptions.service entegrasyonu (PrescriptionItem'a
+    opsiyonel productId+dispensedQuantity+dispensedLotId eklendi;
+    dispense hook'unda ürün referansı olan kalemler için
+    idempotent klinik tüketim kaydı oluşturulur; hata olursa
+    reçete dispans yine başarılı) + 7 yeni hata kodu
+    VET-CLINICAL_CONSUMPTION-0001-0007 + 4 yeni permission
+    (inventory:clinical_consumption:read/create/cancel/export) +
+    26/26 yeni test + 836/836 toplam api testi geçti. Audit
+    audit:clinical_consumption.create (info) + .cancel (warning).
+    Sonraki tick: docs/RAG chunk/i18n key parity + DB migration
+    (Prisma) + ameliyat (surgery) + yatış (hospitalization)
+    modüllerinden otomatik tüketim hook'ları + Faz 5 aşı
+    uygulaması (vaccinations) entegrasyonu (vaccine.application.
+    createApplication'da otomatik tüketim) + reçetede ürün
+    referansı zorunluluğu (şu an opsiyonel) + klinik tüketim
+    listeleme için React UI + düşük stok uyarılarına
+    (GOAL-067) klinik tüketim metrikleri.
+
   - GOAL-065 ⏳ partial — core: petshop satış iadesi. petshop-sale-returns
     modülü (6 endpoint: create/list/get/update/complete/cancel) + 3
     durum (draft/completed/cancelled) + orijinal sale'a bağlı satır
