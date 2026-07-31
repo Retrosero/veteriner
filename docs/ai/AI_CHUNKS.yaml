@@ -1128,6 +1128,45 @@ generated_at: "2026-07-30"
                 api.post._api_v1_clinic_sales__id_complete,
                 api.post._api_v1_clinic_sales__id_cancel]
 
+- chunk_id: flow-payment
+  type: flow
+  source: packages/contracts/src/payment.ts
+  entity: payment
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Tahsilat Akışı (Payment)"
+  content: |
+    1. Tahsilat (Payment). `sourceType`: `clinic_sale`
+       (GOAL-071) | `petshop_sale` (GOAL-064).
+    2. `method`: `cash` | `card` | `bank_transfer` | `other`.
+    3. Aynı sale'a birden fazla payment bağlanabilir
+       (kısmi tahsilat). Toplam kontrolü Faz 7+
+       (VET-PAYMENT-0002).
+    4. Ters kayıt (POST /:id/reverse): `PaymentReversal`
+       oluşturulur (GOAL-073). Kasa etkisi `out` (gider).
+    5. Zaten ters kaydı olan payment → 409 VET-PAYMENT-0003.
+    6. Audit: `audit:payment.{create,reverse}` (info/
+       warning). Reverse'de `reason` + `reasonCode` +
+       `cashRegisterEffect` payload.
+    7. Faz 7 kısmi tahsilat policy; Faz 7+ tahsilat iptal
+       akışı (GOAL-073 payment-reversal).
+    8. Faz 8 kasa etkisi (GOAL-074 cash-register) ile
+       entegre.
+  keywords: [tahsilat, payment, ödeme, nakit, kart, banka
+             transferi, kısmi tahsilat, kasa, ters kayıt]
+  related_chunks: [flow-clinic-sale, flow-petshop-sale,
+                   flow-payment-reversal, flow-cash-register,
+                   error-VET-PAYMENT-0001, error-VET-PAYMENT-0002,
+                   error-VET-PAYMENT-0003]
+  related_pages: []
+  related_api: [api.post._api_v1_payments,
+                api.get._api_v1_payments,
+                api.get._api_v1_payments__id_,
+                api.post._api_v1_payments__id_reverse]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md

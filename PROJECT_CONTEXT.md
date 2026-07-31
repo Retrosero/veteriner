@@ -168,24 +168,7 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
   - GOAL-067 ✅ Düşük stok ve SKT uyarıları (tamamlandı — 2026-07-30, core: d6765df + fix 690ba90, docs/i18n: bu commit). 6 endpoint (low-stock/expiring-lots/refresh/summary + 2 ack); düşük stok severity (warning: qty>0&<=reorder, critical: qty<=min veya <=0); SKT severity (warning: 8-30, critical: 1-7, expired: ≤0 gün); acknowledge idempotent (mevcut acknowledgedAt korunur); refresh idempotent. Audit udit:stock_alert.{refresh,low_stock.acknowledge,expiring_lot.acknowledge}. Faz 7+ dispatch + Faz 8 dashboard planı.
   - GOAL-070 ✅ Fiyat listeleri ve hizmet ücretleri (tamamlandı — 2026-07-30, core: 32ceb6c, docs/i18n: bu commit). 11 endpoint (6 list + 4 item + 1 product price resolve); 3 liste türü (standard/promotional/contract); aktif liste zincirleme (aynı type+currency deaktive); müşteri-özel fiyat (ownerId) + miktar kademeli (minQuantity); çözümleme sırası contract_owner → standard/promotional → product default. Audit udit:price_list.* + udit:price_list_item.*. KDV/GST ülke adaptörü Faz 7'de.
   - GOAL-071 ✅ Klinik satış taslağı (tamamlandı — 2026-07-30, core: 1e6bf50, docs/i18n: bu commit). 6 endpoint (POST/GET list/GET :id/PATCH/POST complete/POST cancel); state draft→completed|cancelled; 6 sourceType (examination/prescription/lab_test/imaging/surgery/order) + sourceId zorunlu; line item (productId × quantity × unitPrice + priceListItemId ref); complete ile Faz 7 Payment (GOAL-072, paymentMethod); cancel ile Faz 7 PaymentReversal (GOAL-073). Stok düşümü YOK (GOAL-066 ayrı akış). Audit udit:clinic_sale.{create,update,complete,cancel}. Tam iade Faz 7+ clinic-sale-returns.
-  - GOAL-072 ⏳ partial — core: tahsilat (payment). payments modülü
-    (4 endpoint: create/list/get/reverse) + 4 yöntem (cash/card/
-    bank_transfer/other) + 2 sourceType (clinic_sale/petshop_sale)
-    + idempotency key (aynı key + aynı body → mevcut kayıt,
-    farklı body → 409 VET-PAYMENT-0005) + ters kayıt (reversal)
-    + 14/14 yeni test + 941/941 api testi geçti. Decimal
-    normalizasyon 4 ondalık; amount=0 reddedilir 422
-    VET-PAYMENT-0006. Kısmi tahsilat: aynı sourceId'ye birden
-    fazla payment bağlanabilir (toplam kontrolü Faz 7 kısmi
-    tahsilat GOAL-073'te detaylanır). Audit
-    audit:payment.create/reverse. Mevcut permission'lar
-    kullanıldı: clinic:payment:create/read/reverse. Sonraki
-    tick: docs/RAG chunk/i18n key parity + DB migration
-    (Prisma) + sale service'lerle cross-module validasyon
-    (clinic_sale / petshop_sale varlık kontrolü) + Faz 7
-    kısmi tahsilat (GOAL-073) + Faz 7 kasa/gün sonu (GOAL-074)
-    + Faz 7 müşteri borç/alacak (GOAL-075).
-
+  - GOAL-072 ✅ Tahsilat (tamamlandı — 2026-07-30, core: 564dff3, docs/i18n: bu commit). 4 ana endpoint (POST/GET list/GET :id/POST :id/reverse); 2 sourceType (clinic_sale/petshop_sale) + 4 method (cash/card/bank_transfer/other); kısmi tahsilat (toplam > sale → 422 VET-PAYMENT-0002); ters kayıt (PaymentReversal — GOAL-073 docs ayrı). Audit udit:payment.{create,reverse}. Kasa etkisi Faz 8 (GOAL-074).
   - GOAL-073 ⏳ partial — core: tahsilat iptal ve ters kayıt
     (kısmi ters kayıt + neden kodu + kasa etkisi + OWNER
     yetkisi). `payment-reversal` sözleşmesi: PaymentReversal +
