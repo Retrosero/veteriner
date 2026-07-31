@@ -414,3 +414,51 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
     için React UI + reaktif hook'lar (stok hareketi
     oluşturulduğunda / lot arşivlendiğinde otomatik
     refresh tetikleme).
+- **Faz 7 — Finans** ⏳ sırada
+  - GOAL-070 ⏳ partial — core: fiyat listeleri ve hizmet
+    ücretleri altyapısı. pricing modülü (`pricing` sözleşmesi:
+    PriceList + PriceListItem + 3 tür standard/promotional/
+    customer_specific + 4 durum draft/active/expired/archived +
+    item append-only 3 durum active/superseded/cancelled +
+    PriceListCreateInput/UpdateInput/ItemCreateInput/ItemUpdateInput
+    + ProductPriceResolution) + `pricing.types.ts`
+    (PriceListRecord + PriceListItemRecord + toPriceList/
+    toPriceListItem + normalizePricingDecimal + isListEffectiveAt
+    + isItemEffectiveAt + PRICE_LIST_TYPE_PRIORITY) +
+    PricingRepository (in-memory; listId + itemId tenant-scoped
+    + byProduct aktif indeks + itemsByList + countActiveItemsForList
+    + findActiveItemByProductInList unique kontrol) +
+    PricingService (10 public method; createPriceList +
+    listPriceLists + getPriceList + updatePriceList +
+    activatePriceList + archivePriceList + addItem + listItems +
+    updateItem append-only + cancelItem + resolveProductPrice
+    ürün tür önceliği resolver; cross-tenant 403 VET-AUTHZ-0001,
+    customer_specific zorunlu customerId 422 VET-PRICING-0005,
+    customerId yalnız customer_specific 422 VET-PRICING-0005,
+    geçersiz tarih 422 VET-PRICING-0004, draft olmayan update 409
+    VET-PRICING-0006, arşivli update 409 VET-PRICING-0007,
+    bulunamadı 404 VET-PRICING-0001, ürün yok 404 VET-PRICING-0008,
+    arşivli ürün 422 VET-PRICING-0009, aktif satır tekrarı 409
+    VET-PRICING-0003, geçersiz fiyat 422 VET-PRICING-0010,
+    aktifleştirme satır yok 422 VET-PRICING-0010, aday bulunamadı
+    404 VET-PRICING-0011; tenant izolasyonu) +
+    PricingController + PricingProductController (11 REST endpoint;
+    Zod validation + PermissionsGuard) + PricingModule
+    (ProductsModule bağımlılığı) + 5 yeni permission
+    pricing:price_list:read/create/update/archive/export
+    (PERMISSION_CATALOG.yaml + permission-spec.ts union +
+    OWNER +4, VETERINARIAN +3) + 11 yeni hata kodu
+    VET-PRICING-0001-0011 (ERROR_CATALOG.md güncellendi;
+    0002 atlandı; PRICING modülü eklendi) + 35/35 yeni test +
+    910/910 api testi geçti (regresyon yok). Audit
+    `audit:price_list.create/update/activate/archive` +
+    `audit:price_list_item.create/amend/cancel`. Cross-module:
+    ProductsService (ürün varlık/arşiv kontrolü). Sonraki
+    tick: docs/RAG chunk/i18n key parity + DB migration
+    (Prisma) + Faz 7 klinik satış taslak (GOAL-071) ile
+    saleLine priceListItemId referansı + Faz 7 tahsilat
+    (GOAL-072) ile sale line üzerinden fiyat çözümleme +
+    müşteriye özel fiyat için portal ownerId erişim kontrolü +
+    aktif listede düzeltme (yeni liste zinciri UI) + Faz 8
+    React UI + fiyat listesi export (CSV/PDF) + ülke adaptörü
+    ile KDV/GBP eşleme.
