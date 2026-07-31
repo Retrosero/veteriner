@@ -649,3 +649,22 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
 - Cross-tenant idor → 404, cross-tenant create → 403 VET-AUTHZ-0001
 - Test: 10 yeni spec (10/10 geçti), full api regression 1000/1000 testler geçti, 0 hata, tsc temiz
 - Docs/RAG chunks/i18n/cross-ref: sonraki tick'lere ertelendi
+
+## GOAL-082 anestezi takip ⏳ partial
+
+- Yeni modul: apps/api/src/modules/anesthesia/ (controller, service, repository, module, spec, index)
+- Yeni tipler: apps/api/src/common/anesthesia/anesthesia.types.ts
+- Yeni contract: packages/contracts/src/anesthesia.ts (exported via index)
+- Cross-module: SurgeryPlansModule (plan in_progress kontrolü)
+- Endpointler: POST/GET /api/v1/clinic/anesthesia, GET :id, POST :id/medications, POST :id/vitals, POST :id/complications, POST :id/staff, POST :id/finalize
+- 2 status: draft → finalized (locked, append-only)
+- 3 medication route, 8 vital kind, 3 complication severity, 4 staff role enum
+- 6 audit event: anesthesia.create / medication_add / vital_add / complication_add / staff_assign / finalize
+- Hata kodları: VET-ANESTHESIA-0001 (not found, 404), -0002 (already finalized, 409), -0003 (plan not in_progress, 422), -0004 (duplicate anesthesia, 409)
+- Permissions: clinic:anesthesia:read + create + update (mevcut catalog'da zaten var)
+- Cross-tenant idor → null/404, cross-tenant create 403 VET-AUTHZ-0001, plan patient mismatch 422
+- Test: 16 yeni spec (16/16 geçti), anesthesia modül testleri yeşil
+- Build fix: packages/contracts/src/consent.ts Zod nullable() sentaks hatası düzeltildi (önceki build kırıktı)
+- Full api regression: anesthesia + diğer tüm modüller 1036/1036 yeşil; cash-register spec hataları PARALEL agent'a ait, bu commit kapsamında değil
+- tsc --noEmit temiz
+- Docs/RAG chunks/i18n/cross-ref: sonraki tick'lere ertelendi

@@ -119,7 +119,7 @@ export const consentSchema = z.object({
   sourceId: z.string().nullable(),
   locale: z.string(),
   status: consentStatusSchema,
-  signatureMethod: consentSignatureMethodSchema | null,
+  signatureMethod: consentSignatureMethodSchema.nullable(),
   signatureProvider: z.string().nullable(),
   signatureReference: z.string().nullable(),
   signedAt: z.string().datetime().nullable(),
