@@ -1554,6 +1554,55 @@ generated_at: "2026-07-30"
                 api.post._api_v1_clinic_operation-notes__id_finalize,
                 api.post._api_v1_clinic_operation-notes__id_amend]
 
+- chunk_id: flow-hospitalization
+  type: flow
+  source: packages/contracts/src/hospitalization.ts
+  entity: hospitalization
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Yatış ve Kafes Yönetimi Akışı (Hospitalization)"
+  content: |
+    1. Yatış (Hospitalization) + Kafes (Cage) yönetimi.
+    2. Cage: tenant-scoped lokasyon; `type` (standard/
+       isolation/intensive_care/recovery/quarantine);
+       `capacity` (1-10); `currentOccupancy` (auto).
+    3. Hospitalization state: `planned` → `admitted` →
+       `discharged` | `cancelled`.
+    4. Admit: kafes atanır; kafes doluysa 409.
+    5. CageAssignment: yatış boyunca kafes değişimi;
+       aynı anda 1 aktif assignment.
+    6. Discharge: kafes boşaltılır; taburcu özeti
+       (GOAL-086) ile entegre.
+    7. Cancel: `planned` doğrudan; `admitted` için
+       `force=true`.
+    8. Stok etkisi: yatış order (GOAL-085) ile
+       `clinical_usage` (GOAL-066) `type='hospitalization'`.
+    9. Audit: `audit:hospitalization.*` +
+       `audit:cage.*` + `audit:cage_assignment.*`
+       (info/warning).
+  keywords: [yatış, hospitalization, kafes, cage,
+             admit, discharge, cancel, izolasyon,
+             yoğun bakım, karkas, transfer, lokasyon]
+  related_chunks: [flow-discharge-summary, flow-clinical-usage,
+                   error-VET-HOSP-0001]
+  related_pages: []
+  related_api: [api.post._api_v1_clinic_cages,
+                api.get._api_v1_clinic_cages,
+                api.get._api_v1_clinic_cages__id_,
+                api.patch._api_v1_clinic_cages__id_,
+                api.post._api_v1_clinic_hospitalizations,
+                api.get._api_v1_clinic_hospitalizations,
+                api.get._api_v1_clinic_hospitalizations__id_,
+                api.patch._api_v1_clinic_hospitalizations__id_,
+                api.post._api_v1_clinic_hospitalizations__id_admit,
+                api.post._api_v1_clinic_hospitalizations__id_discharge,
+                api.post._api_v1_clinic_hospitalizations__id_cancel,
+                api.post._api_v1_clinic_hospitalizations__id_cage-assignments,
+                api.post._api_v1_clinic_hospitalizations_cage-assignments__assignmentId_end]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
