@@ -1415,6 +1415,44 @@ generated_at: "2026-07-30"
                 api.post._api_v1_clinic_surgery-plans__id_complete,
                 api.post._api_v1_clinic_surgery-plans__id_cancel]
 
+- chunk_id: flow-consent
+  type: flow
+  source: packages/contracts/src/consent.ts
+  entity: consent
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Onam Formu Akışı (Consent)"
+  content: |
+    1. Onam formu (Consent). Şablon (template) + versiyon
+       + hasta + sahip + opsiyonel source bağlı.
+    2. State: `draft` → `signed` | `revoked` (`expired`
+       sonraya).
+    3. İmza yöntemi (`signatureMethod`): `wet` (ıslak) |
+       `e_signature` (KVKK uyumlu e-imza) | `verbal_witness`.
+    4. İmza kanıtı (`signatureEvidence`): IP, UA hash,
+       timestamp, geo (opsiyonel). KVKK uyumlu log.
+    5. Ameliyat planı (GOAL-080) için `sourceType=
+       surgery_plan` zorunlu (imza sonrası plan
+       başlatılabilir).
+    6. Revoke: `signed` → `revoked`; ameliyat planı
+       iptal tetiklenir.
+    7. Tenant-scoped; cross-tenant → 404.
+    8. Audit: `audit:consent.{create,sign,revoke}` (info/
+       warning). Sign'da `signatureMethod` +
+       `signatureEvidence` payload.
+  keywords: [onam, consent, imza, signature, witness,
+             e-imza, KVKK, ameliyat onayı, hasta sahibi]
+  related_chunks: [flow-surgery-plan, error-VET-CONSENT-0001]
+  related_pages: []
+  related_api: [api.post._api_v1_clinic_consents,
+                api.get._api_v1_clinic_consents,
+                api.get._api_v1_clinic_consents__id_,
+                api.post._api_v1_clinic_consents__id_sign,
+                api.post._api_v1_clinic_consents__id_revoke]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md

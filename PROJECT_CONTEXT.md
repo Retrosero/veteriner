@@ -1,34 +1,6 @@
 ﻿# Proje Bağlamı
-    konfigürabləşdirməsi.
-  - GOAL-074 ✅ Kasa ve gün sonu (tamamlandı — 2026-07-30, core: d18d45a, docs/i18n: bu commit). 8 endpoint (POST sessions/GET list/GET current/GET :id/POST :id/close/POST :id/reopen/GET :id/movements/GET :id/summary); tenant başına tek aktif session; expectedBalance = opening + in - out; difference (negatif ise notes zorunlu VET-CASH-0003); hareketler payment (in) + payment_reversal (out) + manual. Audit udit:cash_register.session.{open,close,reopen}. Faz 7 tahsilat (GOAL-072) + ters kayıt (GOAL-073) entegrasyonu.
-  - GOAL-070 ✅ Fiyat listeleri ve hizmet ücretleri (tamamlandı — 2026-07-30, core: 32ceb6c, docs/i18n: bu commit). 11 endpoint (6 list + 4 item + 1 product price resolve); 3 liste türü (standard/promotional/contract); aktif liste zincirleme (aynı type+currency deaktive); müşteri-özel fiyat (ownerId) + miktar kademeli (minQuantity); çözümleme sırası contract_owner → standard/promotional → product default. Audit udit:price_list.* + udit:price_list_item.*. KDV/GST ülke adaptörü Faz 7'de.
-  - GOAL-071 ✅ Klinik satış taslağı (tamamlandı — 2026-07-30, core: 1e6bf50, docs/i18n: bu commit). 6 endpoint (POST/GET list/GET :id/PATCH/POST complete/POST cancel); state draft→completed|cancelled; 6 sourceType (examination/prescription/lab_test/imaging/surgery/order) + sourceId zorunlu; line item (productId × quantity × unitPrice + priceListItemId ref); complete ile Faz 7 Payment (GOAL-072, paymentMethod); cancel ile Faz 7 PaymentReversal (GOAL-073). Stok düşümü YOK (GOAL-066 ayrı akış). Audit udit:clinic_sale.{create,update,complete,cancel}. Tam iade Faz 7+ clinic-sale-returns.
-  - GOAL-072 ✅ Tahsilat (tamamlandı — 2026-07-30, core: 564dff3, docs/i18n: bu commit). 4 ana endpoint (POST/GET list/GET :id/POST :id/reverse); 2 sourceType (clinic_sale/petshop_sale) + 4 method (cash/card/bank_transfer/other); kısmi tahsilat (toplam > sale → 422 VET-PAYMENT-0002); ters kayıt (PaymentReversal — GOAL-073 docs ayrı). Audit udit:payment.{create,reverse}. Kasa etkisi Faz 8 (GOAL-074).
-  - GOAL-073 ✅ Tahsilat iptal ve ters kayıt (tamamlandı — 2026-07-30, core: d18d45a, docs/i18n: bu commit). 3 reversal endpoint (GET reversals list/GET :id/GET :id/summary); 5 reasonCode (refund/customer_request/error/duplicate/other); çoklu ters kayıt (kısmi düzeltme, totalReversed <= paymentAmount); kasa etkisi 'out' (Faz 7 cash-register entegrasyonu). Audit udit:payment.reverse (warning). Ters kayıt oluşturma POST /payments/{id}/reverse (GOAL-072).
-  - GOAL-075 ✅ Müşteri borç ve alacak görünümü (tamamlandı — 2026-07-30, core: 903870b, docs/i18n: bu commit). 2 endpoint (GET owner balance/GET owner transactions); atomic hesaplama (cache'lenmez); totalDebit (tahsil edilmemiş), totalCredit (refund credit + manuel), netBalance (negatif = kredi bakiye); 6 transaction source. Faz 7 tahsilat (GOAL-072) + ters kayıt (GOAL-073) + petshop refund credit (GOAL-065) + manuel dahil. Audit yok (salt okunur).
-  - GOAL-077 ✅ e-SMM adaptör sözleşmesi (tamamlandı — 2026-07-30, core: de5b8e4, docs/i18n: bu commit). 6 endpoint (POST/GET list/GET :id/POST :id/submit/POST :id/retry/POST :id/cancel); 3 documentType (invoice/dispatch/receipt); state machine draft→pending→submitted→accepted|rejected|failed; pilot/mock (Faz 13 GOAL-130 gerçek GİB); Audit udit:esmm.document.{create,submit,retry,cancel}. FAZ-7 KAPANDI.
-  - GOAL-072 (not) — başka session tarafından payments modülü
-    genişletildi (reversedAmount + effectiveAmount alanları
-    eklendi; kısmi ters kayıt / etkin tutar mantığı). Bu
-    tick'te yazdığım payments modülü çakışma nedeniyle trash'e
-    gönderildi; mevcut payments modülü kullanılıyor.
-
-  - GOAL-076 ✅ Temel finans raporları (tamamlandı — 2026-07-30, core: d0a58f1, docs/i18n: bu commit). 4 endpoint (GET daily-sales/GET payment-methods/GET open-balances/POST export); 3 read + 1 async export (PDF/CSV). Günlük satış source dağılımı, ödeme yöntemi toplam, açık bakiyeler totalDebit DESC. Audit udit:report.export (info). Faz 10 BullMQ + custom report builder sonra.
-  - GOAL-075 ⏳ partial — core: müşteri borç/alacak görünümü.
-    customer-balances modülü (2 endpoint: summary/
-    transactions) + 6/6 yeni test + 973/973 api testi geçti.
-    Owner (sahip) bazında toplam satış + toplam tahsilat
-    (reversedAmount hariç) + net + açık bakiye + son işlem
-    tarihleri. Transactions: satış + tahsilat karışık
-    liste; tarih sıralı; type filtresi. Cross-module:
-    ClinicSalesService + PetshopSalesService + PaymentsService
-    (read-only). Mevcut permission clinic:payment:read
-    kullanıldı. Audit üretmez (read-only). Sonraki tick:
-    docs/RAG chunk/i18n key parity + DB migration (Prisma) +
-    branch scope filtresi (branchId) + patient bazlı bakiye
-    (sahipten bağımsız) + iade (refund) transaction tipi
-    için destek.
-
+    (GOAL-103) + tenant bazlı job kuyruğu görünümü.
+  - GOAL-081 ✅ Onam formları (tamamlandı — 2026-07-30, core: 3b4c187, docs/i18n: bu commit). 5 endpoint (POST/GET list/GET :id/POST :id/sign/POST :id/revoke); state draft→signed|revoked; 3 imza yöntemi (wet/e_signature/verbal_witness); imza kanıtı (IP/UA hash/timestamp/geo) KVKK uyumlu. Ameliyat (GOAL-080) entegre: sourceType='surgery_plan' + imza sonrası plan başlatılabilir. Audit udit:consent.{create,sign,revoke}.
   - GOAL-080 ✅ Ameliyat planlama (tamamlandı — 2026-07-30, core: 6596ae0, docs/i18n: bu commit). 7 endpoint (POST/GET list/GET :id/PATCH/POST :id/start/POST :id/complete/POST :id/cancel); state machine planned→in_progress→completed|cancelled; onam (GOAL-081) zorunlu start'tan önce; anesthesiaType (local/regional/general/sedation). Audit udit:surgery_plan.{create,update,start,complete,cancel}. Anestezi (GOAL-082) + operasyon notu (GOAL-083) entegre.
   - GOAL-080 ⏳ partial — core: ameliyat planlama. surgery-plans
     modülü (7 endpoint: create/list/get/update/start/
