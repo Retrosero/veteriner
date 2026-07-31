@@ -37,6 +37,7 @@ import {
   REQUEST_ID_HEADER,
   RequestIdInterceptor,
 } from "./common/interceptors/request-id.interceptor.js";
+import { ErrorEventsService } from "./modules/error-events/error-events.service.js";
 import { validateEnv } from "./env.js";
 
 async function bootstrap(): Promise<void> {
@@ -65,7 +66,11 @@ async function bootstrap(): Promise<void> {
   app.useGlobalInterceptors(new RequestIdInterceptor());
   const actorInterceptor = app.get(ActorInterceptor);
   app.useGlobalInterceptors(actorInterceptor);
-  app.useGlobalFilters(new AllExceptionsFilter());
+  // GOAL-100: AllExceptionsFilter'a merkezi hata kayıt servisini
+  // inject et. Servis @Global modülden gelir; null ise filter
+  // sessizce çalışmaya devam eder.
+  const errorEvents = app.get(ErrorEventsService, { strict: false });
+  app.useGlobalFilters(new AllExceptionsFilter(errorEvents));
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle("VetNiva API")
