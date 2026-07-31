@@ -67,6 +67,7 @@ import { SuppliersModule } from "./modules/suppliers/suppliers.module.js";
 import { PurchaseOrdersModule } from "./modules/purchase-orders/purchase-orders.module.js";
 import { StockMovementsModule } from "./modules/stock-movements/stock-movements.module.js";
 import { PetshopSalesModule } from "./modules/petshop-sales/petshop-sales.module.js";
+import { PetshopSaleReturnsModule } from "./modules/petshop-sale-returns/petshop-sale-returns.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 
 @Module({
@@ -113,6 +114,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     PurchaseOrdersModule,
     StockMovementsModule,
     PetshopSalesModule,
+    PetshopSaleReturnsModule,
   ],
 })
 export class AppModule {}
