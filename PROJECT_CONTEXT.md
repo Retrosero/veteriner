@@ -1,5 +1,6 @@
 ﻿# Proje Bağlamı
     (GOAL-103) + tenant bazlı job kuyruğu görünümü.
+  - GOAL-092 ✅ Laboratuvar sonuçları (tamamlandı — 2026-07-30, core: 8782ef3, docs/i18n: bu commit). 7 endpoint (POST/GET/GET history/PATCH/POST submit/POST approve/POST amend); state draft→submitted→approved|amended; analyte bazlı + 5 abnormal flag + reference range; submit tüm draft; approve uzman onayı; amend append-only (amendedFromId). Audit udit:lab_result.*.
   - GOAL-091 ✅ Laboratuvar isteği ve numune (tamamlandı — 2026-07-30, core: 473836, docs/i18n: bu commit). 7 endpoint (POST/GET list/GET :id/POST :id/collect/start/complete/cancel); state ordered→sample_collected→in_progress→completed|cancelled; 3 öncelik (routine/urgent/stat); specimenId + volumeMl opsiyonel; start cihaz adapter (Faz 14) üzerinden iş emri. Audit udit:lab_order.*. Sonuç (GOAL-092) complete ile veya sonradan.
   - GOAL-090 ✅ Laboratuvar test kataloğu (tamamlandı — 2026-07-30, core: 6e92831, docs/i18n: bu commit). 4 endpoint (POST/GET list/GET :id/PATCH); 8 kategori (hematology/biochemistry/microbiology/parasitology/urinalysis/cytology/imaging/other) + 6 specimenType; referenceRanges analyte+unit+low+high; tatHours + price; update snapshot. Audit udit:lab_test.*. Cihaz adapter (GOAL-094) ayrı goal.
 - **Faz 10 — Hata merkezi** ⏳ sırada

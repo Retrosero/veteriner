@@ -1772,6 +1772,46 @@ generated_at: "2026-07-30"
                 api.post._api_v1_clinic_lab-orders__id_complete,
                 api.post._api_v1_clinic_lab-orders__id_cancel]
 
+- chunk_id: flow-lab-result
+  type: flow
+  source: packages/contracts/src/lab-result.ts
+  entity: lab_result
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Laboratuvar Sonuçları Akışı (Lab Result)"
+  content: |
+    1. Lab sonuçları (LabResult) — analyte bazında
+       (WBC/RBC/HGB/HCT/PLT vb.).
+    2. State: `draft` → `submitted` → `approved` |
+       `amended` (append-only).
+    3. Abnormal flag: `low` | `normal` | `high` |
+       `critical_low` | `critical_high`.
+    4. Reference range: analyte başına low + high.
+    5. Submit: tüm draft sonuçları `submitted`.
+    6. Approve: yetkili uzman onaylar; portal/hasta
+       sahibi görebilir.
+    7. Amend: approved sonuç append-only yeni sonuç
+       oluşturur (`amendedFromId`).
+    8. History: amend dahil tüm geçmiş.
+    9. Audit: `audit:lab_result.{create,update,submit,
+       approve,amend}` (info/warning).
+  keywords: [lab sonucu, lab result, analyte, referans
+             aralığı, abnormal flag, critical, append-only,
+             amend, onay, submit]
+  related_chunks: [flow-lab-order, flow-lab-adapter,
+                   error-VET-LAB-RESULT-0001]
+  related_pages: []
+  related_api: [api.post._api_v1_clinic_lab-orders__orderId_result,
+                api.get._api_v1_clinic_lab-orders__orderId_result,
+                api.get._api_v1_clinic_lab-orders__orderId_result_history,
+                api.patch._api_v1_clinic_lab-orders__orderId_result,
+                api.post._api_v1_clinic_lab-orders__orderId_result_submit,
+                api.post._api_v1_clinic_lab-orders__orderId_result_approve,
+                api.post._api_v1_clinic_lab-orders__orderId_result_amend]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
