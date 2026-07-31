@@ -1647,6 +1647,53 @@ generated_at: "2026-07-30"
                 api.post._api_v1_clinic_hospitalization-orders_schedules__scheduleId_apply,
                 api.post._api_v1_clinic_hospitalization-orders_schedules__scheduleId_skip]
 
+- chunk_id: flow-discharge-summary
+  type: flow
+  source: packages/contracts/src/discharge-summary.ts
+  entity: discharge_summary
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Gözlem ve Taburcu Özeti Akışı (Discharge Summary)"
+  content: |
+    1. Yatış sırasında gözlem (Observation). 4 kategori:
+       `vitals` (vital bulgu) | `intake_output` (sıvı
+       alım/çıkış) | `behavior` (davranış) | `general`.
+    2. Taburcu özeti (DischargeSummary). State: `draft` →
+       `finalized` → `amended` (append-only amendment).
+    3. Finalize sonrası güncelleme reddedilir; değişiklik
+       `amend` ile.
+    4. Portal paylaşım: `shareToken` + `shareUrl`
+       (sınırlı süreli, default 30 gün); owner'a
+       SMS/email bildirim.
+    5. KVKK uyumlu: token UUID v4 opaque; süre sonunda
+       otomatik expire.
+    6. Append-only: amendment ayrı kayıt olarak
+       `amendments[]`'e eklenir.
+    7. Yatış (GOAL-084) entegre: `discharge` → özet
+       taslağı başlatılır.
+    8. Audit: `audit:observation.create` +
+       `audit:discharge_summary.{create,update,finalize,
+       amend,portal_share}`.
+  keywords: [gözlem, observation, taburcu özeti, discharge
+             summary, vital, intake, output, amendment,
+             portal paylaşım, share token, hasta sahibi,
+             KVKK, append-only]
+  related_chunks: [flow-hospitalization, flow-vaccine-application-amend,
+                   flow-operation-note, flow-portal,
+                   error-VET-DS-0001]
+  related_pages: []
+  related_api: [api.post._api_v1_clinic_hospitalizations__hospitalizationId_observations,
+                api.get._api_v1_clinic_hospitalizations__hospitalizationId_observations,
+                api.post._api_v1_clinic_hospitalizations__hospitalizationId_discharge-summary,
+                api.get._api_v1_clinic_hospitalizations__hospitalizationId_discharge-summary,
+                api.patch._api_v1_clinic_hospitalizations__hospitalizationId_discharge-summary,
+                api.post._api_v1_clinic_hospitalizations__hospitalizationId_discharge-summary_finalize,
+                api.post._api_v1_clinic_hospitalizations__hospitalizationId_discharge-summary_amend,
+                api.post._api_v1_clinic_hospitalizations__hospitalizationId_discharge-summary_portal-share]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
