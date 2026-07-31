@@ -948,6 +948,88 @@ generated_at: "2026-07-30"
                 api.post._api_v1_petshop_sales_returns__id_complete,
                 api.post._api_v1_petshop_sales_returns__id_cancel]
 
+- chunk_id: flow-clinical-usage
+  type: flow
+  source: packages/contracts/src/clinical-usage.ts
+  entity: clinical_usage
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Klinik Otomatik Stok Tüketimi Akışı (Clinical Usage)"
+  content: |
+    1. Klinik tüketim kaydı (`ClinicalUsage`). Muayene,
+       aşı uygulaması, ameliyat veya yatış sırasında
+       harcanan stok için atomik `StockMovement` üretilir.
+    2. `sourceType`: `examination` (muayene) |
+       `vaccine_application` (aşı uygulaması) | `surgery`
+       (ameliyat) | `hospitalization` (yatış).
+    3. POST: `productId` + `quantity` (Decimal, >0) +
+       `sourceType` + `sourceId` zorunlu. `lotId` opsiyonel
+       (lot-scoped tüketim için).
+    4. Stok hareketi: `sourceType='vaccine_application'`
+       ise `type='vaccination'`, diğerleri
+       `type='clinical_use'`. `direction='out'`.
+    5. Yetersiz stok → 422 VET-STOCK-0007.
+    6. `stockMovementId` ile Faz 6 ledger bağlantısı.
+    7. Audit `audit:clinical_usage.create` (info).
+    8. Faz 8 reaktif hook: muayene/aşı/ameliyat/yataş
+       kaydı oluşturulduğunda otomatik ClinicalUsage
+       kaydı oluşturulacak (şu an manuel POST).
+  keywords: [klinik tüketim, clinical usage, otomatik stok
+             düşümü, muayene, aşı, ameliyat, yatış,
+             vaccination, clinical_use]
+  related_chunks: [flow-stock-movement, flow-product-catalog,
+                   error-VET-STOCK-0004, error-VET-STOCK-0007]
+  related_pages: []
+  related_api: [api.post._api_v1_clinic_usages,
+                api.get._api_v1_clinic_usages,
+                api.get._api_v1_clinic_usages__id_]
+
+- chunk_id: flow-stock-alert
+  type: flow
+  source: packages/contracts/src/stock-alert.ts
+  entity: stock_alert
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Düşük Stok ve SKT Uyarıları Akışı (Stock Alert)"
+  content: |
+    1. İki uyarı türü: düşük stok (`lowStock`) ve SKT
+       lot (`expiringLots`). Severity seviyeleri ile
+       dashboard kartı kaynağı.
+    2. Düşük stok severity: `warning` (`qty > 0` ve
+       `<= reorderLevel`) | `critical` (`qty <= minStockLevel`
+       veya `qty <= 0`).
+    3. SKT severity: `warning` (8-30 gün) | `critical`
+       (1-7 gün) | `expired` (≤0 gün).
+    4. POST /refresh: idempotent yeniden hesap. Ack
+       durumları korunur.
+    5. Acknowledge idempotent: bir ürün/lot için yalnız
+       1 aktif ack; mevcut `acknowledgedAt` korunur.
+    6. Hesaplama: `StockMovement` ledger'ından atomik
+       bakiye (Faz 6) + Product `reorderLevel`/`minStockLevel`.
+    7. Faz 7+: SMS/email/in-app dispatch (notification
+       modülü). Faz 8 dashboard kartları (reaktif hook'lar
+       ile canlı güncelleme).
+    8. Audit: `audit:stock_alert.{refresh,low_stock.
+       acknowledge,expiring_lot.acknowledge}` (info).
+  keywords: [uyarı, stock alert, düşük stok, SKT, expiring
+             lot, severity, acknowledge, dashboard, idempotent]
+  related_chunks: [flow-stock-movement, flow-product-catalog,
+                   flow-inventory-lot, flow-notifications,
+                   error-VET-STOCK-0004, error-VET-STOCK-0005]
+  related_pages: []
+  related_api: [api.get._api_v1_inventory_stock-alerts_low-stock,
+                api.get._api_v1_inventory_stock-alerts_expiring-lots,
+                api.post._api_v1_inventory_stock-alerts_refresh,
+                api.get._api_v1_inventory_stock-alerts_summary,
+                api.post._api_v1_inventory_stock-alerts_low-stock__productId_acknowledge,
+                api.post._api_v1_inventory_stock-alerts_expiring-lots__lotId_acknowledge]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
