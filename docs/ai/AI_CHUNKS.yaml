@@ -1453,6 +1453,56 @@ generated_at: "2026-07-30"
                 api.post._api_v1_clinic_consents__id_sign,
                 api.post._api_v1_clinic_consents__id_revoke]
 
+- chunk_id: flow-anesthesia
+  type: flow
+  source: packages/contracts/src/anesthesia.ts
+  entity: anesthesia
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Anestezi Takip Akışı (Anesthesia Tracking)"
+  content: |
+    1. Anestezi takibi. State: `draft` → `finalized`.
+    2. Oluşturma: `surgeryPlanId` zorunlu; plan `in_progress`
+       olmalı (422 VET-ANESTHESIA-0003). Aynı plan
+       için ikinci kayıt reddedilir (409
+       VET-ANESTHESIA-0004).
+    3. `anesthesiaType`: `local` | `regional` | `general`
+       | `sedation`. `airwayType`: `none` | `face_mask` |
+       `lma` | `endotracheal_tube`.
+    4. Alt kayıtlar (draft'te eklenir):
+       - `medications[]` — ilaç adı, doz, route,
+         administeredAt.
+       - `vitals[]` — HR, SpO2, BP, RR, etCO2 vb.
+       - `complications[]` — type + severity (mild/
+         moderate/severe/life_threatening) + occurredAt.
+       - `staff[]` — kullanıcı + rol (surgeon/
+         anesthesiologist/nurse vb.) + joinedAt/leftAt.
+    5. Finalize: outcome (`mortality` |
+       `uneventful_recovery` | `minor_complications` |
+       `major_complications`) + recoveryTime +
+       postOpNotes + complicationsSummary.
+    6. Ameliyat planı (GOAL-080) ile entegre: plan
+       `completed` ile eşleşebilir.
+    7. Audit: `audit:anesthesia.{create,medication.add,
+       vital.add,complication.add,staff.add,finalize}`.
+  keywords: [anestezi, anesthesia, takip, vital, ilaç,
+             komplikasyon, personel, finalize, general,
+             regional, sedation, endotracheal]
+  related_chunks: [flow-surgery-plan, error-VET-ANESTHESIA-0003,
+                   error-VET-ANESTHESIA-0004]
+  related_pages: []
+  related_api: [api.post._api_v1_clinic_anesthesia,
+                api.get._api_v1_clinic_anesthesia,
+                api.get._api_v1_clinic_anesthesia__id_,
+                api.post._api_v1_clinic_anesthesia__id_medications,
+                api.post._api_v1_clinic_anesthesia__id_vitals,
+                api.post._api_v1_clinic_anesthesia__id_complications,
+                api.post._api_v1_clinic_anesthesia__id_staff,
+                api.post._api_v1_clinic_anesthesia__id_finalize]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
