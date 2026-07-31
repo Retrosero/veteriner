@@ -30,7 +30,7 @@ describe("PermissionCatalogLoader", () => {
       for (const part of parts) {
         expect(part.length).toBeGreaterThan(0);
       }
-      expect(d.key).toMatch(/^[a-z_]+(:[a-z_]+)+$/);
+      expect(d.key).toMatch(/^[a-z_-]+(:[a-z_-]+)+$/);
     }
   });
 

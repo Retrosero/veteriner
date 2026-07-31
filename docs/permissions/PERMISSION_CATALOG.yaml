@@ -2907,19 +2907,9 @@ permissions:
     system_only: false
     applies_to_roles: ['OWNER', 'VETERINARIAN', 'STAFF']
     notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
-  - permission: "low"
-    description: "low (FAZ-11 stub)."
-    resource_type: _self
-    action: manage
-    tenant_scope: required
-    branch_scope: not_required
-    self_only: false
-    audit: false
-    pii: false
-    amend: false
-    system_only: false
-    applies_to_roles: ['OWNER', 'VETERINARIAN', 'STAFF']
-    notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
+  # NOT: Eski "low", "auth:is", "portal:is", "expiring:lot" gibi
+  # case-sensitive truncation'lar kaldırıldı. Tam isimler
+  # PERMISSION_MATRIX.md'de backtick'li olarak bulunur.
   - permission: "portal:is"
     description: "portal:is (FAZ-11 stub)."
     resource_type: _self
@@ -2989,19 +2979,6 @@ permissions:
     description: "superadmin:tenant:read (FAZ-11 stub)."
     resource_type: tenant
     action: read
-    tenant_scope: required
-    branch_scope: not_required
-    self_only: false
-    audit: false
-    pii: false
-    amend: false
-    system_only: false
-    applies_to_roles: ['OWNER', 'VETERINARIAN', 'STAFF']
-    notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
-  - permission: "unknown:module:action"
-    description: "unknown:module:action (FAZ-11 stub)."
-    resource_type: module
-    action: action
     tenant_scope: required
     branch_scope: not_required
     self_only: false

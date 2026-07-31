@@ -13,7 +13,7 @@ import {
   errorResponseSchema,
   livenessResponseSchema,
   readinessResponseSchema,
-} from "../src/index.js";
+} from "../src/index.ts";
 
 describe("contracts.health", () => {
   it("livenessResponseSchema geçerli payload kabul eder", () => {
@@ -51,9 +51,14 @@ describe("contracts.health", () => {
 });
 
 describe("contracts.error", () => {
-  it("errorCodeSchema doğru format kabul eder", () => {
-    const ok = errorCodeSchema.safeParse("TR_CLINIC_0001");
+  it("errorCodeSchema doğru VET- formatı kabul eder", () => {
+    const ok = errorCodeSchema.safeParse("VET-CLINIC-0001");
     expect(ok.success).toBe(true);
+  });
+
+  it("errorCodeSchema legacy TR_ formatını reddeder (VET- zorunlu)", () => {
+    const bad = errorCodeSchema.safeParse("TR_CLINIC_0001");
+    expect(bad.success).toBe(false);
   });
 
   it("errorCodeSchema hatalı format reddeder", () => {
@@ -63,7 +68,7 @@ describe("contracts.error", () => {
 
   it("errorResponseSchema tam payload kabul eder", () => {
     const ok = errorResponseSchema.safeParse({
-      error_code: "TR_COMMON_0001",
+      error_code: "VET-COMMON-0001",
       message: "Örnek hata",
       source: "server",
       severity: "error",

@@ -198,7 +198,7 @@ function parseCatalogYaml(raw: string): RawCatalog {
               .replace(/^\[/, "")
               .replace(/\]$/, "")
               .split(",")
-              .map((s) => s.trim())
+              .map((s) => unquote(s.trim()))
               .filter((s) => s.length > 0);
             perm.applies_to_roles = list;
           } else {

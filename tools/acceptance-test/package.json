@@ -1,0 +1,25 @@
+{
+  "name": "@vetniva/acceptance-test",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pilot kabul (UAT) test altyapisi (GOAL-121, FAZ-12). 10 uctan uca pilot senaryosu icin sirali API calistirici, sure/hata/yorum kayit motoru ve Markdown/JSON rapor ureticisi.",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "type-check": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "run": "node --import tsx src/cli-run.ts",
+    "report": "node --import tsx src/cli-report.ts"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}
