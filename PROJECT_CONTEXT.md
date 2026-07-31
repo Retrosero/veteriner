@@ -614,3 +614,22 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
     branch scope filtresi (branchId) + patient bazlı bakiye
     (sahipten bağımsız) + iade (refund) transaction tipi
     için destek.
+
+  - GOAL-080 ⏳ partial — core: ameliyat planlama. surgery-plans
+    modülü (7 endpoint: create/list/get/update/start/
+    complete/cancel) + 4 durum (scheduled/in_progress/
+    completed/cancelled) + scheduledAt gelecekte olmalı
+    (422 VET-SURGERY-0006) + 17/17 yeni test + 990/990 api
+    testi geçti. Hasta (patient) + sorumlu veteriner
+    (leadSurgeonUserId) + operasyon türü + scheduledAt +
+    randevu (appointmentId) opsiyonel + notes (ön hazırlık +
+    risk). Audit audit:surgery_plan.create/update/start/
+    complete/cancel. Hata kodları VET-SURGERY-0001/0002/
+    0003/0004/0005/0006/0007. Mevcut permission'lar
+    kullanıldı: clinic:surgery:create/read/start/complete/
+    cancel. Sonraki tick: docs/RAG chunk/i18n key parity
+    + DB migration (Prisma) + ekip (assistant) listesi +
+    oda (room) + ön hazırlık kalemleri ayrı tablo + risk
+    skoru + GOAL-081 onam formları entegrasyonu + Faz 6
+    klinik tüketim (GOAL-066) ile malzeme kullanım
+    bağlantısı.

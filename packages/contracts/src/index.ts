@@ -61,6 +61,7 @@ export * from "./payment-reversal.js";
 export * from "./esmm.js";
 export * from "./report.js";
 export * from "./customer-balance.js";
+export * from "./surgery-plan.js";
 export * from "./petshop-sale-return.js";
 export * from "./stock-movement.js";
 export * from "./clinical-consumption.js";
