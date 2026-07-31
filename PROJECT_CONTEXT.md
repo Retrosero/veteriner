@@ -462,3 +462,23 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
     aktif listede düzeltme (yeni liste zinciri UI) + Faz 8
     React UI + fiyat listesi export (CSV/PDF) + ülke adaptörü
     ile KDV/GBP eşleme.
+
+  - GOAL-071 ⏳ partial — core: klinik satış taslağı. clinic-sales
+    modülü (6 endpoint: create/list/get/update/complete/cancel)
+    + 3 durum (draft/completed/cancelled) + 4 sourceType
+    (examination/vaccine_application/lab_order/imaging_order) +
+    satır indirimi + global indirim + rol bazlı indirim yetkisi
+    (STAFF/VETERINARIAN max %10, OWNER sınırsız; aksi 403
+    VET-CLINIC_SALE-0004) + 17/17 yeni test + 927/927 api testi
+    geçti. Ürün arşivliyse 422 VET-CLINIC_SALE-0005; ürün yoksa
+    422 VET-CLINIC_SALE-0005. unitPrice verilmediyse ürün
+    salePrice'ından alınır. Audit audit:clinic_sale.create/
+    update/complete/cancel. Mevcut permission'lar kullanıldı:
+    clinic:payment:create/read/reverse. Cross-module:
+    ProductsService. Sonraki tick: docs/RAG chunk/i18n key
+    parity + DB migration (Prisma) + PricingService entegrasyonu
+    (resolveProductPrice ile liste bazlı fiyat çözümleme) +
+    Owner/Patient varlık doğrulaması (cross-module) + Faz 7
+    tahsilat (GOAL-072) ile sale üzerinden payment bağlantısı
+    + Faz 7 kısmi tahsilat (GOAL-073) + Faz 8 ameliyat (GOAL-080)
+    ile surgery order sourceType.
