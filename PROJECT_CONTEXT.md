@@ -155,35 +155,7 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-050 ✅ Aşı kataloğu ve protokoller (tamamlandı — 2026-07-30)
   - GOAL-051 ✅ Aşı uygulama kaydı (tamamlandı — 2026-07-30)
   - GOAL-052 ✅ Aşı kartı (tamamlandı — 2026-07-30, core: `2b7cc84`, docs/i18n: bu commit). 4 personel endpoint + 1 portal endpoint; species filter (all/other→tüm takvimler); status çözümleme (overdue/upcoming/completed/not_started); tenant `portalVaccineCardEnabled` portal ayarı; in-memory derive (DB göçünde materialized view planı); cross-tenant patient → 404 VET-CLINIC-0001. PDF/çıktı ve owner-pet eşleşmesi guard katmanı sonraya.
-  - GOAL-053 ⏳ partial — core: aşı hatırlatma job'u. `vaccineReminder`
-    sözleşmesi (VaccineReminder + VaccineReminderListQuery +
-    VaccineReminderConfigInput + `vaccine_reminder` notification
-    category) + `vaccine-reminder.types.ts` (VaccineReminderRecord +
-    VaccineReminderConfig + DEFAULT_VACCINE_REMINDER_CONFIG +
-    computeScheduledFor + pickStepForApplication + buildVaccineReminderDedupeKey
-    yardımcıları) + `VaccineRemindersRepository` (in-memory; dedupe
-    + tenant config) + `VaccineRemindersService`
-    (scheduleForApplication + cancelForApplication +
-    cancelForPatient + rescheduleForApplication +
-    processDueReminders + listForPatient + getTenantConfig +
-    updateTenantConfig) + `VaccineRemindersController` (list +
-    config get/update + processDue endpoint'leri) + vaccines
-    module wiring (Notifications + Consent + Patient + Owner +
-    Tenant bağımlılıkları) + 30/30 yeni test + 624/624 api testi
-    geçti. Personel endpoint'ler:
-    `GET /api/v1/clinic/vaccines/reminders/patient/:patientId` +
-    `GET/PUT /api/v1/clinic/vaccines/reminders/config` +
-    `POST /api/v1/clinic/vaccines/reminders/process`. Default
-    config 7 gün önce + sms + in_app; marketing consent yoksa
-    sms atlanır, in_app'e düşer. Snapshot deseni (application +
-    step) ile circular import koruması. Audit
-    `audit:vaccine.reminder.schedule/cancel/cancel_patient/
-    reschedule/config.update/process_due`. Hata kodları
-    VET-AUTHZ-0001 (cross-tenant), VET-VALIDATION-0010 (config
-    invalid). Sonraki tick: docs/RAG chunk/i18n key parity +
-    DB migration (Prisma) + Faz 6 stok modülü ile `stockProductId`
-    gerçek referans + zaman-locale timezone adapter (tenant
-    timezone).
+  - GOAL-053 ✅ Aşı hatırlatma job'u (tamamlandı — 2026-07-30, core: 763f2f, docs/i18n: bu commit). 4 endpoint; schedule/cancel/reschedule hook'ları; in-process queue + 3 denemelik exponential backoff; tenant config (daysBeforeDue 1-90 + channels 1-3, default 7 gün + sms+in_app); consent-aware dispatch (sms/email consent yoksa atla); idempotent + double-send korumalı; multi-tenant processDue. BullMQ geçişi FAZ-10'a, otomatik cron FAZ-10'a.
   - GOAL-054 ⏳ partial — core: aşı amendment ve düzeltme. Eski
     kayıt korunur (status='amended' + `amendedAt`/`amendedBy`/
     `amendedReason`); düzeltilebilir alanlar `dose`,

@@ -438,6 +438,57 @@ generated_at: "2026-07-30"
   related_pages: []
   related_api: [api.get._api_v1_clinic_vaccines_cards_patient__patientId_, api.get._api_v1_clinic_vaccines_cards_portal-setting, api.put._api_v1_clinic_vaccines_cards_portal-setting, api.get._api_v1_portal_vaccines_cards_patient__patientId_]
 
+- chunk_id: flow-vaccine-reminder
+  type: flow
+  source: packages/contracts/src/vaccine-reminder.ts
+  entity: vaccine_reminder
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Aşı Hatırlatma İş Akışı (Vaccine Reminder Job)"
+  content: |
+    1. `VaccineApplication` (aşı uygulaması) oluşturulunca
+       `VaccineRemindersService.scheduleForApplication` hook'u
+       tetiklenir. `nextDueAt` üzerinden tenant config'indeki
+       `daysBeforeDue` kadar geriye gidilerek `scheduledFor`
+       hesaplanır. Aynı `(applicationId, stepNumber)` için
+       `buildVaccineReminderDedupeKey` ile tekil satır (idempotent).
+    2. Snapshot deseni: reminder kaydında uygulama + step'in
+       snapshot'ı tutulur; circular import koruması.
+    3. İptal/değişiklik hook'ları:
+       - `cancelForApplication`: uygulama iptal edilince tüm
+         `status='scheduled'` reminder'lar `cancelled` yapılır.
+       - `cancelForPatient`: hasta silindi/devredildiğinde aynı.
+       - `rescheduleForApplication`: amendment'te `nextDueAt`
+         değişirse delta hesabıyla `scheduledFor` kaydırılır;
+         yeni zaman geçmişte ise `cancelled` yapılır.
+    4. Job/cron çağrısı: `POST /api/v1/clinic/vaccines/reminders
+       /process` `processDueReminders` metodunu tetikler. Şu an
+       in-process queue (FAZ-0); FAZ-10'da BullMQ'ya taşınacak.
+    5. Dispatch kuralları: `NotificationService.send` üzerinden
+       kanal kanal gönderim. `sms` kanalı için
+       `Owner.consent.sms=false` → atla; `email` için aynı;
+       `in_app` consent kontrolsüz.
+    6. Idempotency: `status='sent'` olanlar atlanır; `now <
+       scheduledFor` olanlar atlanır. `attempts` sayacı
+       exponential backoff ile 3 deneme; tüm denemeler başarısız
+       → `status='failed'`. Double-send YOK.
+    7. Tenant config: `GET/PUT /api/v1/clinic/vaccines/reminders
+       /config`. Default 7 gün + `sms`+`in_app`. Boş kanal
+       listesi kabul edilmez (1-3 eleman). Audit
+       `audit:vaccine.reminder.config.update`.
+    8. Audit olayları: `audit:vaccine.reminder.schedule`,
+       `.cancel`, `.cancel_patient`, `.reschedule`,
+       `.process_due`, `.config.update`.
+  keywords: [aşı hatırlatma, vaccine reminder, job, queue,
+             cron, dispatch, sms, in_app, consent, retry,
+             idempotent, tenant config]
+  related_chunks: [flow-vaccination, flow-vaccine-card, glossary-vaccination, error-VET-VALIDATION-0010]
+  related_pages: []
+  related_api: [api.get._api_v1_clinic_vaccines_reminders_patient__patientId_, api.get._api_v1_clinic_vaccines_reminders_config, api.put._api_v1_clinic_vaccines_reminders_config, api.post._api_v1_clinic_vaccines_reminders_process]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
