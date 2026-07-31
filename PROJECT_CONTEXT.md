@@ -633,3 +633,19 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
     skoru + GOAL-081 onam formları entegrasyonu + Faz 6
     klinik tüketim (GOAL-066) ile malzeme kullanım
     bağlantısı.
+
+## GOAL-081 onam formları ⏳ partial
+
+- Yeni modul: apps/api/src/modules/consents/ (controller, service, repository, module, spec, index)
+- Yeni tipler: apps/api/src/common/consents/consent.types.ts
+- Yeni contract: packages/contracts/src/consent.ts (exported via index)
+- Endpointler: POST/GET /api/v1/clinic/consents, GET :id, POST :id/sign, POST :id/revoke
+- 3 templateType: surgery / anesthesia / procedure
+- 3 status: draft / signed / revoked
+- 2 signatureMethod: manual / electronic
+- 4 audit event: consent.create / consent.sign / consent.revoke (signed only) / gerekirse revoke deny
+- Hata kodları: VET-CONSENT-0001 (not found, 404) / -0002 (already signed, 409) / -0003 (already revoked, 409) / -0004 (cannot revoke draft, 409)
+- Permissions: clinic:consent:read + clinic:consent:sign (mevcut catalog'a eklendi)
+- Cross-tenant idor → 404, cross-tenant create → 403 VET-AUTHZ-0001
+- Test: 10 yeni spec (10/10 geçti), full api regression 1000/1000 testler geçti, 0 hata, tsc temiz
+- Docs/RAG chunks/i18n/cross-ref: sonraki tick'lere ertelendi

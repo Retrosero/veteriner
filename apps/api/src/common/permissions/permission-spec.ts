@@ -212,6 +212,12 @@ export const PERMISSIONS = [
   "pricing:price_list:update",
   "pricing:price_list:archive",
   "pricing:price_list:export",
+  "cash_register:session:read",
+  "cash_register:session:open",
+  "cash_register:session:close",
+  "cash_register:session:reopen",
+  "cash_register:movement:read",
+  "cash_register:movement:export",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];

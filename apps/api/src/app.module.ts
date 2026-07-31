@@ -77,6 +77,8 @@ import { EsmmModule } from "./modules/esmm/esmm.module.js";
 import { ReportsModule } from "./modules/reports/reports.module.js";
 import { CustomerBalancesModule } from "./modules/customer-balances/customer-balances.module.js";
 import { SurgeryPlansModule } from "./modules/surgery-plans/surgery-plans.module.js";
+import { ConsentsModule } from "./modules/consents/consents.module.js";
+import { CashRegisterModule } from "./modules/cash-register/cash-register.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 
 @Module({
@@ -133,6 +135,8 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     ReportsModule,
     CustomerBalancesModule,
     SurgeryPlansModule,
+    ConsentsModule,
+    CashRegisterModule,
   ],
 })
 export class AppModule {}
