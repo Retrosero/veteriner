@@ -767,3 +767,14 @@ escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) s
 - Full api regression: 1107/1107 yeşil, 8 skipped, 0 hata
 - tsc --noEmit temiz
 - Docs/RAG chunks/i18n/cross-ref: sonraki tick'lere ertelendi
+
+## GOAL-090 laboratuvar test kataloğu ⏳ partial
+- Contract: packages/contracts/src/lab-test.ts (11 schema/type) + index export.
+- Domain: pps/api/src/common/lab-tests/lab-test.types.ts (LabTestRecord + toLabTest).
+- Repository: pps/api/src/modules/lab-tests/lab-tests.repository.ts (in-memory Map; tenant-scoped code unique, case-insensitive).
+- Service: pps/api/src/modules/lab-tests/lab-tests.service.ts (createLabTest / listLabTests / getLabTestDetail / updateLabTest).
+- Controller: pps/api/src/modules/lab-tests/lab-tests.controller.ts (POST/GET list/GET :id/PATCH :id — POST ve PATCH clinic:lab:order; GET clinic:lab:read).
+- Module: LabTestsModule pp.module.ts içinde kablolu.
+- Testler: lab-tests.service.spec.ts 19/19 yeşil; full regression 1126/1126 api testleri (1107 → 1126, +19).
+- Error kodları: VET-LABTEST-0001 (not found 404), VET-LABTEST-0002 (duplicate code 409), VET-AUTHZ-0001 (cross-tenant 403).
+- Docs/i18n/RAG chunk/field glossary/cross-ref henüz eklenmedi (sonraki tick).

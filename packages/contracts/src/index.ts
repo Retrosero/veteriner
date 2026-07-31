@@ -74,3 +74,4 @@ export * from "./operation-note.js";
 export * from "./hospitalization.js";
 export * from "./hospitalization-order.js";
 export * from "./discharge-summary.js";
+export * from "./lab-test.js";
