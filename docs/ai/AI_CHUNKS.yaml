@@ -1167,6 +1167,46 @@ generated_at: "2026-07-30"
                 api.get._api_v1_payments__id_,
                 api.post._api_v1_payments__id_reverse]
 
+- chunk_id: flow-payment-reversal
+  type: flow
+  source: packages/contracts/src/payment.ts
+  entity: payment_reversal
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Tahsilat Ters Kayıt Akışı (Payment Reversal)"
+  content: |
+    1. Tahsilat ters kayıt (PaymentReversal). Orijinal
+       payment `status='active'` → `reversed`; yeni
+       `PaymentReversal` kaydı oluşturulur.
+    2. `reasonCode` enum: `refund` | `customer_request` |
+       `error` | `duplicate` | `other`. `reason` serbest
+       metin (zorunlu).
+    3. `cashRegisterEffect`: `out` (kasa bakiyesinden düşer;
+       Faz 7 kasa etkisi).
+    4. Çoklu ters kayıt: aynı payment'a birden fazla
+       reversal (kısmi düzeltme). Toplam `totalReversed <=
+       paymentAmount`. Özet endpoint:
+       `GET /:id/reversals/summary`.
+    5. Kısmi ters kayıt + yeniden tahsilat (Faz 7+) — şu an
+       yalnız ters kayıt; tekrar tahsilat ayrı payment.
+    6. Müşteri bakiyesi (GOAL-075 customer-balances) Faz 7+
+       ile entegre; `refundMethod='credit'` ise bakiyeye
+       ekleme.
+    7. Audit: `audit:payment.reverse` (warning). Zaten
+       ters kaydı olan payment → 409 VET-PAYMENT-0003.
+  keywords: [ters kayıt, payment reversal, iade, refund,
+             ters kayıt özeti, neden kodu, kasa etkisi]
+  related_chunks: [flow-payment, flow-customer-balance,
+                   error-VET-PAYMENT-0003]
+  related_pages: []
+  related_api: [api.post._api_v1_payments__id_reverse,
+                api.get._api_v1_payments_reversals,
+                api.get._api_v1_payments_reversals__reversalId_,
+                api.get._api_v1_payments__id_reversals_summary]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
