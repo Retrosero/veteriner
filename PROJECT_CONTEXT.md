@@ -152,13 +152,7 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-046 ✅ Kontrol randevusu oluşturma (tamamlandı — 2026-07-30)
   - GOAL-047 ✅ Klinik kayıt PDF ve paylaşım (tamamlandı — 2026-07-30)
 - **Faz 5 — Aşı + stok** ⏳ sırada
-  - GOAL-050 ⏳ partial — core: aşı kataloğu + tür/kategori/yaş/adım +
-    `isCore`/`totalDurationMonths` türetme + soft archive +
-    tenant izolasyonu + 18/18 vaccines testi + 544/544 api testi
-    geçti. Bu tick'te eklendi: `defaultDose` (protokol düzeyinde ml/dose/
-    mg/drop) + her step için `boosterIntervalDays` ve step-bazlı `dose`
-    override. Sonraki tick: docs/RAG chunk/i18n key parity + Faz 6 stok
-    modülü ile `stockProductId` referansı.
+  - GOAL-050 ✅ Aşı kataloğu ve protokoller (tamamlandı — 2026-07-30)
   - GOAL-051 ⏳ partial — core: aşı uygulama kaydı + atomik stok
     düşümü + in-memory stock ledger. `vaccineApplication`
     sözleşmesi (create/amend/cancel/list/byPatient + SKT/stok/tür

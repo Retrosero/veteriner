@@ -4172,3 +4172,55 @@ generated_at: "2026-07-30"
     - "POST /api/v1/clinic/examinations/{id}/share"
     - "GET /api/v1/clinic/examinations/{id}/shares"
     - "DELETE /api/v1/clinic/shares/{shareId}"
+
+# -----------------------------------------------------------------------------
+# GLOSSARY (ek) — Aşı Protokolü (GOAL-050)
+# -----------------------------------------------------------------------------
+# Source: GOAL-050 aşı kataloğu ve protokoller (packages/contracts/src/vaccine.ts)
+# Protokol = bir türün (species) aşı takvimi. Kategori (WSAVA/AAHA:
+# core / non_core / lifestyle / not_recommended) klinisyene filtre imkânı
+# verir. `isCore` ve `totalDurationMonths` service katmanında türetilir.
+
+- chunk_id: glossary-vaccine-protocol
+  type: glossary
+  source: packages/contracts/src/vaccine.ts
+  entity: vaccine_protocol
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Aşı Protokolü (Vaccine Protocol)"
+  content: |
+    Aşı protokolü, bir türün (species: dog/cat/bird/all)
+    aşı takvimini tanımlayan klinik katalog kaydıdır. Bir
+    veya daha fazla step'ten oluşur; her step yaşa
+    (`ageWeeks`) göre uygulanacak aşı adını
+    (`vaccineName`), sonraki booster'a kadar geçen gün
+    sayısını (`boosterIntervalDays`) ve opsiyonel doz
+    override'ını taşır. Kategori (WSAVA/AAHA uyumlu):
+    `core` (zorunlu), `non_core` (risk-bazlı), `lifestyle`
+    (yaşam tarzına göre), `not_recommended` (artık
+    önerilmeyen). `isCore` alanı `category='core'` ise
+    otomatik `true` yapılır; `totalDurationMonths` son
+    step'in `ageWeeks`'inden türetilir — client
+    gönderemez. Protokol üzerinde fiziksel silme YOK;
+    `archiveProtocol` ile `archivedAt` set edilir (soft
+    delete). Arşivli protokol listede dönmez, güncellenemez
+    (409 `VET-VACC-0001`). Tenant-scoped; cross-tenant
+    IDOR koruması `actor.tenantId` üzerinden.
+  keywords: [aşı protokolü, vaccine protocol, takvim,
+             kategori, WSAVA, AAHA, core, non_core,
+             lifestyle, not_recommended, booster,
+             ageWeeks, soft delete, tenant-scoped]
+  related_chunks: [glossary-vaccination, glossary-stock,
+                   flow-vaccination, error-VET-VACC-0001,
+                   error-VET-VACC-0002,
+                   error-VET-VALIDATION-0010]
+  related_pages: []
+  related_api:
+    - "POST /api/v1/clinic/vaccines/protocols"
+    - "GET /api/v1/clinic/vaccines/protocols"
+    - "GET /api/v1/clinic/vaccines/protocols/{id}"
+    - "PATCH /api/v1/clinic/vaccines/protocols/{id}"
+    - "DELETE /api/v1/clinic/vaccines/protocols/{id}"
