@@ -49,6 +49,7 @@ import type {
 
 import { CalendarService } from "../calendar/calendar.service.js";
 import { PatientsService } from "../patients/patients.service.js";
+import type { AppointmentRemindersService } from "../appointment-reminders/appointment-reminders.service.js";
 
 import {
   type AppointmentRecord,
@@ -64,6 +65,7 @@ export class AppointmentsService {
     private readonly calendar: CalendarService,
     private readonly patients: PatientsService,
     private readonly audit: AuditService,
+    private readonly reminders?: AppointmentRemindersService,
   ) {}
 
   // -------------------------------------------------------------------------
@@ -220,6 +222,26 @@ export class AppointmentsService {
         durationMin: input.durationMin,
       },
     );
+
+    // 7) Reminder hook: randevu için hatırlatma planla (varsa).
+    if (this.reminders) {
+      try {
+        await this.reminders.scheduleForAppointment(
+          tenantId,
+          this.toAppointment(record),
+          actor,
+        );
+      } catch (err) {
+        // Reminder başarısız olursa randevu oluşturma rollback
+        // edilmez; audit warning loglanır. Faz 11+'da
+        // transactional outbox kullanılır.
+        this.logger.warn({
+          msg: "appointment.reminder.schedule_failed",
+          appointmentId: id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
 
     return this.toAppointment(record);
   }
@@ -418,6 +440,26 @@ export class AppointmentsService {
       },
     );
 
+    // Reminder hook: start değiştiyse hatırlatmaları yeni zamana taşı.
+    if (this.reminders && startChanged) {
+      try {
+        await this.reminders.rescheduleForAppointment(
+          tenantId,
+          id,
+          existing.start,
+          updated.start,
+          updated.end,
+          actor,
+        );
+      } catch (err) {
+        this.logger.warn({
+          msg: "appointment.reminder.reschedule_failed",
+          appointmentId: id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
     return this.toAppointment(updated);
   }
 
@@ -478,6 +520,19 @@ export class AppointmentsService {
         reason: _reason,
       },
     );
+
+    // Reminder hook: iptal edilen randevuya hatırlatma gitmesin.
+    if (this.reminders) {
+      try {
+        await this.reminders.cancelForAppointment(tenantId, id, actor);
+      } catch (err) {
+        this.logger.warn({
+          msg: "appointment.reminder.cancel_failed",
+          appointmentId: id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -532,6 +587,19 @@ export class AppointmentsService {
         previousStatus: existing.status,
       },
     );
+
+    // Reminder hook: tamamlanan randevuya hatırlatma gitmesin.
+    if (this.reminders) {
+      try {
+        await this.reminders.cancelForAppointment(tenantId, id, actor);
+      } catch (err) {
+        this.logger.warn({
+          msg: "appointment.reminder.cancel_failed_on_complete",
+          appointmentId: id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -586,6 +654,19 @@ export class AppointmentsService {
         previousStatus: existing.status,
       },
     );
+
+    // Reminder hook: no_show yapılan randevuya hatırlatma gitmesin.
+    if (this.reminders) {
+      try {
+        await this.reminders.cancelForAppointment(tenantId, id, actor);
+      } catch (err) {
+        this.logger.warn({
+          msg: "appointment.reminder.cancel_failed_on_no_show",
+          appointmentId: id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
   }
 
   // -------------------------------------------------------------------------

@@ -40,8 +40,13 @@ export type ActorRole =
 export interface ActorContext {
   /** Actor ID (kullanıcı UUID). SYSTEM için null. */
   actorId: string | null;
-  /** Actor tipi (user / system). */
-  actorType: "user" | "system";
+  /**
+   * Actor tipi. `user` personel panel kullanıcısı, `portal_user`
+   * hasta sahibi portal kullanıcısı (GOAL-033), `system` background
+   * job / internal. Tenant scope ve permission kontrolü actorType
+   * üzerinden dallanır.
+   */
+  actorType: "user" | "system" | "portal_user";
   /** Aktörün rolü. SUPERADMIN tüm tenantları görebilir. */
   role: ActorRole;
   /** Aktif tenant (varsa). SUPERADMIN tüm tenantları yönetir. */
@@ -57,9 +62,10 @@ export interface ActorContext {
   ipAddress: string | null;
   /** User agent hash (opsiyonel). */
   userAgentHash: string | null;
-  /** Actor'un menşei (auth placeholder'da `header`/`default`,
-   *  gerçek auth sonrası `session`, sistem event'lerde `system`). */
-  source: "header" | "default" | "session" | "system";
+  /** Actor'un menşei. Auth placeholder'da `header`/`default`,
+   *  personel auth sonrası `session`, portal auth sonrası
+   *  `portal_session`, sistem event'lerde `system`. */
+  source: "header" | "default" | "session" | "portal_session" | "system";
 }
 
 const ACTOR_ID_HEADER = "x-actor-id";

@@ -48,7 +48,12 @@ export type AuditAction =
  * - integration: dış servis callback
  * - job: BullMQ worker
  */
-export type AuditActorType = "user" | "system" | "integration" | "job";
+export type AuditActorType =
+  | "user"
+  | "system"
+  | "integration"
+  | "job"
+  | "portal_user";
 
 /**
  * Audit event ciddiyet seviyesi.

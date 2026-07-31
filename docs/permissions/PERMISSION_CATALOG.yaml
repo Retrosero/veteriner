@@ -1480,6 +1480,76 @@ permissions:
     applies_to_roles: [OWNER, STAFF]
 
   # ----------------------------------------------------------------
+  # CATALOG:PRODUCT — Ortak ürün/hizmet kataloğu (FAZ-6)
+  # Klinik + petshop ortak katalog. 5 tür: stock_product, medicine,
+  # vaccine, service, consumable. GOAL-060.
+  # ----------------------------------------------------------------
+  - permission: "catalog:product:read"
+    description: "Ortak ürün/hizmet kataloğunu görüntüleme."
+    resource_type: product
+    action: read
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, VETERINARIAN, STAFF]
+
+  - permission: "catalog:product:create"
+    description: "Yeni ürün/hizmet kataloğu kaydı oluşturma."
+    resource_type: product
+    action: create
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "catalog:product:update"
+    description: "Ürün/hizmet kataloğu kaydını güncelleme."
+    resource_type: product
+    action: update
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  - permission: "catalog:product:archive"
+    description: "Ürün/hizmet kataloğu kaydını arşivleme (soft delete)."
+    resource_type: product
+    action: archive
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER]
+
+  - permission: "catalog:product:export"
+    description: "Ürün/hizmet kataloğunu dışa aktarma."
+    resource_type: product
+    action: export
+    tenant_scope: required
+    branch_scope: required
+    self_only: false
+    audit: true
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, STAFF]
+
+  # ----------------------------------------------------------------
   # PETSHOP:STOCK — Petshop stok
   # ----------------------------------------------------------------
   - permission: "petshop:stock:read"
@@ -2045,20 +2115,20 @@ permissions:
 # TOPLAMLAR (otomatik hesaplanır, referans için)
 # =============================================================================
 summary:
-  total_permissions: 118
+  total_permissions: 123
   by_action:
-    read: 32
-    create: 26
-    update: 28
-    archive: 15
-    export: 13
+    read: 33
+    create: 27
+    update: 29
+    archive: 16
+    export: 14
     amend: 9
     manage: 2
   by_role:
     SUPERADMIN: 12
-    OWNER: 83
-    VETERINARIAN: 78
-    STAFF: 53
+    OWNER: 88
+    VETERINARIAN: 79
+    STAFF: 57
     PET_OWNER_PORTAL: 20
   by_module:
     common: 6
@@ -2083,6 +2153,7 @@ summary:
     clinic_stock: 5
     petshop_config: 2
     petshop_product: 5
+    catalog_product: 5
     petshop_stock: 5
     petshop_sale: 4
     clinic_payment: 3

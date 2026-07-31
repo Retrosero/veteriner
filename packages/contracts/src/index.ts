@@ -48,3 +48,4 @@ export * from "./vaccine-card.js";
 export * from "./vaccine-reminder.js";
 export * from "./followup.js";
 export * from "./clinical-record-share.js";
+export * from "./product.js";

@@ -61,6 +61,7 @@ import { OrdersModule } from "./modules/orders/orders.module.js";
 import { PrescriptionsModule } from "./modules/prescriptions/prescriptions.module.js";
 import { VaccinesModule } from "./modules/vaccines/vaccines.module.js";
 import { FollowupsModule } from "./modules/followups/followups.module.js";
+import { ProductsModule } from "./modules/products/products.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 
 @Module({
@@ -101,6 +102,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     VaccinesModule,
     FollowupsModule,
     ClinicalRecordsModule,
+    ProductsModule,
   ],
 })
 export class AppModule {}

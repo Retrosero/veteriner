@@ -240,3 +240,37 @@ Pilot klinikte gÃ¼nlÃ¼k iÅŸlerin gerÃ§ek kullanÄ±mda yÃ¶netilebildiÄŸi, kararlÄ±
     docs/RAG chunk/i18n key parity + DB migration (Prisma) +
     Faz 6 stok modÃ¼lÃ¼ ile `stockProductId` gerÃ§ek referans +
     amendment zinciri (parentId) iÃ§in Ã§oklu amend.
+
+- **Faz 6 — Klinik + petshop ortak stok/petshop** ? sýrada
+  - GOAL-060 ? partial — core: ürün ve hizmet kataloðu. product
+    sözleþmesi (ProductKind: stock_product/medicine/vaccine/service/
+    consumable + ProductUnit × 11 + ProductTaxProfile + ProductCurrency
+    + SKU/barkod unique per-tenant + auto-SKU prd-{kindChar}{6} +
+    vaccine türünde accineProtocolId Faz 5 referansý + medicine
+    türünde equiresPrescription/controlledDrug UK ilaç
+    regülasyonu için) + products.types.ts (ProductRecord +
+    toProduct + normalizeDecimalString + generateSku) +
+    ProductsRepository (in-memory Map + bySku + byBarcode
+    index + nextSkuCounter) + ProductsService (createProduct
+    SKU/barkod unique + auto-SKU + audit info + Decimal
+    normalizasyon + 422 VET-VALIDATION-0010 invalid price;
+    listProducts kind/kinds/clinic/petshop/search/category/active
+    filtreleri; getProduct cross-tenant null; updateProduct kýsmi
+    + arþivli kayýt 409 VET-PRODUCT-0004 + SKU/barkod deðiþimi
+    unique kontrolü + null=barkod temizle + audit info;
+    archiveProduct soft delete + active=false + zaten arþivli
+    409 VET-PRODUCT-0003 + audit warning) + ProductsController
+    (5 endpoint + Zod validation + PermissionsGuard) + module
+    wiring (AppModule entegrasyonu) + 5 yeni permission
+    catalog:product:read/create/update/archive/export
+    (PERMISSION_CATALOG.yaml + permission-spec.ts union +
+    OWNER +5, VETERINARIAN +1, STAFF +4) + 26/26 yeni test +
+    655/655 api testi geçti. Hata kodlarý: VET-PRODUCT-0001
+    (bulunamadý), VET-PRODUCT-0002 (SKU/barkod duplicate),
+    VET-PRODUCT-0003 (zaten arþivli), VET-PRODUCT-0004
+    (arþivli güncellenemez), VET-VALIDATION-0010 (invalid
+    price), VET-AUTHZ-0001 (cross-tenant). Audit
+    udit:product.create/update/archive. Sonraki tick:
+    docs/RAG chunk/i18n key parity + DB migration (Prisma) +
+    Faz 6 stok modülü ile gerçek stockProductId referansý
+    + Faz 5 vaccine protokolü tam entegrasyonu.

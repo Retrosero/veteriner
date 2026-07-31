@@ -12,6 +12,7 @@
 
 import { Module } from "@nestjs/common";
 
+import { AppointmentRemindersModule } from "../appointment-reminders/appointment-reminders.module.js";
 import { CalendarModule } from "../calendar/calendar.module.js";
 import { PatientsModule } from "../patients/patients.module.js";
 
@@ -20,7 +21,7 @@ import { AppointmentsRepository } from "./appointments.repository.js";
 import { AppointmentsService } from "./appointments.service.js";
 
 @Module({
-  imports: [CalendarModule, PatientsModule],
+  imports: [CalendarModule, PatientsModule, AppointmentRemindersModule],
   controllers: [AppointmentsController],
   providers: [AppointmentsService, AppointmentsRepository],
   exports: [AppointmentsService, AppointmentsRepository],
