@@ -1,3 +1,15 @@
+/**
+ * @file Next.js App Router sayfa tarayıcısı.
+ * @module @vetniva/docs-check/scanners/web
+ *
+ * @description `app/[locale]/page.tsx` dosyalarını bularak
+ * Next.js App Router sayfalarını çıkarır. `[locale]` dinamik
+ * segmentini `:locale` placeholder'ına dönüştürür ve
+ * `docs/pages/web.<route>.yaml` anahtarını üretir. Bu statik
+ * analizdir; route group'lar (parantezli klasörler) ve paralel
+ * route'lar bu sürümde desteklenmez.
+ */
+
 import fg from "fast-glob";
 import type { RouteInfo } from "../types.js";
 
