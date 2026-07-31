@@ -1,0 +1,33 @@
+# GET /api/v1/inventory/shelves/{id}
+
+ID'ye göre tek raf getirir. Cross-tenant → 404
+`VET-INV-0002`.
+
+- **Modül:** inventory
+- **Yetki:** `inventory:shelf:read`
+- **Audit:** yok (salt okunur)
+
+**Path parametreleri:**
+
+- `id` (UUID) zorunlu.
+
+**Response 200 (`Shelf`):**
+
+`Shelf` şeması için bkz. `POST /api/v1/inventory/shelves`.
+
+**Hata kodları:**
+
+- `VET-AUTH-0001` (401) — Oturum geçersiz.
+- `VET-AUTHZ-0001` (403) — Yetki yok.
+- `VET-TENANT-0001` (400) — Aktif tenant yok.
+- `VET-VALIDATION-0001` (400) — UUID parse hatası.
+- `VET-INV-0002` (404) — Raf bulunamadı (cross-tenant dahil).
+
+**Tenant izolasyonu:** `actor.tenantId` zorunlu; SUPERADMIN
+bypass'lı.
+
+**İlgili dokümanlar:**
+
+- API sözleşmesi: `packages/contracts/src/inventory.ts`
+- Liste: `GET /api/v1/inventory/shelves`
+- AI chunk: `flow-inventory-shelf`

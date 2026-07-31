@@ -158,43 +158,7 @@ Pilot klinikte günlük işlerin gerçek kullanımda yönetilebildiği, kararlı
   - GOAL-053 ✅ Aşı hatırlatma job'u (tamamlandı — 2026-07-30, core: 763f2f, docs/i18n: bu commit). 4 endpoint; schedule/cancel/reschedule hook'ları; in-process queue + 3 denemelik exponential backoff; tenant config (daysBeforeDue 1-90 + channels 1-3, default 7 gün + sms+in_app); consent-aware dispatch (sms/email consent yoksa atla); idempotent + double-send korumalı; multi-tenant processDue. BullMQ geçişi FAZ-10'a, otomatik cron FAZ-10'a.
   - GOAL-054 ✅ Aşı amendment ve düzeltme (tamamlandı — 2026-07-30, core: 7c42ba, docs/i18n: bu commit). 1 endpoint (PATCH); status='active' şartı; düzeltilebilir alanlar dose/nextDueDate/notes/lot; lot değişiminde atomik ters kayıt + yeni düşüm (SKT 422 VET-VACC-0010, yetersiz stok 422 VET-VACC-0009, aktif değil 409 VET-VACC-0007); mendReason zorunlu; append-only (status='amended', fiziksel silme yok); audit udit:vaccine.application.amend (warning, before snapshot + lotChange). Reminder hook 
 escheduleForApplication otomatik çağrılır. Çoklu amend zinciri (parentId) sonraya.
-  - GOAL-061 ⏳ partial — core: depo, raf ve lot tanımları.
-    `inventory` sözleşmesi (Warehouse + Shelf + StockLot +
-    3 tür: clinic/petshop/general + raf temperatureZone:
-    room/cold/freezer + lot SKT/tedarik/raf atama +
-    10 yeni VET-INV-* hata kodu: 0001-0010) +
-    `inventory.types.ts` (WarehouseRecord + ShelfRecord +
-    StockLotRecord + toWarehouse/toShelf/toStockLot +
-    normalizeLotQuantity + isExpired) +
-    InventoryRepository (in-memory; warehouse code unique +
-    shelf code per-warehouse unique + lot number per-product
-    unique + byProduct/byShelf/byWarehouse indeksleri +
-    countActiveShelvesForWarehouse + countActiveLotsForShelf) +
-    InventoryService (3 varlık × 5 mutasyon = 15 public method;
-    cross-tenant 403 VET-AUTHZ-0001, archive chain
-    VET-INV-0007/0008/0010, code unique VET-INV-0004/0005,
-    lot unique VET-INV-0006, SKT geçmiş 422 VET-INV-0009;
-    manufactureAt ≤ expiryDate refine; tenant izolasyonu) +
-    InventoryController (15 REST endpoint: POST/GET/PATCH
-    + POST :id/archive × 3 varlık; Zod validation +
-    PermissionsGuard) + InventoryModule (AppModule
-    entegrasyonu) + 12 yeni permission catalog:
-    inventory:warehouse:read/create/update/archive,
-    inventory:shelf:read/create/update/archive,
-    inventory:lot:read/create/update/archive
-    (PERMISSION_CATALOG.yaml + permission-spec.ts union +
-    OWNER +9, VETERINARIAN +3, STAFF +9) + 28/28 yeni test +
-    684/684 api testi geçti. Audit
-    `audit:inventory.warehouse.create/update/archive`,
-    `audit:inventory.shelf.create/update/archive`,
-    `audit:inventory.lot.create/update/archive`. Sonraki
-    tick: docs/RAG chunk/i18n key parity + DB migration
-    (Prisma) + Faz 6 stok hareketleri (GOAL-063+) ile
-    `stockProductId` gerçek referans + Faz 5 vaccine
-    protokol lot + Faz 7 satın alma ile `supplierName`
-    bağlantısı + lokasyon ağacı için tree endpoint.
-
-- **Faz 6 — Klinik + petshop ortak stok/petshop** ⏳ sırada
+  - GOAL-061 ✅ Depo, raf, lot ve SKT (tamamlandı — 2026-07-30, core: 10baf7, docs/i18n: bu commit). 15 endpoint (5 warehouse + 5 shelf + 5 lot); hiyerarşi Warehouse→Shelf→Lot; warehouse type (clinic/petshop/general); shelf temperatureZone (room/cold/freezer); lot unique productId × tenant; SKT geçmiş kabul edilmez (422 VET-INV-0003); arşivleme sıralı (alt→üst) + aktif lot/raf varsa 409; stok miktarı TUTULMAZ (GOAL-063 StockMovement). Audit udit:inventory.{warehouse,shelf,lot}.{create,update,archive}. Tree endpoint, supplier link, DB migration sonraya.
   - GOAL-060 ✅ Ürün ve hizmet kataloğu (tamamlandı — 2026-07-30, core: 4edbf3c, docs/i18n: bu commit). 5 endpoint (POST/GET list/GET :id/PATCH/POST archive); 5 ProductKind (stock_product/medicine/vaccine/service/consumable); kanal kısıtı (clinicUsage + petshopUsage); vergi (5 taxProfile) + currency izolasyonu; SKU otomatik + tenant unique; arşivleme soft delete (archivedAt set, FK kırılmaz, re-archive yok); Faz 5 vaccineProtocolId decoupled referans. Audit udit:product.{create,update,archive}. Ülke adaptörü Faz 7'de, stok bakiyesi Faz 6 devamında.
   - GOAL-062 ⏳ partial — core: tedarikçi kataloğu (3 tür:
     clinic/petshop/general + code unique per-tenant + soft archive +

@@ -593,6 +593,115 @@ generated_at: "2026-07-30"
                 api.patch._api_v1_catalog_products__id_,
                 api.post._api_v1_catalog_products__id_archive]
 
+- chunk_id: flow-inventory-warehouse
+  type: flow
+  source: packages/contracts/src/inventory.ts
+  entity: warehouse
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Depo Yönetimi Akışı (Warehouse)"
+  content: |
+    1. Tenant-scoped depo (warehouse) tanımı. `type`:
+       `clinic` (ilaç/aşı saklama) | `petshop` (genel stok) |
+       `general` (varsayılan). Pilot tek şube olsa da tenant
+       başına birden fazla depo desteklenir (merkez depo, şube
+       deposu vb.).
+    2. `code` tenant-içi benzersiz (regex
+       `^[A-Za-z0-9_-]+$`); duplicate → 409 VET-INV-0004.
+    3. POST → oluştur; PATCH → kısmi güncelleme (arşivli
+       güncellenemez, 409 VET-INV-0009).
+    4. Arşivleme: `POST /archive` ile soft delete. Aktif raf
+       varsa 409 VET-INV-0010 (önce rafları arşivleyin). Re-archive
+       YOK.
+    5. Audit `audit:inventory.warehouse.{create,update,archive}`.
+       Stok miktarı bu tabloda TUTULMAZ; StockMovement
+       (GOAL-063) ile hesaplanır.
+  keywords: [depo, warehouse, lokasyon, type, code unique,
+             soft delete, append-only]
+  related_chunks: [glossary-warehouse, error-VET-INV-0001,
+                   error-VET-INV-0004, error-VET-INV-0009,
+                   error-VET-INV-0010]
+  related_pages: []
+  related_api: [api.post._api_v1_inventory_warehouses,
+                api.get._api_v1_inventory_warehouses,
+                api.get._api_v1_inventory_warehouses__id_,
+                api.patch._api_v1_inventory_warehouses__id_,
+                api.post._api_v1_inventory_warehouses__id_archive]
+
+- chunk_id: flow-inventory-shelf
+  type: flow
+  source: packages/contracts/src/inventory.ts
+  entity: shelf
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Raf Yönetimi Akışı (Shelf)"
+  content: |
+    1. Raf (shelf) bir depoya bağlıdır. `temperatureZone`:
+       `room` (default) | `cold` (soğuk oda) | `freezer`
+       (dondurucu). Aşı/ilaç saklama için `cold` veya
+       `freezer` zorunlu olabilir (Faz 7'de policy).
+    2. `code` opsiyonel; verildiyse depo-içi benzersiz
+       (VET-INV-0005).
+    3. Arşivlenmiş depoya raf eklenemez (VET-INV-0008).
+    4. Arşivleme: aktif lot varsa 409 VET-INV-0010.
+    5. Lokasyon ağacı: Warehouse → Shelf → Lot.
+    6. Audit `audit:inventory.shelf.{create,update,archive}`.
+  keywords: [raf, shelf, lokasyon, depo, temperatureZone,
+             soğuk oda, freezer]
+  related_chunks: [flow-inventory-warehouse, error-VET-INV-0002,
+                   error-VET-INV-0005, error-VET-INV-0008,
+                   error-VET-INV-0010]
+  related_pages: []
+  related_api: [api.post._api_v1_inventory_shelves,
+                api.get._api_v1_inventory_shelves,
+                api.get._api_v1_inventory_shelves__id_,
+                api.patch._api_v1_inventory_shelves__id_,
+                api.post._api_v1_inventory_shelves__id_archive]
+
+- chunk_id: flow-inventory-lot
+  type: flow
+  source: packages/contracts/src/inventory.ts
+  entity: stock_lot
+  locale: tr-TR
+  version: "1.0.0"
+  last_verified_at: 2026-07-30
+  confidence: high
+  pii: false
+  title: "Lot / Stok Partisi Yönetimi Akışı (Stock Lot)"
+  content: |
+    1. Lot (stok partisi) bir ürün (Product) için tedarik
+       edilen partinin takibi. `lotNumber` + SKT (son kullanma
+       tarihi) + tedarikçi/lot bilgisi.
+    2. `lotNumber` `productId` × tenant bazında benzersiz
+       (VET-INV-0006).
+    3. SKT geçmiş olamaz (VET-INV-0003). Üretim tarihi
+       SKT'den sonra olamaz.
+    4. Sıralama default `expiryDate ASC` (yaklaşan SKT en
+       önde). `expiredOnly` filtresi ile geçmiş lotlar.
+    5. Arşivleme: yeniden aktif etme (un-archive) YOK; yeni
+       lot oluşturulur. Geçmiş hareketler korunur.
+    6. Faz 5 aşı uygulaması (GOAL-051) ile lot referansı
+       (vaccine.lot). Faz 7 satın alma (GOAL-062) ile
+       receivePurchaseOrder lot/SKT girişi.
+    7. Audit `audit:inventory.lot.{create,update,archive}`.
+  keywords: [lot, stok partisi, lotNumber, expiryDate, SKT,
+             tedarik, productId, benzersiz]
+  related_chunks: [flow-inventory-shelf, flow-product-catalog,
+                   error-VET-INV-0003, error-VET-INV-0006,
+                   error-VET-INV-0009]
+  related_pages: []
+  related_api: [api.post._api_v1_inventory_lots,
+                api.get._api_v1_inventory_lots,
+                api.get._api_v1_inventory_lots__id_,
+                api.patch._api_v1_inventory_lots__id_,
+                api.post._api_v1_inventory_lots__id_archive]
+
 - chunk_id: flow-ownership-transfer
   type: flow
   source: docs/domain/CLINICAL_FLOWS.md
