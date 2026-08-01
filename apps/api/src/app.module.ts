@@ -9,7 +9,7 @@
  * - ConfigModule (env)
  * - PrismaModule (DB)
  * - AuditModule (audit + log)
- * - ActorModule (GOAL-010 header placeholder; AuthGuard session varsa override)
+ * - ActorModule (güvenilir request actor bağlamı)
  * - AuthModule (GOAL-011 kimlik doğrulama)
  * - RbacModule (GOAL-012 RBAC ve izin motoru).
  *
@@ -19,11 +19,10 @@
  * - TenantModule (FAZ-1)
  * - BranchModule (FAZ-1)
  * - IdentityModule (FAZ-1 — /me endpointleri).
- * @security Auth guard controller-level'ında çalışır; header
- * placeholder fallback'i ActorInterceptor'da korunur (test/dev
- * uyumu için). RBAC guard (PermissionsGuard) isteğe bağlı olarak
- * controller'larda `@UseGuards(PermissionsGuard)` ile uygulanır;
- * global guard kaydı GOAL-012 sonrası yapılabilir.
+ * @security AuthGuard uygulama geneli kaydedilidir; public endpoint'ler
+ * `@Public()` ile açıkça işaretlenir. ActorInterceptor yalnızca guard'ın
+ * ürettiği güvenilir actor bağlamını tüketir. RBAC guard
+ * (`PermissionsGuard`) ilgili controller'larda zorunlu kılınır.
  */
 
 import { Module } from "@nestjs/common";
@@ -120,7 +119,6 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     SuperadminModule,
     TimelineModule,
     PortalModule,
-    PortalAuthModule,
     PortalAuthModule,
     PortalPetsModule,
     PortalAppointmentsModule,

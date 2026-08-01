@@ -4,8 +4,8 @@
  * @description NestJS uygulamasını başlatır:
  * - Global exception filter (AllExceptionsFilter)
  * - Global request ID interceptor
- * - Global actor interceptor (AuthGuard session varsa override eder;
- *   aksi halde header placeholder fallback — GOAL-010 uyumu)
+ * - Global actor interceptor (AuthGuard'ın ürettiği güvenilir actor
+ *   bağlamını endpoint katmanına taşır)
  * - Helmet (güvenlik başlıkları)
  * - CORS (WEB_BASE_URL'den, credentials=true)
  * - Cookie parser (GOAL-011 session cookie)
