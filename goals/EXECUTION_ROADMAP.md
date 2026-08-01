@@ -11,10 +11,12 @@
 > indexi ve trigger ile engellenir. Temiz izole veritabaninda tum root smoke
 > kapsami 19/19 basarili.
 >
-> Acik production kaniti: bu yerel sonuc CI tarafinda bagimsiz
-> calistirilmali; pilot kabul, performans, guvenlik, backup/restore ve harici
-> saglayici/kurum entegrasyonlari gercek ortam erisimi olmadan tamamlanmis
-> sayilmaz.
+> 1 Agustos 2026 CI kaniti: `main` uzerindeki GitHub Actions run
+> `30709275922`, temiz Linux runner'da install/cache, lint, type-check, unit,
+> build, docs/i18n ve PostgreSQL runtime-role/migration/HTTP smoke E2E
+> kapilarinin tamamini basariyla gecmistir. Pilot kabul, performans,
+> guvenlik, backup/restore ve harici saglayici/kurum entegrasyonlari yine de
+> gercek ortam erisimi olmadan tamamlanmis sayilmaz.
 
 > 1 Agustos 2026 RBAC katalog temizligi: runtime permission sozlesmesinde
 > olmayan 19 eski FAZ-11 stub katalogdan kaldirildi. YAML katalog ve
@@ -201,12 +203,12 @@ başlanmaz.
 
 ## Re-baseline — aktif kalite borcu
 
-| Goal                                                           | Durum                            | Çıkış kriteri                                                                                        |
-| -------------------------------------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| GOAL-QA-001: kalite envanteri ve kontrollü ilaç stabilizasyonu | Tamamlandı                       | Tip, test, format, docs ve i18n kapıları; kontrollü ilaç migration/RLS/append-only kanıtı.           |
-| GOAL-QA-002: lint borcunu kapatma                              | Devam ediyor                     | `pnpm lint` sıfır hata; üretim kurallarını gevşetmeden ve her modülü kendi testleriyle doğrulayarak. |
-| GOAL-QA-003: AI chunk UTF-8/YAML bütünlüğü                     | Tamamlandı                       | Chunk üretimi ve doğrulama tekrarlanabilir.                                                          |
-| GOAL-QA-004: CI smoke doğruluğu                                | Yerelde tamamlandı / CI bekliyor | Migration başarısızlıkları gizlenmez; servis readiness zorunludur; CI üzerinde yeşil kanıt alınır.   |
+| Goal                                                           | Durum      | Çıkış kriteri                                                                                      |
+| -------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------- |
+| GOAL-QA-001: kalite envanteri ve kontrollü ilaç stabilizasyonu | Tamamlandı | Tip, test, format, docs ve i18n kapıları; kontrollü ilaç migration/RLS/append-only kanıtı.         |
+| GOAL-QA-002: lint borcunu kapatma                              | Tamamlandı | `pnpm lint` temiz Linux CI runner'ında sıfır hata ile geçti; üretim kuralları gevşetilmedi.        |
+| GOAL-QA-003: AI chunk UTF-8/YAML bütünlüğü                     | Tamamlandı | Chunk üretimi ve doğrulama tekrarlanabilir.                                                        |
+| GOAL-QA-004: CI smoke doğruluğu                                | Tamamlandı | Migration başarısızlıkları gizlenmez; servis readiness zorunludur; CI üzerinde yeşil kanıt alındı. |
 
 ### Güncel doğrulama fotoğrafı — 1 Ağustos 2026
 
@@ -318,12 +320,13 @@ geri dönüşü test edilmiş release prosedürü. İlk satış için Faz 0–7 
 
 ## Bir sonraki çalışma dilimi
 
-1. GOAL-QA-004 için bu yerel kanıt, PR/CI çalıştırmasıyla bağımsız olarak
-   doğrulanır.
-2. GOAL-QA-002 küçük, temiz sahiplikli modüller üzerinden sıfır lint hatasına
-   indirilir; mevcut kullanıcı değişiklikleri topluca yeniden yazılmaz.
-3. Faz 1, gerçek çalışır durumunun yeniden doğrulanmasıyla GOAL-010'dan
+1. Faz 1, gerçek çalışır durumunun yeniden doğrulanmasıyla GOAL-010'dan
    başlayarak sırayla yeniden kapatılır.
+2. Faz 2 ve sonraki klinik/finansal akışlar, ilgili goal kabul kriterleri,
+   tenant izolasyonu ve append-only kanıtlarıyla denetlenir.
+3. Faz 12 için pilot kabul, performans, güvenlik, backup/restore ve gerçek
+   sağlayıcı doğrulamaları planlanır; CI başarısı bu dış ortam kanıtlarının
+   yerine geçmez.
 
 ### GOAL-QA-002 ilerleme kaydı
 
