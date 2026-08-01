@@ -27,6 +27,7 @@
     "docs:check": "node --import tsx tools/docs-check/src/index.ts",
     "i18n:check": "node --import tsx tools/i18n-check/src/index.ts",
     "prepare": "husky || true",
+    "postinstall": "pnpm --filter @vetniva/api db:generate",
     "clean": "turbo run clean && rimraf node_modules"
   },
   "devDependencies": {

@@ -14,7 +14,7 @@
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "e2e:smoke": "vitest run --config vitest.e2e.config.ts",
-    "db:generate": "prisma generate || echo 'GOAL-000: model yok, generate atlandi'",
+    "db:generate": "prisma generate",
     "db:migrate": "node ../../tools/db/migrate-with-migrator.mjs",
     "db:verify-runtime-role": "node scripts/verify-runtime-role.mjs",
     "clean": "rimraf dist .turbo"
