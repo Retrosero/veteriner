@@ -168,7 +168,7 @@ SUPERADMIN) için ortak rehber yazıldı:
 - SUPERADMIN tenant oluşturduktan sonra ilk OWNER'ı davet eder
   (`POST /api/v1/auth/invitations`).
 - Davet kabul edilince User oluşturulur + UserTenantMembership atanır
-  + session açılır.
+  - session açılır.
 - Bir kullanıcı birden fazla tenant'a üye olabilir; login sonrası
   `tenantSlug` ile aktif tenant seçilebilir.
 

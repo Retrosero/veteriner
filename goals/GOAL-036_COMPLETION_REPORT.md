@@ -36,13 +36,14 @@ göre `sent/failed/cancelled`; SYSTEM audit
 tenant-scoped `status/limit/offset` filtreli liste.
 
 **AppointmentRemindersController** (`.controller.ts`) — 2 endpoint:
+
 - `GET  /api/v1/clinic/appointments/:id/reminders`
   (`@RequirePermissions("clinic:appointment:read")`, 200) — query
   Zod `reminderListQuerySchema` (`status?`, `limit? 1-200 default 50`,
   `offset? default 0`).
 - `POST /api/v1/clinic/appointment-reminders/process` (200) — admin/
   job çağrısı; tenant-bağlamı zorunlu değil (`{processed, sent,
-  failed, skipped}` döner). FAZ-3'te manuel trigger; BullMQ worker
+failed, skipped}` döner). FAZ-3'te manuel trigger; BullMQ worker
   Faz 11+'da bu endpoint'i çağıracak.
 
 > Not: scheduleForAppointment / cancelForAppointment /
@@ -88,14 +89,14 @@ appointment_status_* + SYSTEM audit), list 2 (filtre + tenant scope).
   (`reminderConfigInputSchema`) mevcut; FAZ-3+'da tenant settings UI
   ile bağlanacak.
 - **Idempotency 2 katmanlı:** (a) `dedupeKey` (appointmentId + channel
-  + scheduledFor) → repository insert çakışmasında `existing` döner;
-  (b) `NotificationsService.send(idempotencyKey=appt-reminder|{id})`
-  → notification tarafında çift dispatch önlenir.
+  - scheduledFor) → repository insert çakışmasında `existing` döner;
+    (b) `NotificationsService.send(idempotencyKey=appt-reminder|{id})`
+    → notification tarafında çift dispatch önlenir.
 - **Snapshot alanı:** processDueReminders anında `Appointment`'a
   bağımlı kalmamak için schedule sırasında repository'ye kopyalanır.
   Cross-tenant bilgi sızdırmaz (rec.tenantId altında izole).
 - **Consent öncelikli:** `ConsentService.canSend(userId, channel,
-  "appointment_reminder")` — opt-out → `cancelled` (yeniden
+"appointment_reminder")` — opt-out → `cancelled` (yeniden
   denenmez, `opted_out` audit metadata).
 - **Appointment status korelasyonu:** `cancelled/completed/no_show`
   randevuya hatırlatma gitmez; snapshot üzerinden kontrol edilip
@@ -134,19 +135,20 @@ handled).
 ## Veritabanı
 
 Yok (FAZ-3 pilot). In-memory `byId: Map<string, AppointmentReminderRecord>`
-+ `byAppointment`, `byDue` indexleri. Üretimde:
-`appointment_reminders` (id, tenantId, appointmentId, channel enum,
-scheduledFor timestamptz, status enum, attempts int, lastError text,
-sentAt timestamptz?, createdAt timestamptz, dedupeKey text unique,
-snapshot jsonb). Indexler: `(tenantId, status, scheduledFor)`,
-`(tenantId, appointmentId, status)`, `dedupeKey` unique.
+
+- `byAppointment`, `byDue` indexleri. Üretimde:
+  `appointment_reminders` (id, tenantId, appointmentId, channel enum,
+  scheduledFor timestamptz, status enum, attempts int, lastError text,
+  sentAt timestamptz?, createdAt timestamptz, dedupeKey text unique,
+  snapshot jsonb). Indexler: `(tenantId, status, scheduledFor)`,
+  `(tenantId, appointmentId, status)`, `dedupeKey` unique.
 
 ## API
 
-| Method | Path                                                       | Auth                  | Kod |
-| ------ | ---------------------------------------------------------- | --------------------- | --- |
-| GET    | /api/v1/clinic/appointments/:id/reminders                  | staff + perm          | 200 |
-| POST   | /api/v1/clinic/appointment-reminders/process               | staff + perm (job)    | 200 |
+| Method | Path                                         | Auth               | Kod |
+| ------ | -------------------------------------------- | ------------------ | --- |
+| GET    | /api/v1/clinic/appointments/:id/reminders    | staff + perm       | 200 |
+| POST   | /api/v1/clinic/appointment-reminders/process | staff + perm (job) | 200 |
 
 Hatalar: 401 `VET-AUTH-0001` (Guard), 403 `VET-AUTHZ-0001`
 (cross-tenant), 400 `VET-TENANT-0001` (tenant bağlamı yok, list

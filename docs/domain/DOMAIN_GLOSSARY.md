@@ -1,20 +1,21 @@
 /**
- * @file Domain sözlüğü.
- * @module docs/domain/DOMAIN_GLOSSARY
- *
- * @description VetNiva'daki tüm varlık/kavramların tanımı, ilişkileri,
- * zorunlu alanları, yaşam döngüsü ve silme/düzeltme kuralları. Bu
- * sözlük, sonraki tüm goal'ların (GOAL-002+) ortak ürün sözleşmesi
- * görevi görür.
- *
- * Bu dosya `docs/fields/FIELD_GLOSSARY.md`'den farklıdır: orada
- * alan düzeyinde (alan adı, tip, kısıt), burada varlık düzeyinde
- * (kavram, ilişkiler, yaşam döngüsü) tanımlama yapılır.
- *
- * @security Tıbbi ve finansal kayıtlar append-only; silme yok,
- * versiyonlama ve amendment ile düzeltme.
- * @author GOAL-001 (FAZ-0) domain sözlüğü
- */
+
+- @file Domain sözlüğü.
+- @module docs/domain/DOMAIN_GLOSSARY
+-
+- @description VetNiva'daki tüm varlık/kavramların tanımı, ilişkileri,
+- zorunlu alanları, yaşam döngüsü ve silme/düzeltme kuralları. Bu
+- sözlük, sonraki tüm goal'ların (GOAL-002+) ortak ürün sözleşmesi
+- görevi görür.
+-
+- Bu dosya `docs/fields/FIELD_GLOSSARY.md`'den farklıdır: orada
+- alan düzeyinde (alan adı, tip, kısıt), burada varlık düzeyinde
+- (kavram, ilişkiler, yaşam döngüsü) tanımlama yapılır.
+-
+- @security Tıbbi ve finansal kayıtlar append-only; silme yok,
+- versiyonlama ve amendment ile düzeltme.
+- @author GOAL-001 (FAZ-0) domain sözlüğü
+  */
 
 # VetNiva Domain Sözlüğü
 

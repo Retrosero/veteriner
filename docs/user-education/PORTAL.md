@@ -1,12 +1,14 @@
 # Kullanıcı Eğitimi — Portal (Hayvan Sahibi Arayüzü)
 
 ## Amaç
+
 Hayvan sahiplerinin kendi hayvanlarına ait verileri
 görebileceği, randevu talebi oluşturabileceği ve
 bildirim alabileceği portalın nasıl kullanılacağını
 açıklar.
 
 ## Hedef kitle
+
 - PET_OWNER_PORTAL (hayvan sahipleri)
 
 ## Senaryolar
@@ -104,14 +106,15 @@ mevcut; tüm veriler korunur.
 
 ## Hata durumları
 
-| Hata | Çözüm |
-|------|-------|
-| Davet geçersiz | Yeni davet talep edin. |
-| Hesap kilitli | Klinik ile iletişime geçin. |
-| Sahiplik yok | Klinik tarafından sahiplik tanımlanmalı. |
-| Yetkisiz | Kendi hayvanlarınızı görebilirsiniz. |
+| Hata           | Çözüm                                    |
+| -------------- | ---------------------------------------- |
+| Davet geçersiz | Yeni davet talep edin.                   |
+| Hesap kilitli  | Klinik ile iletişime geçin.              |
+| Sahiplik yok   | Klinik tarafından sahiplik tanımlanmalı. |
+| Yetkisiz       | Kendi hayvanlarınızı görebilirsiniz.     |
 
 ## İlgili dokümanlar
+
 - `docs/api/api.post._api_v1_portal_invitations.md`
 - `goals/GOAL-033 → 036_COMPLETION_REPORT.md` (portal)
 - `goals/GOAL-022_COMPLETION_REPORT.md` (sahiplik devri)

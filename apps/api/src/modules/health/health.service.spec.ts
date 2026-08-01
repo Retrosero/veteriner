@@ -1,7 +1,6 @@
 /**
  * @file HealthService unit testi.
  * @module apps/api/modules/health
- *
  * @description PrismaService'i mock'layarak health check davranışını
  * izole biçimde doğrular.
  */
@@ -10,7 +9,9 @@ import { describe, expect, it, vi } from "vitest";
 
 import { HealthService } from "./health.service.js";
 
-const makePrisma = (impl: () => Promise<unknown>) =>
+const makePrisma = (
+  impl: () => Promise<unknown>,
+): ConstructorParameters<typeof HealthService>[0] =>
   ({
     $queryRaw: vi.fn().mockImplementation(impl),
   }) as unknown as ConstructorParameters<typeof HealthService>[0];

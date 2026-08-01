@@ -1,21 +1,19 @@
 /**
  * @file CalendarService unit testleri.
  * @module apps/api/modules/calendar/calendar.service.spec
- *
  * @description Slot üretimi (09:00-17:00, 30dk → 16 slot), booked
  * + blocked durumu, cross-tenant guard, veterinarian filtresi,
  * setWorkingHours / blockSlot / unblockSlot, audit event
  * yayını.
- *
  * @since GOAL-030 (FAZ-3) klinik takvimi core (partial)
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { CalendarService } from "./calendar.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-
-import { CalendarService } from "./calendar.service.js";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -60,6 +58,9 @@ const SUPERADMIN: ActorContext = {
   source: "header",
 };
 
+/**
+ *
+ */
 function makeAudit(): AuditService {
   return {
     record: vi.fn().mockResolvedValue({ eventId: "ev-1" }),
@@ -82,12 +83,7 @@ describe("CalendarService", () => {
 
   it("getDay: 09:00-17:00 varsayılan saat + 30 dk slot = 16 slot (Pzt)", async () => {
     // 2025-03-17 = Pazartesi (UTC)
-    const day = await service.getDay(
-      TENANT_A,
-      "2025-03-17",
-      {},
-      STAFF_A,
-    );
+    const day = await service.getDay(TENANT_A, "2025-03-17", {}, STAFF_A);
     expect(day.date).toBe("2025-03-17");
     expect(day.slots).toHaveLength(16);
     // İlk slot 09:00-09:30, son slot 16:30-17:00
@@ -112,12 +108,7 @@ describe("CalendarService", () => {
       end: "2025-03-17T10:30:00.000Z",
     });
 
-    const day = await service.getDay(
-      TENANT_A,
-      "2025-03-17",
-      {},
-      STAFF_A,
-    );
+    const day = await service.getDay(TENANT_A, "2025-03-17", {}, STAFF_A);
     const booked = day.slots.find(
       (s) => s.start === "2025-03-17T10:00:00.000Z",
     );
@@ -138,19 +129,10 @@ describe("CalendarService", () => {
       STAFF_A,
     );
 
-    const day = await service.getDay(
-      TENANT_A,
-      "2025-03-17",
-      {},
-      STAFF_A,
-    );
+    const day = await service.getDay(TENANT_A, "2025-03-17", {}, STAFF_A);
     // 12:00-12:30 ve 12:30-13:00 → blocked
-    const slot1 = day.slots.find(
-      (s) => s.start === "2025-03-17T12:00:00.000Z",
-    );
-    const slot2 = day.slots.find(
-      (s) => s.start === "2025-03-17T12:30:00.000Z",
-    );
+    const slot1 = day.slots.find((s) => s.start === "2025-03-17T12:00:00.000Z");
+    const slot2 = day.slots.find((s) => s.start === "2025-03-17T12:30:00.000Z");
     expect(slot1?.status).toBe("blocked");
     expect(slot2?.status).toBe("blocked");
     // 11:30 hâlâ available
@@ -170,12 +152,7 @@ describe("CalendarService", () => {
   });
 
   it("getDay: SUPERADMIN her tenant'a erişebilir", async () => {
-    const day = await service.getDay(
-      TENANT_B,
-      "2025-03-17",
-      {},
-      SUPERADMIN,
-    );
+    const day = await service.getDay(TENANT_B, "2025-03-17", {}, SUPERADMIN);
     expect(day.slots.length).toBeGreaterThan(0);
   });
 
@@ -186,7 +163,12 @@ describe("CalendarService", () => {
       {
         veterinarianId: VET_A,
         hours: [
-          { dayOfWeek: 3, startTime: "10:00", endTime: "12:00", slotDurationMin: 30 },
+          {
+            dayOfWeek: 3,
+            startTime: "10:00",
+            endTime: "12:00",
+            slotDurationMin: 30,
+          },
         ],
       },
       STAFF_A,
@@ -213,12 +195,7 @@ describe("CalendarService", () => {
 
   it("getDay: Pazar (varsayılan çalışılmaz) → 0 slot", async () => {
     // 2025-03-16 = Pazar
-    const sun = await service.getDay(
-      TENANT_A,
-      "2025-03-16",
-      {},
-      STAFF_A,
-    );
+    const sun = await service.getDay(TENANT_A, "2025-03-16", {}, STAFF_A);
     expect(sun.slots).toHaveLength(0);
   });
 
@@ -231,7 +208,12 @@ describe("CalendarService", () => {
       TENANT_A,
       {
         hours: [
-          { dayOfWeek: 1, startTime: "08:00", endTime: "18:00", slotDurationMin: 60 },
+          {
+            dayOfWeek: 1,
+            startTime: "08:00",
+            endTime: "18:00",
+            slotDurationMin: 60,
+          },
         ],
       },
       STAFF_A,
@@ -257,8 +239,18 @@ describe("CalendarService", () => {
         TENANT_A,
         {
           hours: [
-            { dayOfWeek: 1, startTime: "09:00", endTime: "12:00", slotDurationMin: 30 },
-            { dayOfWeek: 1, startTime: "13:00", endTime: "17:00", slotDurationMin: 30 },
+            {
+              dayOfWeek: 1,
+              startTime: "09:00",
+              endTime: "12:00",
+              slotDurationMin: 30,
+            },
+            {
+              dayOfWeek: 1,
+              startTime: "13:00",
+              endTime: "17:00",
+              slotDurationMin: 30,
+            },
           ],
         },
         STAFF_A,
@@ -340,15 +332,14 @@ describe("CalendarService", () => {
     );
 
     // Slot tekrar available
-    const day = await service.getDay(
-      TENANT_A,
-      "2025-03-17",
-      { veterinarianId: VET_A },
-      STAFF_A,
-    );
     // VET_A için default saat tanımlı değil → 0 slot
     // Vet default için bloklamanın kalktığını doğrulayalım
-    const dayDefault = await service.getDay(TENANT_A, "2025-03-17", {}, STAFF_A);
+    const dayDefault = await service.getDay(
+      TENANT_A,
+      "2025-03-17",
+      {},
+      STAFF_A,
+    );
     const slot = dayDefault.slots.find(
       (s) => s.start === "2025-03-17T14:00:00.000Z",
     );
@@ -441,7 +432,9 @@ describe("CalendarService", () => {
       { branchId: "brc-1111" },
       STAFF_A,
     );
-    const slot1 = dayB1.slots.find((s) => s.start === "2025-03-17T15:00:00.000Z");
+    const slot1 = dayB1.slots.find(
+      (s) => s.start === "2025-03-17T15:00:00.000Z",
+    );
     expect(slot1?.status).toBe("blocked");
 
     // Şube 2 — farklı branchId olsa bile tenant-wide olduğu için blocked
@@ -451,7 +444,9 @@ describe("CalendarService", () => {
       { branchId: "brc-2222" },
       STAFF_A,
     );
-    const slot2 = dayB2.slots.find((s) => s.start === "2025-03-17T15:00:00.000Z");
+    const slot2 = dayB2.slots.find(
+      (s) => s.start === "2025-03-17T15:00:00.000Z",
+    );
     expect(slot2?.status).toBe("blocked");
   });
 });

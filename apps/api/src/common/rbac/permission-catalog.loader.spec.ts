@@ -11,10 +11,20 @@ import {
   loadPermissionCatalog,
   resetPermissionCatalogCache,
 } from "./permission-catalog.loader.js";
+import { PERMISSIONS } from "../permissions/permission-spec.js";
 
 describe("PermissionCatalogLoader", () => {
   beforeEach(() => {
     resetPermissionCatalogCache();
+  });
+
+  it("YAML catalog and runtime permission contract match exactly", () => {
+    const catalogKeys = loadPermissionCatalog()
+      .map((definition) => definition.key)
+      .sort();
+    const contractKeys = [...PERMISSIONS].sort();
+
+    expect(catalogKeys).toEqual(contractKeys);
   });
 
   it("kataloğu yükler ve 100+ permission döner", () => {
@@ -30,7 +40,10 @@ describe("PermissionCatalogLoader", () => {
       for (const part of parts) {
         expect(part.length).toBeGreaterThan(0);
       }
-      expect(d.key).toMatch(/^[a-z_-]+(:[a-z_-]+)+$/);
+      const allowedCharacters = new Set("abcdefghijklmnopqrstuvwxyz_-");
+      for (const character of d.key.replaceAll(":", "")) {
+        expect(allowedCharacters.has(character)).toBe(true);
+      }
     }
   });
 

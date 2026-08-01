@@ -33,21 +33,6 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import type {
-  Examination,
-  ExaminationAmend,
-  ExaminationAmendInput,
-  ExaminationCreateInput,
-  ExaminationFilters,
-  ExaminationListResponse,
-} from "@vetniva/contracts";
-
-import { AppointmentsService } from "../appointments/appointments.service.js";
-import { PatientsService } from "../patients/patients.service.js";
-
 import {
   type ExaminationAmendRecord,
   type ExaminationRecord,
@@ -56,6 +41,20 @@ import {
   toExamination,
   toExaminationAmend,
 } from "./examinations.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { AppointmentsService } from "../appointments/appointments.service.js";
+import { PatientsService } from "../patients/patients.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type {
+  Examination,
+  ExaminationAmend,
+  ExaminationAmendInput,
+  ExaminationCreateInput,
+  ExaminationFilters,
+  ExaminationListResponse,
+} from "@vetniva/contracts";
 
 @Injectable()
 export class ExaminationsService {
@@ -458,7 +457,7 @@ export class ExaminationsService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

@@ -28,7 +28,7 @@ POST /api/v1/clinic/consents
 - `patientId` (string) zorunlu.
 - `ownerId` (string) zorunlu.
 - `sourceType` (enum: `surgery_plan|lab_order|procedure|
-  other`) opsiyonel.
+other`) opsiyonel.
 - `sourceId` (string) opsiyonel — `sourceType` set ise.
 - `locale` (ISO) opsiyonel, default `tr-TR`.
 

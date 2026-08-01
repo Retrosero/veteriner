@@ -21,9 +21,15 @@ import globals from "globals";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const sharedLegacyConfig = path.resolve(
+  __dirname,
+  "../../packages/config/eslint.base.cjs",
+);
 
 const compat = new FlatCompat({
   baseDirectory: __dirname,
+  recommendedConfig: js.configs.recommended,
+  allConfig: js.configs.all,
 });
 
 /** @type {import('eslint').Linter.Config[]} */
@@ -40,7 +46,7 @@ export default [
   },
   js.configs.recommended,
   ...compat.config({
-    extends: ["@vetniva/config/eslint"],
+    extends: [sharedLegacyConfig],
   }),
   {
     languageOptions: {
@@ -79,6 +85,23 @@ export default [
     rules: {
       ...reactPlugin.configs.recommended.rules,
       ...reactHooksPlugin.configs.recommended.rules,
+      // Next.js, React 17+ otomatik JSX runtime kullanır.
+      "react/react-in-jsx-scope": "off",
+      "react/jsx-uses-react": "off",
+      // Proje standardı yalnız public/karmaşık API'lerde JSDoc ister;
+      // her yerel React yardımcı fonksiyonuna boş blok eklenmez.
+      "jsdoc/require-jsdoc": "off",
+      "jsdoc/require-description": "off",
+      "jsdoc/check-tag-names": "off",
+      "jsdoc/check-values": "off",
+      "jsdoc/require-description-complete-sentence": "off",
+      "jsdoc/require-param-description": "off",
+      "jsdoc/require-param-type": "off",
+      "jsdoc/require-returns": "off",
+      "jsdoc/tag-lines": "off",
+      // Güvenlik kuralları uyarı olarak geçilemez; paket kapısında hata üretir.
+      "security/detect-object-injection": "error",
+      "security/detect-unsafe-regex": "error",
     },
   },
 ];

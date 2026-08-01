@@ -1,17 +1,18 @@
 /**
- * @file Klinik ve petshop uçtan uca iş akışları.
- * @module docs/domain/CLINICAL_FLOWS
- *
- * @description VetNiva'nın pilot kapsamdaki tüm anahtar uçtan uca
- * iş akışları. Her akış için aktör, ön koşullar, adımlar, tenant
- * bağlamı, yetki gereksinimi, audit event'leri, hata senaryoları,
- * ilgili sayfa/API referansları yer alır.
- *
- * Bu dosya `docs/workflows/OVERVIEW.md`'yi tamamlar: orada Faz 0
- * kapsamı, burada pilot Faz 2+ kapsamı.
- *
- * @author GOAL-001 (FAZ-0) uçtan uca iş akışları
- */
+
+- @file Klinik ve petshop uçtan uca iş akışları.
+- @module docs/domain/CLINICAL_FLOWS
+-
+- @description VetNiva'nın pilot kapsamdaki tüm anahtar uçtan uca
+- iş akışları. Her akış için aktör, ön koşullar, adımlar, tenant
+- bağlamı, yetki gereksinimi, audit event'leri, hata senaryoları,
+- ilgili sayfa/API referansları yer alır.
+-
+- Bu dosya `docs/workflows/OVERVIEW.md`'yi tamamlar: orada Faz 0
+- kapsamı, burada pilot Faz 2+ kapsamı.
+-
+- @author GOAL-001 (FAZ-0) uçtan uca iş akışları
+  */
 
 # Klinik ve Petshop Uçtan Uca İş Akışları
 
@@ -760,7 +761,7 @@ silmeden, amendment oluşturarak düzeltmek.
    - Yeni bir kayıt oluşturur (`amends_id` ile orijinale bağlı)
    - Yeni kayıt aktif hale gelir
 5. Audit: `record.amended` event'i oluşturulur (orijinal + yeni
-   + sebep).
+   - sebep).
 6. Tıbbi zaman çizelgesi her iki kaydı da gösterir
    (düzeltme tarihi + sebep).
 

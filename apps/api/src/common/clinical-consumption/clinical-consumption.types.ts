@@ -115,7 +115,10 @@ export function normalizeConsumptionQuantity(value: string): string | null {
   const fracPart = parts[1];
   const normalizedInt =
     intPart.length > 1 ? intPart.replace(/^0+(?=\d)/, "") : intPart;
-  if (normalizedInt === "0" && (fracPart === undefined || /^0+$/.test(fracPart))) {
+  if (
+    normalizedInt === "0" &&
+    (fracPart === undefined || /^0+$/.test(fracPart))
+  ) {
     return null;
   }
   return fracPart !== undefined

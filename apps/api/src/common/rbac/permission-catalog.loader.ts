@@ -1,7 +1,6 @@
 /**
  * @file Permission kataloğu yükleyici.
  * @module apps/api/common/rbac/permission-catalog.loader
- *
  * @since GOAL-002 (FAZ-0) yetki matrisi
  * @updated GOAL-012 (FAZ-1) RBAC ve izin motoru
  */
@@ -9,17 +8,18 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import type { ActorRole } from "../actor/actor-context.service.js";
 import type {
   BranchScopeFlag,
   PermissionDefinition,
   TenantScopeFlag,
 } from "./permission.types.js";
+import type { ActorRole } from "../actor/actor-context.service.js";
 
 const CATALOG_RELATIVE_PATH = "docs/permissions/PERMISSION_CATALOG.yaml";
 
 let cachedCatalog: ReadonlyArray<PermissionDefinition> | null = null;
 
+/** İzin kataloğunu doğrulayarak yükler ve süreç önbelleğinde tutar. */
 export function loadPermissionCatalog(
   workspaceRoot?: string,
 ): ReadonlyArray<PermissionDefinition> {
@@ -27,6 +27,7 @@ export function loadPermissionCatalog(
 
   const root = workspaceRoot ?? findWorkspaceRoot();
   const filePath = resolve(root, CATALOG_RELATIVE_PATH);
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- Yol kontrollü workspace kökü ile sabit katalog göreli yolundan oluşturulur.
   const raw = readFileSync(filePath, "utf-8");
 
   const parsed = parseCatalogYaml(raw);
@@ -61,10 +62,12 @@ export function loadPermissionCatalog(
   return cachedCatalog;
 }
 
+/** Test veya yeniden yükleme için katalog önbelleğini sıfırlar. */
 export function resetPermissionCatalogCache(): void {
   cachedCatalog = null;
 }
 
+/** Ham YAML izin kaydını uygulamanın tipli izin sözleşmesine dönüştürür. */
 function toDefinition(p: RawPermission): PermissionDefinition {
   return {
     key: p.permission,
@@ -101,6 +104,7 @@ interface RawCatalog {
   permissions?: RawPermission[];
 }
 
+/** Çalışma dizininden yukarı doğru pnpm workspace kökünü bulur. */
 function findWorkspaceRoot(): string {
   let dir = process.cwd();
   for (let i = 0; i < 8; i++) {
@@ -117,8 +121,10 @@ function findWorkspaceRoot(): string {
   return process.cwd();
 }
 
+/** Dosyanın okunabilir olup olmadığını hata yaymadan denetler. */
 function tryExists(p: string): boolean {
   try {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- p yalnızca workspace kökü taramasında resolve ile üretilir.
     readFileSync(p, "utf-8");
     return true;
   } catch {
@@ -126,6 +132,7 @@ function tryExists(p: string): boolean {
   }
 }
 
+/** Katalog YAML'ının sınırlı şemasını bağımlılık eklemeden ayrıştırır. */
 function parseCatalogYaml(raw: string): RawCatalog {
   const lines = raw.split(/\r?\n/);
   const result: RawCatalog = {};
@@ -133,7 +140,7 @@ function parseCatalogYaml(raw: string): RawCatalog {
   let inPermissions = false;
   let i = 0;
   while (i < lines.length) {
-    const line = lines[i] ?? "";
+    const line = lines.at(i) ?? "";
     const trimmed = line.trim();
 
     if (trimmed === "" || trimmed.startsWith("#")) {
@@ -160,7 +167,7 @@ function parseCatalogYaml(raw: string): RawCatalog {
       };
       i++;
       while (i < lines.length) {
-        const sub = lines[i] ?? "";
+        const sub = lines.at(i) ?? "";
         const subTrim = sub.trim();
         if (subTrim === "" || subTrim.startsWith("#")) {
           i++;
@@ -177,21 +184,24 @@ function parseCatalogYaml(raw: string): RawCatalog {
         const v = (kv[2] ?? "").trim();
         if (k === "description") {
           perm.description = unquote(v);
-        } else if (
-          k === "resource_type" ||
-          k === "action" ||
-          k === "tenant_scope" ||
-          k === "branch_scope"
-        ) {
-          (perm as unknown as Record<string, string>)[k] = unquote(v);
-        } else if (
-          k === "self_only" ||
-          k === "audit" ||
-          k === "pii" ||
-          k === "amend" ||
-          k === "system_only"
-        ) {
-          (perm as unknown as Record<string, boolean>)[k] = v === "true";
+        } else if (k === "resource_type") {
+          perm.resource_type = unquote(v);
+        } else if (k === "action") {
+          perm.action = unquote(v);
+        } else if (k === "tenant_scope") {
+          perm.tenant_scope = unquote(v);
+        } else if (k === "branch_scope") {
+          perm.branch_scope = unquote(v);
+        } else if (k === "self_only") {
+          perm.self_only = v === "true";
+        } else if (k === "audit") {
+          perm.audit = v === "true";
+        } else if (k === "pii") {
+          perm.pii = v === "true";
+        } else if (k === "amend") {
+          perm.amend = v === "true";
+        } else if (k === "system_only") {
+          perm.system_only = v === "true";
         } else if (k === "applies_to_roles") {
           if (v.startsWith("[")) {
             const list = v
@@ -205,7 +215,7 @@ function parseCatalogYaml(raw: string): RawCatalog {
             const list: string[] = [];
             i++;
             while (i < lines.length) {
-              const next = lines[i] ?? "";
+              const next = lines.at(i) ?? "";
               const nextTrim = next.trim();
               if (nextTrim === "" || nextTrim.startsWith("#")) {
                 i++;
@@ -231,10 +241,12 @@ function parseCatalogYaml(raw: string): RawCatalog {
   return result;
 }
 
+/** YAML scalar değerinin çevre boşluk ve tırnaklarını normalize eder. */
 function extractScalar(s: string): string {
   return unquote(s.trim());
 }
 
+/** Tek veya çift tırnakla çevrili scalar değerini açar. */
 function unquote(s: string): string {
   if (s.startsWith('"') && s.endsWith('"')) return s.slice(1, -1);
   if (s.startsWith("'") && s.endsWith("'")) return s.slice(1, -1);

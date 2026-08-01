@@ -39,13 +39,13 @@ Permission anahtarı formatı: `<domain>:<resource>:<action>`
 
 ## 5 Temel Rol
 
-| Rol | Amaç | Kapsam |
-| --- | --- | --- |
-| `SUPERADMIN` | Platform yönetimi (onboarding, fatura, sistem) | Tüm tenant'lar |
-| `OWNER` | İşletme sahibi (kullanıcı + finans + tüm veri) | Kendi tenant'ı |
-| `VETERINARIAN` | Klinik tıbbi (muayene, aşı, reçete, ameliyat) | Kendi tenant'ı |
-| `STAFF` | Resepsiyon + petshop kasiyer (tıbbi değil) | Kendi tenant'ı, atanmış şube |
-| `PET_OWNER_PORTAL` | Salt okunur kendi hayvanları | `self_only` |
+| Rol                | Amaç                                           | Kapsam                       |
+| ------------------ | ---------------------------------------------- | ---------------------------- |
+| `SUPERADMIN`       | Platform yönetimi (onboarding, fatura, sistem) | Tüm tenant'lar               |
+| `OWNER`            | İşletme sahibi (kullanıcı + finans + tüm veri) | Kendi tenant'ı               |
+| `VETERINARIAN`     | Klinik tıbbi (muayene, aşı, reçete, ameliyat)  | Kendi tenant'ı               |
+| `STAFF`            | Resepsiyon + petshop kasiyer (tıbbi değil)     | Kendi tenant'ı, atanmış şube |
+| `PET_OWNER_PORTAL` | Salt okunur kendi hayvanları                   | `self_only`                  |
 
 ## Şube ve Tenant Kısıtları
 

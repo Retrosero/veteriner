@@ -13,14 +13,14 @@
 
 import { Module } from "@nestjs/common";
 
+import { PetshopSaleReturnsController } from "./petshop-sale-returns.controller.js";
+import { PetshopSaleReturnsRepository } from "./petshop-sale-returns.repository.js";
+import { PetshopSaleReturnsService } from "./petshop-sale-returns.service.js";
 import { AuditModule } from "../../common/audit/audit.module.js";
 import { InventoryModule } from "../inventory/inventory.module.js";
 import { PetshopSalesModule } from "../petshop-sales/petshop-sales.module.js";
 import { ProductsModule } from "../products/products.module.js";
 import { StockMovementsModule } from "../stock-movements/stock-movements.module.js";
-import { PetshopSaleReturnsController } from "./petshop-sale-returns.controller.js";
-import { PetshopSaleReturnsRepository } from "./petshop-sale-returns.repository.js";
-import { PetshopSaleReturnsService } from "./petshop-sale-returns.service.js";
 
 @Module({
   imports: [
@@ -31,10 +31,7 @@ import { PetshopSaleReturnsService } from "./petshop-sale-returns.service.js";
     AuditModule,
   ],
   controllers: [PetshopSaleReturnsController],
-  providers: [
-    PetshopSaleReturnsService,
-    PetshopSaleReturnsRepository,
-  ],
+  providers: [PetshopSaleReturnsService, PetshopSaleReturnsRepository],
   exports: [PetshopSaleReturnsService, PetshopSaleReturnsRepository],
 })
 export class PetshopSaleReturnsModule {}

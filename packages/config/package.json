@@ -10,12 +10,14 @@
     "./tsconfig.next.json": "./tsconfig.next.json",
     "./tsconfig.nest.json": "./tsconfig.nest.json",
     "./eslint": "./eslint.base.cjs",
+    "./eslint-flat": "./eslint.flat.mjs",
     "./prettier": "./prettier.config.cjs",
     "./tailwind": "./tailwind.preset.cjs"
   },
   "files": [
     "tsconfig.*.json",
     "eslint.*.cjs",
+    "eslint.*.mjs",
     "prettier.*.cjs",
     "tailwind.*.cjs"
   ],
@@ -24,5 +26,15 @@
     "type-check": "echo \"@vetniva/config: no type-check\"",
     "test": "echo \"@vetniva/config: no test\"",
     "clean": "echo \"@vetniva/config: nothing to clean\""
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/js": "^9.17.0",
+    "@typescript-eslint/eslint-plugin": "^8.18.2",
+    "@typescript-eslint/parser": "^8.18.2",
+    "eslint": "^9.17.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-jsdoc": "^50.6.2",
+    "eslint-plugin-security": "^3.0.1"
   }
 }

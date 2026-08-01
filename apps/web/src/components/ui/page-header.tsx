@@ -1,7 +1,6 @@
 /**
  * @file Sayfa başlığı bileşeni.
  * @module @vetniva/web/components/ui/page-header
- *
  * @description Her sayfanın üstünde tekrarlanan başlık bloğu.
  * Başlık, alt başlık, breadcrumb ve sağ tarafta aksiyon
  * butonları içerir. AppShell ile birlikte kullanıldığında sadece
@@ -11,16 +10,14 @@
  * - `<header>` semantiği
  * - `aria-label` her bölümde
  * - Breadcrumb: `<nav aria-label="Breadcrumb">` + ordered list
- * - Başlık `<h2>` (AppShell'deki `<h1>` page title için ayrılmıştır)
- *
+ * - Başlık `<h2>` (AppShell'deki `<h1>` page title için ayrılmıştır).
  * @security Breadcrumb tenant-aware olabilir; tenant slug burada
  * gösterilir.
  */
 
+import { cn } from "@vetniva/ui/cn";
 import Link from "next/link";
 import { type ReactNode } from "react";
-
-import { cn } from "@vetniva/ui/cn";
 
 export type BreadcrumbItem = {
   label: string;
@@ -35,6 +32,15 @@ export type PageHeaderProps = {
   className?: string;
 };
 
+/**
+ *
+ * @param root0
+ * @param root0.title
+ * @param root0.description
+ * @param root0.breadcrumb
+ * @param root0.actions
+ * @param root0.className
+ */
 export function PageHeader({
   title,
   description,

@@ -1,22 +1,18 @@
 /**
  * @file Appointment repository (in-memory).
  * @module apps/api/modules/appointments/appointments.repository
- *
  * @description Appointment veri erişim katmanı. GOAL-031 kapsamında
  * DB migration sonraya bırakıldı; tenant-scoped in-memory Map
  * kullanılır. Production'a geçişte Prisma repository'si ile
  * değiştirilecek (API sözleşmesi sabit kalır).
- *
  * @security Tüm sorgular tenantId ile filtrelenir. RLS olmadığı
  *   için uygulama katmanı tenant izolasyonundan sorumludur.
- *
  * @since GOAL-031 (FAZ-3) randevu oluşturma core
  */
 
 import { Injectable } from "@nestjs/common";
 
 import type {
-  Appointment,
   AppointmentFilters,
   AppointmentStatus,
   AppointmentType,
@@ -52,7 +48,7 @@ export interface VeterinarianRecord {
 
 @Injectable()
 export class VeterinariansRepository {
-  /** key: id → record. */
+  /** Key: id → record. */
   private readonly byId = new Map<string, VeterinarianRecord>();
 
   public upsert(record: VeterinarianRecord): VeterinarianRecord {
@@ -74,7 +70,7 @@ export class VeterinariansRepository {
 
 @Injectable()
 export class AppointmentsRepository {
-  /** key: id → record. */
+  /** Key: id → record. */
   private readonly byId = new Map<string, AppointmentRecord>();
   /** Her tenant için id counter. */
   private readonly counters = new Map<string, number>();
@@ -127,6 +123,8 @@ export class AppointmentsRepository {
    * Tenant-scoped liste + filtre. `from`/`to` aralığı `start`
    * alanına göre uygulanır. İptal edilen randevular varsayılan
    * olarak DAHİL edilir (UI filtreler; burada nötr kalırız).
+   * @param tenantId
+   * @param filters
    */
   public search(
     tenantId: string,

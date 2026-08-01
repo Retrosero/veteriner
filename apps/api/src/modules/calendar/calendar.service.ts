@@ -1,7 +1,6 @@
 /**
  * @file Calendar service (klinik takvimi).
  * @module apps/api/modules/calendar/calendar.service
- *
  * @description GOAL-030 klinik takvimi (calendar / time slot yönetimi)
  * iş kuralları. Veterinarian başına working hours tanımı, gün için
  * slot üretimi, mevcut appointment'lar ile booked durumunun
@@ -34,19 +33,23 @@
  * - `unblockSlot(tenantId, blockId, actor)`: blocked slot'u
  *   kaldırır. Audit `audit:calendar.unblock` (info).
  *   Cross-tenant blockId → 404.
- *
  * @security Tenant bilgisi yalnızca actor.tenantId'den alınır.
  *   Cross-tenant blockId → 404 VET-AUTHZ-0001.
- *
  * @since GOAL-030 (FAZ-3) klinik takvimi core
  */
 
-import { Injectable, Logger } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import { Injectable, Logger } from "@nestjs/common";
+
 import { AuditService } from "../../common/audit/audit.service.js";
+import {
+  type BlockedSlotRecord,
+  type DayOfWeek,
+} from "../../common/calendar/calendar.types.js";
 import { DomainError } from "../../common/errors/domain-error.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   BlockSlotInput,
   CalendarDay,
@@ -55,11 +58,6 @@ import type {
   SetWorkingHoursInput,
   WorkingHours,
 } from "@vetniva/contracts";
-
-import {
-  type BlockedSlotRecord,
-  type DayOfWeek,
-} from "../../common/calendar/calendar.types.js";
 
 /** Varsayılan çalışma saati: Pzt-Cum 09:00-17:00, 30 dk slot. */
 const DEFAULT_WORKING_HOURS: ReadonlyArray<WorkingHours> = [
@@ -81,8 +79,10 @@ interface BookedSlotRecord {
   end: string;
 }
 
-/** Tenant + veterinarian için default veterinarian ID placeholder
- *  (veterinarianId belirtilmediğinde kullanılır). */
+/**
+ * Tenant + veterinarian için default veterinarian ID placeholder
+ *  (veterinarianId belirtilmediğinde kullanılır).
+ */
 const DEFAULT_VETERINARIAN_ID = "vet-default";
 
 @Injectable()
@@ -98,7 +98,7 @@ export class CalendarService {
   /** key: `${tenantId}|${veterinarianId}|${start}` → BookedSlotRecord */
   private readonly bookedSlots = new Map<string, BookedSlotRecord>();
 
-  /** key: blockId → BlockedSlotRecord */
+  /** Key: blockId → BlockedSlotRecord */
   private readonly blockedById = new Map<string, BlockedSlotRecord>();
 
   public constructor(private readonly audit: AuditService) {}
@@ -109,6 +109,10 @@ export class CalendarService {
    * birlikte. `branchId` filtresi verildiğinde yalnızca o
    * şubenin booked/blocked slot'ları dikkate alınır; tenant-wide
    * (branchId=null) kayıtlar HER şubede görünür.
+   * @param tenantId
+   * @param date
+   * @param query
+   * @param actor
    */
   public async getDay(
     tenantId: string,
@@ -121,16 +125,22 @@ export class CalendarService {
     const veterinarianId = query.veterinarianId ?? DEFAULT_VETERINARIAN_ID;
     const dayOfWeek = this.dayOfWeekForDate(date);
 
-    const hours = this.workingHoursByTenant.get(
-      this.hoursKey(tenantId, veterinarianId),
-    ) ?? DEFAULT_WORKING_HOURS;
+    const hours =
+      this.workingHoursByTenant.get(this.hoursKey(tenantId, veterinarianId)) ??
+      DEFAULT_WORKING_HOURS;
 
     const dayHours = hours.filter((h) => h.dayOfWeek === dayOfWeek);
 
     const slots: CalendarSlot[] = [];
     for (const block of dayHours) {
       slots.push(
-        ...this.generateSlots(tenantId, veterinarianId, date, block, query.branchId),
+        ...this.generateSlots(
+          tenantId,
+          veterinarianId,
+          date,
+          block,
+          query.branchId,
+        ),
       );
     }
 
@@ -142,6 +152,9 @@ export class CalendarService {
    * saatlerini günceller. Mevcut booked/blocked slot'lar
    * ETKİLENMEZ; yalnızca gelecekte üretilecek slot'lar yeni
    * kuralla hesaplanır.
+   * @param tenantId
+   * @param input
+   * @param actor
    */
   public async setWorkingHours(
     tenantId: string,
@@ -174,6 +187,9 @@ export class CalendarService {
 
   /**
    * Veterinarian için slot aralığını blocked yapar (mola, izin).
+   * @param tenantId
+   * @param input
+   * @param actor
    */
   public async blockSlot(
     tenantId: string,
@@ -229,6 +245,9 @@ export class CalendarService {
 
   /**
    * Engellenmiş slot'u kaldırır. Cross-tenant blockId → 404.
+   * @param tenantId
+   * @param blockId
+   * @param actor
    */
   public async unblockSlot(
     tenantId: string,
@@ -268,6 +287,7 @@ export class CalendarService {
 
   /**
    * Test amaçlı: booked slot ekler (manuel seed için).
+   * @param record
    */
   public seedBookedSlot(record: BookedSlotRecord): void {
     const key = this.bookedKey(
@@ -282,6 +302,7 @@ export class CalendarService {
    * GOAL-031: Appointment oluşturma sırasında slot'u booked yapar.
    * Aynı tenant + vet + start için tek bir booked slot olabilir
    * (çakışma kontrolü service katmanında yapılır).
+   * @param record
    */
   public bookSlot(record: BookedSlotRecord): void {
     const key = this.bookedKey(
@@ -295,6 +316,9 @@ export class CalendarService {
   /**
    * GOAL-031: Appointment iptali / yeniden planlaması sonrasında
    * booked slot'u kaldırır. Key bulunamazsa false döner.
+   * @param tenantId
+   * @param veterinarianId
+   * @param startIso
    */
   public releaseSlot(
     tenantId: string,
@@ -310,8 +334,12 @@ export class CalendarService {
    * eder. Booked veya blocked slot ile overlap → uygun değil.
    * Branch filtresi verildiğinde yalnızca o şubenin booked/blocked
    * kayıtlarına bakılır (tenant-wide kayıtlar her şubede görünür).
-   *
-   * @returns available=false durumda `reason` ve `conflictId` döner
+   * @param tenantId
+   * @param veterinarianId
+   * @param startIso
+   * @param endIso
+   * @param branchId
+   * @returns Available=false durumda `reason` ve `conflictId` döner
    *   (booked → appointmentId, blocked → blockId).
    */
   public checkAvailability(
@@ -393,7 +421,9 @@ export class CalendarService {
     const [startH, startM] = this.parseHhMm(block.startTime);
     const [endH, endM] = this.parseHhMm(block.endTime);
     const dayStart = new Date(`${date}T00:00:00.000Z`);
-    const start = new Date(dayStart.getTime() + (startH * 60 + startM) * 60_000);
+    const start = new Date(
+      dayStart.getTime() + (startH * 60 + startM) * 60_000,
+    );
     const end = new Date(dayStart.getTime() + (endH * 60 + endM) * 60_000);
     const stepMs = block.slotDurationMin * 60_000;
 
@@ -405,10 +435,21 @@ export class CalendarService {
       const endIso = slotEnd.toISOString();
 
       // 1) Booked mı? — branch filtresine uygun entry ara
-      const booked = this.findBookedSlot(tenantId, veterinarianId, startIso, branchId);
+      const booked = this.findBookedSlot(
+        tenantId,
+        veterinarianId,
+        startIso,
+        branchId,
+      );
 
       // 2) Blocked mı? — branch filtresine uygun entry ara
-      const blocked = this.isBlocked(tenantId, veterinarianId, startIso, endIso, branchId);
+      const blocked = this.isBlocked(
+        tenantId,
+        veterinarianId,
+        startIso,
+        endIso,
+        branchId,
+      );
 
       let status: CalendarSlot["status"] = "available";
       let appointmentId: string | undefined;
@@ -436,6 +477,10 @@ export class CalendarService {
    * Branch filtresine uygun booked slot arar. `branchId` verildiğinde
    * yalnızca o şubenin booked slot'ları eşleşir; tenant-wide
    * (branchId=null) booked slot'lar her şubede görünür.
+   * @param tenantId
+   * @param veterinarianId
+   * @param startIso
+   * @param branchId
    */
   private findBookedSlot(
     tenantId: string,
@@ -449,7 +494,11 @@ export class CalendarService {
       if (rec.start !== startIso) continue;
       // Branch filtresi: branchId=null (tenant-wide) tüm şubelerde
       // görünür; branchId=<X> yalnızca o şubede görünür.
-      if (branchId !== undefined && rec.branchId !== null && rec.branchId !== branchId) {
+      if (
+        branchId !== undefined &&
+        rec.branchId !== null &&
+        rec.branchId !== branchId
+      ) {
         continue;
       }
       return rec;
@@ -471,7 +520,11 @@ export class CalendarService {
       if (rec.veterinarianId !== veterinarianId) continue;
       // Branch filtresi: branchId=null (tenant-wide) tüm şubelerde
       // görünür; branchId=<X> yalnızca o şubede görünür.
-      if (branchId !== undefined && rec.branchId !== null && rec.branchId !== branchId) {
+      if (
+        branchId !== undefined &&
+        rec.branchId !== null &&
+        rec.branchId !== branchId
+      ) {
         continue;
       }
       const bs = new Date(rec.start).getTime();
@@ -567,7 +620,7 @@ export class CalendarService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

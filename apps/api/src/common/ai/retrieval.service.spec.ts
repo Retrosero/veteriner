@@ -1,16 +1,15 @@
 /**
  * @file Retrieval service unit testleri.
  * @module apps/api/common/ai/retrieval.spec
- *
  * @description RetrievalService'in temel davranışlarını
  * doğrular: sorgu, filtreleme, topK, sıralama.
- *
  * @since GOAL-005 (FAZ-0) dokümantasyon ve AI bilgi havuzu
  */
 
 import { describe, expect, it, beforeEach } from "vitest";
 
 import { RetrievalService } from "./retrieval.service.js";
+
 import type { ChunkMetadata } from "./chunk.types.js";
 
 const SAMPLE_CHUNKS: ChunkMetadata[] = [
@@ -58,7 +57,7 @@ describe("RetrievalService", () => {
       // naiveEmbed doğrudan kullanılamaz; service üzerinden ekle.
       const vec = new Array<number>(256).fill(0);
       const id = (chunk.chunk_id.length * 7 + chunk.title.length * 3) % 256;
-      vec[id] = 1;
+      vec.fill(1, id, id + 1);
       await service.getStore().upsert(chunk, vec);
     }
   });

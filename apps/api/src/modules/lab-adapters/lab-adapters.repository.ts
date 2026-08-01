@@ -161,8 +161,7 @@ export class LabAdaptersRepository {
     const all: LabAdapterExportRecord[] = [];
     for (const rec of this.byIdExport.values()) {
       if (rec.tenantId !== tenantId) continue;
-      if (filters.labOrderId && rec.labOrderId !== filters.labOrderId)
-        continue;
+      if (filters.labOrderId && rec.labOrderId !== filters.labOrderId) continue;
       if (filters.adapterType && rec.adapterType !== filters.adapterType)
         continue;
       if (filters.status && rec.status !== filters.status) continue;
@@ -225,8 +224,7 @@ export class LabAdaptersRepository {
     const all: LabAdapterImportRecord[] = [];
     for (const rec of this.byIdImport.values()) {
       if (rec.tenantId !== tenantId) continue;
-      if (filters.labOrderId && rec.labOrderId !== filters.labOrderId)
-        continue;
+      if (filters.labOrderId && rec.labOrderId !== filters.labOrderId) continue;
       if (filters.adapterType && rec.adapterType !== filters.adapterType)
         continue;
       if (filters.status && rec.status !== filters.status) continue;

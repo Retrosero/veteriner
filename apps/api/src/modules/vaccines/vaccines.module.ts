@@ -20,30 +20,29 @@
 
 import { Module } from "@nestjs/common";
 
-import { AuditModule } from "../../common/audit/audit.module.js";
-import { ConsentService } from "../../common/notifications/consent.service.js";
-import { NotificationsModule } from "../notifications/notifications.module.js";
-import { OwnersModule } from "../owners/owners.module.js";
-import { PatientsModule } from "../patients/patients.module.js";
-import { PortalAuthModule } from "../portal-auth/portal-auth.module.js";
-import { TenantModule } from "../tenant/tenant.module.js";
-
+import { VaccineApplicationsController } from "./vaccine-applications.controller.js";
+import { VaccineApplicationsRepository } from "./vaccine-applications.repository.js";
+import { VaccineApplicationsService } from "./vaccine-applications.service.js";
 import {
   PortalVaccineCardsController,
   VaccineCardsController,
 } from "./vaccine-cards.controller.js";
 import { VaccineCardsRepository } from "./vaccine-cards.repository.js";
 import { VaccineCardsService } from "./vaccine-cards.service.js";
-import { VaccineApplicationsController } from "./vaccine-applications.controller.js";
-import { VaccineApplicationsService } from "./vaccine-applications.service.js";
-import { VaccineApplicationsRepository } from "./vaccine-applications.repository.js";
 import { VaccineRemindersController } from "./vaccine-reminders.controller.js";
 import { VaccineRemindersRepository } from "./vaccine-reminders.repository.js";
 import { VaccineRemindersService } from "./vaccine-reminders.service.js";
-import { VaccineStockLedger } from "../../common/vaccines/vaccine-stock-ledger.js";
 import { VaccinesController } from "./vaccines.controller.js";
-import { VaccinesService } from "./vaccines.service.js";
 import { VaccinesRepository } from "./vaccines.repository.js";
+import { VaccinesService } from "./vaccines.service.js";
+import { AuditModule } from "../../common/audit/audit.module.js";
+import { ConsentService } from "../../common/notifications/consent.service.js";
+import { VaccineStockLedger } from "../../common/vaccines/vaccine-stock-ledger.js";
+import { NotificationsModule } from "../notifications/notifications.module.js";
+import { OwnersModule } from "../owners/owners.module.js";
+import { PatientsModule } from "../patients/patients.module.js";
+import { PortalAuthModule } from "../portal-auth/portal-auth.module.js";
+import { TenantModule } from "../tenant/tenant.module.js";
 
 @Module({
   imports: [

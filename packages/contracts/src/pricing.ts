@@ -36,10 +36,7 @@
 
 import { z } from "zod";
 
-import {
-  productCurrencySchema,
-  productTaxProfileSchema,
-} from "./product.js";
+import { productCurrencySchema, productTaxProfileSchema } from "./product.js";
 
 /** Para birimi (Product ile aynı). */
 export const pricingCurrencySchema = productCurrencySchema;
@@ -100,35 +97,25 @@ export const priceListCreateInputSchema = z
       v.type !== "customer_specific" ||
       (v.customerId !== undefined && v.customerId.length > 0),
     {
-      message:
-        "type='customer_specific' için customerId zorunludur",
+      message: "type='customer_specific' için customerId zorunludur",
       path: ["customerId"],
     },
   )
-  .refine(
-    (v) =>
-      v.type === "customer_specific" ||
-      v.customerId === undefined,
-    {
-      message:
-        "customerId yalnızca type='customer_specific' için kullanılabilir",
-      path: ["customerId"],
-    },
-  )
+  .refine((v) => v.type === "customer_specific" || v.customerId === undefined, {
+    message: "customerId yalnızca type='customer_specific' için kullanılabilir",
+    path: ["customerId"],
+  })
   .refine(
     (v) =>
       v.validFrom === undefined ||
       v.validUntil === undefined ||
-      new Date(v.validFrom).getTime() <=
-        new Date(v.validUntil).getTime(),
+      new Date(v.validFrom).getTime() <= new Date(v.validUntil).getTime(),
     {
       message: "validFrom, validUntil'den büyük olamaz",
       path: ["validUntil"],
     },
   );
-export type PriceListCreateInput = z.infer<
-  typeof priceListCreateInputSchema
->;
+export type PriceListCreateInput = z.infer<typeof priceListCreateInputSchema>;
 
 /**
  * Fiyat listesi kısmi güncelleme isteği. Yalnızca `status='draft'`
@@ -149,8 +136,7 @@ export const priceListUpdateInputSchema = z
       v.validFrom === null ||
       v.validUntil === undefined ||
       v.validUntil === null ||
-      new Date(v.validFrom).getTime() <=
-        new Date(v.validUntil).getTime(),
+      new Date(v.validFrom).getTime() <= new Date(v.validUntil).getTime(),
     {
       message: "validFrom, validUntil'den büyük olamaz",
       path: ["validUntil"],
@@ -159,9 +145,7 @@ export const priceListUpdateInputSchema = z
   .refine((v) => Object.keys(v).length > 0, {
     message: "En az bir alan gönderilmelidir",
   });
-export type PriceListUpdateInput = z.infer<
-  typeof priceListUpdateInputSchema
->;
+export type PriceListUpdateInput = z.infer<typeof priceListUpdateInputSchema>;
 
 /** Fiyat listesi API response şeması. */
 export const priceListSchema = z.object({
@@ -204,17 +188,13 @@ export const priceListListResponseSchema = z.object({
   items: z.array(priceListSchema),
   total: z.number().int().nonnegative(),
 });
-export type PriceListListResponse = z.infer<
-  typeof priceListListResponseSchema
->;
+export type PriceListListResponse = z.infer<typeof priceListListResponseSchema>;
 
 /** Arşivleme isteği. */
 export const priceListArchiveInputSchema = z.object({
   reason: z.string().min(1).max(2000),
 });
-export type PriceListArchiveInput = z.infer<
-  typeof priceListArchiveInputSchema
->;
+export type PriceListArchiveInput = z.infer<typeof priceListArchiveInputSchema>;
 
 /** Fiyat listesi aktifleştirme isteği. */
 export const priceListActivateInputSchema = z.object({});
@@ -235,6 +215,7 @@ export type PriceListActivateInput = z.infer<
  */
 export const priceListItemCreateInputSchema = z.object({
   productId: z.string().uuid(),
+  // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden fiyat doğrulamasıdır.
   price: z.string().regex(/^\d+(\.\d{1,4})?$/, "Geçersiz fiyat formatı"),
   taxProfile: pricingTaxProfileSchema.optional(),
   validFrom: z.string().datetime().optional(),
@@ -254,6 +235,7 @@ export const priceListItemUpdateInputSchema = z
   .object({
     price: z
       .string()
+      // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden fiyat doğrulamasıdır.
       .regex(/^\d+(\.\d{1,4})?$/, "Geçersiz fiyat formatı")
       .optional(),
     taxProfile: pricingTaxProfileSchema.nullable().optional(),
@@ -295,9 +277,7 @@ export const priceListItemFiltersSchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).max(10000).default(0),
 });
-export type PriceListItemFilters = z.infer<
-  typeof priceListItemFiltersSchema
->;
+export type PriceListItemFilters = z.infer<typeof priceListItemFiltersSchema>;
 
 /** Fiyat satırı liste response şeması. */
 export const priceListItemListResponseSchema = z.object({

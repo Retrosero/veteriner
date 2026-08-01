@@ -1017,12 +1017,12 @@ entities:
         validation: "timestamptz, nullable"
         version: "1.0.0"
 
-# AUTO-GENERATED START
-# GOAL-118 (FAZ-11) pilot temizliği: kod tarafından referans verilen
-# ancak katalogda eksik olan alanların toplu stub kayıtları.
-# Üretim öncesi her alan için type, required, validation ve PII
-# etiketi gözden geçirilmelidir. Bu blok bulk-add-fields.py
-# tarafından yönetilir; manuel düzenleme yapılmamalıdır.
+  # AUTO-GENERATED START
+  # GOAL-118 (FAZ-11) pilot temizliği: kod tarafından referans verilen
+  # ancak katalogda eksik olan alanların toplu stub kayıtları.
+  # Üretim öncesi her alan için type, required, validation ve PII
+  # etiketi gözden geçirilmelidir. Bu blok bulk-add-fields.py
+  # tarafından yönetilir; manuel düzenleme yapılmamalıdır.
   - id: alert
     description_tr: "Alert varlığı (FAZ-11 bulk add)."
     description_en: "Alert entity (FAZ-11 bulk add)."
@@ -25899,4 +25899,796 @@ entities:
         description_en: "Surgery_plan offset field."
         validation: "auto-generated; refine in follow-up"
         version: "1.0.0"
-# AUTO-GENERATED END
+  # AUTO-GENERATED END
+  - id: controlled_drug
+    description_tr: "İngiltere controlled drug register append-only kayıtları"
+    description_en: "United Kingdom controlled drug register append-only entries"
+    pii: false
+    tenant_scoped: true
+    fields:
+      - {
+          id: controlled_drug.drugName,
+          name: drugName,
+          type: string,
+          required: true,
+          unique: false,
+          pii: false,
+          description_tr: "İlaç adı.",
+          description_en: "Drug name.",
+          validation: "1-200 karakter",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.schedule,
+          name: schedule,
+          type: enum,
+          required: true,
+          unique: false,
+          pii: false,
+          description_tr: "UK controlled-drug schedule sınıfı.",
+          description_en: "UK controlled-drug schedule.",
+          validation: "S1-S5",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.entryType,
+          name: entryType,
+          type: enum,
+          required: true,
+          unique: false,
+          pii: false,
+          description_tr: "Append-only hareket türü.",
+          description_en: "Append-only entry type.",
+          validation: "received/dispensed/wasted/returned/transferred/count/correction",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.branchId,
+          name: branchId,
+          type: uuid,
+          required: true,
+          unique: false,
+          pii: false,
+          description_tr: "Kaynak şube kimliği.",
+          description_en: "Source branch identifier.",
+          validation: "1-100 karakter",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.storageAreaId,
+          name: storageAreaId,
+          type: uuid,
+          required: true,
+          unique: false,
+          pii: false,
+          description_tr: "Saklama alanı kimliği.",
+          description_en: "Storage area identifier.",
+          validation: "1-100 karakter",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.to,
+          name: to,
+          type: datetime,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Register sorgusu bitiş zamanı.",
+          description_en: "Register query end time.",
+          validation: "ISO 8601 datetime",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.limit,
+          name: limit,
+          type: integer,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Sayfalama kayıt limiti.",
+          description_en: "Pagination record limit.",
+          validation: "1-500",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.offset,
+          name: offset,
+          type: integer,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Sayfalama başlangıç ofseti.",
+          description_en: "Pagination start offset.",
+          validation: "0 veya büyük",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.unit,
+          name: unit,
+          type: enum,
+          required: true,
+          unique: false,
+          pii: false,
+          description_tr: "Miktar birimi.",
+          description_en: "Quantity unit.",
+          validation: "mg veya ml",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.quantity,
+          name: quantity,
+          type: number,
+          required: true,
+          unique: false,
+          pii: false,
+          description_tr: "Hareket miktarı.",
+          description_en: "Movement quantity.",
+          validation: "pozitif sayı",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.supplier,
+          name: supplier,
+          type: string,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Tedarikçi veya üretici.",
+          description_en: "Supplier or manufacturer.",
+          validation: "en çok 200 karakter",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.lotNumber,
+          name: lotNumber,
+          type: string,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Lot/batch numarası.",
+          description_en: "Lot or batch number.",
+          validation: "en çok 100 karakter",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.expiryDate,
+          name: expiryDate,
+          type: date,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Son kullanma tarihi.",
+          description_en: "Expiry date.",
+          validation: "YYYY-MM-DD",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.occurredAt,
+          name: occurredAt,
+          type: datetime,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Hareketin gerçekleştiği an.",
+          description_en: "Movement occurrence time.",
+          validation: "ISO 8601 datetime",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.notes,
+          name: notes,
+          type: string,
+          required: false,
+          unique: false,
+          pii: true,
+          description_tr: "Kayıt notu; loglarda maskelenir.",
+          description_en: "Entry note; masked in logs.",
+          validation: "en çok 2000 karakter",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.ownerId,
+          name: ownerId,
+          type: uuid,
+          required: false,
+          unique: false,
+          pii: true,
+          description_tr: "Hasta sahibi referansı.",
+          description_en: "Owner reference.",
+          validation: "1-100 karakter",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.patientId,
+          name: patientId,
+          type: uuid,
+          required: false,
+          unique: false,
+          pii: true,
+          description_tr: "Hayvan referansı.",
+          description_en: "Patient reference.",
+          validation: "1-100 karakter",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.emergencyUse,
+          name: emergencyUse,
+          type: boolean,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Acil kullanım işareti.",
+          description_en: "Emergency-use marker.",
+          validation: "boolean",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.prescribedByVeterinarianId,
+          name: prescribedByVeterinarianId,
+          type: uuid,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Reçete eden veteriner referansı.",
+          description_en: "Prescribing veterinarian reference.",
+          validation: "1-100 karakter",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.prescriptionNumber,
+          name: prescriptionNumber,
+          type: string,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Reçete numarası.",
+          description_en: "Prescription number.",
+          validation: "1-100 karakter",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.reason,
+          name: reason,
+          type: string,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "İmha, iade veya düzeltme gerekçesi.",
+          description_en: "Wastage, return or correction reason.",
+          validation: "en çok 2000 karakter",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.witnessUserId,
+          name: witnessUserId,
+          type: uuid,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "İkinci tanık kullanıcı referansı.",
+          description_en: "Second witness user reference.",
+          validation: "1-100 karakter",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.targetBranchId,
+          name: targetBranchId,
+          type: uuid,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Transfer hedef şube referansı.",
+          description_en: "Transfer target branch reference.",
+          validation: "1-100 karakter",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.targetStorageAreaId,
+          name: targetStorageAreaId,
+          type: uuid,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Transfer hedef saklama alanı.",
+          description_en: "Transfer target storage area.",
+          validation: "1-100 karakter",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.transferGroupId,
+          name: transferGroupId,
+          type: uuid,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Çift taraflı transfer grup kimliği.",
+          description_en: "Paired transfer group identifier.",
+          validation: "1-100 karakter",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.items,
+          name: items,
+          type: array,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Register veya stok cevap öğeleri.",
+          description_en: "Register or stock response items.",
+          validation: "array",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.total,
+          name: total,
+          type: integer,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Toplam kayıt veya stok öğesi sayısı.",
+          description_en: "Total number of register or stock items.",
+          validation: "0 veya büyük",
+          version: "1.0.0",
+        }
+      - {
+          id: controlled_drug.originalEntryId,
+          name: originalEntryId,
+          type: uuid,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Düzeltilecek orijinal kayıt kimliği.",
+          description_en: "Original entry identifier to correct.",
+          validation: "1-100 karakter",
+          version: "1.0.0",
+        }
+  - id: controlled_drug_stock
+    description_tr: "Kontrollü ilaç stok projeksiyonu"
+    description_en: "Controlled-drug stock projection"
+    pii: false
+    tenant_scoped: true
+    fields:
+      - {
+          id: stock.branchId,
+          name: branchId,
+          type: uuid,
+          required: true,
+          unique: false,
+          pii: false,
+          description_tr: "Stok şubesi.",
+          description_en: "Stock branch.",
+          validation: "identifier",
+          version: "1.0.0",
+        }
+      - {
+          id: stock.storageAreaId,
+          name: storageAreaId,
+          type: uuid,
+          required: true,
+          unique: false,
+          pii: false,
+          description_tr: "Stok saklama alanı.",
+          description_en: "Stock storage area.",
+          validation: "identifier",
+          version: "1.0.0",
+        }
+      - {
+          id: stock.drugName,
+          name: drugName,
+          type: string,
+          required: true,
+          unique: false,
+          pii: false,
+          description_tr: "İlaç adı.",
+          description_en: "Drug name.",
+          validation: "string",
+          version: "1.0.0",
+        }
+      - {
+          id: stock.schedule,
+          name: schedule,
+          type: enum,
+          required: true,
+          unique: false,
+          pii: false,
+          description_tr: "İlaç schedule sınıfı.",
+          description_en: "Drug schedule.",
+          validation: "S1-S5",
+          version: "1.0.0",
+        }
+      - {
+          id: stock.physicalQuantity,
+          name: physicalQuantity,
+          type: number,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Fiziksel sayım miktarı.",
+          description_en: "Physical stock count.",
+          validation: "number",
+          version: "1.0.0",
+        }
+      - {
+          id: stock.bookQuantity,
+          name: bookQuantity,
+          type: number,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Defterdeki stok miktarı.",
+          description_en: "Book stock quantity.",
+          validation: "number",
+          version: "1.0.0",
+        }
+      - {
+          id: stock.discrepancy,
+          name: discrepancy,
+          type: number,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Fiziksel ve defter stok farkı.",
+          description_en: "Physical and book stock difference.",
+          validation: "number",
+          version: "1.0.0",
+        }
+      - {
+          id: stock.witnessUserId,
+          name: witnessUserId,
+          type: uuid,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Sayım tanığı.",
+          description_en: "Stock count witness.",
+          validation: "identifier",
+          version: "1.0.0",
+        }
+      - {
+          id: stock.countDate,
+          name: countDate,
+          type: date,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Fiziksel sayım tarihi.",
+          description_en: "Physical count date.",
+          validation: "YYYY-MM-DD",
+          version: "1.0.0",
+        }
+      - {
+          id: stock.lastMovementAt,
+          name: lastMovementAt,
+          type: datetime,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Son stok hareketi zamanı.",
+          description_en: "Last stock movement time.",
+          validation: "ISO 8601 datetime",
+          version: "1.0.0",
+        }
+  - id: controlled_drug_entry
+    description_tr: "Kontrollü ilaç register kayıt ayrıntıları"
+    description_en: "Controlled-drug register entry details"
+    pii: false
+    tenant_scoped: true
+    fields:
+      - {
+          id: entry.entryType,
+          name: entryType,
+          type: enum,
+          required: true,
+          unique: false,
+          pii: false,
+          description_tr: "Hareket türü.",
+          description_en: "Entry type.",
+          validation: "controlled-drug enum",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.drugName,
+          name: drugName,
+          type: string,
+          required: true,
+          unique: false,
+          pii: false,
+          description_tr: "İlaç adı.",
+          description_en: "Drug name.",
+          validation: "string",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.schedule,
+          name: schedule,
+          type: enum,
+          required: true,
+          unique: false,
+          pii: false,
+          description_tr: "Schedule sınıfı.",
+          description_en: "Schedule classification.",
+          validation: "S1-S5",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.unit,
+          name: unit,
+          type: enum,
+          required: true,
+          unique: false,
+          pii: false,
+          description_tr: "Miktar birimi.",
+          description_en: "Quantity unit.",
+          validation: "mg/ml",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.quantityDelta,
+          name: quantityDelta,
+          type: number,
+          required: true,
+          unique: false,
+          pii: false,
+          description_tr: "İşaretli stok etkisi.",
+          description_en: "Signed stock effect.",
+          validation: "number",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.branchId,
+          name: branchId,
+          type: uuid,
+          required: true,
+          unique: false,
+          pii: false,
+          description_tr: "Şube kimliği.",
+          description_en: "Branch identifier.",
+          validation: "identifier",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.storageAreaId,
+          name: storageAreaId,
+          type: uuid,
+          required: true,
+          unique: false,
+          pii: false,
+          description_tr: "Saklama alanı kimliği.",
+          description_en: "Storage-area identifier.",
+          validation: "identifier",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.occurredAt,
+          name: occurredAt,
+          type: datetime,
+          required: true,
+          unique: false,
+          pii: false,
+          description_tr: "Hareket zamanı.",
+          description_en: "Occurrence time.",
+          validation: "ISO 8601 datetime",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.recordedAt,
+          name: recordedAt,
+          type: datetime,
+          required: true,
+          unique: false,
+          pii: false,
+          description_tr: "Sisteme kayıt zamanı.",
+          description_en: "Recorded time.",
+          validation: "ISO 8601 datetime",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.recordedBy,
+          name: recordedBy,
+          type: uuid,
+          required: true,
+          unique: false,
+          pii: false,
+          description_tr: "Kaydı oluşturan aktör.",
+          description_en: "Recording actor.",
+          validation: "identifier",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.supplier,
+          name: supplier,
+          type: string,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Tedarikçi.",
+          description_en: "Supplier.",
+          validation: "string",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.lotNumber,
+          name: lotNumber,
+          type: string,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Lot numarası.",
+          description_en: "Lot number.",
+          validation: "string",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.prescribedByVeterinarianId,
+          name: prescribedByVeterinarianId,
+          type: uuid,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Reçete eden veteriner.",
+          description_en: "Prescribing veterinarian.",
+          validation: "identifier",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.prescriptionNumber,
+          name: prescriptionNumber,
+          type: string,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Reçete numarası.",
+          description_en: "Prescription number.",
+          validation: "string",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.emergencyUse,
+          name: emergencyUse,
+          type: boolean,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Acil kullanım işareti.",
+          description_en: "Emergency use flag.",
+          validation: "boolean",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.witnessUserId,
+          name: witnessUserId,
+          type: uuid,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Tanık kullanıcı.",
+          description_en: "Witness user.",
+          validation: "identifier",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.targetBranchId,
+          name: targetBranchId,
+          type: uuid,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Transfer hedef şubesi.",
+          description_en: "Transfer target branch.",
+          validation: "identifier",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.targetStorageAreaId,
+          name: targetStorageAreaId,
+          type: uuid,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Transfer hedef saklama alanı.",
+          description_en: "Transfer target storage area.",
+          validation: "identifier",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.transferGroupId,
+          name: transferGroupId,
+          type: uuid,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Transfer grup kimliği.",
+          description_en: "Transfer group identifier.",
+          validation: "identifier",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.physicalQuantity,
+          name: physicalQuantity,
+          type: number,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Fiziksel sayım miktarı.",
+          description_en: "Physical count quantity.",
+          validation: "number",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.bookQuantity,
+          name: bookQuantity,
+          type: number,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Defter miktarı.",
+          description_en: "Book quantity.",
+          validation: "number",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.discrepancy,
+          name: discrepancy,
+          type: number,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Sayım sapması.",
+          description_en: "Count discrepancy.",
+          validation: "number",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.countDate,
+          name: countDate,
+          type: date,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Sayım tarihi.",
+          description_en: "Count date.",
+          validation: "YYYY-MM-DD",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.correctsEntryId,
+          name: correctsEntryId,
+          type: uuid,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Düzeltilen kayıt kimliği.",
+          description_en: "Corrected entry identifier.",
+          validation: "identifier",
+          version: "1.0.0",
+        }
+      - {
+          id: entry.notes,
+          name: notes,
+          type: string,
+          required: false,
+          unique: false,
+          pii: true,
+          description_tr: "Kayıt notu.",
+          description_en: "Entry note.",
+          validation: "en çok 2000 karakter",
+          version: "1.0.0",
+        }
+  - id: clinical_consumption_extension
+    description_tr: "Klinik tüketim ek alanları"
+    description_en: "Clinical consumption extension fields"
+    pii: false
+    tenant_scoped: true
+    fields:
+      - {
+          id: clinical_consumption.reason,
+          name: reason,
+          type: string,
+          required: false,
+          unique: false,
+          pii: false,
+          description_tr: "Klinik tüketim gerekçesi.",
+          description_en: "Clinical-consumption reason.",
+          validation: "string",
+          version: "1.0.0",
+        }

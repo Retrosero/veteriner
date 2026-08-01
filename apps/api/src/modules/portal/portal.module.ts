@@ -13,12 +13,11 @@
 
 import { Module } from "@nestjs/common";
 
-import { OwnersModule } from "../owners/owners.module.js";
-import { PatientsModule } from "../patients/patients.module.js";
-
 import { PortalController } from "./portal.controller.js";
 import { PortalRepository } from "./portal.repository.js";
 import { PortalService } from "./portal.service.js";
+import { OwnersModule } from "../owners/owners.module.js";
+import { PatientsModule } from "../patients/patients.module.js";
 
 @Module({
   imports: [OwnersModule, PatientsModule],

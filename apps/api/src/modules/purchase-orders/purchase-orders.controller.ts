@@ -32,13 +32,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   purchaseOrderCancelInputSchema,
   purchaseOrderCreateInputSchema,
@@ -55,14 +48,19 @@ import {
 } from "@vetniva/contracts";
 
 import { PurchaseOrdersService } from "./purchase-orders.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("inventory/purchase-orders")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/inventory/purchase-orders")
 export class PurchaseOrdersController {
-  public constructor(
-    private readonly service: PurchaseOrdersService,
-  ) {}
+  public constructor(private readonly service: PurchaseOrdersService) {}
 
   @Post()
   @RequirePermissions("inventory:purchase_order:create")
@@ -109,8 +107,7 @@ export class PurchaseOrdersController {
   @ApiOperation({
     operationId: "purchaseOrderGetById",
     summary: "Satın alma sipariş detayı",
-    description:
-      "Header + satırlar. Cross-tenant → 404.",
+    description: "Header + satırlar. Cross-tenant → 404.",
   })
   public async findById(
     @Param("id", new ParseUUIDPipe()) id: string,

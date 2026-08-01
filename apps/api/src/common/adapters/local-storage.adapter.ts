@@ -1,7 +1,6 @@
 /**
  * @file Local filesystem storage adapter (dev/test).
  * @module apps/api/common/adapters/local-storage
- *
  * @description Geliştirme ve test ortamı için disk tabanlı storage
  * implementasyonu. Production'da S3 adapter'ı kullanılır. Storage
  * path şeması tenant-bazlıdır: `<root>/tenants/<tenantId>/files/<fileId>`.
@@ -12,22 +11,15 @@
  * - Dosya yazımı atomik: önce `.tmp`, sonra `rename` (yarım kalan
  *   dosya okunamaz).
  * - `archive` dosyayı `archived/` altına taşır (fiziksel silme YOK).
- *
  * @since GOAL-014 (FAZ-1) dosya ve medya servisi
  */
 
 import { createHash } from "node:crypto";
 import { createReadStream, createWriteStream } from "node:fs";
-import {
-  copyFile,
-  mkdir,
-  rename,
-  rm,
-  stat,
-} from "node:fs/promises";
+import { copyFile, mkdir, rename, rm, stat } from "node:fs/promises";
 import { dirname, join, normalize, resolve, sep } from "node:path";
-import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 
 import type {
   SignedUrlOptions,
@@ -64,6 +56,7 @@ const ARCHIVE_SUBDIR = "archived";
  * Key format doğrulaması. `tenants/<uuid>/files/<uuid>` veya
  * `tenants/<uuid>/files/<uuid>/archived` benzeri formatta olmalı.
  * Path traversal (`../`, `\\`) reddedilir.
+ * @param key
  */
 function assertSafeKey(key: string): void {
   if (key.length === 0 || key.length > 512) {
@@ -79,6 +72,8 @@ function assertSafeKey(key: string): void {
 
 /**
  * Key'den absolute path üretir. Root dışına çıkışı engeller.
+ * @param root
+ * @param key
  */
 function resolveSafePath(root: string, key: string): string {
   const absRoot = resolve(root);
@@ -109,17 +104,21 @@ export class LocalStorageAdapter implements StorageAdapter {
     assertSafeKey(input.key);
     const absPath = resolveSafePath(this.root, input.key);
     const dir = dirname(absPath);
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- absPath assertSafeKey + resolveSafePath ile storage kökü içinde doğrulanır.
     await mkdir(dir, { recursive: true });
 
     const tmpPath = `${absPath}.${process.pid}.${Date.now()}.tmp`;
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- tmpPath doğrulanmış absPath'ten türetilir.
     const stream = createWriteStream(tmpPath);
     if (Buffer.isBuffer(input.body)) {
       await pipeline(Readable.from(input.body), stream);
     } else {
       await pipeline(input.body, stream);
     }
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- Her iki yol doğrulanmış storage kökü içindedir.
     await rename(tmpPath, absPath);
 
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- absPath storage kökü sınır kontrolünden geçti.
     const stats = await stat(absPath);
     const checksum = await this.sha256File(absPath);
     return {
@@ -135,6 +134,7 @@ export class LocalStorageAdapter implements StorageAdapter {
     assertSafeKey(key);
     const absPath = resolveSafePath(this.root, key);
     try {
+      // eslint-disable-next-line security/detect-non-literal-fs-filename -- absPath storage kökü sınır kontrolünden geçti.
       const stats = await stat(absPath);
       if (!stats.isFile()) return null;
       const checksum = await this.sha256File(absPath);
@@ -155,7 +155,9 @@ export class LocalStorageAdapter implements StorageAdapter {
     assertSafeKey(key);
     const absPath = resolveSafePath(this.root, key);
     try {
+      // eslint-disable-next-line security/detect-non-literal-fs-filename -- absPath storage kökü sınır kontrolünden geçti.
       await stat(absPath);
+      // eslint-disable-next-line security/detect-non-literal-fs-filename -- absPath storage kökü sınır kontrolünden geçti.
       return createReadStream(absPath);
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === "ENOENT") return null;
@@ -173,8 +175,12 @@ export class LocalStorageAdapter implements StorageAdapter {
     const disp = options.contentDisposition
       ? `&disp=${encodeURIComponent(options.contentDisposition)}`
       : "";
-    const sig = this.sign(`${key}|${expiresAt}|${options.contentDisposition ?? ""}`);
-    const url = new URL(`${this.publicBaseUrl}/api/v1/files/stream/${encodeURIComponent(key)}`);
+    const sig = this.sign(
+      `${key}|${expiresAt}|${options.contentDisposition ?? ""}`,
+    );
+    const url = new URL(
+      `${this.publicBaseUrl}/api/v1/files/stream/${encodeURIComponent(key)}`,
+    );
     url.searchParams.set("expires", String(expiresAt));
     url.searchParams.set("sig", sig);
     if (options.contentDisposition) {
@@ -191,10 +197,12 @@ export class LocalStorageAdapter implements StorageAdapter {
     const absPath = resolveSafePath(this.root, key);
     const dir = dirname(absPath);
     const archivedDir = join(dir, ARCHIVE_SUBDIR);
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- archivedDir doğrulanmış absPath'in alt dizinidir.
     await mkdir(archivedDir, { recursive: true });
     const base = absPath.split(sep).pop() ?? "object";
     const dest = join(archivedDir, `${base}.${Date.now()}.archived`);
     try {
+      // eslint-disable-next-line security/detect-non-literal-fs-filename -- Kaynak ve hedef doğrulanmış storage kökü içindedir.
       await rename(absPath, dest);
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === "ENOENT") return;
@@ -204,6 +212,7 @@ export class LocalStorageAdapter implements StorageAdapter {
 
   public async healthCheck(): Promise<boolean> {
     try {
+      // eslint-disable-next-line security/detect-non-literal-fs-filename -- root constructor'da mutlak storage kökü olarak çözülür.
       await mkdir(this.root, { recursive: true });
       const probe = join(this.root, ".health");
       await rm(probe, { force: true });
@@ -216,8 +225,10 @@ export class LocalStorageAdapter implements StorageAdapter {
   /**
    * Stream'i buffered okur, SHA-256 hesaplar. Put sonrası ve get
    * sırasında kullanılır.
+   * @param absPath
    */
   private async sha256File(absPath: string): Promise<string> {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- Çağıranlar absPath'i resolveSafePath ile doğrular.
     const stream = createReadStream(absPath);
     const hash = createHash("sha256");
     await pipeline(stream, hash);
@@ -227,6 +238,7 @@ export class LocalStorageAdapter implements StorageAdapter {
   /**
    * Signed URL imzası. HMAC-SHA256(secret, "{key}|{expires}|{disp}").
    * Local adapter için yeterli; production S3 native signing kullanır.
+   * @param payload
    */
   private sign(payload: string): string {
     return createHash("sha256")
@@ -239,6 +251,10 @@ export class LocalStorageAdapter implements StorageAdapter {
 
   /**
    * İmza doğrular. Stream endpoint'i bu metodu çağırır.
+   * @param key
+   * @param expiresAt
+   * @param sig
+   * @param contentDisposition
    */
   public verifySignature(
     key: string,
@@ -263,6 +279,7 @@ export class LocalStorageAdapter implements StorageAdapter {
 
   /**
    * Test amaçlı: root içeriğini normalize eder (path injection tespiti).
+   * @param candidate
    */
   public assertWithinRoot(candidate: string): boolean {
     const absRoot = resolve(this.root);
@@ -273,6 +290,7 @@ export class LocalStorageAdapter implements StorageAdapter {
 
 /**
  * `expiresInSeconds` aralığını 60-3600 arasında sıkıştırır.
+ * @param value
  */
 function clampExpires(value: number | undefined): number {
   if (value === undefined) return 300;

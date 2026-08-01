@@ -1,7 +1,6 @@
 /**
  * @file Auth guard + actor extraction.
  * @module apps/api/common/auth/auth.guard
- *
  * @description Her istek için session doğrulaması yapar; başarılıysa
  * `request.actor` üzerinde gerçek `ActorContext` üretir. Bu, GOAL-010
  * header placeholder'ının yerini alır.
@@ -20,7 +19,6 @@
  * - Public endpoint'ler (`@Public()` dekoratörü ile) kontrol
  *   dışıdır; controller'lar bu dekoratörü kullanabilir.
  * - Session yoksa veya geçersizse `UnauthorizedException` (401).
- *
  * @since GOAL-011 (FAZ-1) kimlik doğrulama
  * @updated GOAL-012 (FAZ-1) RBAC ve izin motoru — isSuperadmin + branchId
  */
@@ -34,14 +32,11 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
+import { SESSION_COOKIE_NAME } from "@vetniva/contracts";
 import { Request } from "express";
 
-import {
-  ActorContext,
-  ActorRole,
-} from "../actor/actor-context.service.js";
 import { AuthService } from "./auth.service.js";
-import { SESSION_COOKIE_NAME } from "@vetniva/contracts";
+import { ActorContext, ActorRole } from "../actor/actor-context.service.js";
 
 export const IS_PUBLIC_KEY = "auth:isPublic";
 /** Public endpoint işaretleyicisi (auth kontrol dışı). */
@@ -108,8 +103,9 @@ export class AuthGuard implements CanActivate {
     // Tenant + role context'i her istekte resolve et. SUPERADMIN
     // ise tenantId=null + isSuperadmin=true; aksi halde ilk aktif
     // üyelikten.
-    const { role, tenantId, isSuperadmin } =
-      await this.resolveRoleAndTenant(session.userId);
+    const { role, tenantId, isSuperadmin } = await this.resolveRoleAndTenant(
+      session.userId,
+    );
 
     // Branch context: session'daki aktif branch. Header override'ı
     // (X-Branch-Id) yalnızca SUPERADMIN için kabul edilir (cross-tenant
@@ -122,14 +118,15 @@ export class AuthGuard implements CanActivate {
     }
 
     const correlationId =
-      (request as Request & { requestId?: string }).requestId ??
-      "req-unknown";
+      (request as Request & { requestId?: string }).requestId ?? "req-unknown";
     const ipRaw =
       request.header("x-forwarded-for") ??
       request.ip ??
       request.socket?.remoteAddress ??
       null;
-    const ip = ipRaw ? maskIp(typeof ipRaw === "string" ? ipRaw : String(ipRaw)) : null;
+    const ip = ipRaw
+      ? maskIp(typeof ipRaw === "string" ? ipRaw : String(ipRaw))
+      : null;
     const ua = request.header("user-agent") ?? null;
     const userAgentHash = ua ? hashUserAgent(ua) : null;
 
@@ -144,15 +141,20 @@ export class AuthGuard implements CanActivate {
       ipAddress: ip,
       userAgentHash,
       source: "session",
-    } as ActorContext & { isSuperadmin: boolean };
+    };
 
     return true;
   }
 
   private extractToken(request: Request): string | null {
-    const cookieToken = (request as Request & { cookies?: Record<string, string> })
-      .cookies?.[SESSION_COOKIE_NAME];
-    if (cookieToken) return cookieToken;
+    const cookies: unknown = (request as unknown as { cookies?: unknown })
+      .cookies;
+    if (cookies && typeof cookies === "object") {
+      const cookieToken = Reflect.get(cookies, SESSION_COOKIE_NAME) as unknown;
+      if (typeof cookieToken === "string" && cookieToken.length > 0) {
+        return cookieToken;
+      }
+    }
     const auth = request.header("authorization");
     if (auth?.toLowerCase().startsWith("bearer ")) {
       return auth.substring(7).trim();
@@ -167,33 +169,40 @@ export class AuthGuard implements CanActivate {
    * Memberships verisi AuthService üzerinden çözümlenir (RLS
    * nedeniyle repository doğrudan erişilmez). GOAL-012 ile birlikte
    * `isSuperadmin` bayrağı user tablosundan okunur.
+   * @param userId
    */
-  private async resolveRoleAndTenant(
-    userId: string,
-  ): Promise<{
+  private async resolveRoleAndTenant(userId: string): Promise<{
     role: ActorRole;
     tenantId: string | null;
     isSuperadmin: boolean;
   }> {
-    const resolved = await (this.auth as unknown as {
-      resolveActorContext: (id: string) => Promise<{
-        role: ActorRole;
-        tenantId: string | null;
-        isSuperadmin: boolean;
-      }>;
-    }).resolveActorContext(userId);
+    const resolved = await (
+      this.auth as unknown as {
+        resolveActorContext: (id: string) => Promise<{
+          role: ActorRole;
+          tenantId: string | null;
+          isSuperadmin: boolean;
+        }>;
+      }
+    ).resolveActorContext(userId);
     return resolved;
   }
 }
 
-/** IP mask'leme (actor-context ile aynı algoritma). */
+/**
+ * IP mask'leme (actor-context ile aynı algoritma).
+ * @param ip
+ */
 function maskIp(ip: string): string {
   const cleaned = ip.split(",")[0]?.trim() ?? ip;
   if (cleaned.includes(":")) return "***";
   return cleaned.replace(/\.\d+$/, ".***");
 }
 
-/** User agent kısa hash. */
+/**
+ * User agent kısa hash.
+ * @param ua
+ */
 function hashUserAgent(ua: string): string {
   let hash = 2166136261;
   for (let i = 0; i < ua.length; i++) {

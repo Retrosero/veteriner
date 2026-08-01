@@ -1,7 +1,6 @@
 /**
  * @file Denetleyici çalıştırıcı.
  * @module @vetniva/docs-check/runner
- *
  * @description Repo kökünden tüm kontrolleri sırayla çalıştırır ve
  * bulguları toplar. Tek bir `run` fonksiyonu üzerinden test edilebilir.
  *
@@ -14,22 +13,24 @@
  *           pilot kapsamı dışı route'lar içindir.
  */
 
-import fg from "fast-glob";
 import path from "node:path";
 
-import { scanWebRoutes } from "./scanners/web.js";
-import { scanApiRoutes } from "./scanners/api.js";
-import { scanErrorCodes } from "./scanners/error-codes.js";
-import { scanPermissions } from "./scanners/permissions.js";
-import { scanAiChunks } from "./scanners/ai-chunks.js";
-import { scanFields } from "./scanners/fields.js";
-import { readDocFiles } from "./scanners/docs.js";
-import { scanI18nParity } from "./scanners/i18n.js";
+import fg from "fast-glob";
+
 import {
   isOverridden,
   loadOverrides,
   overrideReason,
 } from "./load-overrides.js";
+import { scanAiChunks } from "./scanners/ai-chunks.js";
+import { scanApiRoutes } from "./scanners/api.js";
+import { readDocFiles } from "./scanners/docs.js";
+import { scanErrorCodes } from "./scanners/error-codes.js";
+import { scanFields } from "./scanners/fields.js";
+import { scanI18nParity } from "./scanners/i18n.js";
+import { scanPermissions } from "./scanners/permissions.js";
+import { scanWebRoutes } from "./scanners/web.js";
+
 import type { Issue, RouteInfo } from "./types.js";
 
 export type RunResult = {
@@ -49,6 +50,11 @@ export type RunResult = {
   issues: Issue[];
 };
 
+/**
+ * Tüm doküman-kod uyum taramalarını çalıştırır ve bulguları birleştirir.
+ * @param {string} root Proje kök dizini.
+ * @returns {Promise<RunResult>} Tarama sayaçları ve uyum bulguları.
+ */
 export async function run(root: string): Promise<RunResult> {
   const docsRoot = path.join(root, "docs");
   const docs = await readDocFiles(docsRoot);

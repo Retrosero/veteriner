@@ -16,8 +16,8 @@
   mı doğrulanır (cross-tenant → 404 `VET-CLINIC-0001`). `items` en az 1
   kalem; boş → 422 `VET-VALIDATION-0010`. `durationDays` 1-30 gün
   (aşımı → 422 `VET-VALIDATION-0010`); `expiresAt = now +
-  durationDays` gün. `status='active'`. `id =
-  prsc-<tenant8>-000001` (artan sayaç, tenant başına). Audit
+durationDays` gün. `status='active'`. `id =
+prsc-<tenant8>-000001` (artan sayaç, tenant başına). Audit
   `audit:prescription.create` (info) — examinationId, patientId,
   items, status, expiresAt.
 - **`findById(tenantId, id, actor)`** — tenant-scoped; cross-tenant →
@@ -85,8 +85,9 @@ patientId + status filtreleri, dispense başarı + dispensedAt +
 dispensedBy + audit, dispense active değilse → 409 PRESC-0003, cancel
 başarı + cancelReason + audit (warning), cancel zaten iptal → 409
 PRESC-0004, expireOverdue süresi geçen aktif reçeteleri expired yapar
-+ count, expireOverdue hiç overdue yoksa 0, pdf placeholder buffer +
-audit, pdf cross-tenant → 404.
+
+- count, expireOverdue hiç overdue yoksa 0, pdf placeholder buffer +
+  audit, pdf cross-tenant → 404.
 
 ## Tasarım kararları
 

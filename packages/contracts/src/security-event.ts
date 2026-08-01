@@ -127,7 +127,9 @@ export const securityEventActorTypeSchema = z.enum([
   "system",
   "portal_user",
 ]);
-export type SecurityEventActorType = z.infer<typeof securityEventActorTypeSchema>;
+export type SecurityEventActorType = z.infer<
+  typeof securityEventActorTypeSchema
+>;
 
 /** Ülke. ErrorEvent ile aynı. */
 export const securityEventCountrySchema = z.enum(["TR", "GB", "SYSTEM"]);

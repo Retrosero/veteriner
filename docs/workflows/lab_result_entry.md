@@ -6,16 +6,19 @@
 **Sayfa:** `/[locale]/clinic/lab-orders/{orderId}/result/new`
 
 ## Amaç
+
 Bir lab order'ın sonucunu girmek. Analyte bazlı değer,
 referans aralığı ve abnormal flag eklenir; draft → submitted
 → approved → (amended) state machine ile yönetilir.
 
 ## Aktör
+
 - VETERINARIAN (uzman onayı)
 - LAB_TECH (sonuç girişi)
 - EXTERNAL_ADAPTER (cihaz/lab adapter, FAZ-9 GOAL-094)
 
 ## Tetikleyici
+
 - Numune toplandıktan sonra cihaz/laboratuvar sonuç döner.
 - Manuel giriş (override).
 
@@ -73,9 +76,11 @@ referans aralığı ve abnormal flag eklenir; draft → submitted
     - Anormal flag varsa portal'da kırmızı işaret.
 
 ## Tenant izolasyonu
+
 - Lab order + test catalog aynı tenant'ta olmalı.
 
 ## Audit
+
 - `audit:lab_result.create` (info).
 - `audit:lab_result.submit` (info).
 - `audit:lab_result.approve` (info).
@@ -83,14 +88,15 @@ referans aralığı ve abnormal flag eklenir; draft → submitted
 
 ## Hata senaryoları
 
-| Senaryo | HTTP | Hata kodu |
-|---------|------|-----------|
-| Order uygun değil | 409 | `VET-LAB-0001` |
-| Cross-tenant | 404 | `VET-CLINIC-0001` |
-| Geçersiz analyte | 422 | `VET-VALIDATION-0001` |
-| Yetkisiz | 403 | `VET-AUTHZ-0001` |
+| Senaryo           | HTTP | Hata kodu             |
+| ----------------- | ---- | --------------------- |
+| Order uygun değil | 409  | `VET-LAB-0001`        |
+| Cross-tenant      | 404  | `VET-CLINIC-0001`     |
+| Geçersiz analyte  | 422  | `VET-VALIDATION-0001` |
+| Yetkisiz          | 403  | `VET-AUTHZ-0001`      |
 
 ## İlgili dokümanlar
+
 - `docs/api/api.post._api_v1_clinic_lab-orders__orderId_result.md`
 - `goals/GOAL-091_COMPLETION_REPORT.md`
 - `goals/GOAL-092_COMPLETION_REPORT.md` (sonuç yönetimi)

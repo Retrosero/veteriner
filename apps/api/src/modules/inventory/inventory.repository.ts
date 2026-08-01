@@ -206,9 +206,7 @@ export class InventoryRepository {
     const rec = this.findWarehouseById(tenantId, id);
     if (!rec) return null;
     if (patch.code !== undefined && patch.code !== rec.code) {
-      this.warehousesByCode.delete(
-        this.tenantCodeKey(rec.tenantId, rec.code),
-      );
+      this.warehousesByCode.delete(this.tenantCodeKey(rec.tenantId, rec.code));
       this.warehousesByCode.set(
         this.tenantCodeKey(rec.tenantId, patch.code),
         rec.id,
@@ -245,10 +243,7 @@ export class InventoryRepository {
     }
     all.sort((a, b) => a.code.localeCompare(b.code));
     const total = all.length;
-    const items = all.slice(
-      filters.offset,
-      filters.offset + filters.limit,
-    );
+    const items = all.slice(filters.offset, filters.offset + filters.limit);
     return { items, total };
   }
 
@@ -279,10 +274,7 @@ export class InventoryRepository {
     return record;
   }
 
-  public findShelfById(
-    tenantId: string,
-    id: string,
-  ): ShelfRecord | null {
+  public findShelfById(tenantId: string, id: string): ShelfRecord | null {
     const rec = this.shelvesById.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -293,9 +285,7 @@ export class InventoryRepository {
     warehouseId: string,
     code: string,
   ): ShelfRecord | null {
-    const id = this.shelvesByCode.get(
-      this.warehouseCodeKey(warehouseId, code),
-    );
+    const id = this.shelvesByCode.get(this.warehouseCodeKey(warehouseId, code));
     if (!id) return null;
     const rec = this.shelvesById.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
@@ -340,10 +330,7 @@ export class InventoryRepository {
     for (const rec of this.shelvesById.values()) {
       if (rec.tenantId !== tenantId) continue;
       if (!filters.includeArchived && rec.archivedAt !== null) continue;
-      if (
-        filters.warehouseId &&
-        rec.warehouseId !== filters.warehouseId
-      )
+      if (filters.warehouseId && rec.warehouseId !== filters.warehouseId)
         continue;
       if (
         filters.temperatureZone &&
@@ -362,10 +349,7 @@ export class InventoryRepository {
     }
     all.sort((a, b) => a.name.localeCompare(b.name));
     const total = all.length;
-    const items = all.slice(
-      filters.offset,
-      filters.offset + filters.limit,
-    );
+    const items = all.slice(filters.offset, filters.offset + filters.limit);
     return { items, total };
   }
 
@@ -413,10 +397,7 @@ export class InventoryRepository {
     return record;
   }
 
-  public findLotById(
-    tenantId: string,
-    id: string,
-  ): StockLotRecord | null {
+  public findLotById(tenantId: string, id: string): StockLotRecord | null {
     const rec = this.lotsById.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -443,10 +424,7 @@ export class InventoryRepository {
   ): StockLotRecord | null {
     const rec = this.findLotById(tenantId, id);
     if (!rec) return null;
-    if (
-      patch.lotNumber !== undefined &&
-      patch.lotNumber !== rec.lotNumber
-    ) {
+    if (patch.lotNumber !== undefined && patch.lotNumber !== rec.lotNumber) {
       this.lotsByProductLot.delete(
         this.productLotKey(rec.productId, rec.lotNumber),
       );
@@ -492,10 +470,7 @@ export class InventoryRepository {
       if (filters.productId && rec.productId !== filters.productId) continue;
       if (filters.shelfId && rec.shelfId !== filters.shelfId) continue;
       if (filters.lotNumber && rec.lotNumber !== filters.lotNumber) continue;
-      if (
-        filters.supplierName &&
-        rec.supplierName !== filters.supplierName
-      )
+      if (filters.supplierName && rec.supplierName !== filters.supplierName)
         continue;
       if (filters.active !== undefined && rec.active !== filters.active)
         continue;
@@ -554,10 +529,7 @@ export class InventoryRepository {
    * arşivleme engellemesi için kullanılır: rafta lot varsa
    * arşivlenemez.
    */
-  public countActiveLotsForShelf(
-    tenantId: string,
-    shelfId: string,
-  ): number {
+  public countActiveLotsForShelf(tenantId: string, shelfId: string): number {
     const set = this.lotsByShelf.get(shelfId);
     if (!set) return 0;
     let n = 0;

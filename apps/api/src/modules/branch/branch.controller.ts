@@ -1,7 +1,6 @@
 ﻿/**
  * @file Branch controller.
  * @module apps/api/modules/branch/branch.controller
- *
  * @description Branch REST API. CRUD + archive endpoint'leri. Tenant
  * ID URL path'inde taÅŸÄ±nÄ±r; body'de alÄ±nmaz (cross-tenant IDOR
  * saldÄ±rÄ±sÄ±na karÅŸÄ±).
@@ -11,14 +10,12 @@
  * - `POST   /api/v1/tenants/:tenantId/branches` â€” Yeni branch
  * - `GET    /api/v1/branches/:id`               â€” Detay
  * - `PATCH  /api/v1/branches/:id`               â€” GÃ¼ncelle
- * - `POST   /api/v1/branches/:id/archive`       â€” ArÅŸivle
- *
+ * - `POST   /api/v1/branches/:id/archive`       â€” ArÅŸivle.
  * @security Tenant ID URL'den gelir; actor.tenantId ile eÅŸleÅŸmeli
  *   veya actor SUPERADMIN olmalÄ±. Cross-tenant denemesi â†’ 404.
  *   GOAL-012: `@RequirePermissions()` dekoratÃ¶rÃ¼ ile her endpoint'te
  *   aÃ§Ä±k yetki kontrolÃ¼ uygulanÄ±r; PermissionsGuard RBAC motorunu
  *   Ã§alÄ±ÅŸtÄ±rÄ±r.
- *
  * @since GOAL-010 (FAZ-1) tenant ve ÅŸube altyapÄ±sÄ±
  * @updated GOAL-012 (FAZ-1) RBAC ve izin motoru â€” explicit @RequirePermission
  */
@@ -37,20 +34,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import type {
-  ArchiveBranchRequest,
-  BranchListResponse,
-  BranchResponse,
-  CreateBranchRequest,
-  ListBranchesQuery,
-  UpdateBranchRequest,
-} from "@vetniva/contracts";
 import {
   archiveBranchRequestSchema,
   createBranchRequestSchema,
@@ -59,6 +42,20 @@ import {
 } from "@vetniva/contracts";
 
 import { BranchService } from "./branch.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type {
+  ArchiveBranchRequest,
+  BranchListResponse,
+  BranchResponse,
+  CreateBranchRequest,
+  ListBranchesQuery,
+  UpdateBranchRequest,
+} from "@vetniva/contracts";
 
 @ApiTags("branches")
 @UseGuards(PermissionsGuard)
@@ -66,9 +63,11 @@ import { BranchService } from "./branch.service.js";
 export class BranchController {
   public constructor(private readonly service: BranchService) {}
 
-
   /**
    * Tenant'Ä±n branch'lerini listeler.
+   * @param tenantId
+   * @param query
+   * @param actor
    */
   @Get("tenants/:tenantId/branches")
   @RequirePermissions("branch:branch:read")
@@ -87,7 +86,11 @@ export class BranchController {
   ): Promise<BranchListResponse> {
     // exactOptionalPropertyTypes uyumu: yalnÄ±zca set edilmiÅŸ alanlarÄ±
     // service'e geÃ§ir.
-    const args: { actor: ActorContext; tenantId: string; status?: "active" | "inactive" | "closed" } = {
+    const args: {
+      actor: ActorContext;
+      tenantId: string;
+      status?: "active" | "inactive" | "closed";
+    } = {
       actor,
       tenantId,
     };
@@ -97,6 +100,9 @@ export class BranchController {
 
   /**
    * Yeni branch oluÅŸturur.
+   * @param tenantId
+   * @param body
+   * @param actor
    */
   @Post("tenants/:tenantId/branches")
   @RequirePermissions("branch:branch:create")
@@ -120,14 +126,15 @@ export class BranchController {
 
   /**
    * Branch detayÄ±.
+   * @param id
+   * @param actor
    */
   @Get("branches/:id")
   @RequirePermissions("branch:branch:read")
   @ApiOperation({
     operationId: "branchGetById",
     summary: "Åube detayÄ±",
-    description:
-      "ID'ye gÃ¶re ÅŸube getirir. Cross-tenant denemesi 404 dÃ¶ner.",
+    description: "ID'ye gÃ¶re ÅŸube getirir. Cross-tenant denemesi 404 dÃ¶ner.",
   })
   @ApiResponse({ status: 200, description: "Åube dÃ¶ner." })
   public async findById(
@@ -139,6 +146,9 @@ export class BranchController {
 
   /**
    * Branch gÃ¼ncelleme.
+   * @param id
+   * @param body
+   * @param actor
    */
   @Patch("branches/:id")
   @RequirePermissions("branch:branch:update")
@@ -159,6 +169,9 @@ export class BranchController {
 
   /**
    * Branch arÅŸivleme (soft delete).
+   * @param id
+   * @param body
+   * @param actor
    */
   @Post("branches/:id/archive")
   @RequirePermissions("branch:branch:archive")

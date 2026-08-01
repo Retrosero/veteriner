@@ -122,7 +122,25 @@ related_api:
   - "GET /api/v1/superadmin/security-events/{id}"
   - "POST /api/v1/system/security-events"
 keywords:
-  tr-TR: [güvenlik olayı, failed login, suspicious export, role change, tenant breach, alarm adapter, SUPERADMIN]
-  en-GB: [security event, failed login, suspicious export, role change, tenant breach, alarm adapter, SUPERADMIN]
+  tr-TR:
+    [
+      güvenlik olayı,
+      failed login,
+      suspicious export,
+      role change,
+      tenant breach,
+      alarm adapter,
+      SUPERADMIN,
+    ]
+  en-GB:
+    [
+      security event,
+      failed login,
+      suspicious export,
+      role change,
+      tenant breach,
+      alarm adapter,
+      SUPERADMIN,
+    ]
 version: "1.0.0"
 last_verified_at: 2026-07-31

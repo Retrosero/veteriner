@@ -13,15 +13,14 @@
 
 import { Module } from "@nestjs/common";
 
-import { AppointmentsModule } from "../appointments/appointments.module.js";
-import { PatientsModule } from "../patients/patients.module.js";
-
 import { ExaminationsController } from "./examinations.controller.js";
 import {
   ExaminationAmendsRepository,
   ExaminationsRepository,
 } from "./examinations.repository.js";
 import { ExaminationsService } from "./examinations.service.js";
+import { AppointmentsModule } from "../appointments/appointments.module.js";
+import { PatientsModule } from "../patients/patients.module.js";
 
 @Module({
   imports: [AppointmentsModule, PatientsModule],

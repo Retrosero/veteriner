@@ -38,8 +38,8 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { OperationNotesRepository } from "./operation-notes.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import {
   toOperationNote,
@@ -50,6 +50,10 @@ import {
   type OperationNoteRecord,
   type OperationNoteTeamRecord,
 } from "../../common/operation-notes/operation-note.types.js";
+import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
+import { SurgeryPlansService } from "../surgery-plans/surgery-plans.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   OperationNote,
   OperationNoteAmendInput,
@@ -63,10 +67,6 @@ import type {
   OperationNoteTeamInput,
   OperationNoteUpdateInput,
 } from "@vetniva/contracts";
-
-import { OperationNotesRepository } from "./operation-notes.repository.js";
-import { SurgeryPlansService } from "../surgery-plans/surgery-plans.service.js";
-import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
 
 @Injectable()
 export class OperationNotesService {
@@ -99,7 +99,8 @@ export class OperationNotesService {
     if (!plan) {
       throw new DomainError({
         errorCode: "VET-OPNOTE-0003",
-        message: "Operasyon notu yalnızca mevcut bir ameliyat planı için açılabilir",
+        message:
+          "Operasyon notu yalnızca mevcut bir ameliyat planı için açılabilir",
         httpStatus: 422,
         severity: "warning",
         i18nKey: "error.VET-OPNOTE-0003",
@@ -114,7 +115,10 @@ export class OperationNotesService {
         httpStatus: 422,
         severity: "warning",
         i18nKey: "error.VET-OPNOTE-0003",
-        details: { surgeryPlanId: input.surgeryPlanId, planStatus: plan.status },
+        details: {
+          surgeryPlanId: input.surgeryPlanId,
+          planStatus: plan.status,
+        },
       });
     }
     if (plan.patientId !== input.patientId) {
@@ -248,7 +252,7 @@ export class OperationNotesService {
     actor: ActorContext,
   ): Promise<OperationNote> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.requireDraftNote(tenantId, id, "güncelleme");
+    this.requireDraftNote(tenantId, id, "güncelleme");
     const nowIso = new Date().toISOString();
     this.repo.update(tenantId, id, {
       procedure: input.procedure,
@@ -415,7 +419,8 @@ export class OperationNotesService {
       status: "finalized",
       finalizedAt: nowIso,
       finalizedBy: actor.actorId ?? "system",
-      findings: input.findings !== undefined ? input.findings : existing.findings,
+      findings:
+        input.findings !== undefined ? input.findings : existing.findings,
       complicationsText:
         input.complicationsText !== undefined
           ? input.complicationsText
@@ -617,7 +622,7 @@ export class OperationNotesService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

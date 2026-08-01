@@ -51,9 +51,7 @@ export type LowStockAlertStatus = z.infer<typeof lowStockAlertStatusSchema>;
 
 /** Düşük stok uyarı şiddeti. */
 export const lowStockAlertSeveritySchema = z.enum(["warning", "critical"]);
-export type LowStockAlertSeverity = z.infer<
-  typeof lowStockAlertSeveritySchema
->;
+export type LowStockAlertSeverity = z.infer<typeof lowStockAlertSeveritySchema>;
 
 /** API response şeması. */
 export const lowStockAlertSchema = z.object({
@@ -125,7 +123,9 @@ export const expiringLotAlertStatusSchema = z.enum([
   "acknowledged",
   "resolved",
 ]);
-export type ExpiringLotAlertStatus = z.infer<typeof expiringLotAlertStatusSchema>;
+export type ExpiringLotAlertStatus = z.infer<
+  typeof expiringLotAlertStatusSchema
+>;
 
 /** SKT uyarı şiddeti. */
 export const expiringLotAlertSeveritySchema = z.enum([

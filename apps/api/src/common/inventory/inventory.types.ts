@@ -25,11 +25,7 @@
  * @since GOAL-061 (FAZ-6) depo, raf, lot ve SKT core
  */
 
-import type {
-  Shelf,
-  StockLot,
-  Warehouse,
-} from "@vetniva/contracts";
+import type { Shelf, StockLot, Warehouse } from "@vetniva/contracts";
 
 /* --------------------------------------------------------------------------
  * Warehouse (Depo)

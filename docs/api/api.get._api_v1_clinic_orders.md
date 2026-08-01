@@ -8,15 +8,15 @@ Order listesi. Tenant-scoped; `patientId` / `type` / `status` / `from`
 
 **Query (`OrderFilters`):**
 
-| Param       | Tip                | Zorunlu | Varsayılan | Açıklama                                        |
-| ----------- | ------------------ | ------- | ---------- | ----------------------------------------------- |
-| `patientId` | string             | hayır   | —          | Hastaya ait order'ları filtreler.               |
-| `type`      | enum (8 değer)     | hayır   | —          | Order tipi filtresi.                            |
-| `status`    | enum (4 değer)     | hayır   | —          | `pending` / `in_progress` / `completed` / `cancelled`. |
-| `from`      | ISO 8601 datetime  | hayır   | —          | Oluşturma zamanı alt sınırı (UTC).             |
-| `to`        | ISO 8601 datetime  | hayır   | —          | Oluşturma zamanı üst sınırı (UTC).             |
-| `limit`     | int (1-200)        | hayır   | 20         | Sayfa başına kayıt.                             |
-| `offset`    | int (0-10000)      | hayır   | 0          | Sayfa başlangıcı.                               |
+| Param       | Tip               | Zorunlu | Varsayılan | Açıklama                                               |
+| ----------- | ----------------- | ------- | ---------- | ------------------------------------------------------ |
+| `patientId` | string            | hayır   | —          | Hastaya ait order'ları filtreler.                      |
+| `type`      | enum (8 değer)    | hayır   | —          | Order tipi filtresi.                                   |
+| `status`    | enum (4 değer)    | hayır   | —          | `pending` / `in_progress` / `completed` / `cancelled`. |
+| `from`      | ISO 8601 datetime | hayır   | —          | Oluşturma zamanı alt sınırı (UTC).                     |
+| `to`        | ISO 8601 datetime | hayır   | —          | Oluşturma zamanı üst sınırı (UTC).                     |
+| `limit`     | int (1-200)       | hayır   | 20         | Sayfa başına kayıt.                                    |
+| `offset`    | int (0-10000)     | hayır   | 0          | Sayfa başlangıcı.                                      |
 
 **Response 200 (`OrderListResponse`):**
 

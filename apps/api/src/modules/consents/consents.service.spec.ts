@@ -1,7 +1,6 @@
 /**
  * @file ConsentsService unit testleri.
  * @module apps/api/modules/consents/consents.service.spec
- *
  * @description GOAL-081 onam formu service testleri.
  *   - createConsent (taslak + audit).
  *   - signConsent (draft → signed + signedAt + audit).
@@ -9,17 +8,16 @@
  *     draft 409 VET-CONSENT-0004).
  *   - listConsents / getConsentDetail.
  *   - Cross-tenant IDOR → null; cross-tenant create 403.
- *
  * @since GOAL-081 (FAZ-8) onam formları core
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ConsentsRepository } from "./consents.repository.js";
+import { ConsentsService } from "./consents.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-
-import { ConsentsService } from "./consents.service.js";
-import { ConsentsRepository } from "./consents.repository.js";
 import type {
   ConsentCreateInput,
   ConsentRevokeInput,
@@ -68,6 +66,9 @@ const STAFF_B: ActorContext = {
   source: "header",
 };
 
+/**
+ *
+ */
 function makeAudit(): AuditService {
   return {
     record: vi.fn().mockResolvedValue({ eventId: "ev-1" }),
@@ -89,6 +90,10 @@ function makeAudit(): AuditService {
 const PATIENT_A = "00000000-0000-0000-0000-000000000001";
 const OWNER_UUID = "00000000-0000-0000-0000-000000000002";
 
+/**
+ *
+ * @param overrides
+ */
 function makeCreateInput(
   overrides: Partial<ConsentCreateInput> = {},
 ): ConsentCreateInput {
@@ -298,11 +303,7 @@ describe("ConsentsService", () => {
         makeCreateInput(),
         STAFF_A,
       );
-      await service.createConsent(
-        TENANT_A,
-        makeCreateInput(),
-        STAFF_A,
-      );
+      await service.createConsent(TENANT_A, makeCreateInput(), STAFF_A);
       const b = await service.signConsent(
         TENANT_A,
         a.id,
@@ -326,11 +327,7 @@ describe("ConsentsService", () => {
         makeCreateInput(),
         STAFF_A,
       );
-      const c = await service.getConsentDetail(
-        TENANT_B,
-        created.id,
-        STAFF_B,
-      );
+      const c = await service.getConsentDetail(TENANT_B, created.id, STAFF_B);
       expect(c).toBeNull();
     });
   });

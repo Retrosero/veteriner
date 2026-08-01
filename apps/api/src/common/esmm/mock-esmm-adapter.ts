@@ -1,7 +1,6 @@
 /**
  * @file Mock e-SMM provider adapter.
  * @module apps/api/common/esmm/mock-esmm-adapter
- *
  * @description GOAL-077 (FAZ-7) e-SMM provider mock
  *   implementasyonu. Gerçek provider entegrasyonu (Faz 13+)
  *   olmadığı için bu adapter:
@@ -13,25 +12,20 @@
  *
  *   Operatör ayrıca `manualDocumentNumber` ile kayıt açabilir
  *   (provider'a göndermeden).
- *
  * @since GOAL-077 (FAZ-7) e-SMM adapter sözleşmesi core
  */
 
 import { Injectable } from "@nestjs/common";
 
-import type {
-  EsmmSubmitRequest,
-  EsmmSubmitResponse,
-} from "@vetniva/contracts";
-
 import type { EsmmAdapter } from "./esmm.types.js";
+import type { EsmmSubmitRequest, EsmmSubmitResponse } from "@vetniva/contracts";
 
 @Injectable()
 export class MockEsmmAdapter implements EsmmAdapter {
   public readonly providerName = "mock";
   /** Idempotency key → önceki yanıt. */
   private readonly responses = new Map<string, EsmmSubmitResponse>();
-  /** providerDocumentId → yanıt. */
+  /** ProviderDocumentId → yanıt. */
   private readonly byId = new Map<string, EsmmSubmitResponse>();
   /** Her tenant için sayaç (mock fatura no üretimi). */
   private readonly counters = new Map<string, number>();

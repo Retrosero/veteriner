@@ -27,23 +27,22 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import type {
-  VitalSigns,
-  VitalSignsCreateInput,
-  VitalsRecord,
-} from "@vetniva/contracts";
-
-import { ExaminationsService } from "../examinations/examinations.service.js";
-import { PatientsService } from "../patients/patients.service.js";
-
 import {
   type VitalsPersistRecord,
   VitalsRepository,
   toVitalsRecord,
 } from "./vitals.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { ExaminationsService } from "../examinations/examinations.service.js";
+import { PatientsService } from "../patients/patients.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type {
+  VitalSigns,
+  VitalSignsCreateInput,
+  VitalsRecord,
+} from "@vetniva/contracts";
 
 @Injectable()
 export class VitalsService {
@@ -69,7 +68,11 @@ export class VitalsService {
     this.requireTenantScope(actor, tenantId);
 
     // 1) Examination aynı tenant'ta mı (cross-tenant → 404).
-    const exam = await this.examinations.findById(tenantId, examinationId, actor);
+    const exam = await this.examinations.findById(
+      tenantId,
+      examinationId,
+      actor,
+    );
     if (!exam) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",
@@ -85,7 +88,8 @@ export class VitalsService {
     if (!hasAnyMeasurement(input.vitalSigns)) {
       throw new DomainError({
         errorCode: "VET-VALIDATION-0010",
-        message: "En az bir vital bulgu (ateş, nabız, solunum, vb.) girilmelidir",
+        message:
+          "En az bir vital bulgu (ateş, nabız, solunum, vb.) girilmelidir",
         httpStatus: 422,
         severity: "warning",
         i18nKey: "error.VET-VALIDATION-0010",
@@ -203,7 +207,7 @@ export class VitalsService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

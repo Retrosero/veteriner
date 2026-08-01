@@ -45,14 +45,16 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { ImagingOrdersRepository } from "./imaging-orders.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import {
   toImagingOrder,
   type ImagingOrderRecord,
   type ImagingReportRecord,
 } from "../../common/imaging-orders/imaging-order.types.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   ImagingOrder,
   ImagingOrderCancelInput,
@@ -68,8 +70,6 @@ import type {
   ImagingOrderStatus,
   ImagingModality,
 } from "@vetniva/contracts";
-
-import { ImagingOrdersRepository } from "./imaging-orders.repository.js";
 
 /** Dahili görüntüleme kataloğu girdisi. */
 interface InternalImagingTest {
@@ -234,8 +234,7 @@ export class ImagingOrdersService {
     if (!test) {
       throw new DomainError({
         errorCode: "VET-IMG-0003",
-        message:
-          "Katalogda böyle bir görüntüleme testi bulunamadı",
+        message: "Katalogda böyle bir görüntüleme testi bulunamadı",
         httpStatus: 422,
         severity: "warning",
         i18nKey: "error.VET-IMG-0003",
@@ -358,9 +357,7 @@ export class ImagingOrdersService {
   ): Promise<ImagingOrder> {
     this.requireTenantScope(actor, tenantId);
     const existing = this.requireOrder(tenantId, id);
-    this.requireStateTransition(existing.status, "scheduled", [
-      "ordered",
-    ]);
+    this.requireStateTransition(existing.status, "scheduled", ["ordered"]);
 
     const nowIso = new Date().toISOString();
     this.repo.update(tenantId, id, {
@@ -399,9 +396,7 @@ export class ImagingOrdersService {
   ): Promise<ImagingOrder> {
     this.requireTenantScope(actor, tenantId);
     const existing = this.requireOrder(tenantId, id);
-    this.requireStateTransition(existing.status, "performed", [
-      "scheduled",
-    ]);
+    this.requireStateTransition(existing.status, "performed", ["scheduled"]);
 
     const nowIso = new Date().toISOString();
     const performedAt = input.performedAt ?? nowIso;
@@ -444,9 +439,7 @@ export class ImagingOrdersService {
   ): Promise<ImagingOrder> {
     this.requireTenantScope(actor, tenantId);
     const existing = this.requireOrder(tenantId, id);
-    this.requireStateTransition(existing.status, "reported", [
-      "performed",
-    ]);
+    this.requireStateTransition(existing.status, "reported", ["performed"]);
 
     const nowIso = new Date().toISOString();
     const revision: ImagingReportRecord = {
@@ -498,10 +491,7 @@ export class ImagingOrdersService {
   ): Promise<ImagingOrder> {
     this.requireTenantScope(actor, tenantId);
     const existing = this.requireOrder(tenantId, id);
-    if (
-      existing.status !== "reported" &&
-      existing.status !== "amended"
-    ) {
+    if (existing.status !== "reported" && existing.status !== "amended") {
       throw new DomainError({
         errorCode: "VET-IMG-0006",
         message: `Rapor onayı için sipariş "reported" durumunda olmalı: ${existing.status}`,
@@ -519,8 +509,7 @@ export class ImagingOrdersService {
         i18nKey: "error.VET-IMG-0007",
       });
     }
-    const last =
-      existing.reportRevisions[existing.reportRevisions.length - 1]!;
+    const last = existing.reportRevisions[existing.reportRevisions.length - 1]!;
     if (last.approved) {
       throw new DomainError({
         errorCode: "VET-IMG-0008",
@@ -540,10 +529,7 @@ export class ImagingOrdersService {
       portalVisible: input.portalVisible ?? false,
       reviewNotes: input.reviewNotes ?? null,
     };
-    const newRevisions = [
-      ...existing.reportRevisions.slice(0, -1),
-      updated,
-    ];
+    const newRevisions = [...existing.reportRevisions.slice(0, -1), updated];
     this.repo.update(tenantId, id, {
       status: "reported",
       reportRevisions: newRevisions,
@@ -578,10 +564,7 @@ export class ImagingOrdersService {
   ): Promise<ImagingOrder> {
     this.requireTenantScope(actor, tenantId);
     const existing = this.requireOrder(tenantId, id);
-    if (
-      existing.status !== "reported" &&
-      existing.status !== "amended"
-    ) {
+    if (existing.status !== "reported" && existing.status !== "amended") {
       throw new DomainError({
         errorCode: "VET-IMG-0009",
         message: `Rapor düzeltmesi için sipariş "reported" durumunda olmalı: ${existing.status}`,
@@ -790,7 +773,7 @@ export class ImagingOrdersService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

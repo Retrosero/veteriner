@@ -35,7 +35,7 @@ POST /api/v1/clinic/sales
 - `customerOwnerId` (string) zorunlu.
 - `patientId` (string|null) opsiyonel.
 - `sourceType` (enum: `examination|prescription|lab_test|
-  imaging|surgery|order`) zorunlu.
+imaging|surgery|order`) zorunlu.
 - `sourceId` (string) zorunlu.
 - `currency` (ISO 4217) zorunlu.
 - `discount` (Decimal) opsiyonel.

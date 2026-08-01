@@ -16,11 +16,11 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { HospitalizationRepository } from "./hospitalization.repository.js";
+import { HospitalizationService } from "./hospitalization.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-
-import { HospitalizationService } from "./hospitalization.service.js";
-import { HospitalizationRepository } from "./hospitalization.repository.js";
 import type {
   CageAssignmentCreateInput,
   CageAssignmentEndInput,
@@ -60,7 +60,7 @@ const STAFF_A: ActorContext = {
   source: "header",
 };
 
-const STAFF_B: ActorContext = {
+const _STAFF_B: ActorContext = {
   actorId: "usr-staff-b",
   actorType: "user",
   role: "STAFF",
@@ -93,10 +93,6 @@ function makeAudit(): AuditService {
 
 const PATIENT_A = "00000000-0000-0000-0000-000000000001";
 const PATIENT_B = "00000000-0000-0000-0000-000000000002";
-
-function isoNow(): string {
-  return new Date().toISOString();
-}
 
 function isoOffset(minutes: number): string {
   const d = new Date();
@@ -176,11 +172,7 @@ describe("HospitalizationService", () => {
 
   describe("createCage", () => {
     it("yeni kafes oluşturur", async () => {
-      const out = await service.createCage(
-        TENANT_A,
-        makeCageInput(),
-        VET_A,
-      );
+      const out = await service.createCage(TENANT_A, makeCageInput(), VET_A);
       expect(out.id).toMatch(/^cag-/);
       expect(out.code).toBe("A1");
       expect(out.active).toBe(true);
@@ -224,17 +216,9 @@ describe("HospitalizationService", () => {
     });
 
     it("aynı patient için aktif yatış 409 VET-HOSP-0007", async () => {
-      await service.createHospitalization(
-        TENANT_A,
-        makeHospInput(),
-        VET_A,
-      );
+      await service.createHospitalization(TENANT_A, makeHospInput(), VET_A);
       await expect(
-        service.createHospitalization(
-          TENANT_A,
-          makeHospInput(),
-          VET_A,
-        ),
+        service.createHospitalization(TENANT_A, makeHospInput(), VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-HOSP-0007",
         httpStatus: 409,
@@ -289,11 +273,7 @@ describe("HospitalizationService", () => {
 
   describe("yaşam döngüsü", () => {
     it("planned → admitted → active (cage atayarak) → discharged", async () => {
-      const cage = await service.createCage(
-        TENANT_A,
-        makeCageInput(),
-        VET_A,
-      );
+      const cage = await service.createCage(TENANT_A, makeCageInput(), VET_A);
       const h = await service.createHospitalization(
         TENANT_A,
         makeHospInput(),
@@ -346,12 +326,7 @@ describe("HospitalizationService", () => {
         VET_A,
       );
       await expect(
-        service.admitHospitalization(
-          TENANT_A,
-          h.id,
-          makeAdmitInput(),
-          VET_A,
-        ),
+        service.admitHospitalization(TENANT_A, h.id, makeAdmitInput(), VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-HOSP-0003",
         httpStatus: 409,
@@ -393,12 +368,7 @@ describe("HospitalizationService", () => {
       expect(cancelled.cancelReason).toBe("plan iptal");
 
       await expect(
-        service.cancelHospitalization(
-          TENANT_A,
-          h.id,
-          makeCancelInput(),
-          VET_A,
-        ),
+        service.cancelHospitalization(TENANT_A, h.id, makeCancelInput(), VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-HOSP-0008",
         httpStatus: 409,
@@ -424,12 +394,7 @@ describe("HospitalizationService", () => {
         VET_A,
       );
       await expect(
-        service.updateHospitalization(
-          TENANT_A,
-          h.id,
-          { reason: "x" },
-          VET_A,
-        ),
+        service.updateHospitalization(TENANT_A, h.id, { reason: "x" }, VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-HOSP-0002",
         httpStatus: 409,
@@ -443,11 +408,7 @@ describe("HospitalizationService", () => {
 
   describe("assignCage", () => {
     it("ilk cage ataması admitted → active geçişi yapar", async () => {
-      const cage = await service.createCage(
-        TENANT_A,
-        makeCageInput(),
-        VET_A,
-      );
+      const cage = await service.createCage(TENANT_A, makeCageInput(), VET_A);
       const h = await service.createHospitalization(
         TENANT_A,
         makeHospInput(),
@@ -475,11 +436,7 @@ describe("HospitalizationService", () => {
     });
 
     it("aynı kafeste zaman çakışması 409 VET-HOSP-0009", async () => {
-      const cage = await service.createCage(
-        TENANT_A,
-        makeCageInput(),
-        VET_A,
-      );
+      const cage = await service.createCage(TENANT_A, makeCageInput(), VET_A);
       // İlk yatış: cage atama + discharge
       const h1 = await service.createHospitalization(
         TENANT_A,
@@ -538,11 +495,7 @@ describe("HospitalizationService", () => {
     });
 
     it("aynı yatış için ikinci açık atama 409 VET-HOSP-0011", async () => {
-      const cage = await service.createCage(
-        TENANT_A,
-        makeCageInput(),
-        VET_A,
-      );
+      const cage = await service.createCage(TENANT_A, makeCageInput(), VET_A);
       const h = await service.createHospitalization(
         TENANT_A,
         makeHospInput(),
@@ -604,11 +557,7 @@ describe("HospitalizationService", () => {
     });
 
     it("discharged yatışa kafes atanamaz 409 VET-HOSP-0005", async () => {
-      const cage = await service.createCage(
-        TENANT_A,
-        makeCageInput(),
-        VET_A,
-      );
+      const cage = await service.createCage(TENANT_A, makeCageInput(), VET_A);
       const h = await service.createHospitalization(
         TENANT_A,
         makeHospInput(),
@@ -642,11 +591,7 @@ describe("HospitalizationService", () => {
 
   describe("endCageAssignment", () => {
     it("to set eder; assignment kapanır", async () => {
-      const cage = await service.createCage(
-        TENANT_A,
-        makeCageInput(),
-        VET_A,
-      );
+      const cage = await service.createCage(TENANT_A, makeCageInput(), VET_A);
       const h = await service.createHospitalization(
         TENANT_A,
         makeHospInput(),
@@ -675,11 +620,7 @@ describe("HospitalizationService", () => {
     });
 
     it("zaten kapalı 409 VET-HOSP-0013", async () => {
-      const cage = await service.createCage(
-        TENANT_A,
-        makeCageInput(),
-        VET_A,
-      );
+      const cage = await service.createCage(TENANT_A, makeCageInput(), VET_A);
       const h = await service.createHospitalization(
         TENANT_A,
         makeHospInput(),
@@ -697,19 +638,9 @@ describe("HospitalizationService", () => {
         makeAssignmentInput({ cageId: cage.id }),
         VET_A,
       );
-      await service.endCageAssignment(
-        TENANT_A,
-        a.id,
-        makeEndInput(),
-        VET_A,
-      );
+      await service.endCageAssignment(TENANT_A, a.id, makeEndInput(), VET_A);
       await expect(
-        service.endCageAssignment(
-          TENANT_A,
-          a.id,
-          makeEndInput(),
-          VET_A,
-        ),
+        service.endCageAssignment(TENANT_A, a.id, makeEndInput(), VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-HOSP-0013",
         httpStatus: 409,
@@ -723,11 +654,7 @@ describe("HospitalizationService", () => {
 
   describe("discharge kafes atamalarını kapatır", () => {
     it("taburcu sırasında açık cage assignment'lar kapanır", async () => {
-      const cage = await service.createCage(
-        TENANT_A,
-        makeCageInput(),
-        VET_A,
-      );
+      const cage = await service.createCage(TENANT_A, makeCageInput(), VET_A);
       const h = await service.createHospitalization(
         TENANT_A,
         makeHospInput(),

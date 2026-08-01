@@ -1,16 +1,14 @@
 /**
  * @file Badge / status pill primitive.
  * @module @vetniva/ui/components/badge
- *
  * @description Küçük durum rozeti. Renk semantiği:
  * - `success`: yeşil ton (olumlu, çalışıyor, onaylandı)
  * - `warning`: sarı ton (beklemede, uyarı, dikkat)
  * - `danger`: kırmızı ton (hata, çalışmıyor, kritik)
  * - `info`: mavi ton (bilgi, nötr)
- * - `neutral`: gri ton (ikincil bilgi)
+ * - `neutral`: gri ton (ikincil bilgi).
  *
  * Hem dolu (`solid`) hem de yumuşak (`soft`) varyant destekler.
- *
  * @security Hassas durum etiketleri (hata kodu, PII) gövdeye
  * yerleştirilmez; yalnızca semantik kategori.
  */

@@ -11,9 +11,7 @@
  * @since GOAL-012 (FAZ-1) RBAC ve izin motoru
  */
 
-import type {
-  PermissionDefinition,
-} from "./permission.types.js";
+import type { PermissionDefinition } from "./permission.types.js";
 
 /** Katalogda tanımlı olmayan ama runtime'da ihtiyaç duyulan
  *  permission'lar (auth/password reset gibi). */
@@ -25,9 +23,7 @@ export const PERMISSION_CATALOG: ReadonlyArray<PermissionDefinition> = [
 ];
 
 /** Katalog lookup helper. */
-export function findPermission(
-  _key: string,
-): PermissionDefinition | undefined {
+export function findPermission(_key: string): PermissionDefinition | undefined {
   return undefined;
 }
 

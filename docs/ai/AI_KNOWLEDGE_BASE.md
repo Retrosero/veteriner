@@ -107,18 +107,18 @@ Ek olarak, `DOMAIN_GLOSSARY.md` ve `CLINICAL_FLOWS.md` dosyaları
 
 ## Örnek eşleştirmeler
 
-| Kullanıcı sorusu | Kaynak | Chunk | Yanıt tipi |
-| --- | --- | --- | --- |
-| "Aşı nasıl uygulanır?" | `CLINICAL_FLOWS.md` | `flow-vaccination` | Adım adım akış |
-| "Hasta sahibi ne demek?" | `DOMAIN_GLOSSARY.md` | `glossary-patient-owner` | Tanım + ilişkiler |
-| "Stok düşümü nasıl olur?" | `CLINICAL_FLOWS.md` | `flow-vaccination` (stok düşüm adımı) | Akış + teknik not |
-| "e-SMM var mı?" | `PILOT_SCOPE.md` | `pilot-scope-mvp-out` | "MVP dışı" notu |
-| "Aşı SKT kontrolü" | `FIELD_GLOSSARY.md` | `vaccination-lot` | Alan açıklaması |
-| "Sahiplik nasıl devredilir?" | `CLINICAL_FLOWS.md` | `flow-ownership-transfer` | Uçtan uca akış |
-| "KVKK silme talebi?" | `CLINICAL_FLOWS.md` | `flow-kvkk-erasure` | Akış + uyarılar |
-| "Bu hatayı nasıl çözerim?" | `ERROR_CATALOG.md` | `error-<code>` chunk | Mesaj + çözüm adımları |
-| "Hata kodu ne anlama geliyor?" | `ERROR_CODE_STANDARD.md` | `error-code-<module>` chunk | Modül + HTTP eşlemesi |
-| "Audit log nedir?" | `AUDIT_LOG_STANDARD.md` | `audit-overview` chunk | Amaç + retention + PII |
+| Kullanıcı sorusu               | Kaynak                   | Chunk                                 | Yanıt tipi             |
+| ------------------------------ | ------------------------ | ------------------------------------- | ---------------------- |
+| "Aşı nasıl uygulanır?"         | `CLINICAL_FLOWS.md`      | `flow-vaccination`                    | Adım adım akış         |
+| "Hasta sahibi ne demek?"       | `DOMAIN_GLOSSARY.md`     | `glossary-patient-owner`              | Tanım + ilişkiler      |
+| "Stok düşümü nasıl olur?"      | `CLINICAL_FLOWS.md`      | `flow-vaccination` (stok düşüm adımı) | Akış + teknik not      |
+| "e-SMM var mı?"                | `PILOT_SCOPE.md`         | `pilot-scope-mvp-out`                 | "MVP dışı" notu        |
+| "Aşı SKT kontrolü"             | `FIELD_GLOSSARY.md`      | `vaccination-lot`                     | Alan açıklaması        |
+| "Sahiplik nasıl devredilir?"   | `CLINICAL_FLOWS.md`      | `flow-ownership-transfer`             | Uçtan uca akış         |
+| "KVKK silme talebi?"           | `CLINICAL_FLOWS.md`      | `flow-kvkk-erasure`                   | Akış + uyarılar        |
+| "Bu hatayı nasıl çözerim?"     | `ERROR_CATALOG.md`       | `error-<code>` chunk                  | Mesaj + çözüm adımları |
+| "Hata kodu ne anlama geliyor?" | `ERROR_CODE_STANDARD.md` | `error-code-<module>` chunk           | Modül + HTTP eşlemesi  |
+| "Audit log nedir?"             | `AUDIT_LOG_STANDARD.md`  | `audit-overview` chunk                | Amaç + retention + PII |
 
 ## Güncelleme politikası
 

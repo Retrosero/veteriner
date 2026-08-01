@@ -1,11 +1,9 @@
 /**
  * @file Button bileşeni.
  * @module @vetniva/ui/components/button
- *
  * @description Klinik arayüz için standart buton. Varyant: primary,
  * secondary, ghost, danger. Boyut: sm, md, lg. Loading state için
  * `aria-busy` ve devre dışı bırakma davranışı içerir.
- *
  * @security Tıbbi/finansal tehlikeli işlemlerde `variant="danger"`
  * kullanılmalı ve onay adımıyla sarmalanmalıdır. Bu bileşen yalnızca
  * görsel/işlevsel sunum sağlar; işlem güvenliği kapsayıcı sayfada

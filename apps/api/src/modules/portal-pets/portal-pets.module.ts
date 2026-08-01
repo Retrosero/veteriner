@@ -15,21 +15,15 @@
 
 import { Module } from "@nestjs/common";
 
+import { PortalPetsController } from "./portal-pets.controller.js";
+import { PortalPetsService } from "./portal-pets.service.js";
 import { AlertsModule } from "../alerts/alerts.module.js";
 import { AppointmentsModule } from "../appointments/appointments.module.js";
 import { PatientsModule } from "../patients/patients.module.js";
 import { PortalAuthModule } from "../portal-auth/portal-auth.module.js";
 
-import { PortalPetsController } from "./portal-pets.controller.js";
-import { PortalPetsService } from "./portal-pets.service.js";
-
 @Module({
-  imports: [
-    PortalAuthModule,
-    PatientsModule,
-    AlertsModule,
-    AppointmentsModule,
-  ],
+  imports: [PortalAuthModule, PatientsModule, AlertsModule, AppointmentsModule],
   controllers: [PortalPetsController],
   providers: [PortalPetsService],
   exports: [PortalPetsService],

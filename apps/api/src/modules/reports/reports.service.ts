@@ -26,9 +26,13 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
+import { ClinicSalesService } from "../clinic-sales/clinic-sales.service.js";
+import { PaymentsService } from "../payments/payments.service.js";
+import { PetshopSalesService } from "../petshop-sales/petshop-sales.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   DailySalesReport,
   OpenBalanceItem,
@@ -38,12 +42,7 @@ import type {
   ReportDateRange,
   ReportExportInput,
   ReportExportResponse,
-  ReportExportType,
 } from "@vetniva/contracts";
-
-import { ClinicSalesService } from "../clinic-sales/clinic-sales.service.js";
-import { PetshopSalesService } from "../petshop-sales/petshop-sales.service.js";
-import { PaymentsService } from "../payments/payments.service.js";
 
 @Injectable()
 export class ReportsService {
@@ -206,12 +205,16 @@ export class ReportsService {
     ]);
     const items: OpenBalanceItem[] = [];
     for (const sale of clinic.items) {
-      const paid = await this.payments.listPayments(tenantId, {
-        sourceType: "clinic_sale",
-        sourceId: sale.id,
-        limit: 10000,
-        offset: 0,
-      }, actor);
+      const paid = await this.payments.listPayments(
+        tenantId,
+        {
+          sourceType: "clinic_sale",
+          sourceId: sale.id,
+          limit: 10000,
+          offset: 0,
+        },
+        actor,
+      );
       const paidTotal = sumCompletedPayments(paid.items);
       const open = subDecimal(sale.netAmount, paidTotal);
       if (open !== "0") {
@@ -226,12 +229,16 @@ export class ReportsService {
       }
     }
     for (const sale of petshop.items) {
-      const paid = await this.payments.listPayments(tenantId, {
-        sourceType: "petshop_sale",
-        sourceId: sale.id,
-        limit: 10000,
-        offset: 0,
-      }, actor);
+      const paid = await this.payments.listPayments(
+        tenantId,
+        {
+          sourceType: "petshop_sale",
+          sourceId: sale.id,
+          limit: 10000,
+          offset: 0,
+        },
+        actor,
+      );
       const paidTotal = sumCompletedPayments(paid.items);
       const open = subDecimal(sale.netAmount, paidTotal);
       if (open !== "0") {
@@ -267,47 +274,34 @@ export class ReportsService {
     actor: ActorContext,
   ): Promise<ReportExportResponse> {
     this.requireTenantScope(actor, tenantId);
-    const range: ReportDateRange =
-      input.dateRange ?? {
-        from: new Date().toISOString().slice(0, 10),
-        to: new Date().toISOString().slice(0, 10),
-      };
+    const range: ReportDateRange = input.dateRange ?? {
+      from: new Date().toISOString().slice(0, 10),
+      to: new Date().toISOString().slice(0, 10),
+    };
     let content = "";
     if (input.type === "daily_sales") {
-      const report = await this.getDailySalesReport(
-        tenantId,
-        range,
-        actor,
-      );
-      content =
-        input.format === "csv"
-          ? toCsv([
-              "date",
-              "currency",
-              "clinicSalesTotal",
-              "petshopSalesTotal",
-              "combinedTotal",
-              "clinicSaleCount",
-              "petshopSaleCount",
-              "netTotal",
-            ], [report])
-          : JSON.stringify(report);
-    } else if (input.type === "payment_methods") {
-      const report = await this.getPaymentMethodsReport(
-        tenantId,
-        range,
-        actor,
-      );
+      const report = await this.getDailySalesReport(tenantId, range, actor);
       content =
         input.format === "csv"
           ? toCsv(
               [
-                "method",
-                "count",
-                "totalAmount",
+                "date",
+                "currency",
+                "clinicSalesTotal",
+                "petshopSalesTotal",
+                "combinedTotal",
+                "clinicSaleCount",
+                "petshopSaleCount",
+                "netTotal",
               ],
-              report.breakdown,
+              [report],
             )
+          : JSON.stringify(report);
+    } else if (input.type === "payment_methods") {
+      const report = await this.getPaymentMethodsReport(tenantId, range, actor);
+      content =
+        input.format === "csv"
+          ? toCsv(["method", "count", "totalAmount"], report.breakdown)
           : JSON.stringify(report);
     } else {
       const report = await this.getOpenBalancesReport(tenantId, actor);
@@ -376,7 +370,7 @@ export class ReportsService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,
@@ -435,10 +429,12 @@ function lastPaymentAt(
 ): string | null {
   const completed = payments.filter((p) => p.status === "completed");
   if (completed.length === 0) return null;
-  return completed
-    .map((p) => p.paidAt)
-    .sort()
-    .reverse()[0] ?? null;
+  return (
+    completed
+      .map((p) => p.paidAt)
+      .sort()
+      .reverse()[0] ?? null
+  );
 }
 
 function toCsv(
@@ -448,10 +444,17 @@ function toCsv(
   const lines: string[] = [headers.join(",")];
   for (const r of rows) {
     const cells = headers.map((h) => {
-      const v = r[h];
+      const v: unknown = Reflect.get(r, h);
       if (v === null || v === undefined) return "";
-      const s = String(v);
-      if (s.includes(",") || s.includes("\"") || s.includes("\n")) {
+      const s =
+        typeof v === "string"
+          ? v
+          : typeof v === "number" ||
+              typeof v === "boolean" ||
+              typeof v === "bigint"
+            ? String(v)
+            : (JSON.stringify(v) ?? "");
+      if (s.includes(",") || s.includes('"') || s.includes("\n")) {
         return `"${s.replace(/"/g, '""')}"`;
       }
       return s;

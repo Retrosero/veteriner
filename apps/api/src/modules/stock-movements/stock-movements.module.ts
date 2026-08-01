@@ -18,13 +18,12 @@
 
 import { Module } from "@nestjs/common";
 
-import { AuditModule } from "../../common/audit/audit.module.js";
-import { InventoryModule } from "../inventory/inventory.module.js";
-import { ProductsModule } from "../products/products.module.js";
-
 import { StockMovementsController } from "./stock-movements.controller.js";
 import { StockMovementsRepository } from "./stock-movements.repository.js";
 import { StockMovementsService } from "./stock-movements.service.js";
+import { AuditModule } from "../../common/audit/audit.module.js";
+import { InventoryModule } from "../inventory/inventory.module.js";
+import { ProductsModule } from "../products/products.module.js";
 
 @Module({
   imports: [AuditModule, ProductsModule, InventoryModule],

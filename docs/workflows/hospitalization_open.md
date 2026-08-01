@@ -6,15 +6,18 @@
 **Sayfa:** `/[locale]/clinic/patients/{patientId}/hospitalizations/new`
 
 ## Amaç
+
 Muayene sonrası veya doğrudan yatış gereken hayvanı kliniğe
 yatırmak. Kafes/yatak atanır, yatış order'ları planlanır,
 gözlem kayıtları başlatılır.
 
 ## Aktör
+
 - VETERINARIAN (yatış kararı)
 - STAFF (kafes atama, order uygulama)
 
 ## Tetikleyici
+
 - Ameliyat sonrası gözlem gerekir.
 - Kritik hasta stabilizasyonu.
 - Tedavi planı hastanede uygulanacak (IV, nebül, vb.).
@@ -78,9 +81,11 @@ gözlem kayıtları başlatılır.
     - Opsiyonel: PDF + portal paylaşımı.
 
 ## Tenant izolasyonu
+
 - Patient + branch + cage aynı tenant'ta olmalı.
 
 ## Audit
+
 - `audit:hospitalization.create` (info).
 - `audit:hospitalization.cage_assign` (info).
 - `audit:hospitalization.discharge` (info).
@@ -89,15 +94,16 @@ gözlem kayıtları başlatılır.
 
 ## Hata senaryoları
 
-| Senaryo | HTTP | Hata kodu |
-|---------|------|-----------|
-| Aktif yatış var | 409 | `VET-HOSP-0001` |
-| Kafes dolu | 409 | `VET-CLINIC-0006` |
-| Cross-tenant | 404 | `VET-CLINIC-0001` |
-| Geçersiz order | 422 | `VET-VALIDATION-0001` |
-| Yetkisiz | 403 | `VET-AUTHZ-0001` |
+| Senaryo         | HTTP | Hata kodu             |
+| --------------- | ---- | --------------------- |
+| Aktif yatış var | 409  | `VET-HOSP-0001`       |
+| Kafes dolu      | 409  | `VET-CLINIC-0006`     |
+| Cross-tenant    | 404  | `VET-CLINIC-0001`     |
+| Geçersiz order  | 422  | `VET-VALIDATION-0001` |
+| Yetkisiz        | 403  | `VET-AUTHZ-0001`      |
 
 ## İlgili dokümanlar
+
 - `docs/api/api.post._api_v1_clinic_hospitalizations.md`
 - `goals/GOAL-084 → GOAL-086_COMPLETION_REPORT.md`
 - `docs/permissions/PERMISSION_CATALOG.yaml#clinic:hospitalization:create`

@@ -187,7 +187,9 @@ jobs:
         ports: ["6379:6379"]
         options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 10
     env:
-      DATABASE_URL: postgresql://vetniva:vetniva@localhost:5432/vetniva?schema=public
+      DATABASE_URL: postgresql://vetniva_app:vetniva_app@localhost:5432/vetniva?schema=public
+      DATABASE_MIGRATOR_URL: postgresql://vetniva:vetniva@localhost:5432/vetniva?schema=public
+      E2E_BASE_URL: http://localhost:3001
       REDIS_URL: redis://localhost:6379
     steps:
       - uses: actions/checkout@v4
@@ -199,13 +201,28 @@ jobs:
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - run: pnpm --filter @vetniva/api db:migrate || true
+      # Şema uygulanmadan E2E'nin çalışması yanlış-pozitif üretir. Migration
+      # hatası doğrudan bu kalite kapısını durdurmalıdır.
+      - name: Provision non-superuser runtime database role
+        run: |
+          PGPASSWORD=vetniva psql \
+            --host=localhost \
+            --username=vetniva \
+            --dbname=vetniva \
+            --set=ON_ERROR_STOP=1 \
+            --file=tools/docker/postgres-init/02-runtime-roles.sql
+      - run: pnpm --filter @vetniva/api db:migrate
+      - run: pnpm --filter @vetniva/api db:verify-runtime-role
       - run: pnpm --filter @vetniva/api start &
       - run: pnpm --filter @vetniva/web start &
       - name: Wait for services
         run: |
-          for i in 1 2 3 4 5 6 7 8 9 10; do
-            if curl -sf http://localhost:3001/api/v1/health >/dev/null; then break; fi
+          for i in {1..30}; do
+            if curl --fail --silent --show-error http://localhost:3001/api/v1/health >/dev/null; then
+              exit 0
+            fi
             sleep 2
           done
+          echo "API health endpoint did not become ready within 60 seconds."
+          exit 1
       - run: pnpm e2e:smoke

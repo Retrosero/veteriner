@@ -86,8 +86,7 @@ export class PetshopSaleReturnsRepository {
   public insert(record: PetshopSaleReturnRecord): PetshopSaleReturnRecord {
     this.byId.set(record.id, record);
     this.linesByReturn.set(record.id, []);
-    const list =
-      this.byOriginalSale.get(record.originalSaleId) ?? [];
+    const list = this.byOriginalSale.get(record.originalSaleId) ?? [];
     list.push(record.id);
     this.byOriginalSale.set(record.originalSaleId, list);
     return record;
@@ -204,18 +203,10 @@ export class PetshopSaleReturnsRepository {
         rec.customerPatientId !== filters.customerPatientId
       )
         continue;
-      if (
-        filters.refundMethod &&
-        rec.refundMethod !== filters.refundMethod
-      )
+      if (filters.refundMethod && rec.refundMethod !== filters.refundMethod)
         continue;
       if (needle) {
-        const hay = [
-          rec.id,
-          rec.originalSaleId,
-          rec.reason,
-          rec.notes ?? "",
-        ]
+        const hay = [rec.id, rec.originalSaleId, rec.reason, rec.notes ?? ""]
           .join(" ")
           .toLowerCase();
         if (!hay.includes(needle)) continue;

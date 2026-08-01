@@ -47,10 +47,7 @@ export class VitalsRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): VitalsPersistRecord | null {
+  public findById(tenantId: string, id: string): VitalsPersistRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;

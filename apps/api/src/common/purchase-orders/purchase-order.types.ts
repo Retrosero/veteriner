@@ -131,10 +131,7 @@ export function toPurchaseOrderLine(
  * Decimal string çarpımı. Geçersiz formatta null döner.
  * 4 ondalık basamağa kadar destekler; sonuçta fazla sıfırları kırpar.
  */
-export function multiplyDecimalString(
-  a: string,
-  b: string,
-): string | null {
+export function multiplyDecimalString(a: string, b: string): string | null {
   if (!/^\d+(\.\d{1,4})?$/.test(a)) return null;
   if (!/^\d+(\.\d{1,4})?$/.test(b)) return null;
   // Ondalık noktayı kaldırıp tamsayı çarpımı yap; sonra noktayı geri koy.
@@ -164,9 +161,7 @@ export function multiplyDecimalString(
   }
   // Fazla sıfırları kırp (sondaki sıfırları fracPart'tan at).
   fracPartStr = fracPartStr.replace(/0+$/, "");
-  return fracPartStr.length > 0
-    ? `${intPartStr}.${fracPartStr}`
-    : intPartStr;
+  return fracPartStr.length > 0 ? `${intPartStr}.${fracPartStr}` : intPartStr;
 }
 
 /**
@@ -199,9 +194,7 @@ export function addDecimalString(a: string, b: string): string | null {
     fracPartStr = s.slice(s.length - totalScale);
   }
   fracPartStr = fracPartStr.replace(/0+$/, "");
-  return fracPartStr.length > 0
-    ? `${intPartStr}.${fracPartStr}`
-    : intPartStr;
+  return fracPartStr.length > 0 ? `${intPartStr}.${fracPartStr}` : intPartStr;
 }
 
 /**

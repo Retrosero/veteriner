@@ -1,7 +1,6 @@
 /**
  * @file Appointment (randevu) controller.
  * @module apps/api/modules/appointments/appointments.controller
- *
  * @description GOAL-031 randevu REST API. Tenant ID URL'de taşınmaz;
  * actor.tenantId'den alınır (cross-tenant IDOR koruması).
  *
@@ -12,8 +11,7 @@
  * - `PATCH  /api/v1/clinic/appointments/:id`          — Güncelle
  * - `POST   /api/v1/clinic/appointments/:id/cancel`   — İptal
  * - `POST   /api/v1/clinic/appointments/:id/complete` — Tamamla
- * - `POST   /api/v1/clinic/appointments/:id/no-show`  — No-show
- *
+ * - `POST   /api/v1/clinic/appointments/:id/no-show`  — No-show.
  * @since GOAL-031 (FAZ-3) randevu oluşturma core
  */
 
@@ -30,21 +28,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
-import type {
-  Appointment,
-  AppointmentCancelInput,
-  AppointmentCreateInput,
-  AppointmentFilters,
-  AppointmentListResponse,
-  AppointmentUpdateInput,
-} from "@vetniva/contracts";
 import {
   appointmentCancelInputSchema,
   appointmentCreateInputSchema,
@@ -53,6 +36,21 @@ import {
 } from "@vetniva/contracts";
 
 import { AppointmentsService } from "./appointments.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type {
+  Appointment,
+  AppointmentCancelInput,
+  AppointmentCreateInput,
+  AppointmentFilters,
+  AppointmentListResponse,
+  AppointmentUpdateInput,
+} from "@vetniva/contracts";
 
 @ApiTags("appointments")
 @UseGuards(PermissionsGuard)

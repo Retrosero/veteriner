@@ -32,25 +32,22 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import {
+  type WaitlistEntryRecord,
+  WaitlistRepository,
+} from "./waitlist.repository.js";
+import { WAITLIST_DEFAULT_TTL_DAYS } from "./waitlist.types.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
+import { PatientsService } from "../patients/patients.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   WaitlistEntry,
   WaitlistEntryCreate,
   WaitlistFilters,
 } from "@vetniva/contracts";
-
-import type { NotificationsService } from "../notifications/notifications.service.js";
-import type { PatientsService } from "../patients/patients.service.js";
-
-import {
-  WAITLIST_DEFAULT_TTL_DAYS,
-} from "./waitlist.types.js";
-import {
-  type WaitlistEntryRecord,
-  WaitlistRepository,
-} from "./waitlist.repository.js";
 
 /** Öncelik sıralaması (emergency > urgent > normal). */
 const PRIORITY_RANK: Readonly<Record<string, number>> = {
@@ -470,7 +467,7 @@ export class WaitlistService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

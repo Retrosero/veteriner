@@ -11,8 +11,8 @@
 
 import { Module } from "@nestjs/common";
 
-import { OnboardingModule as CommonOnboardingModule } from "../../common/onboarding/index.js";
 import { OnboardingController } from "./onboarding.controller.js";
+import { OnboardingModule as CommonOnboardingModule } from "../../common/onboarding/index.js";
 
 @Module({
   imports: [CommonOnboardingModule],

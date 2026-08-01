@@ -10,7 +10,7 @@ Tenant-scoped lab order arama. `status`/`patientId`/
 **Query parametreleri (`LabOrderFilters`):**
 
 - `status` (enum: `ordered|sample_collected|in_progress|
-  completed|cancelled`) opsiyonel.
+completed|cancelled`) opsiyonel.
 - `patientId` (string) opsiyonel.
 - `labTestId` (string) opsiyonel.
 - `priority` (enum) opsiyonel.

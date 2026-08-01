@@ -1,29 +1,28 @@
 /**
- * @file api-error-integration unit testleri.
+ * @file Api-error-integration unit testleri.
  * @module @vetniva/web/lib/api-error-integration.test
- *
  * @description GOAL-101 (FAZ-10) frontend hata yakalama — API
  * client hata entegrasyonunun davranış testleri. Severity
  * tahmini, no-throw garantisi ve wrapApiRequest'in başarıyı
  * bozmadığı doğrulanır.
- *
  * @since GOAL-101 (FAZ-10) frontend hata yakalama core
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { errorReporter } from "./error-reporter";
 import {
   reportApiFailure,
   severityForApiFailure,
   wrapApiRequest,
 } from "./api-error-integration";
+import { errorReporter } from "./error-reporter";
+
 import type { ApiFailure, ApiResult } from "./api-client";
 
 const NETWORK_FAILURE: ApiFailure = {
   ok: false,
   error: {
-    error_code: "TR_COMMON_0001",
+    error_code: "VET-COMMON-0001",
     message: "API bağlantısı kurulamadı",
     source: "unknown",
     severity: "error",
@@ -133,7 +132,7 @@ describe("wrapApiRequest", () => {
       status: 200,
       requestId: "req-ok-1",
     };
-    const caller = vi.fn(async () => success);
+    const caller = vi.fn(() => Promise.resolve(success));
     const captureSpy = vi.spyOn(errorReporter, "captureMessage");
     const out = await wrapApiRequest(caller);
     expect(out).toBe(success);
@@ -142,7 +141,7 @@ describe("wrapApiRequest", () => {
   });
 
   it("başarısız sonuç → raporlar + sonucu döner", async () => {
-    const caller = vi.fn(async () => SERVER_FAILURE);
+    const caller = vi.fn(() => Promise.resolve(SERVER_FAILURE));
     const captureSpy = vi.spyOn(errorReporter, "captureMessage");
     const out = await wrapApiRequest(caller);
     expect(out).toBe(SERVER_FAILURE);

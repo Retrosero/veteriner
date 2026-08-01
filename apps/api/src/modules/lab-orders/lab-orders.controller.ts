@@ -30,13 +30,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   labOrderCancelInputSchema,
   labOrderCollectSampleInputSchema,
@@ -55,14 +48,19 @@ import {
 } from "@vetniva/contracts";
 
 import { LabOrdersService } from "./lab-orders.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("clinic/lab-orders")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/clinic/lab-orders")
 export class LabOrdersController {
-  public constructor(
-    private readonly service: LabOrdersService,
-  ) {}
+  public constructor(private readonly service: LabOrdersService) {}
 
   @Post()
   @RequirePermissions("clinic:lab:order")
@@ -133,8 +131,7 @@ export class LabOrdersController {
   @ApiOperation({
     operationId: "labOrderCollect",
     summary: "Numune alımı",
-    description:
-      "ordered → collected. Yanlış durum 409 VET-LABORD-0002.",
+    description: "ordered → collected. Yanlış durum 409 VET-LABORD-0002.",
   })
   public async collect(
     @Param("id", new ParseUUIDPipe()) id: string,

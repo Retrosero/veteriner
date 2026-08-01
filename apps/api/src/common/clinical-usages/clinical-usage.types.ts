@@ -49,16 +49,10 @@ export interface ClinicalUsageRecord {
   createdBy: string;
 }
 
-export type {
-  ClinicalUsage,
-  ClinicalUsageLine,
-  ClinicalUsageSourceType,
-};
+export type { ClinicalUsage, ClinicalUsageLine, ClinicalUsageSourceType };
 
 /** Record → public ClinicalUsage. */
-export function toClinicalUsage(
-  rec: ClinicalUsageRecord,
-): ClinicalUsage {
+export function toClinicalUsage(rec: ClinicalUsageRecord): ClinicalUsage {
   return {
     id: rec.id,
     tenantId: rec.tenantId,

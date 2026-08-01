@@ -24,12 +24,19 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 
+import { maskTenantResponse, toTenantResponse } from "./dto/tenant.dto.js";
+import { TenantRepository } from "./tenant.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+
+import type {
+  ListTenantsArgs,
+  ListTenantsResult,
+} from "./tenant.repository.js";
 import type {
   ActorContext,
   ActorRole,
 } from "../../common/actor/actor-context.service.js";
-import { AuditService } from "../../common/audit/audit.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
 import type {
   CloseTenantRequest,
   CreateTenantRequest,
@@ -37,13 +44,6 @@ import type {
   TenantResponse,
   UpdateTenantRequest,
 } from "@vetniva/contracts";
-
-import { maskTenantResponse, toTenantResponse } from "./dto/tenant.dto.js";
-import type {
-  ListTenantsArgs,
-  ListTenantsResult,
-} from "./tenant.repository.js";
-import { TenantRepository } from "./tenant.repository.js";
 
 @Injectable()
 export class TenantService {
@@ -168,7 +168,8 @@ export class TenantService {
 
     const data: Prisma.TenantUpdateInput = {};
     if (input.name !== undefined) data.name = input.name;
-    if (input.contactEmail !== undefined) data.contactEmail = input.contactEmail;
+    if (input.contactEmail !== undefined)
+      data.contactEmail = input.contactEmail;
     if (input.timezone !== undefined) data.timezone = input.timezone;
     if (input.status !== undefined) data.status = input.status;
 
@@ -366,8 +367,15 @@ export class TenantService {
   ): Record<string, { from: unknown; to: unknown }> {
     const diff: Record<string, { from: unknown; to: unknown }> = {};
     for (const f of fields) {
-      if (before[f] !== after[f]) {
-        diff[f] = { from: before[f], to: after[f] };
+      const from = Reflect.get(before, f);
+      const to = Reflect.get(after, f);
+      if (from !== to) {
+        Object.defineProperty(diff, f, {
+          value: { from, to },
+          enumerable: true,
+          configurable: true,
+          writable: true,
+        });
       }
     }
     return diff;

@@ -1,7 +1,6 @@
 /**
  * @file Anesthesia service.
  * @module apps/api/modules/anesthesia/anesthesia.service
- *
  * @description GOAL-082 (FAZ-8) ameliyat içi anestezi takip iş
  * kuralları. Bir ameliyat planı (surgeryPlan) ile birebir ilişkili
  * tek bir anestezi kaydı; alt kayıtlar (ilaç, vital, komplikasyon,
@@ -22,18 +21,14 @@
  * - `finalizeAnesthesia`: draft → finalized, recoveryAt set,
  *   finalizedAt/finalizedBy set, tüm alt kayıtlar append-only.
  *   Audit.
- *
  * @security Tenant bilgisi yalnızca actor.tenantId'den alınır.
  *   Anestezi kaydı üzerinde fiziksel silme YOKTUR.
- *
  * @since GOAL-082 (FAZ-8) anestezi takip core
  */
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
+import { AnesthesiaRepository } from "./anesthesia.repository.js";
 import {
   toAnesthesia,
   toAnesthesiaComplication,
@@ -46,6 +41,11 @@ import {
   type AnesthesiaStaffRecord,
   type AnesthesiaVitalRecord,
 } from "../../common/anesthesia/anesthesia.types.js";
+import { AuditService } from "../../common/audit/audit.service.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { SurgeryPlansService } from "../surgery-plans/surgery-plans.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   Anesthesia,
   AnesthesiaDetail,
@@ -62,9 +62,6 @@ import type {
   AnesthesiaVital,
   AnesthesiaVitalInput,
 } from "@vetniva/contracts";
-
-import { AnesthesiaRepository } from "./anesthesia.repository.js";
-import { SurgeryPlansService } from "../surgery-plans/surgery-plans.service.js";
 
 @Injectable()
 export class AnesthesiaService {
@@ -111,7 +108,10 @@ export class AnesthesiaService {
         httpStatus: 422,
         severity: "warning",
         i18nKey: "error.VET-ANESTHESIA-0003",
-        details: { surgeryPlanId: input.surgeryPlanId, planStatus: plan.status },
+        details: {
+          surgeryPlanId: input.surgeryPlanId,
+          planStatus: plan.status,
+        },
       });
     }
     if (plan.patientId !== input.patientId) {
@@ -490,7 +490,12 @@ export class AnesthesiaService {
   // Private helpers
   // -------------------------------------------------------------------------
 
-  /** draft durumda olmalı; değilse 409 VET-ANESTHESIA-0002. */
+  /**
+   * Draft durumda olmalı; değilse 409 VET-ANESTHESIA-0002.
+   * @param tenantId
+   * @param id
+   * @param subType
+   */
   private requireDraftAnesthesia(
     tenantId: string,
     id: string,
@@ -542,7 +547,7 @@ export class AnesthesiaService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

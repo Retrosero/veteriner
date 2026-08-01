@@ -12,16 +12,15 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { VitalsRepository } from "./vitals.repository.js";
+import { VitalsService } from "./vitals.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-import type { Examination } from "@vetniva/contracts";
 import type { Patient } from "../../common/patients/patient.types.js";
-
 import type { ExaminationsService } from "../examinations/examinations.service.js";
 import type { PatientsService } from "../patients/patients.service.js";
-
-import { VitalsService } from "./vitals.service.js";
-import { VitalsRepository } from "./vitals.repository.js";
+import type { Examination } from "@vetniva/contracts";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -237,27 +236,32 @@ describe("VitalsService", () => {
       await service.record(
         TENANT_A,
         EXAM_ID_A,
-        { vitalSigns: { temperatureC: 38.0 }, takenAt: "2025-01-01T08:00:00.000Z" },
+        {
+          vitalSigns: { temperatureC: 38.0 },
+          takenAt: "2025-01-01T08:00:00.000Z",
+        },
         VET_A,
       );
       await service.record(
         TENANT_A,
         EXAM_ID_A,
-        { vitalSigns: { temperatureC: 39.0 }, takenAt: "2025-01-01T12:00:00.000Z" },
+        {
+          vitalSigns: { temperatureC: 39.0 },
+          takenAt: "2025-01-01T12:00:00.000Z",
+        },
         VET_A,
       );
       await service.record(
         TENANT_A,
         EXAM_ID_A,
-        { vitalSigns: { temperatureC: 38.5 }, takenAt: "2025-01-01T10:00:00.000Z" },
+        {
+          vitalSigns: { temperatureC: 38.5 },
+          takenAt: "2025-01-01T10:00:00.000Z",
+        },
         VET_A,
       );
 
-      const list = await service.findByExamination(
-        TENANT_A,
-        EXAM_ID_A,
-        VET_A,
-      );
+      const list = await service.findByExamination(TENANT_A, EXAM_ID_A, VET_A);
       expect(list).toHaveLength(3);
       expect(list[0]?.takenAt).toBe("2025-01-01T12:00:00.000Z");
       expect(list[1]?.takenAt).toBe("2025-01-01T10:00:00.000Z");
@@ -269,11 +273,7 @@ describe("VitalsService", () => {
       await service.record(TENANT_A, EXAM_ID_A, validVitals(), VET_A);
       // tenantB aynı examinationId'yi sorsa bile tenant-scoped
       // sorgu boş döner (EXAM_ID_B farklı tenant'ta var).
-      const list = await service.findByExamination(
-        TENANT_B,
-        EXAM_ID_A,
-        VET_B,
-      );
+      const list = await service.findByExamination(TENANT_B, EXAM_ID_A, VET_B);
       expect(list).toEqual([]);
     });
   });
@@ -287,19 +287,28 @@ describe("VitalsService", () => {
       await service.record(
         TENANT_A,
         EXAM_ID_A,
-        { vitalSigns: { temperatureC: 38.0 }, takenAt: "2025-01-01T08:00:00.000Z" },
+        {
+          vitalSigns: { temperatureC: 38.0 },
+          takenAt: "2025-01-01T08:00:00.000Z",
+        },
         VET_A,
       );
       await service.record(
         TENANT_A,
         EXAM_ID_A,
-        { vitalSigns: { temperatureC: 39.5 }, takenAt: "2025-01-01T14:00:00.000Z" },
+        {
+          vitalSigns: { temperatureC: 39.5 },
+          takenAt: "2025-01-01T14:00:00.000Z",
+        },
         VET_A,
       );
       await service.record(
         TENANT_A,
         EXAM_ID_A,
-        { vitalSigns: { temperatureC: 38.5 }, takenAt: "2025-01-01T10:00:00.000Z" },
+        {
+          vitalSigns: { temperatureC: 38.5 },
+          takenAt: "2025-01-01T10:00:00.000Z",
+        },
         VET_A,
       );
 

@@ -2,13 +2,14 @@
 
 Muayeneye bağlı yeni vital bulguları (vücut sıcaklığı, nabız, solunum,
 ağırlık, BCS, kan basıncı, CRT, mukoza rengi) kaydeder. `patientId`
-+ `veterinarianId` muayeneden türetilir; client gönderemez. En az
-bir ölçüm alanı dolu olmalı (`notes` tek başına yetmez). Vital
-kaydı append-only; düzeltme yeni vital kaydı yazımı ile yapılır.
 
-- **Modül:** vitals
-- **Yetki:** `clinic:examination:create` (STAFF / VETERINARIAN)
-- **Audit:** `audit:vitals.record` (severity: info) —
+- `veterinarianId` muayeneden türetilir; client gönderemez. En az
+  bir ölçüm alanı dolu olmalı (`notes` tek başına yetmez). Vital
+  kaydı append-only; düzeltme yeni vital kaydı yazımı ile yapılır.
+
+* **Modül:** vitals
+* **Yetki:** `clinic:examination:create` (STAFF / VETERINARIAN)
+* **Audit:** `audit:vitals.record` (severity: info) —
   examinationId, patientId, veterinarianId, takenAt, fields.
 
 **Path params:**

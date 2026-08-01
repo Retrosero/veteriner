@@ -27,7 +27,9 @@ export const portalInvitationStatusSchema = z.enum([
   "expired",
   "revoked",
 ]);
-export type PortalInvitationStatus = z.infer<typeof portalInvitationStatusSchema>;
+export type PortalInvitationStatus = z.infer<
+  typeof portalInvitationStatusSchema
+>;
 
 /** Davet oluşturma isteği. Service tenant + email normalize + token üretir. */
 export const portalInviteInputSchema = z.object({

@@ -12,11 +12,19 @@
 
 import { Global, Module } from "@nestjs/common";
 
+import { InMemoryVectorStore } from "./in-memory-vector-store.js";
 import { RetrievalService } from "./retrieval.service.js";
+import { VECTOR_STORE, type VectorStore } from "./vector-store.js";
 
 @Global()
 @Module({
-  providers: [RetrievalService],
+  providers: [
+    {
+      provide: VECTOR_STORE,
+      useFactory: (): VectorStore => new InMemoryVectorStore(),
+    },
+    RetrievalService,
+  ],
   exports: [RetrievalService],
 })
 export class AiModule {}

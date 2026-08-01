@@ -1,15 +1,12 @@
 /**
- * @file error-reporter unit testleri.
+ * @file Error-reporter unit testleri.
  * @module @vetniva/web/lib/error-reporter.test
- *
  * @description GOAL-101 (FAZ-10) frontend hata yakalama altyapısı
  * için kapsamlı unit test. PII sanitizer, kuyruk yönetimi, dedup
  * penceresi, flush davranışı ve Error çıkarma fonksiyonları
  * doğrulanır.
- *
  * @security Testlerde sentetik PII kullanılır; gerçek kullanıcı
  *   verisi içermez.
- *
  * @since GOAL-101 (FAZ-10) frontend hata yakalama core
  */
 
@@ -82,7 +79,7 @@ describe("sanitizeContext", () => {
     const out = sanitizeContext({
       note: "Hasta ahmet@example.com adresinde",
     });
-    expect((out["note"] as string)).not.toContain("ahmet@example.com");
+    expect(out["note"] as string).not.toContain("ahmet@example.com");
   });
 
   it("iç içe objelerde PII temizler", () => {
@@ -94,7 +91,9 @@ describe("sanitizeContext", () => {
         },
       },
     });
-    const payload = out["payload"] as { contact: { email: string; ok: string } };
+    const payload = out["payload"] as {
+      contact: { email: string; ok: string };
+    };
     expect(payload.contact.email).toBe("[redacted]");
     expect(payload.contact.ok).toBe("value");
   });
@@ -148,13 +147,18 @@ describe("extractErrorInfo", () => {
  * --------------------------------------------------------------------------
  */
 
+/**
+ *
+ */
 function makeFetchMock(): Mock {
-  return vi.fn(async () => {
-    return new Response(JSON.stringify({ id: "err-1", fingerprint: "abc" }), {
-      status: 201,
-      headers: { "content-type": "application/json" },
-    });
-  });
+  return vi.fn(() =>
+    Promise.resolve(
+      new Response(JSON.stringify({ id: "err-1", fingerprint: "abc" }), {
+        status: 201,
+        headers: { "content-type": "application/json" },
+      }),
+    ),
+  );
 }
 
 describe("ErrorReporter", () => {
@@ -251,7 +255,9 @@ describe("ErrorReporter", () => {
   });
 
   it("fetch başarısız olursa hata kuyruğa geri döner", async () => {
-    const failFetch = vi.fn(async () => new Response("server error", { status: 500 }));
+    const failFetch = vi.fn(() =>
+      Promise.resolve(new Response("server error", { status: 500 })),
+    );
     const reporter = new ErrorReporter({
       enabled: true,
       flushIntervalMs: 60_000,
@@ -299,7 +305,13 @@ describe("ErrorReporter", () => {
     reporter.captureError(new Error("explode"), { x: 1 });
     await reporter.flush();
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    const body = JSON.parse(init.body as string);
+    const body = JSON.parse(init.body as string) as {
+      release: string;
+      occurredAt: string;
+      severity: string;
+      route: string;
+      context: unknown;
+    };
     expect(body.release).toBe("1.0.0");
     expect(body.occurredAt).toBeTruthy();
     expect(body.severity).toBe("error");

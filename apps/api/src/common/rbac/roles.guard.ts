@@ -1,7 +1,6 @@
 /**
  * @file Roles guard.
  * @module apps/api/common/rbac/roles.guard
- *
  * @description `@RequireRole()` metadata'sında tanımlı rollerin
  * herhangi birini (OR semantiği) kabul eder. SUPERADMIN her zaman
  * bypass yapar.
@@ -16,21 +15,20 @@
  * Hassas işlemler için `@RequirePermission()` tercih edilir; bu
  * guard "hangi tipler bu endpoint'i çağırabilir" için hızlı bir
  * kontrol noktasıdır.
- *
  * @since GOAL-012 (FAZ-1) RBAC ve izin motoru
  */
 
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-} from "@nestjs/common";
+import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import type { Request } from "express";
 
-import type { ActorContext, ActorRole } from "../actor/actor-context.service.js";
 import { RbacService } from "./rbac.service.js";
 import { ROLE_KEY } from "./require-role.decorator.js";
+
+import type {
+  ActorContext,
+  ActorRole,
+} from "../actor/actor-context.service.js";
+import type { Request } from "express";
 
 @Injectable()
 export class RolesGuard implements CanActivate {

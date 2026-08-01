@@ -109,9 +109,7 @@ export function toCage(rec: CageRecord): Cage {
   };
 }
 
-export function toHospitalization(
-  rec: HospitalizationRecord,
-): Hospitalization {
+export function toHospitalization(rec: HospitalizationRecord): Hospitalization {
   return {
     id: rec.id,
     tenantId: rec.tenantId,
@@ -131,9 +129,7 @@ export function toHospitalization(
   };
 }
 
-export function toCageAssignment(
-  rec: CageAssignmentRecord,
-): CageAssignment {
+export function toCageAssignment(rec: CageAssignmentRecord): CageAssignment {
   return {
     id: rec.id,
     tenantId: rec.tenantId,

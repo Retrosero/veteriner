@@ -1,7 +1,6 @@
 /**
  * @file Brute-force koruması.
  * @module apps/api/common/auth/brute-force
- *
  * @description Email ve IP başına başarısız login denemesi sayacı.
  * In-memory Map ile hızlı kontrol; cluster ortamında Redis'e
  * taşınabilir (GOAL-100+ ile).
@@ -17,12 +16,10 @@
  * `User.failedLoginCount` + `User.lockedUntil` üzerinden takip edilir.
  * In-memory katman hızlı "çok deneme" tespiti içindir; DB katmanı
  * daima önceliklidir.
- *
  * @since GOAL-011 (FAZ-1) kimlik doğrulama
  */
 
 import { Injectable, Logger } from "@nestjs/common";
-
 import {
   ACCOUNT_LOCK_SECONDS,
   MAX_FAILED_LOGIN_COUNT,
@@ -50,7 +47,6 @@ export class BruteForceGuard {
   /**
    * Başarısız login denemesi kaydeder. Eşik aşıldıysa true döner
    * (lockout uygulanmalı).
-   *
    * @param key Genelde normalize email; IP de olabilir.
    */
   public recordFailure(key: string): boolean {
@@ -77,6 +73,7 @@ export class BruteForceGuard {
 
   /**
    * Başarılı login sonrası sayacı sıfırlar.
+   * @param key
    */
   public recordSuccess(key: string): void {
     this.attempts.delete(key);
@@ -84,6 +81,7 @@ export class BruteForceGuard {
 
   /**
    * Bu anahtar şu an kilitli mi? (in-memory karar).
+   * @param key
    */
   public isLocked(key: string): boolean {
     const entry = this.attempts.get(key);
@@ -95,6 +93,7 @@ export class BruteForceGuard {
 
   /**
    * Lockout için kalan süre (saniye). Kilitli değilse 0.
+   * @param key
    */
   public remainingLockSeconds(key: string): number {
     const entry = this.attempts.get(key);
@@ -124,6 +123,7 @@ export class BruteForceGuard {
 
   /**
    * Email veya IP'yi mask'ler (PII log koruması).
+   * @param key
    */
   private maskKey(key: string): string {
     if (key.includes("@")) {

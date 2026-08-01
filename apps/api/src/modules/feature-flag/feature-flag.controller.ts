@@ -30,15 +30,15 @@ import {
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { z } from "zod";
 
+import { FeatureFlagService } from "./feature-flag.service.js";
 import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
 import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
 import { isModuleKey } from "../../common/modules/module.types.js";
-import type { ModuleKey } from "../../common/modules/module.types.js";
 import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 
-import { FeatureFlagService } from "./feature-flag.service.js";
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { ModuleKey } from "../../common/modules/module.types.js";
 
 const setModuleEnabledSchema = z.object({
   enabled: z.boolean(),

@@ -1,13 +1,23 @@
 # @file Rol Sorumlulukları.
+
 # @module docs/permissions/ROLE_DESCRIPTIONS
+
 #
+
 # @description VetNiva'daki 5 temel rol için detaylı sorumluluk,
+
 # yetki kapsamı ve kullanım senaryoları. Yetki matrisi için
+
 # `PERMISSION_MATRIX.md` ve makinece okunabilir katalog için
+
 # `PERMISSION_CATALOG.yaml` dosyalarına bakın.
+
 #
+
 # @author GOAL-002 (FAZ-0) yetki matrisi
+
 # @since 2026-07-30
+
 # =============================================================================
 
 # Rol Sorumlulukları
@@ -314,27 +324,27 @@ kapsamındaki hayvanlar.
 
 ## Karşılaştırma Tablosu
 
-| Özellik                    | SUPERADMIN | OWNER | VETERINARIAN | STAFF | PORTAL |
-| -------------------------- | :--------: | :---: | :----------: | :---: | :----: |
-| Tenant kapsamı             |   Tümü    |  1    |      1       |   1   |   1    |
-| Şube kapsamı               |   Yok     | Tümü |    Tümü      | Atan. |  Atan. |
-| Tıbbi kayıt oluşturma      |     —     |   —   |      ✓       |   —   |   —    |
-| Tıbbi kayıt imzalama       |     —     |   —   |      ✓       |   —   |   —    |
-| Tıbbi kayıt düzeltme       |     —     |   ✓   |      ✓       |   —   |   —    |
-| Tıbbi kayıt görme          |     —     |   ✓   |      ✓       |   ✓   |  ✓(k)  |
-| Tahsilat oluşturma         |     —     |   ✓   |      —       |   ✓   |   —    |
-| Tahsilat iptal             |     —     |   ✓   |      —       |   —   |   —    |
-| Petshop satış              |     —     |   ✓   |      —       |   ✓   |   —    |
-| Kullanıcı yönetimi         |     ✓     |   ✓   |      —       |   —   |   —    |
-| Şube yönetimi             |     ✓     |   ✓   |      —       |   —   |   —    |
-| Tenant yönetimi           |     ✓     |   —   |      —       |   —   |   —    |
-| Audit log görme            |     ✓     |   ✓   |      —       |   —   |   —    |
-| KVKK silme                 |     ✓     |   ✓   |      —       |   —   |   —    |
-| Finansal rapor             |     —     |   ✓   |      —       |   —   |   —    |
-| Klinik rapor              |     —     |   ✓   |      ✓       |  (s)  |   —    |
-| Stok raporu               |     —     |   ✓   |      ✓       |   ✓   |   —    |
-| Randevu talep (portal)     |     —     |   —   |      —       |   —   |   ✓    |
-| Onam (kendi hayvanı)       |     —     |  (s)  |     (s)      |  (s)  |  ✓(k)  |
+| Özellik                | SUPERADMIN | OWNER | VETERINARIAN | STAFF | PORTAL |
+| ---------------------- | :--------: | :---: | :----------: | :---: | :----: |
+| Tenant kapsamı         |    Tümü    |   1   |      1       |   1   |   1    |
+| Şube kapsamı           |    Yok     | Tümü  |     Tümü     | Atan. | Atan.  |
+| Tıbbi kayıt oluşturma  |     —      |   —   |      ✓       |   —   |   —    |
+| Tıbbi kayıt imzalama   |     —      |   —   |      ✓       |   —   |   —    |
+| Tıbbi kayıt düzeltme   |     —      |   ✓   |      ✓       |   —   |   —    |
+| Tıbbi kayıt görme      |     —      |   ✓   |      ✓       |   ✓   |  ✓(k)  |
+| Tahsilat oluşturma     |     —      |   ✓   |      —       |   ✓   |   —    |
+| Tahsilat iptal         |     —      |   ✓   |      —       |   —   |   —    |
+| Petshop satış          |     —      |   ✓   |      —       |   ✓   |   —    |
+| Kullanıcı yönetimi     |     ✓      |   ✓   |      —       |   —   |   —    |
+| Şube yönetimi          |     ✓      |   ✓   |      —       |   —   |   —    |
+| Tenant yönetimi        |     ✓      |   —   |      —       |   —   |   —    |
+| Audit log görme        |     ✓      |   ✓   |      —       |   —   |   —    |
+| KVKK silme             |     ✓      |   ✓   |      —       |   —   |   —    |
+| Finansal rapor         |     —      |   ✓   |      —       |   —   |   —    |
+| Klinik rapor           |     —      |   ✓   |      ✓       |  (s)  |   —    |
+| Stok raporu            |     —      |   ✓   |      ✓       |   ✓   |   —    |
+| Randevu talep (portal) |     —      |   —   |      —       |   —   |   ✓    |
+| Onam (kendi hayvanı)   |     —      |  (s)  |     (s)      |  (s)  |  ✓(k)  |
 
 **Kısaltmalar:**
 

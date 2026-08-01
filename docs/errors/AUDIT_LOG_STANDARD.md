@@ -1,15 +1,27 @@
 # @file Audit Log Standardı.
+
 # @module docs/errors/AUDIT_LOG_STANDARD
+
 #
+
 # @description VetNiva'da hangi olayların audit kaydı
+
 # oluşturacağını, zorunlu alanları, retention ve
+
 # sorgulama kurallarını tanımlar. Klinik ve finansal
+
 # kayıtlar için append-only audit trail.
+
 #
+
 # @author GOAL-004 (FAZ-0) audit + log + hata standardı
+
 # @since 2026-07-30
+
 # @security Audit kayıtları değiştirilemez / silinemez.
-#   Append-only. PII maskelenir (bkz. PII_MASKING.md).
+
+# Append-only. PII maskelenir (bkz. PII_MASKING.md).
+
 # =============================================================================
 
 # Audit Log Standardı
@@ -20,14 +32,14 @@ ayrı tutulur. Bu döküman audit log tarafını tanımlar.
 
 ## 1. Audit vs. Sistem Logu
 
-| Boyut          | Audit log                     | Sistem logu                |
-| -------------- | ----------------------------- | -------------------------- |
-| Amaç           | "Kim ne yaptı?" sorusuna cevap | Uygulama / hata ayıklama  |
-| Kime sorulur?  | Superadmin + tenant OWNER     | Geliştirici / SRE          |
-| Retention      | 7 yıl (TR ticari kayıt)      | 90 gün                     |
-| Değiştirilebilir mi? | **Hayır** (append-only) | Hayır (immutable)          |
-| PII            | Mask'li                       | Mask'li (PII_MASKING)      |
-| Örnekler       | "Veteriner X aşıyı uyguladı" | "DB bağlantısı 50ms sürdü" |
+| Boyut                | Audit log                      | Sistem logu                |
+| -------------------- | ------------------------------ | -------------------------- |
+| Amaç                 | "Kim ne yaptı?" sorusuna cevap | Uygulama / hata ayıklama   |
+| Kime sorulur?        | Superadmin + tenant OWNER      | Geliştirici / SRE          |
+| Retention            | 7 yıl (TR ticari kayıt)        | 90 gün                     |
+| Değiştirilebilir mi? | **Hayır** (append-only)        | Hayır (immutable)          |
+| PII                  | Mask'li                        | Mask'li (PII_MASKING)      |
+| Örnekler             | "Veteriner X aşıyı uyguladı"   | "DB bağlantısı 50ms sürdü" |
 
 ## 2. Audit Event İsimlendirme
 
@@ -73,36 +85,36 @@ Tüm liste: [`AUDIT_EVENTS.yaml`](./AUDIT_EVENTS.yaml).
 
 Her audit event aşağıdaki alanları içerir:
 
-| Alan            | Tür        | Zorunlu | Açıklama |
-| --------------- | ---------- | ------- | -------- |
-| `event_id`      | uuid       | evet    | Benzersiz event ID. |
-| `event_name`    | string     | evet    | `audit:owner.create` formatında. |
-| `tenant_id`     | uuid       | evet    | Tenant context. SYSTEM eventlerde null. |
-| `branch_id`     | uuid/null  | hayır   | Şube (multi-branch tenant için). |
-| `actor_id`      | uuid/null  | evet    | İşlemi yapan kullanıcı. SYSTEM eventlerde null. |
-| `actor_type`    | enum       | evet    | `user` / `system` / `integration` / `job`. |
-| `target_type`   | string     | evet    | Etkilenen varlık tipi (örn. `owner`, `patient`). |
-| `target_id`     | uuid/string | evet   | Varlık ID. |
-| `action`        | enum       | evet    | `create` / `read` / `update` / `archive` / `restore` / `erase` / `export` / `sign` / `amend` / `complete` / `cancel` / `reverse` / `transfer` / `adjust` / `dispense` / `admit` / `discharge` / `invite` / `assign_role` / `format_currency` / `send` / `receive`. |
-| `before`        | jsonb/null | hayır   | Değişiklik öncesi varlık durumu (mask'li). |
-| `after`         | jsonb/null | hayır   | Değişiklik sonrası varlık durumu (mask'li). |
-| `diff`          | jsonb/null | hayır   | Alan-bazlı fark (sadece değişen alanlar). |
-| `correlation_id`| string     | evet    | `req-...` / `job-...` / `int-...` (bkz. CORRELATION_ID.md). |
-| `ip_address`    | string     | hayır   | Mask'li (`192.168.1.***`). |
-| `user_agent`    | string     | hayır   | Hash. |
-| `country`       | enum       | evet    | Tenant ülkesi (`TR` / `GB`). |
-| `severity`      | enum       | evet    | `info` / `warning` / `error` / `critical`. |
-| `timestamp`     | timestamptz | evet   | ISO 8601, UTC. |
-| `metadata`      | jsonb      | hayır   | Ek bağlam (örn. `idempotency_key`, `reason`). |
+| Alan             | Tür         | Zorunlu | Açıklama                                                                                                                                                                                                                                                           |
+| ---------------- | ----------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `event_id`       | uuid        | evet    | Benzersiz event ID.                                                                                                                                                                                                                                                |
+| `event_name`     | string      | evet    | `audit:owner.create` veya `audit:auth.login.success` biçiminde hiyerarşik ad.                                                                                                                                                                                      |
+| `tenant_id`      | uuid        | evet    | Tenant context. SYSTEM eventlerde null.                                                                                                                                                                                                                            |
+| `branch_id`      | uuid/null   | hayır   | Şube (multi-branch tenant için).                                                                                                                                                                                                                                   |
+| `actor_id`       | uuid/null   | evet    | İşlemi yapan kullanıcı. SYSTEM eventlerde null.                                                                                                                                                                                                                    |
+| `actor_type`     | enum        | evet    | `user` / `system` / `integration` / `job`.                                                                                                                                                                                                                         |
+| `target_type`    | string      | evet    | Etkilenen varlık tipi (örn. `owner`, `patient`).                                                                                                                                                                                                                   |
+| `target_id`      | uuid/string | evet    | Varlık ID.                                                                                                                                                                                                                                                         |
+| `action`         | enum        | evet    | `create` / `read` / `update` / `archive` / `restore` / `erase` / `export` / `sign` / `amend` / `complete` / `cancel` / `reverse` / `transfer` / `adjust` / `dispense` / `admit` / `discharge` / `invite` / `assign_role` / `format_currency` / `send` / `receive`. |
+| `before`         | jsonb/null  | hayır   | Değişiklik öncesi varlık durumu (mask'li).                                                                                                                                                                                                                         |
+| `after`          | jsonb/null  | hayır   | Değişiklik sonrası varlık durumu (mask'li).                                                                                                                                                                                                                        |
+| `diff`           | jsonb/null  | hayır   | Alan-bazlı fark (sadece değişen alanlar).                                                                                                                                                                                                                          |
+| `correlation_id` | string      | evet    | `req-...` / `job-...` / `int-...` (bkz. CORRELATION_ID.md).                                                                                                                                                                                                        |
+| `ip_address`     | string      | hayır   | Mask'li (`192.168.1.***`).                                                                                                                                                                                                                                         |
+| `user_agent`     | string      | hayır   | Hash.                                                                                                                                                                                                                                                              |
+| `country`        | enum        | evet    | Tenant ülkesi (`TR` / `GB`).                                                                                                                                                                                                                                       |
+| `severity`       | enum        | evet    | `info` / `warning` / `error` / `critical`.                                                                                                                                                                                                                         |
+| `timestamp`      | timestamptz | evet    | ISO 8601, UTC.                                                                                                                                                                                                                                                     |
+| `metadata`       | jsonb       | hayır   | Ek bağlam (örn. `idempotency_key`, `reason`).                                                                                                                                                                                                                      |
 
 ## 4. Severity
 
-| Severity    | Kullanım                                          |
-| ----------- | ------------------------------------------------- |
-| `info`      | Rutin create / read / update.                     |
-| `warning`   | Beklenen ancak dikkat gereken (iptal, iade).      |
-| `error`     | Yetkisiz erişim, validation hatası.               |
-| `critical`  | PII silme, KVKK talebi, rol değişikliği, tenant kapatma. |
+| Severity   | Kullanım                                                 |
+| ---------- | -------------------------------------------------------- |
+| `info`     | Rutin create / read / update.                            |
+| `warning`  | Beklenen ancak dikkat gereken (iptal, iade).             |
+| `error`    | Yetkisiz erişim, validation hatası.                      |
+| `critical` | PII silme, KVKK talebi, rol değişikliği, tenant kapatma. |
 
 ## 5. Veri Yapısı (PostgreSQL)
 
@@ -202,12 +214,28 @@ WHERE (metadata->>'pii_hash') = $1;
 ```ts
 // apps/api/src/common/audit/audit.types.ts
 export type AuditAction =
-  | "create" | "read" | "update" | "archive" | "restore"
-  | "erase" | "export" | "sign" | "amend"
-  | "complete" | "cancel" | "reverse" | "transfer"
-  | "adjust" | "dispense" | "admit" | "discharge"
-  | "invite" | "assign_role" | "format_currency"
-  | "send" | "receive";
+  | "create"
+  | "read"
+  | "update"
+  | "archive"
+  | "restore"
+  | "erase"
+  | "export"
+  | "sign"
+  | "amend"
+  | "complete"
+  | "cancel"
+  | "reverse"
+  | "transfer"
+  | "adjust"
+  | "dispense"
+  | "admit"
+  | "discharge"
+  | "invite"
+  | "assign_role"
+  | "format_currency"
+  | "send"
+  | "receive";
 
 export type AuditActorType = "user" | "system" | "integration" | "job";
 
@@ -215,7 +243,7 @@ export type AuditSeverity = "info" | "warning" | "error" | "critical";
 
 export interface AuditEvent {
   eventId: string;
-  eventName: string;       // "audit:owner.create"
+  eventName: string; // "audit:owner.create"
   tenantId: string | null;
   branchId: string | null;
   actorId: string | null;
@@ -232,7 +260,7 @@ export interface AuditEvent {
   country: string;
   severity: AuditSeverity;
   metadata?: Record<string, unknown> | null;
-  timestamp: string;       // ISO 8601
+  timestamp: string; // ISO 8601
 }
 ```
 

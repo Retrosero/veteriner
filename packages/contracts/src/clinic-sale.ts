@@ -51,9 +51,7 @@ export const clinicSaleSourceTypeSchema = z.enum([
   "lab_order",
   "imaging_order",
 ]);
-export type ClinicSaleSourceType = z.infer<
-  typeof clinicSaleSourceTypeSchema
->;
+export type ClinicSaleSourceType = z.infer<typeof clinicSaleSourceTypeSchema>;
 
 /* --------------------------------------------------------------------------
  * Satır girdileri
@@ -64,11 +62,13 @@ export const clinicSaleLineInputSchema = z.object({
   unit: z.string().min(1).max(32),
   quantity: z
     .string()
+    // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden decimal doğrulamasıdır.
     .regex(/^\d+(\.\d{1,4})?$/)
     .optional()
     .default("1"),
   unitPrice: z
     .string()
+    // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden decimal doğrulamasıdır.
     .regex(/^\d+(\.\d{1,4})?$/)
     .optional(),
   discountPercent: z.number().min(0).max(100).optional(),

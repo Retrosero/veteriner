@@ -351,6 +351,4 @@ export const triggerRetentionSweepSchema = z.object({
   /** Tetikleyen not (örn. "GDPR review Q3"). */
   note: z.string().max(500).optional(),
 });
-export type TriggerRetentionSweep = z.infer<
-  typeof triggerRetentionSweepSchema
->;
+export type TriggerRetentionSweep = z.infer<typeof triggerRetentionSweepSchema>;

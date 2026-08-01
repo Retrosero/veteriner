@@ -47,7 +47,9 @@ describe("SCENARIOS", () => {
   it("her step'in path /api/v1 ile baslar", () => {
     for (const s of SCENARIOS) {
       for (const step of s.steps) {
-        expect(step.path.startsWith("/api/v1"), `${s.key}.${step.name}`).toBe(true);
+        expect(step.path.startsWith("/api/v1"), `${s.key}.${step.name}`).toBe(
+          true,
+        );
       }
     }
   });
@@ -55,7 +57,11 @@ describe("SCENARIOS", () => {
   it("POST/PUT/PATCH step'lerinde body tanimli", () => {
     for (const s of SCENARIOS) {
       for (const step of s.steps) {
-        if (step.method === "POST" || step.method === "PUT" || step.method === "PATCH") {
+        if (
+          step.method === "POST" ||
+          step.method === "PUT" ||
+          step.method === "PATCH"
+        ) {
           expect(step.body, `${s.key}.${step.name} body`).toBeDefined();
         }
       }

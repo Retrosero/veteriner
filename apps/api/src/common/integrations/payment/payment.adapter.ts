@@ -19,7 +19,8 @@
 export type PaymentProvider = "iyzico" | "paytr" | "stripe" | "manual" | "noop";
 
 /** Ödeme yöntemi. */
-export type PaymentMethod = "card" | "bank_transfer" | "wallet" | "cash" | "other";
+export type PaymentMethod =
+  "card" | "bank_transfer" | "wallet" | "cash" | "other";
 
 /** Ödeme init girdisi. */
 export interface PaymentInitInput {
@@ -84,7 +85,11 @@ export interface PaymentAdapter {
   /** Ödeme doğrulama (poll). */
   verifyPayment(paymentId: string): Promise<PaymentVerifyResult>;
   /** İade (refund). */
-  refund(paymentId: string, amount: number, reason: string): Promise<{ refundId: string; status: "pending" | "completed" | "failed" }>;
+  refund(
+    paymentId: string,
+    amount: number,
+    reason: string,
+  ): Promise<{ refundId: string; status: "pending" | "completed" | "failed" }>;
   /** Webhook imza doğrulama. */
   verifyWebhookSignature(rawBody: string, signature: string): boolean;
 }

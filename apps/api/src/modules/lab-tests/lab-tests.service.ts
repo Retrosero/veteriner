@@ -23,13 +23,15 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { LabTestsRepository } from "./lab-tests.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import {
   toLabTest,
   type LabTestRecord,
 } from "../../common/lab-tests/lab-test.types.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   LabTest,
   LabTestCreateInput,
@@ -37,8 +39,6 @@ import type {
   LabTestListResponse,
   LabTestUpdateInput,
 } from "@vetniva/contracts";
-
-import { LabTestsRepository } from "./lab-tests.repository.js";
 
 @Injectable()
 export class LabTestsService {
@@ -241,7 +241,7 @@ export class LabTestsService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

@@ -11,15 +11,14 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { WaitlistRepository } from "./waitlist.repository.js";
+import { WaitlistService } from "./waitlist.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
 import type { Patient } from "../../common/patients/patient.types.js";
-
 import type { NotificationsService } from "../notifications/notifications.service.js";
 import type { PatientsService } from "../patients/patients.service.js";
-
-import { WaitlistService } from "./waitlist.service.js";
-import { WaitlistRepository } from "./waitlist.repository.js";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -179,11 +178,7 @@ describe("WaitlistService", () => {
 
     it("cross-tenant patient → 404 VET-CLINIC-0001, audit yok", async () => {
       await expect(
-        service.add(
-          TENANT_A,
-          makeInput({ patientId: PATIENT_ID_B }),
-          STAFF_A,
-        ),
+        service.add(TENANT_A, makeInput({ patientId: PATIENT_ID_B }), STAFF_A),
       ).rejects.toMatchObject({
         errorCode: "VET-CLINIC-0001",
         httpStatus: 404,
@@ -229,11 +224,7 @@ describe("WaitlistService", () => {
     });
 
     it("status filtresi", async () => {
-      const r = await service.list(
-        TENANT_A,
-        { status: "waiting" },
-        STAFF_A,
-      );
+      const r = await service.list(TENANT_A, { status: "waiting" }, STAFF_A);
       expect(r.total).toBe(3);
     });
 
@@ -335,12 +326,7 @@ describe("WaitlistService", () => {
       const entry = await service.add(TENANT_A, makeInput(), STAFF_A);
       await service.cancel(TENANT_A, entry.id, "iptal", STAFF_A);
       await expect(
-        service.convertToAppointment(
-          TENANT_A,
-          entry.id,
-          "appt-1",
-          STAFF_A,
-        ),
+        service.convertToAppointment(TENANT_A, entry.id, "appt-1", STAFF_A),
       ).rejects.toMatchObject({
         errorCode: "VET-CLINIC-0006",
         httpStatus: 422,

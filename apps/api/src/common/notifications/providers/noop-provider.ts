@@ -1,7 +1,6 @@
 /**
  * @file Noop notification provider.
  * @module apps/api/common/notifications/providers/noop
- *
  * @description Test/development için kullanılan no-op provider.
  * send() çağrısı başarılı sayılır ama hiçbir dış etkisi yoktur.
  * Provider seçim mantığını izole test etmek için idealdir.
@@ -11,13 +10,12 @@
 
 import { Injectable } from "@nestjs/common";
 
-import type { NotificationChannel } from "@vetniva/contracts";
-
 import type {
   NotificationProvider,
   ProviderSendPayload,
   ProviderSendResult,
 } from "../provider.interface.js";
+import type { NotificationChannel } from "@vetniva/contracts";
 
 /**
  * Noop provider. Tüm kanallarda kullanılabilir (varsayılan
@@ -27,7 +25,9 @@ import type {
 export class NoopProvider implements NotificationProvider {
   public readonly channel: NotificationChannel = "in_app";
 
-  public async send(_request: ProviderSendPayload): Promise<ProviderSendResult> {
+  public async send(
+    _request: ProviderSendPayload,
+  ): Promise<ProviderSendResult> {
     return { externalId: `noop-${Date.now()}`, status: "sent" };
   }
 }

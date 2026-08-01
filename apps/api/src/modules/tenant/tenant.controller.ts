@@ -35,19 +35,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import type {
-  CloseTenantRequest,
-  CreateTenantRequest,
-  TenantListResponse,
-  TenantResponse,
-  UpdateTenantRequest,
-} from "@vetniva/contracts";
 import {
   closeTenantRequestSchema,
   createTenantRequestSchema,
@@ -56,6 +43,19 @@ import {
 } from "@vetniva/contracts";
 
 import { TenantService } from "./tenant.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type {
+  CloseTenantRequest,
+  CreateTenantRequest,
+  TenantListResponse,
+  TenantResponse,
+  UpdateTenantRequest,
+} from "@vetniva/contracts";
 
 @ApiTags("tenants")
 @UseGuards(PermissionsGuard)

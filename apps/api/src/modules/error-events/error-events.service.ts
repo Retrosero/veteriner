@@ -44,13 +44,27 @@
  * @updated GOAL-104 (FAZ-10) hata atama ve çözüm notları core
  */
 
-import { Injectable, Logger } from "@nestjs/common";
-
 import { createHash } from "node:crypto";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import { Injectable, Logger } from "@nestjs/common";
+
+import { ErrorEventsRepository } from "./error-events.repository.js";
+import {
+  UNASSIGNED,
+  toErrorEvent,
+  toErrorEventAssignment,
+  toErrorEventNote,
+  toErrorEventStatusTransition,
+  toErrorEventSupportLink,
+  type ErrorEventNoteRecord,
+  type ErrorEventRecord,
+  type ErrorEventStatusTransitionRecord,
+  type ErrorEventSupportLinkRecord,
+} from "../../common/error-events/error-event.types.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import { PiiMasker } from "../../common/logging/pii-masker.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   ClientErrorReportInput,
   ClientErrorReportResponse,
@@ -58,7 +72,6 @@ import type {
   ErrorEventAssignmentInput,
   ErrorEventAssignmentListResponse,
   ErrorEventAssignmentResponse,
-  ErrorEventAuditAction,
   ErrorEventAuditEntry,
   ErrorEventAuditLogResponse,
   ErrorEventCreateInput,
@@ -72,28 +85,12 @@ import type {
   ErrorEventNoteCreateInput,
   ErrorEventNoteListResponse,
   ErrorEventStatus,
-  ErrorEventStatusTransition,
   ErrorEventStatusUpdateInput,
   ErrorEventStatusUpdateResponse,
   ErrorEventSummary,
   ErrorEventSupportLinkInput,
   ErrorEventSupportLinkListResponse,
 } from "@vetniva/contracts";
-
-import {
-  UNASSIGNED,
-  toErrorEvent,
-  toErrorEventAssignment,
-  toErrorEventNote,
-  toErrorEventStatusTransition,
-  toErrorEventSupportLink,
-  type ErrorEventAssignmentRecordInternal,
-  type ErrorEventNoteRecord,
-  type ErrorEventRecord,
-  type ErrorEventStatusTransitionRecord,
-  type ErrorEventSupportLinkRecord,
-} from "../../common/error-events/error-event.types.js";
-import { ErrorEventsRepository } from "./error-events.repository.js";
 
 /** Uygulama sürümü. `APP_VERSION` env ya da sabit. */
 const APP_RELEASE = process.env["APP_VERSION"] ?? "0.0.0-dev";
@@ -173,7 +170,10 @@ export function moduleFromRoute(route: string): ErrorEventModule {
 /** Mesajı fingerprint üretimi için normalize eder. */
 export function normalizeMessage(msg: string): string {
   return msg
-    .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, "<uuid>")
+    .replace(
+      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
+      "<uuid>",
+    )
     .replace(/\b\d+\b/g, "<n>")
     .replace(/\s+/g, " ")
     .trim()
@@ -198,7 +198,9 @@ export function computeFingerprint(
  */
 
 /** Geçerli status geçişlerini döner. */
-const VALID_TRANSITIONS: Readonly<Record<ErrorEventStatus, ReadonlyArray<ErrorEventStatus>>> = {
+const VALID_TRANSITIONS: Readonly<
+  Record<ErrorEventStatus, ReadonlyArray<ErrorEventStatus>>
+> = {
   new: ["investigating", "resolved"],
   investigating: ["resolved", "new"],
   resolved: ["reopened", "investigating"],
@@ -211,7 +213,11 @@ export function isValidTransition(
   to: ErrorEventStatus,
 ): boolean {
   if (from === to) return false;
-  return VALID_TRANSITIONS[from].includes(to);
+  const allowed: ReadonlyArray<ErrorEventStatus> = Reflect.get(
+    VALID_TRANSITIONS,
+    from,
+  );
+  return allowed.includes(to);
 }
 
 @Injectable()
@@ -262,8 +268,7 @@ export class ErrorEventsService {
 
       // Mevcut kayıt resolved ise otomatik reopened'a terfi.
       const existing = this.repo.findByFingerprint(fingerprint);
-      const willReopen =
-        existing !== null && existing.status === "resolved";
+      const willReopen = existing !== null && existing.status === "resolved";
 
       const rec = this.repo.upsertByFingerprint({
         fingerprint,
@@ -715,10 +720,7 @@ export class ErrorEventsService {
     for (const s of siblings) {
       if (s.tenantId) tenants.add(s.tenantId);
     }
-    const eventCount = siblings.reduce(
-      (sum, s) => sum + s.occurrenceCount,
-      0,
-    );
+    const eventCount = siblings.reduce((sum, s) => sum + s.occurrenceCount, 0);
     return {
       fingerprint: rec.fingerprint,
       severity: rec.severity,
@@ -757,7 +759,7 @@ export class ErrorEventsService {
   ): Record<string, unknown> {
     if (!ctx) return {};
     try {
-      return this.masker.mask(ctx) as Record<string, unknown>;
+      return this.masker.mask(ctx);
     } catch {
       return {};
     }
@@ -791,7 +793,7 @@ export class ErrorEventsService {
     actor: ActorContext,
     requestId: string,
   ): ClientErrorReportResponse {
-    const errorCode = (input.errorCode ?? "TR_FE_0001") as ErrorEventCreateInput["errorCode"];
+    const errorCode = input.errorCode ?? "VET-COMMON-0001";
 
     const createInput: ErrorEventCreateInput = {
       requestId,
@@ -1006,7 +1008,7 @@ export class ErrorEventsService {
       });
     }
     const isUnassign = input.unassign === true;
-    const assigneeId = isUnassign ? UNASSIGNED : input.assigneeId ?? "";
+    const assigneeId = isUnassign ? UNASSIGNED : (input.assigneeId ?? "");
     if (!assigneeId) {
       throw new DomainError({
         errorCode: "VET-ERRNOTE-0001",

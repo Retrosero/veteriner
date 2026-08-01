@@ -1,7 +1,6 @@
 /**
  * @file ClinicalRecordsService unit testleri.
  * @module apps/api/modules/clinical-records/clinical-records.service.spec
- *
  * @description GOAL-047 klinik kayıt PDF ve paylaşım iş kuralları:
  * - `generatePdf` başarı (Buffer döner) + cross-tenant 404.
  * - `shareWithPatient` başarı (shareId + expiresAt) + boş channels 422.
@@ -11,16 +10,16 @@
  *
  * Tüm alt servisler mock'lanır; gerçek PDF render test edilmez
  * (FAZ-0 stub). DB migration olmadığı için in-memory repo kullanılır.
- *
  * @since GOAL-047 (FAZ-4) klinik kayıt PDF ve paylaşım core
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ClinicalRecordSharesRepository } from "./clinical-records.repository.js";
+import { ClinicalRecordsService } from "./clinical-records.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-import type { Examination } from "@vetniva/contracts";
-
 import type { DiagnosesService } from "../diagnoses/diagnoses.service.js";
 import type { ExaminationsService } from "../examinations/examinations.service.js";
 import type { FileService } from "../file/file.service.js";
@@ -30,9 +29,7 @@ import type { OrdersService } from "../orders/orders.service.js";
 import type { PrescriptionsService } from "../prescriptions/prescriptions.service.js";
 import type { SoapService } from "../soap/soap.service.js";
 import type { VitalsService } from "../vitals/vitals.service.js";
-
-import { ClinicalRecordsService } from "./clinical-records.service.js";
-import { ClinicalRecordSharesRepository } from "./clinical-records.repository.js";
+import type { Examination } from "@vetniva/contracts";
 
 // ---------------------------------------------------------------------------
 // Test fixtures
@@ -106,53 +103,76 @@ const examRecord: Examination = {
 // Mock factory'leri
 // ---------------------------------------------------------------------------
 
+/**
+ *
+ */
 function makeExams(): ExaminationsService {
   return {
     findById: vi
       .fn()
-      .mockImplementation(
-        async (tenantId: string, id: string) =>
-          tenantId === TENANT_A && id === EXAM_ID ? examRecord : null,
+      .mockImplementation(async (tenantId: string, id: string) =>
+        tenantId === TENANT_A && id === EXAM_ID ? examRecord : null,
       ),
   } as unknown as ExaminationsService;
 }
 
+/**
+ *
+ */
 function makeSoap(): SoapService {
   return {
     findByExamination: vi.fn().mockResolvedValue(null),
   } as unknown as SoapService;
 }
 
+/**
+ *
+ */
 function makeVitals(): VitalsService {
   return {
     findByExamination: vi.fn().mockResolvedValue([]),
   } as unknown as VitalsService;
 }
 
+/**
+ *
+ */
 function makeDiagnoses(): DiagnosesService {
   return {
     listForExamination: vi.fn().mockResolvedValue([]),
   } as unknown as DiagnosesService;
 }
 
+/**
+ *
+ */
 function makePrescriptions(): PrescriptionsService {
   return {
     list: vi.fn().mockResolvedValue({ items: [], total: 0 }),
   } as unknown as PrescriptionsService;
 }
 
+/**
+ *
+ */
 function makeOrders(): OrdersService {
   return {
     list: vi.fn().mockResolvedValue({ items: [], total: 0 }),
   } as unknown as OrdersService;
 }
 
+/**
+ *
+ */
 function makeFollowups(): FollowupsService {
   return {
     listPending: vi.fn().mockResolvedValue([]),
   } as unknown as FollowupsService;
 }
 
+/**
+ *
+ */
 function makeFiles(): FileService {
   return {
     upload: vi.fn().mockResolvedValue({
@@ -169,18 +189,25 @@ function makeFiles(): FileService {
       relatedEntityType: "examination",
       relatedEntityId: EXAM_ID,
     }),
-    getSignedUrl: vi
-      .fn()
-      .mockResolvedValue({ url: "https://stub.invalid/signed", expiresInSec: 3600 }),
+    getSignedUrl: vi.fn().mockResolvedValue({
+      url: "https://stub.invalid/signed",
+      expiresInSec: 3600,
+    }),
   } as unknown as FileService;
 }
 
+/**
+ *
+ */
 function makeNotifications(): NotificationsService {
   return {
     send: vi.fn().mockResolvedValue({}),
   } as unknown as NotificationsService;
 }
 
+/**
+ *
+ */
 function makeAudit(): AuditService {
   return {
     record: vi.fn().mockResolvedValue({}),
@@ -301,7 +328,10 @@ describe("ClinicalRecordsService", () => {
         "create",
         expect.objectContaining({ tenantId: TENANT_A }),
         "info",
-        expect.objectContaining({ examinationId: EXAM_ID, sentChannels: ["email", "portal"] }),
+        expect.objectContaining({
+          examinationId: EXAM_ID,
+          sentChannels: ["email", "portal"],
+        }),
       );
     });
 

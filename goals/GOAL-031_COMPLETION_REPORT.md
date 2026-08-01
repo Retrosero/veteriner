@@ -20,17 +20,19 @@ audit `audit:appointment.create` (info). (2) `findById`: tenant-scoped
 null döner. (3) `list`: `patientId/veterinarianId/status/from/to`
 filtre + `limit/offset` pagination. (4) `update`: start/duration/vet
 değiştiyse eski booked slot release, yeni zaman için uygunluk kontrol
-+ başarısızsa eski slot compensation ile geri konur; audit
-`audit:appointment.update` (info) `before/after` snapshot. (5)
-`cancel`: idempotent; `completed` → 422 `VET-APPT-0006`; calendar'dan
-booked slot kaldırılır; audit `audit:appointment.cancel` (**warning**)
-+ reason. (6) `complete`: idempotent; `cancelled` → 422
-`VET-APPT-0006`; audit `audit:appointment.complete` (info). (7)
-`markNoShow`: idempotent; `cancelled/completed` → 422; audit
-`audit:appointment.no_show` (**warning**).
+
+- başarısızsa eski slot compensation ile geri konur; audit
+  `audit:appointment.update` (info) `before/after` snapshot. (5)
+  `cancel`: idempotent; `completed` → 422 `VET-APPT-0006`; calendar'dan
+  booked slot kaldırılır; audit `audit:appointment.cancel` (**warning**)
+- reason. (6) `complete`: idempotent; `cancelled` → 422
+  `VET-APPT-0006`; audit `audit:appointment.complete` (info). (7)
+  `markNoShow`: idempotent; `cancelled/completed` → 422; audit
+  `audit:appointment.no_show` (**warning**).
 
 **AppointmentsController** — 7 endpoint
 (`apps/api/src/modules/appointments/appointments.controller.ts`):
+
 - `POST   /api/v1/clinic/appointments` —
   `clinic:appointment:create`, 201.
 - `GET    /api/v1/clinic/appointments/:id` —
@@ -45,11 +47,11 @@ booked slot kaldırılır; audit `audit:appointment.cancel` (**warning**)
   `clinic:appointment:complete`, 200.
 - `POST   /api/v1/clinic/appointments/:id/no-show` —
   `clinic:appointment:complete`, 200.
-Swagger `operationId: appointmentCreate | appointmentGetById |
+  Swagger `operationId: appointmentCreate | appointmentGetById |
 appointmentList | appointmentUpdate | appointmentCancel |
 appointmentComplete | appointmentNoShow`. `ZodValidationPipe` ile
-input doğrulama; `requireTenant()` tenant bağlamı zorunlu
-(`VET-TENANT-0001`).
+  input doğrulama; `requireTenant()` tenant bağlamı zorunlu
+  (`VET-TENANT-0001`).
 
 **Sözleşme** (`packages/contracts/src/appointments.ts`) — Zod şemaları:
 `appointmentStatusSchema` (scheduled|confirmed|arrived|in_progress|
@@ -83,8 +85,8 @@ idempotent, (15) complete + audit, (16) markNoShow + audit.
   (`VET-APPT-0006`). `cancel` ve `complete` / `noShow` kendi
   durumlarında idempotent.
 - **Audit seviyesi:** cancel + no_show **warning** (anomali), create
-  + update + complete **info**. reason alanı cancel audit payload'unda
-  plain text tutulur; KVKK kapsamında erişim yetkisi sınırlıdır.
+  - update + complete **info**. reason alanı cancel audit payload'unda
+    plain text tutulur; KVKK kapsamında erişim yetkisi sınırlıdır.
 - **In-memory storage:** Map üzerinde `appointmentsByTenant` +
   tenantId index; production'a geçişte Prisma `Appointment` tablosu
   ile değiştirilecek (API sözleşmesi sabit kalır).
@@ -122,15 +124,15 @@ Yok. In-memory `appointmentsByTenant` Map. Production'a geçişte
 
 ## API
 
-| Method | Path                                       | Yetki                          | Kod |
-| ------ | ------------------------------------------ | ------------------------------ | --- |
-| POST   | /api/v1/clinic/appointments                | clinic:appointment:create      | 201 |
-| GET    | /api/v1/clinic/appointments                | clinic:appointment:read        | 200 |
-| GET    | /api/v1/clinic/appointments/:id            | clinic:appointment:read        | 200 |
-| PATCH  | /api/v1/clinic/appointments/:id            | clinic:appointment:update      | 200 |
-| POST   | /api/v1/clinic/appointments/:id/cancel     | clinic:appointment:cancel      | 200 |
-| POST   | /api/v1/clinic/appointments/:id/complete   | clinic:appointment:complete    | 200 |
-| POST   | /api/v1/clinic/appointments/:id/no-show    | clinic:appointment:complete    | 200 |
+| Method | Path                                     | Yetki                       | Kod |
+| ------ | ---------------------------------------- | --------------------------- | --- |
+| POST   | /api/v1/clinic/appointments              | clinic:appointment:create   | 201 |
+| GET    | /api/v1/clinic/appointments              | clinic:appointment:read     | 200 |
+| GET    | /api/v1/clinic/appointments/:id          | clinic:appointment:read     | 200 |
+| PATCH  | /api/v1/clinic/appointments/:id          | clinic:appointment:update   | 200 |
+| POST   | /api/v1/clinic/appointments/:id/cancel   | clinic:appointment:cancel   | 200 |
+| POST   | /api/v1/clinic/appointments/:id/complete | clinic:appointment:complete | 200 |
+| POST   | /api/v1/clinic/appointments/:id/no-show  | clinic:appointment:complete | 200 |
 
 Hatalar: 404 `VET-CLINIC-0001` (patient/randevu yok / cross-tenant),
 404 `VET-AUTHZ-0002` (cross-tenant), 403 `VET-AUTHZ-0001`,

@@ -169,10 +169,7 @@ export class OwnershipHistoryRepository {
   }
 
   /** Record oluşturmak için yardımcı (service kullanır). */
-  public toRecord(
-    id: string,
-    input: OwnershipCreateInput,
-  ): OwnershipRecord {
+  public toRecord(id: string, input: OwnershipCreateInput): OwnershipRecord {
     return {
       id,
       tenantId: input.tenantId,

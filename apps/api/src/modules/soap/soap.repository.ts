@@ -84,10 +84,7 @@ export class SoapNotesRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): SoapNoteRecord | null {
+  public findById(tenantId: string, id: string): SoapNoteRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -161,10 +158,7 @@ export class SoapAmendsRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): SoapAmendRecord | null {
+  public findById(tenantId: string, id: string): SoapAmendRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;

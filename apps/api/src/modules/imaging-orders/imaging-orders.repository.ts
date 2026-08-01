@@ -16,7 +16,10 @@
 
 import { Injectable } from "@nestjs/common";
 
-import type { ImagingOrderRecord, ImagingReportRecord } from "../../common/imaging-orders/imaging-order.types.js";
+import type {
+  ImagingOrderRecord,
+  ImagingReportRecord,
+} from "../../common/imaging-orders/imaging-order.types.js";
 import type {
   ImagingModality,
   ImagingOrderSourceType,
@@ -30,14 +33,7 @@ export interface ImagingOrderPatch {
   scheduledLocation?: string | null | undefined;
   performedAt?: string | null | undefined;
   performedByUserId?: string | null | undefined;
-  contrastUse?:
-    | "none"
-    | "iv"
-    | "oral"
-    | "rectal"
-    | "other"
-    | null
-    | undefined;
+  contrastUse?: "none" | "iv" | "oral" | "rectal" | "other" | null | undefined;
   clinicalInfo?: string | null | undefined;
   attachments?: string[] | undefined;
   reportRevisions?: ImagingReportRecord[] | undefined;
@@ -80,10 +76,7 @@ export class ImagingOrdersRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): ImagingOrderRecord | null {
+  public findById(tenantId: string, id: string): ImagingOrderRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -113,19 +106,11 @@ export class ImagingOrdersRepository {
     for (const rec of this.byId.values()) {
       if (rec.tenantId !== tenantId) continue;
       if (filters.status && rec.status !== filters.status) continue;
-      if (filters.modality && rec.modality !== filters.modality)
-        continue;
-      if (filters.patientId && rec.patientId !== filters.patientId)
-        continue;
-      if (
-        filters.sourceType &&
-        rec.sourceType !== filters.sourceType
-      )
-        continue;
-      if (filters.sourceId && rec.sourceId !== filters.sourceId)
-        continue;
-      if (filters.dateFrom && rec.createdAt < filters.dateFrom)
-        continue;
+      if (filters.modality && rec.modality !== filters.modality) continue;
+      if (filters.patientId && rec.patientId !== filters.patientId) continue;
+      if (filters.sourceType && rec.sourceType !== filters.sourceType) continue;
+      if (filters.sourceId && rec.sourceId !== filters.sourceId) continue;
+      if (filters.dateFrom && rec.createdAt < filters.dateFrom) continue;
       if (filters.dateTo && rec.createdAt > filters.dateTo) continue;
       all.push(rec);
     }

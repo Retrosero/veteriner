@@ -58,9 +58,10 @@ null
   değil, normal durum (ilk muayene öncesi).
 
 **Tenant izolasyonu:** Service `requireTenantScope(actor, tenantId)`
-+ `PatientsService.findById` + `latestForPatient` tümü
-`actor.tenantId` kapsamında; cross-tenant denemesi → 403
-`VET-AUTHZ-0001` veya 404 `VET-CLINIC-0001`.
+
+- `PatientsService.findById` + `latestForPatient` tümü
+  `actor.tenantId` kapsamında; cross-tenant denemesi → 403
+  `VET-AUTHZ-0001` veya 404 `VET-CLINIC-0001`.
 
 **İlgili dokümanlar:**
 

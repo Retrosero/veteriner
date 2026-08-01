@@ -70,9 +70,8 @@ export type CashRegisterCurrency = z.infer<typeof cashRegisterCurrencySchema>;
  */
 export const cashRegisterSessionOpenInputSchema = z.object({
   branchId: z.string().uuid(),
-  openingBalance: z
-    .string()
-    .regex(/^\d+(\.\d{1,4})?$/, "Geçersiz tutar"),
+  // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden decimal doğrulamasıdır.
+  openingBalance: z.string().regex(/^\d+(\.\d{1,4})?$/, "Geçersiz tutar"),
   note: z.string().max(2000).optional(),
   currency: cashRegisterCurrencySchema.optional().default("TRY"),
 });
@@ -92,9 +91,8 @@ export type CashRegisterSessionOpenInput = z.input<
  *   hesaplar; variance = closing - expected döner response'ta.
  */
 export const cashRegisterSessionCloseInputSchema = z.object({
-  closingBalance: z
-    .string()
-    .regex(/^\d+(\.\d{1,4})?$/, "Geçersiz tutar"),
+  // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden decimal doğrulamasıdır.
+  closingBalance: z.string().regex(/^\d+(\.\d{1,4})?$/, "Geçersiz tutar"),
   note: z.string().max(2000).optional(),
 });
 export type CashRegisterSessionCloseInput = z.infer<

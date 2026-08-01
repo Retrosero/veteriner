@@ -109,10 +109,7 @@ export class PricingRepository {
     return record;
   }
 
-  public findListById(
-    tenantId: string,
-    id: string,
-  ): PriceListRecord | null {
+  public findListById(tenantId: string, id: string): PriceListRecord | null {
     const rec = this.listsById.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -161,9 +158,7 @@ export class PricingRepository {
       )
         continue;
       if (needle) {
-        const hay = [rec.name, rec.description ?? ""]
-          .join(" ")
-          .toLowerCase();
+        const hay = [rec.name, rec.description ?? ""].join(" ").toLowerCase();
         if (!hay.includes(needle)) continue;
       }
       all.push(rec);
@@ -190,7 +185,11 @@ export class PricingRepository {
     set.add(record.id);
     // activeItemsByProduct indeksini güncelle.
     if (record.status === "active") {
-      this.addActiveItemForProduct(record.tenantId, record.productId, record.id);
+      this.addActiveItemForProduct(
+        record.tenantId,
+        record.productId,
+        record.id,
+      );
     }
     return record;
   }
@@ -220,17 +219,9 @@ export class PricingRepository {
     // İndeks güncelle (status değiştiyse).
     const isActive = rec.status === "active";
     if (wasActive && !isActive) {
-      this.removeActiveItemForProduct(
-        rec.tenantId,
-        rec.productId,
-        rec.id,
-      );
+      this.removeActiveItemForProduct(rec.tenantId, rec.productId, rec.id);
     } else if (!wasActive && isActive) {
-      this.addActiveItemForProduct(
-        rec.tenantId,
-        rec.productId,
-        rec.id,
-      );
+      this.addActiveItemForProduct(rec.tenantId, rec.productId, rec.id);
     }
     this.itemsById.set(id, rec);
     return rec;
@@ -248,8 +239,7 @@ export class PricingRepository {
     const all: PriceListItemRecord[] = [];
     for (const rec of this.itemsById.values()) {
       if (rec.tenantId !== tenantId) continue;
-      if (filters.productId && rec.productId !== filters.productId)
-        continue;
+      if (filters.productId && rec.productId !== filters.productId) continue;
       if (filters.status && rec.status !== filters.status) continue;
       if (
         filters.effectiveAt &&
@@ -351,10 +341,7 @@ export class PricingRepository {
   // Private helpers
   // -------------------------------------------------------------------------
 
-  private isListEffectiveAt(
-    rec: PriceListRecord,
-    effectiveAt: Date,
-  ): boolean {
+  private isListEffectiveAt(rec: PriceListRecord, effectiveAt: Date): boolean {
     if (rec.status !== "active") return false;
     if (rec.archivedAt !== null) return false;
     if (

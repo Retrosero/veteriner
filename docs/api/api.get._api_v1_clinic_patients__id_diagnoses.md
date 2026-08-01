@@ -84,8 +84,9 @@ görünümü için kronik + aktif teşhisler genelde ilk sırada yer alır.
   çevirir.
 
 **Tenant izolasyonu:** Service `requireTenantScope(actor, tenantId)`
-+ hasta varlık kontrolü `actor.tenantId` kapsamında; cross-tenant
-denemesi → 403 `VET-AUTHZ-0001` veya 404 `VET-CLINIC-0001`.
+
+- hasta varlık kontrolü `actor.tenantId` kapsamında; cross-tenant
+  denemesi → 403 `VET-AUTHZ-0001` veya 404 `VET-CLINIC-0001`.
 
 **İlgili dokümanlar:**
 

@@ -1,7 +1,6 @@
 /**
  * @file Anesthesia controller.
  * @module apps/api/modules/anesthesia/anesthesia.controller
- *
  * @description GOAL-082 (FAZ-8) anestezi takip REST API.
  *   Tenant ID URL'de taşınmaz; actor.tenantId'den alınır.
  *
@@ -13,8 +12,7 @@
  * - `POST  /api/v1/clinic/anesthesia/:id/vitals`                     — Vital ekle (draft)
  * - `POST  /api/v1/clinic/anesthesia/:id/complications`              — Komplikasyon ekle (draft)
  * - `POST  /api/v1/clinic/anesthesia/:id/staff`                      — Personel ata (draft)
- * - `POST  /api/v1/clinic/anesthesia/:id/finalize`                   — Finalize
- *
+ * - `POST  /api/v1/clinic/anesthesia/:id/finalize`                   — Finalize.
  * @since GOAL-082 (FAZ-8) anestezi takip core
  */
 
@@ -30,13 +28,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   anesthesiaComplicationInputSchema,
   anesthesiaCreateInputSchema,
@@ -62,14 +53,19 @@ import {
 } from "@vetniva/contracts";
 
 import { AnesthesiaService } from "./anesthesia.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("clinic/anesthesia")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/clinic/anesthesia")
 export class AnesthesiaController {
-  public constructor(
-    private readonly service: AnesthesiaService,
-  ) {}
+  public constructor(private readonly service: AnesthesiaService) {}
 
   @Post()
   @RequirePermissions("clinic:anesthesia:create")
@@ -97,8 +93,7 @@ export class AnesthesiaController {
   @ApiOperation({
     operationId: "anesthesiaList",
     summary: "Anestezi takip arama",
-    description:
-      "Tenant-scoped arama. status/patientId/surgeryPlanId/sort.",
+    description: "Tenant-scoped arama. status/patientId/surgeryPlanId/sort.",
   })
   public async list(
     @Query(new ZodValidationPipe(anesthesiaFiltersSchema))

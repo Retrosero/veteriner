@@ -38,9 +38,7 @@ export const prescriptionFrequencySchema = z.enum([
   "as_needed",
   "custom",
 ]);
-export type PrescriptionFrequency = z.infer<
-  typeof prescriptionFrequencySchema
->;
+export type PrescriptionFrequency = z.infer<typeof prescriptionFrequencySchema>;
 
 /** Uygulama yolu. */
 export const prescriptionRouteSchema = z.enum([
@@ -88,6 +86,7 @@ export const prescriptionItemSchema = z.object({
    */
   dispensedQuantity: z
     .string()
+    // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden miktar doğrulamasıdır.
     .regex(/^\d+(\.\d{1,4})?$/)
     .optional(),
   /**

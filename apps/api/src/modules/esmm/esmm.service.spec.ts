@@ -16,12 +16,12 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { EsmmDocumentsRepository } from "./esmm.repository.js";
+import { EsmmDocumentsService } from "./esmm.service.js";
+import { MockEsmmAdapter } from "../../common/esmm/mock-esmm-adapter.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-
-import { EsmmDocumentsService } from "./esmm.service.js";
-import { EsmmDocumentsRepository } from "./esmm.repository.js";
-import { MockEsmmAdapter } from "../../common/esmm/mock-esmm-adapter.js";
 import type {
   EsmmDocumentCreateInput,
   EsmmSubmitDocumentInput,
@@ -204,9 +204,7 @@ describe("EsmmDocumentsService", () => {
       // Aynı providerDocumentId ve providerDocumentNumber
       // dönmeli (idempotent).
       expect(same.providerDocumentId).toBe(a.providerDocumentId);
-      expect(same.providerDocumentNumber).toBe(
-        a.providerDocumentNumber,
-      );
+      expect(same.providerDocumentNumber).toBe(a.providerDocumentNumber);
     });
 
     it("accepted belge tekrar gönderilemez 409 VET-ESMM-0002", async () => {
@@ -308,11 +306,7 @@ describe("EsmmDocumentsService", () => {
         makeCreateInput(),
         STAFF_A,
       );
-      const doc = await service.getDocument(
-        TENANT_B,
-        created.id,
-        STAFF_B,
-      );
+      const doc = await service.getDocument(TENANT_B, created.id, STAFF_B);
       expect(doc).toBeNull();
     });
   });
@@ -324,11 +318,7 @@ describe("EsmmDocumentsService", () => {
   describe("tenant izolasyonu", () => {
     it("cross-tenant create 403 VET-AUTHZ-0001", async () => {
       await expect(
-        service.createDocument(
-          TENANT_B,
-          makeCreateInput(),
-          STAFF_A,
-        ),
+        service.createDocument(TENANT_B, makeCreateInput(), STAFF_A),
       ).rejects.toMatchObject({
         errorCode: "VET-AUTHZ-0001",
         httpStatus: 403,

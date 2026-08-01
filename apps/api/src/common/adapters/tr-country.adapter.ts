@@ -53,7 +53,7 @@ function isValidVKN(vkn: string): boolean {
   if (digits.length !== 10) return false;
   let sum = 0;
   for (let i = 0; i < 9; i++) {
-    const d = digits[i];
+    const d = digits.at(i);
     if (d === undefined) return false;
     const weighted = (d * Math.pow(2, 9 - i)) % 10;
     sum += weighted;
@@ -89,18 +89,13 @@ function isValidTCKN(tckn: string): boolean {
     (digits[6] ?? 0) +
     (digits[8] ?? 0);
   const evenSum =
-    (digits[1] ?? 0) +
-    (digits[3] ?? 0) +
-    (digits[5] ?? 0) +
-    (digits[7] ?? 0);
+    (digits[1] ?? 0) + (digits[3] ?? 0) + (digits[5] ?? 0) + (digits[7] ?? 0);
   const tenthDigit = (oddSum * 7 - evenSum) % 10;
   const tenthActual = digits[9];
   if (tenthDigit !== tenthActual) return false;
 
   // 11. hane kontrolü
-  const firstTenSum = digits
-    .slice(0, 10)
-    .reduce((acc, d) => acc + (d ?? 0), 0);
+  const firstTenSum = digits.slice(0, 10).reduce((acc, d) => acc + (d ?? 0), 0);
   const eleventhDigit = firstTenSum % 10;
   const eleventhActual = digits[10];
   return eleventhDigit === eleventhActual;
@@ -143,7 +138,11 @@ const TR_VAT_RATES: VatRate[] = [
   { category: "medicine", rate: 0.08, effectiveFrom: new Date("2024-01-01") },
   { category: "vaccine", rate: 0.08, effectiveFrom: new Date("2024-01-01") },
   { category: "pet_food", rate: 0.1, effectiveFrom: new Date("2024-01-01") },
-  { category: "pet_accessory", rate: 0.2, effectiveFrom: new Date("2024-01-01") },
+  {
+    category: "pet_accessory",
+    rate: 0.2,
+    effectiveFrom: new Date("2024-01-01"),
+  },
   { category: "service", rate: 0.2, effectiveFrom: new Date("2024-01-01") },
   { category: "other", rate: 0.2, effectiveFrom: new Date("2024-01-01") },
 ];
@@ -305,10 +304,7 @@ export class TrCountryAdapter implements CountryAdapter {
     return taxId;
   }
 
-  validateTaxId(
-    taxId: string,
-    type: "company" | "personal",
-  ): ValidationResult {
+  validateTaxId(taxId: string, type: "company" | "personal"): ValidationResult {
     const cleaned = taxId.replace(/\s/g, "");
     if (type === "company") {
       if (isValidVKN(cleaned)) return { valid: true, normalized: cleaned };
@@ -319,7 +315,13 @@ export class TrCountryAdapter implements CountryAdapter {
   }
 
   formatIBAN(iban: string): string {
-    return iban.replace(/\s/g, "").toUpperCase().match(/.{1,4}/g)?.join(" ") ?? iban;
+    return (
+      iban
+        .replace(/\s/g, "")
+        .toUpperCase()
+        .match(/.{1,4}/g)
+        ?.join(" ") ?? iban
+    );
   }
 
   validateIBAN(iban: string): ValidationResult {

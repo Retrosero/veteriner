@@ -3,32 +3,31 @@
 // Profil: pilot (10 VU, 2dk — pilot dogrulama)
 // Bu dosya elle degistirilmemelidir; ureticiden gelir.
 
-import { vetGet, check, jitterSleep } from './shared.js';
+import { vetGet, check, jitterSleep } from "./shared.js";
 
 export const options = {
   vus: 10,
-  duration: '2m',
+  duration: "2m",
   thresholds: {
     // k6 tarafinda hizli baseline; detayli kontrol TypeScript
     // tarafinda (evaluateScenario) yapilir.
-    http_req_failed: ['rate<0.05'],
-    http_req_duration: ['p(95)<2000'],
+    http_req_failed: ["rate<0.05"],
+    http_req_duration: ["p(95)<2000"],
   },
-  tags: { suite: 'vetniva-load-test' },
+  tags: { suite: "vetniva-load-test" },
 };
 
 export default async function () {
   // step 1: list_appointments_today
-  const res0 = vetGet(
-    "/api/v1/appointments?date=today&limit=50",
-    undefined,
-  );
+  const res0 = vetGet("/api/v1/appointments?date=today&limit=50", undefined);
   check(res0, {
-    'list_appointments_today_status_200': (r) => r.status === 200,
-    'list_appointments_today_no_pii_leak': (r) => !/[\\w.+-]+@[\\w-]+\\.[\\w.-]+|\\b[5-9]\\d{9}[0-9]\\b|\\b0?5\\d{9}\\b/.test(typeof r.body === 'string' ? r.body : ''),
+    list_appointments_today_status_200: (r) => r.status === 200,
+    list_appointments_today_no_pii_leak: (r) =>
+      !/[\\w.+-]+@[\\w-]+\\.[\\w.-]+|\\b[5-9]\\d{9}[0-9]\\b|\\b0?5\\d{9}\\b/.test(
+        typeof r.body === "string" ? r.body : "",
+      ),
   });
   jitterSleep(50, 200);
-
 
   // step 2: list_appointments_week
   const res1 = vetGet(
@@ -36,9 +35,11 @@ export default async function () {
     undefined,
   );
   check(res1, {
-    'list_appointments_week_status_200': (r) => r.status === 200,
-    'list_appointments_week_no_pii_leak': (r) => !/[\\w.+-]+@[\\w-]+\\.[\\w.-]+|\\b[5-9]\\d{9}[0-9]\\b|\\b0?5\\d{9}\\b/.test(typeof r.body === 'string' ? r.body : ''),
+    list_appointments_week_status_200: (r) => r.status === 200,
+    list_appointments_week_no_pii_leak: (r) =>
+      !/[\\w.+-]+@[\\w-]+\\.[\\w.-]+|\\b[5-9]\\d{9}[0-9]\\b|\\b0?5\\d{9}\\b/.test(
+        typeof r.body === "string" ? r.body : "",
+      ),
   });
   jitterSleep(50, 200);
-
 }

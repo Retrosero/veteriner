@@ -28,6 +28,7 @@ vergi no, iletişim e-postası) hazır.
 **Adımlar:**
 
 1. **API'ye istek gönder:**
+
    ```http
    POST /api/v1/tenants
    X-Actor-Id: usr-super-admin
@@ -104,6 +105,7 @@ X-Actor-Role: SUPERADMIN
 ```
 
 **Sorgu parametreleri:**
+
 - `page` (varsayılan 1)
 - `pageSize` (varsayılan 20, max 100)
 - `status`: `active` | `suspended` | `closed`
@@ -170,6 +172,7 @@ bakışta görmek.
 **Adımlar:**
 
 1. **API'ye istek gönder:**
+
    ```http
    GET /api/v1/superadmin/tenants?page=1&pageSize=20
    X-Actor-Role: SUPERADMIN

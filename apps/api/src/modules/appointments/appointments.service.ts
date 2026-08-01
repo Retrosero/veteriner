@@ -1,7 +1,6 @@
 /**
  * @file Appointment service.
  * @module apps/api/modules/appointments/appointments.service
- *
  * @description GOAL-031 randevu oluşturma ve yönetim iş kuralları.
  * CalendarService (GOAL-030) ile entegre: appointment oluşturma/
  * iptali sırasında booked slot eklenir / kaldırılır; slot çakışma
@@ -28,33 +27,30 @@
  *   Audit `audit:appointment.complete` (info).
  * - `markNoShow`: status='no_show'. Audit
  *   `audit:appointment.no_show` (warning).
- *
  * @security Tenant bilgisi yalnızca actor.tenantId'den alınır;
  *   request body/query'den güvenilmez.
- *
  * @since GOAL-031 (FAZ-3) randevu oluşturma core
  */
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import {
+  type AppointmentRecord,
+  AppointmentsRepository,
+} from "./appointments.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
+import { AppointmentRemindersService } from "../appointment-reminders/appointment-reminders.service.js";
+import { CalendarService } from "../calendar/calendar.service.js";
+import { PatientsService } from "../patients/patients.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   Appointment,
   AppointmentCreateInput,
   AppointmentFilters,
   AppointmentUpdateInput,
 } from "@vetniva/contracts";
-
-import { CalendarService } from "../calendar/calendar.service.js";
-import { PatientsService } from "../patients/patients.service.js";
-import type { AppointmentRemindersService } from "../appointment-reminders/appointment-reminders.service.js";
-
-import {
-  type AppointmentRecord,
-  AppointmentsRepository,
-} from "./appointments.repository.js";
 
 @Injectable()
 export class AppointmentsService {
@@ -145,9 +141,7 @@ export class AppointmentsService {
     }
 
     // 4) End hesapla ve calendar uygunluk kontrolü.
-    const endIso = new Date(
-      startMs + input.durationMin * 60_000,
-    ).toISOString();
+    const endIso = new Date(startMs + input.durationMin * 60_000).toISOString();
     const branchId = input.branchId ?? actor.branchId ?? undefined;
     const availability = this.calendar.checkAvailability(
       tenantId,
@@ -310,8 +304,7 @@ export class AppointmentsService {
       });
     }
 
-    const nextStart =
-      input.start !== undefined ? input.start : existing.start;
+    const nextStart = input.start !== undefined ? input.start : existing.start;
     const nextDuration =
       input.durationMin !== undefined
         ? input.durationMin
@@ -346,7 +339,11 @@ export class AppointmentsService {
         });
       }
       // Eski booked slot'u serbest bırak, yeni zaman için uygunluk kontrol et.
-      this.calendar.releaseSlot(tenantId, existing.veterinarianId, existing.start);
+      this.calendar.releaseSlot(
+        tenantId,
+        existing.veterinarianId,
+        existing.start,
+      );
       const availability = this.calendar.checkAvailability(
         tenantId,
         nextVet,
@@ -712,7 +709,7 @@ export class AppointmentsService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

@@ -1,9 +1,11 @@
 # GOAL-102 — Background Job ve Entegrasyon Logları (Completion Report)
 
 ## Faz
+
 FAZ-10 (Hata merkezi)
 
 ## Özet
+
 BullMQ kuyruğu, dış entegrasyon çağrısı, cron tetikleyicisi
 veya sistem aksiyonu için tek denemeye karşılık gelen
 JobRun kaydı. SUPERADMIN görünürlüğünde 8 endpoint; retry
@@ -12,10 +14,11 @@ zinciri, dead-letter view, summary aggregate.
 ## Çıktılar
 
 ### Core (GOAL-102 core commit `9912475`)
+
 - `packages/contracts/src/job-run.ts` — JobRun + StartInput
-  + FinishInput + RetryInput + Filters + ListResponse +
-  AttemptsByKeyResponse + DeadLetterQuery + Summary +
-  SummaryQuery + 20+ Zod şema/tip.
+  - FinishInput + RetryInput + Filters + ListResponse +
+    AttemptsByKeyResponse + DeadLetterQuery + Summary +
+    SummaryQuery + 20+ Zod şema/tip.
 - `apps/api/src/common/job-runs/job-run.types.ts` —
   JobRunRecord + toJobRun dönüşümü.
 - `apps/api/src/modules/job-runs/job-runs.repository.ts` —
@@ -39,13 +42,15 @@ zinciri, dead-letter view, summary aggregate.
   GET :id).
 
 ### Döküman (bu commit)
-- 8 API doc (docs/api/api.*._superadmin_job-runs*.md).
+
+- 8 API doc (docs/api/api._.\_superadmin_job-runs_.md).
 - `docs/ai/AI_CHUNKS.yaml` — yeni `glossary-job-run` ve
   `flow-job-run` chunk'ları v1.0.0.
 - `docs/pages/web.superadmin.locale.job-runs.yaml` — yeni
   sayfa kataloğu.
 
 ## İş Kuralları
+
 - **5 status:** pending, running, succeeded, failed, dead_letter.
 - **4 source:** queue, adapter, cron, system.
 - **4 triggeredBy:** user, system, manual_retry, integration.
@@ -60,19 +65,23 @@ zinciri, dead-letter view, summary aggregate.
 - **Audit:** `audit:job_run.*` (`started`, `finished`, `retried`).
 
 ## Yapılmayanlar / Bilinçli Atlamalar
+
 - **Prisma migration** → Faz 10+ DB katmanı.
 - **BullMQ adapter (auto caller)** → Faz 10+ worker iskeleti.
 - **Cross-correlation (ErrorEvents ↔ JobRuns)** → Faz 10+ unified.
 - **Tenant bazlı job kuyruğu görünümü** → Faz 10+ tenant panel.
 
 ## Döküman Uyum
+
 - `pnpm docs:check` → temiz (job-runs özgü).
 - `pnpm i18n:check` → temiz.
 
 ## Testler
+
 - `job-runs.service.spec.ts` → 40 unit test.
 - Full api regresyon: 1306/1306 yeşil, 9 skipped, 0 hata.
 
 ## Commit
+
 - Core: `9912475` — `GOAL-102 core: background job ve entegrasyon logları`
 - Docs: (bu commit) — `docs(error-events): GOAL-100/101/102/103/104 doküman ve i18n tamamla`

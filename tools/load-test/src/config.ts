@@ -250,8 +250,16 @@ export interface ProfileShape {
 }
 
 export const PROFILE_SHAPES: Record<LoadProfile, ProfileShape> = {
-  smoke: { vus: 1, duration: "30s", description: "Tek VU, 30sn — saglik kontrolu" },
-  pilot: { vus: 10, duration: "2m", description: "10 VU, 2dk — pilot dogrulama" },
+  smoke: {
+    vus: 1,
+    duration: "30s",
+    description: "Tek VU, 30sn — saglik kontrolu",
+  },
+  pilot: {
+    vus: 10,
+    duration: "2m",
+    description: "10 VU, 2dk — pilot dogrulama",
+  },
   first_100: {
     vus: 50,
     duration: "5m",

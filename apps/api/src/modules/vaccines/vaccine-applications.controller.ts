@@ -31,21 +31,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
-import type {
-  VaccineApplication,
-  VaccineApplicationAmendInput,
-  VaccineApplicationCancelInput,
-  VaccineApplicationCreateInput,
-  VaccineApplicationFilters,
-  VaccineApplicationListResponse,
-} from "@vetniva/contracts";
 import {
   vaccineApplicationAmendInputSchema,
   vaccineApplicationCancelInputSchema,
@@ -54,14 +39,27 @@ import {
 } from "@vetniva/contracts";
 
 import { VaccineApplicationsService } from "./vaccine-applications.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type {
+  VaccineApplication,
+  VaccineApplicationAmendInput,
+  VaccineApplicationCancelInput,
+  VaccineApplicationCreateInput,
+  VaccineApplicationFilters,
+  VaccineApplicationListResponse,
+} from "@vetniva/contracts";
 
 @ApiTags("vaccines")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/clinic")
 export class VaccineApplicationsController {
-  public constructor(
-    private readonly service: VaccineApplicationsService,
-  ) {}
+  public constructor(private readonly service: VaccineApplicationsService) {}
 
   // -------------------------------------------------------------------------
   // Collection

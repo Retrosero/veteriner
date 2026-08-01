@@ -27,7 +27,7 @@
 - **`sign(tenantId, examinationId, actor)`** — yalnızca
   `status="draft"` → `signed`. `signedAt=now`, `signedBy=actor.actorId`.
   **Cross-service:** `ExaminationsService.sign(tenantId, examinationId,
-  actor)` çağrılır; muayene de imzalanır (muayene kendi kuralı →
+actor)` çağrılır; muayene de imzalanır (muayene kendi kuralı →
   `status=completed` olmalı; aksi 409 `VET-EXAM-0002` propagation).
   İmza sonrası UPDATE/DELETE trigger (FAZ-0 no-op flag, sadece log).
   Audit `audit:soap.sign` (info).
@@ -68,12 +68,13 @@ zorunlu), `soapNoteSchema`, `soapAmendRecordSchema`.
 `toSoapNote` yardımcıları.
 
 **11 unit test** (`soap.service.spec.ts`): create başarı (status=draft
-+ audit.info), create cross-tenant examination 404, create
-status≠in_progress 409, findByExamination kendi tenant OK,
-findByExamination cross-tenant null, update draft OK + audit,
-update signed 409, sign draft → signed + examinations.sign tetiklenir
-+ audit.info, sign sonrası tekrar sign 409, amend signed → amended +
-SoapAmend kaydı + audit.warning, amend draft 409.
+
+- audit.info), create cross-tenant examination 404, create
+  status≠in_progress 409, findByExamination kendi tenant OK,
+  findByExamination cross-tenant null, update draft OK + audit,
+  update signed 409, sign draft → signed + examinations.sign tetiklenir
+- audit.info, sign sonrası tekrar sign 409, amend signed → amended +
+  SoapAmend kaydı + audit.warning, amend draft 409.
 
 ## Tasarım kararları
 
@@ -96,7 +97,7 @@ SoapAmend kaydı + audit.warning, amend draft 409.
   completed değil" yarım durumu oluşmaz.
 - **Append-only amend:** İmza sonrası `SoapNote` UPDATE/DELETE yasak.
   Düzeltme yalnızca yeni `SoapAmendRecord` + `SoapNote.status=
-  "amended"`. Orijinal S/O/A/P bölümleri değişmez; yeni içerik
+"amended"`. Orijinal S/O/A/P bölümleri değişmez; yeni içerik
   amend kaydında snapshot olarak saklanır. `previousSignedAt` +
   `previousSignedBy` immutable referans olarak korunur. Production
   migration'da DB trigger (`signed` → immutable) FAZ-0'da no-op flag.

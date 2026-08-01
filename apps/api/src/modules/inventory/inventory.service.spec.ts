@@ -19,11 +19,11 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { InventoryRepository } from "./inventory.repository.js";
+import { InventoryService } from "./inventory.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-
-import { InventoryService } from "./inventory.service.js";
-import { InventoryRepository } from "./inventory.repository.js";
 import type {
   ShelfCreateInput,
   ShelfUpdateInput,
@@ -184,7 +184,11 @@ describe("InventoryService", () => {
     it("create — clinic türünde depo oluşturulabilir", async () => {
       const w = await service.createWarehouse(
         TENANT_A,
-        makeWarehouseInput({ name: "Klinik Depo", code: "CLINIC", type: "clinic" }),
+        makeWarehouseInput({
+          name: "Klinik Depo",
+          code: "CLINIC",
+          type: "clinic",
+        }),
         STAFF_A,
       );
       expect(w.type).toBe("clinic");
@@ -227,7 +231,10 @@ describe("InventoryService", () => {
         makeWarehouseInput({ code: "MAIN" }),
         STAFF_A,
       );
-      const upd: WarehouseUpdateInput = { name: "Ana Depo Yenilendi", code: "MAIN-NEW" };
+      const upd: WarehouseUpdateInput = {
+        name: "Ana Depo Yenilendi",
+        code: "MAIN-NEW",
+      };
       const r = await service.updateWarehouse(TENANT_A, w.id, upd, STAFF_A);
       expect(r.name).toBe("Ana Depo Yenilendi");
       expect(r.code).toBe("MAIN-NEW");
@@ -263,12 +270,7 @@ describe("InventoryService", () => {
         STAFF_A,
       );
       await expect(
-        service.updateWarehouse(
-          TENANT_A,
-          w.id,
-          { name: "x" },
-          STAFF_A,
-        ),
+        service.updateWarehouse(TENANT_A, w.id, { name: "x" }, STAFF_A),
       ).rejects.toMatchObject({ errorCode: "VET-INV-0008" });
     });
 
@@ -284,12 +286,7 @@ describe("InventoryService", () => {
         STAFF_A,
       );
       await expect(
-        service.archiveWarehouse(
-          TENANT_A,
-          w.id,
-          { reason: "test" },
-          STAFF_A,
-        ),
+        service.archiveWarehouse(TENANT_A, w.id, { reason: "test" }, STAFF_A),
       ).rejects.toMatchObject({ errorCode: "VET-INV-0010" });
     });
 
@@ -306,12 +303,7 @@ describe("InventoryService", () => {
         OWNER_A,
       );
       await expect(
-        service.archiveWarehouse(
-          TENANT_A,
-          w.id,
-          { reason: "test2" },
-          OWNER_A,
-        ),
+        service.archiveWarehouse(TENANT_A, w.id, { reason: "test2" }, OWNER_A),
       ).rejects.toMatchObject({ errorCode: "VET-INV-0007" });
     });
 
@@ -483,12 +475,7 @@ describe("InventoryService", () => {
         STAFF_A,
       );
       await expect(
-        service.archiveShelf(
-          TENANT_A,
-          s.id,
-          { reason: "test" },
-          OWNER_A,
-        ),
+        service.archiveShelf(TENANT_A, s.id, { reason: "test" }, OWNER_A),
       ).rejects.toMatchObject({ errorCode: "VET-INV-0010" });
     });
   });
@@ -572,7 +559,11 @@ describe("InventoryService", () => {
       });
       await service.createLot(
         TENANT_A,
-        makeLotInput({ productId: "prd-1", lotNumber: "FUTURE", expiryDate: futureIso(120) }),
+        makeLotInput({
+          productId: "prd-1",
+          lotNumber: "FUTURE",
+          expiryDate: futureIso(120),
+        }),
         STAFF_A,
       );
       const r = await service.listLots(
@@ -670,12 +661,7 @@ describe("InventoryService", () => {
       );
       await service.archiveLot(TENANT_A, l.id, { reason: "test" }, STAFF_A);
       await expect(
-        service.updateLot(
-          TENANT_A,
-          l.id,
-          { notes: "x" },
-          STAFF_A,
-        ),
+        service.updateLot(TENANT_A, l.id, { notes: "x" }, STAFF_A),
       ).rejects.toMatchObject({ errorCode: "VET-INV-0008" });
     });
 
@@ -686,12 +672,7 @@ describe("InventoryService", () => {
         STAFF_A,
       );
       await expect(
-        service.updateLot(
-          TENANT_A,
-          l.id,
-          { expiryDate: pastIso(1) },
-          STAFF_A,
-        ),
+        service.updateLot(TENANT_A, l.id, { expiryDate: pastIso(1) }, STAFF_A),
       ).rejects.toMatchObject({ errorCode: "VET-INV-0009" });
     });
 

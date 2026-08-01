@@ -1,19 +1,16 @@
 /**
  * @file Brute-force guard unit testleri.
  * @module apps/api/common/auth/brute-force.spec
- *
  * @description In-memory sayaç + lockout mantığı. MAX_FAILED_LOGIN_COUNT
  * sonrası lockout uygulanır; başarılı login sayacı sıfırlar.
- *
  * @since GOAL-011 (FAZ-1) kimlik doğrulama
  */
-
-import { beforeEach, describe, expect, it } from "vitest";
 
 import {
   ACCOUNT_LOCK_SECONDS,
   MAX_FAILED_LOGIN_COUNT,
 } from "@vetniva/contracts";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { BruteForceGuard } from "./brute-force.js";
 

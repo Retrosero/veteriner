@@ -24,11 +24,7 @@ export const calendarSlotStatusSchema = z.enum([
 export type CalendarSlotStatus = z.infer<typeof calendarSlotStatusSchema>;
 
 /** Haftanın günü. 0=Pazar, 1=Pazartesi, ..., 6=Cumartesi. */
-export const dayOfWeekSchema = z
-  .number()
-  .int()
-  .min(0)
-  .max(6);
+export const dayOfWeekSchema = z.number().int().min(0).max(6);
 export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 /** Saat formatı (HH:mm, 24 saat). */

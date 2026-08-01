@@ -6,15 +6,18 @@
 **Sayfa:** `/[locale]/clinic/patients/{patientId}/examinations/new`
 
 ## Amaç
+
 Bir randevuya bağlı veya doğrudan muayene kaydı açmak. SOAP
 notu, vital bulgular, teşhis, tedavi planı, reçete, order
 ve kontrol randevusu alt kayıtları bu ana muayeneye bağlanır.
 
 ## Aktör
+
 - VETERINARIAN (muayeneyi yapan)
 - STAFF (giriş/yardım)
 
 ## Tetikleyici
+
 - Hayvan sahibi muayeneye gelir (randevulu veya doğrudan).
 - Bekleme listesindeki hasta sırası gelir.
 - Acil servis (acil olarak işaretlenmiş).
@@ -79,24 +82,27 @@ ve kontrol randevusu alt kayıtları bu ana muayeneye bağlanır.
     - Sonradan değişiklik: **amendment** (append-only).
 
 ## Tenant izolasyonu
+
 - Patient + branch aynı tenant'ta olmalı.
 
 ## Audit
+
 - `audit:examination.create` (info).
 - `audit:examination.sign` (info).
 - `audit:examination.amend` (info; sonradan düzeltme).
 
 ## Hata senaryoları
 
-| Senaryo | HTTP | Hata kodu |
-|---------|------|-----------|
-| Aktif ownership yok | 404 | `VET-CLINIC-0011` |
-| Randevu uygun değil | 409 | `VET-APPT-0006` |
-| Cross-tenant | 404 | `VET-CLINIC-0001` |
-| İmzalı muayene değişiklik | 409 | `VET-EXAM-0002` |
-| Yetkisiz | 403 | `VET-AUTHZ-0001` |
+| Senaryo                   | HTTP | Hata kodu         |
+| ------------------------- | ---- | ----------------- |
+| Aktif ownership yok       | 404  | `VET-CLINIC-0011` |
+| Randevu uygun değil       | 409  | `VET-APPT-0006`   |
+| Cross-tenant              | 404  | `VET-CLINIC-0001` |
+| İmzalı muayene değişiklik | 409  | `VET-EXAM-0002`   |
+| Yetkisiz                  | 403  | `VET-AUTHZ-0001`  |
 
 ## İlgili dokümanlar
+
 - `docs/api/api.post._api_v1_clinic_examinations.md`
 - `goals/GOAL-040_COMPLETION_REPORT.md`
 - `goals/GOAL-041 → 047_*COMPLETION_REPORT.md` (alt akışlar)

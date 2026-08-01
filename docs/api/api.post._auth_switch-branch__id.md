@@ -17,8 +17,8 @@ geçebilir; SUPERADMIN herhangi bir tenant'ın branch'ına geçebilir.
 
 ## Path parametreleri
 
-| Parametre | Tip   | Zorunlu | Açıklama                |
-| --------- | ----- | ------- | ----------------------- |
+| Parametre  | Tip  | Zorunlu | Açıklama                  |
+| ---------- | ---- | ------- | ------------------------- |
 | `branchId` | UUID | evet    | Geçilecek branch'ın ID'si |
 
 ## Request body
@@ -40,11 +40,11 @@ branch ID, correlation ID, IP, user agent hash.
 
 ## Hata kodları
 
-| Kod              | HTTP | Açıklama                                     |
-| ---------------- | ---- | -------------------------------------------- |
+| Kod               | HTTP | Açıklama                                      |
+| ----------------- | ---- | --------------------------------------------- |
 | `VET-BRANCH-0001` | 404  | Şube bulunamadı (ID yanlış veya arşivlenmiş). |
-| `VET-AUTHZ-0004`  | 403  | Kullanıcı bu şubenin tenant'ına üye değil.  |
-| `VET-AUTH-0001`   | 401  | Oturum geçersiz veya süresi dolmuş.         |
+| `VET-AUTHZ-0004`  | 403  | Kullanıcı bu şubenin tenant'ına üye değil.    |
+| `VET-AUTH-0001`   | 401  | Oturum geçersiz veya süresi dolmuş.           |
 
 ## Örnek
 

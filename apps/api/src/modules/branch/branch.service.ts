@@ -1,7 +1,6 @@
 /**
  * @file Branch service.
  * @module apps/api/modules/branch/branch.service
- *
  * @description Branch iş kuralları. Repository üzerinden veri
  * erişimi sağlar; permission kontrolü, audit event yayını, hata
  * yönetimi burada yapılır.
@@ -13,18 +12,22 @@
  * - Branch güncelleme: SUPERADMIN veya tenant OWNER.
  * - Branch arşivleme: SUPERADMIN veya tenant OWNER; arşivlenen
  *   branch'in FK'si olan kayıtlar korunur.
- *
  * @security RLS actor.tenantId üzerinden filtreyi uygular.
  *   Service katmanı ek olarak OWNER veya SUPERADMIN rolü kontrol eder.
- *
  * @since GOAL-010 (FAZ-1) tenant ve şube altyapısı
  */
 
 import { Injectable, Logger } from "@nestjs/common";
 
+import {
+  BranchRepository,
+  type ListBranchesArgs,
+} from "./branch.repository.js";
+import { toBranchResponse } from "./dto/branch.dto.js";
 import { AuditService } from "../../common/audit/audit.service.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   ArchiveBranchRequest,
   BranchListResponse,
@@ -32,12 +35,6 @@ import type {
   CreateBranchRequest,
   UpdateBranchRequest,
 } from "@vetniva/contracts";
-
-import { toBranchResponse } from "./dto/branch.dto.js";
-import {
-  BranchRepository,
-  type ListBranchesArgs,
-} from "./branch.repository.js";
 
 @Injectable()
 export class BranchService {
@@ -51,6 +48,7 @@ export class BranchService {
   /**
    * Bir tenant'ın branch'lerini listeler. RLS actor.tenantId üzerinden
    * filtreyi uygular.
+   * @param args
    */
   public async list(
     args: ListBranchesArgs & { actor: ActorContext },
@@ -66,6 +64,8 @@ export class BranchService {
 
   /**
    * Branch detayı. Cross-tenant denemesi → 404.
+   * @param id
+   * @param actor
    */
   public async findById(
     id: string,
@@ -87,6 +87,9 @@ export class BranchService {
 
   /**
    * Yeni branch oluşturur. SUPERADMIN veya tenant OWNER.
+   * @param tenantId
+   * @param input
+   * @param actor
    */
   public async create(
     tenantId: string,
@@ -147,6 +150,9 @@ export class BranchService {
 
   /**
    * Branch günceller. SUPERADMIN veya tenant OWNER.
+   * @param id
+   * @param input
+   * @param actor
    */
   public async update(
     id: string,
@@ -169,13 +175,7 @@ export class BranchService {
     if (input.name !== undefined) data.name = input.name;
     if (input.city !== undefined) data.city = input.city;
     if (input.address !== undefined) {
-      data.addressJson = input.address as unknown as Parameters<
-        BranchRepository["update"]
-      >[1] extends infer R
-        ? R extends { addressJson?: infer A }
-          ? A
-          : never
-        : never;
+      data.addressJson = input.address;
     }
     if (input.phone !== undefined) data.phone = input.phone;
     if (input.status !== undefined) data.status = input.status;
@@ -211,6 +211,9 @@ export class BranchService {
 
   /**
    * Branch'i arşivler (soft delete). SUPERADMIN veya tenant OWNER.
+   * @param id
+   * @param input
+   * @param actor
    */
   public async archive(
     id: string,
@@ -263,6 +266,7 @@ export class BranchService {
 
   /**
    * Repository'e aktarılacak actor bilgisi.
+   * @param actor
    */
   private repoActor(actor: ActorContext): {
     tenantId: string | null;
@@ -276,6 +280,8 @@ export class BranchService {
 
   /**
    * Okuma kapsamı: SUPERADMIN veya kendi tenant.
+   * @param actor
+   * @param tenantId
    */
   private requireReadScope(actor: ActorContext, tenantId: string): void {
     if (actor.role === "SUPERADMIN") return;
@@ -295,6 +301,8 @@ export class BranchService {
 
   /**
    * Yazma kapsamı: SUPERADMIN veya kendi tenant OWNER.
+   * @param actor
+   * @param tenantId
    */
   private requireWriteScope(actor: ActorContext, tenantId: string): void {
     if (actor.role === "SUPERADMIN") return;
@@ -315,8 +323,15 @@ export class BranchService {
   ): Record<string, { from: unknown; to: unknown }> {
     const diff: Record<string, { from: unknown; to: unknown }> = {};
     for (const f of fields) {
-      if (before[f] !== after[f]) {
-        diff[f] = { from: before[f], to: after[f] };
+      const from = Reflect.get(before, f);
+      const to = Reflect.get(after, f);
+      if (from !== to) {
+        Object.defineProperty(diff, f, {
+          value: { from, to },
+          enumerable: true,
+          configurable: true,
+          writable: true,
+        });
       }
     }
     return diff;

@@ -39,12 +39,11 @@ export type ErrorCode = z.infer<typeof errorCodeSchema>;
  * - `EN_<DOMAIN>_<NNN>` (ülke + domain + sıra)
  * - `TR_<DOMAIN>_<NAME>` (validation aliases)
  */
-export const legacyErrorCodeSchema = z
-  .string()
-  .regex(
-    /^(TR|EN)_[A-Z]+(_[A-Z]+)*_[0-9]{1,4}$/,
-    "Invalid legacy error code format",
-  );
+export const legacyErrorCodeSchema = z.string().regex(
+  // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, segment sayısı doğrusal ve her parça karakter sınıfıyla sınırlı hata kodu doğrulamasıdır.
+  /^(TR|EN)_[A-Z]+(_[A-Z]+)*_[0-9]{1,4}$/,
+  "Invalid legacy error code format",
+);
 export type LegacyErrorCode = z.infer<typeof legacyErrorCodeSchema>;
 
 /**
@@ -154,6 +153,10 @@ export const errorResponseSchema = z.object({
   /**
    * Yönlendirme önerisi (varsa). Örn: 401 → "/login".
    */
-  action_url: z.string().url().or(z.string().regex(/^\/[A-Za-z0-9/_-]+$/)).optional(),
+  action_url: z
+    .string()
+    .url()
+    .or(z.string().regex(/^\/[A-Za-z0-9/_-]+$/))
+    .optional(),
 });
 export type ErrorResponse = z.infer<typeof errorResponseSchema>;

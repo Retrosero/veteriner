@@ -13,12 +13,12 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AuditService } from "../../common/audit/audit.service.js";
-import type { PortalInvitation } from "../../common/portal/portal.types.js";
-import { PortalService } from "../portal/portal.service.js";
-
 import { PortalAuthRepository } from "./portal-auth.repository.js";
 import { PortalAuthService } from "./portal-auth.service.js";
+import { type AuditService } from "../../common/audit/audit.service.js";
+import { type PortalService } from "../portal/portal.service.js";
+
+import type { PortalInvitation } from "../../common/portal/portal.types.js";
 
 const TENANT = "tenant-abc-12345678";
 const OWNER_ID = "11111111-1111-1111-1111-111111111111";
@@ -34,9 +34,10 @@ function makeCtx() {
 
 function makeAuditStub() {
   return {
-    record: vi
-      .fn()
-      .mockResolvedValue({ eventId: "evt-1", timestamp: new Date().toISOString() }),
+    record: vi.fn().mockResolvedValue({
+      eventId: "evt-1",
+      timestamp: new Date().toISOString(),
+    }),
   } as unknown as AuditService;
 }
 
@@ -405,10 +406,7 @@ describe("PortalAuthService", () => {
         expect.fail("Hata fırlamalıydı");
       } catch (e) {
         const err = e as { errorCode: string; httpStatus: number };
-        expect([err.errorCode, err.httpStatus]).toEqual([
-          "VET-AUTH-0005",
-          423,
-        ]);
+        expect([err.errorCode, err.httpStatus]).toEqual(["VET-AUTH-0005", 423]);
       }
       const updated = repo.findPortalUserById(TENANT, user.id);
       expect(updated?.status).toBe("locked");
@@ -436,10 +434,7 @@ describe("PortalAuthService", () => {
         expect.fail("Hata fırlamalıydı");
       } catch (e) {
         const err = e as { errorCode: string; httpStatus: number };
-        expect([err.errorCode, err.httpStatus]).toEqual([
-          "VET-AUTH-0005",
-          423,
-        ]);
+        expect([err.errorCode, err.httpStatus]).toEqual(["VET-AUTH-0005", 423]);
       }
     });
   });
@@ -578,10 +573,7 @@ describe("PortalAuthService", () => {
         expect.fail("Hata fırlamalıydı");
       } catch (e) {
         const err = e as { errorCode: string; httpStatus: number };
-        expect([err.errorCode, err.httpStatus]).toEqual([
-          "VET-AUTH-0004",
-          400,
-        ]);
+        expect([err.errorCode, err.httpStatus]).toEqual(["VET-AUTH-0004", 400]);
       }
     });
   });
@@ -626,10 +618,7 @@ describe("PortalAuthService", () => {
         expect.fail("Hata fırlamalıydı");
       } catch (e) {
         const err = e as { errorCode: string; httpStatus: number };
-        expect([err.errorCode, err.httpStatus]).toEqual([
-          "VET-AUTH-0004",
-          400,
-        ]);
+        expect([err.errorCode, err.httpStatus]).toEqual(["VET-AUTH-0004", 400]);
       }
     });
 
@@ -689,9 +678,7 @@ describe("PortalAuthService", () => {
       const events = (audit.record as ReturnType<typeof vi.fn>).mock.calls.map(
         (c) => (c[0] as { eventName: string }).eventName,
       );
-      expect(events).toContain(
-        "audit:portal.auth.email.verification_request",
-      );
+      expect(events).toContain("audit:portal.auth.email.verification_request");
     });
 
     it("zaten doğrulanmış kullanıcı için reissue → 422 VET-VALIDATION-0003", async () => {

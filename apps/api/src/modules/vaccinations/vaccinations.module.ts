@@ -13,13 +13,12 @@
 
 import { Module } from "@nestjs/common";
 
-import { AuditModule } from "../../common/audit/audit.module.js";
-import { PatientsModule } from "../patients/patients.module.js";
-import { VaccinesModule } from "../vaccines/vaccines.module.js";
-
 import { VaccinationsController } from "./vaccinations.controller.js";
 import { VaccinationsRepository } from "./vaccinations.repository.js";
 import { VaccinationsService } from "./vaccinations.service.js";
+import { AuditModule } from "../../common/audit/audit.module.js";
+import { PatientsModule } from "../patients/patients.module.js";
+import { VaccinesModule } from "../vaccines/vaccines.module.js";
 
 @Module({
   imports: [AuditModule, PatientsModule, VaccinesModule],

@@ -12,18 +12,18 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { PortalPetsService } from "./portal-pets.service.js";
+import { AlertsService } from "../alerts/alerts.service.js";
+import { OwnersService } from "../owners/owners.service.js";
+import { OwnershipHistoryService } from "../ownership-history/ownership-history.service.js";
+import { PatientsRepository } from "../patients/patients.repository.js";
+import { PatientsService } from "../patients/patients.service.js";
+import { PortalAuthRepository } from "../portal-auth/portal-auth.repository.js";
+import { PortalAuthService } from "../portal-auth/portal-auth.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-import { AlertsService } from "../alerts/alerts.service.js";
 import type { AppointmentsService } from "../appointments/appointments.service.js";
-import { PatientsService } from "../patients/patients.service.js";
-import { PortalAuthService } from "../portal-auth/portal-auth.service.js";
-import { PortalAuthRepository } from "../portal-auth/portal-auth.repository.js";
-import { OwnersService } from "../owners/owners.service.js";
-import { PatientsRepository } from "../patients/patients.repository.js";
-import { OwnershipHistoryService } from "../ownership-history/ownership-history.service.js";
-
-import { PortalPetsService } from "./portal-pets.service.js";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -152,13 +152,12 @@ describe("PortalPetsService", () => {
     patients = makePatientsService(patientRepo);
     alerts = new AlertsService(patientRepo, makeAudit());
     appointments = makeAppointmentsStub();
-    portalAuth = new PortalAuthService(portalAuthRepo, makeAudit(), {} as never);
-    service = new PortalPetsService(
-      portalAuth,
-      patients,
-      alerts,
-      appointments,
+    portalAuth = new PortalAuthService(
+      portalAuthRepo,
+      makeAudit(),
+      {} as never,
     );
+    service = new PortalPetsService(portalAuth, patients, alerts, appointments);
   });
 
   // ===========================================================================
@@ -196,7 +195,11 @@ describe("PortalPetsService", () => {
 
     it("portal user bulunamazsa boş liste döner", async () => {
       seedPatient(patientRepo, OWNER_A, { name: "Orphan" });
-      const result = await service.list(TENANT_A, "missing-portal", PORTAL_ACTOR);
+      const result = await service.list(
+        TENANT_A,
+        "missing-portal",
+        PORTAL_ACTOR,
+      );
       expect(result).toEqual([]);
     });
   });
@@ -231,7 +234,12 @@ describe("PortalPetsService", () => {
         tenantId: TENANT_B,
       });
       try {
-        await service.getDetail(TENANT_A, PORTAL_USER_A, patientId, PORTAL_ACTOR);
+        await service.getDetail(
+          TENANT_A,
+          PORTAL_USER_A,
+          patientId,
+          PORTAL_ACTOR,
+        );
         expect.fail("Hata fırlamalıydı");
       } catch (e) {
         const err = e as { errorCode: string; httpStatus: number };
@@ -242,9 +250,16 @@ describe("PortalPetsService", () => {
 
     it("başka owner'ın hastası → 404 (bilgi sızdırmaz)", async () => {
       seedPortalUser(portalAuthRepo, OWNER_A);
-      const patientId = seedPatient(patientRepo, OWNER_B, { name: "OtherOwner" });
+      const patientId = seedPatient(patientRepo, OWNER_B, {
+        name: "OtherOwner",
+      });
       try {
-        await service.getDetail(TENANT_A, PORTAL_USER_A, patientId, PORTAL_ACTOR);
+        await service.getDetail(
+          TENANT_A,
+          PORTAL_USER_A,
+          patientId,
+          PORTAL_ACTOR,
+        );
         expect.fail("Hata fırlamalıydı");
       } catch (e) {
         const err = e as { errorCode: string; httpStatus: number };
@@ -260,7 +275,12 @@ describe("PortalPetsService", () => {
         archived: true,
       });
       try {
-        await service.getDetail(TENANT_A, PORTAL_USER_A, patientId, PORTAL_ACTOR);
+        await service.getDetail(
+          TENANT_A,
+          PORTAL_USER_A,
+          patientId,
+          PORTAL_ACTOR,
+        );
         expect.fail("Hata fırlamalıydı");
       } catch (e) {
         const err = e as { errorCode: string; httpStatus: number };

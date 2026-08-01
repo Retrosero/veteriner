@@ -29,12 +29,12 @@ günceller. Opsiyonel atama yapar veya atamayı kaldırır.
 
 **Geçerli geçişler:**
 
-| from          | to                            |
-| ------------- | ----------------------------- |
-| `new`         | `investigating`, `resolved`   |
+| from            | to                          |
+| --------------- | --------------------------- |
+| `new`           | `investigating`, `resolved` |
 | `investigating` | `resolved`, `new`           |
-| `resolved`    | `reopened`, `investigating`   |
-| `reopened`    | `investigating`, `resolved`   |
+| `resolved`      | `reopened`, `investigating` |
+| `reopened`      | `investigating`, `resolved` |
 
 **Response 200 (`ErrorEventStatusUpdateResponse`):**
 

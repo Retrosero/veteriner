@@ -28,13 +28,14 @@ idempotent. (6) `checkMedicationConflict`: yalnızca aktif
 
 **AlertsController** — 3 yeni endpoint
 (`apps/api/src/modules/alerts/alerts.controller.ts`):
+
 - `POST /api/v1/clinic/patients/:patientId/alerts` —
   `clinic:examination:create`, 201.
 - `GET /api/v1/clinic/patients/:patientId/alerts?severity=...&activeOnly=...` —
   `clinic:patient:read`, 200.
 - `DELETE /api/v1/clinic/alerts/:id` — `clinic:examination:create`,
   204 (idempotent soft delete).
-Swagger: `operationId: alertCreate | alertListForPatient |
+  Swagger: `operationId: alertCreate | alertListForPatient |
 alertArchive`. `ZodValidationPipe` ile input doğrulama.
 
 **Sözleşme** (`packages/contracts/src/alert.ts`):
@@ -94,11 +95,11 @@ Yok. In-memory `byId` Map. Production'a geçişte Prisma
 
 ## API
 
-| Method | Path                                          | Yetki                       | Kod |
-| ------ | --------------------------------------------- | --------------------------- | --- |
-| POST   | /api/v1/clinic/patients/:patientId/alerts     | clinic:examination:create   | 201 |
-| GET    | /api/v1/clinic/patients/:patientId/alerts     | clinic:patient:read         | 200 |
-| DELETE | /api/v1/clinic/alerts/:id                     | clinic:examination:create   | 204 |
+| Method | Path                                      | Yetki                     | Kod |
+| ------ | ----------------------------------------- | ------------------------- | --- |
+| POST   | /api/v1/clinic/patients/:patientId/alerts | clinic:examination:create | 201 |
+| GET    | /api/v1/clinic/patients/:patientId/alerts | clinic:patient:read       | 200 |
+| DELETE | /api/v1/clinic/alerts/:id                 | clinic:examination:create | 204 |
 
 Hatalar: 404 `VET-AUTHZ-0002` (patient cross-tenant), 404
 `VET-CLINIC-0010` (alert not found / cross-tenant), 403

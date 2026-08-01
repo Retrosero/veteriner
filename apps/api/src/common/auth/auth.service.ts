@@ -1,7 +1,6 @@
 /**
  * @file Kimlik doğrulama servisi.
  * @module apps/api/common/auth/auth.service
- *
  * @description Personel paneli için auth akışının iş kuralları.
  * Login, logout, refresh, parola sıfırlama, davet oluşturma/kabul,
  * parola değişimi. Brute-force koruması, audit event yayını, PII
@@ -17,7 +16,6 @@
  * - Davet token'ı 7 gün geçerli, tek kullanımlık.
  * - Başarısız login VET-AUTH-0002 (genel mesaj) döner; detaylar
  *   audit/security log'a yazılır.
- *
  * @security
  * - Login response mesajı her zaman genel ("kimlik bilgileri
  *   hatalı"); hesap var/yok bilgisi sızdırılmaz.
@@ -25,13 +23,10 @@
  *   koruması).
  * - Token DB'de SHA-256 hash; plain sadece response'da.
  * - Tüm auth event'leri audit_events tablosuna append-only yazılır.
- *
  * @since GOAL-011 (FAZ-1) kimlik doğrulama
  */
 
 import { Injectable, Logger } from "@nestjs/common";
-import type { User } from "@prisma/client";
-
 import {
   ACCOUNT_LOCK_SECONDS,
   INVITATION_TTL_SECONDS,
@@ -51,17 +46,20 @@ import {
   type SwitchTenantRequest,
 } from "@vetniva/contracts";
 
-import type { ActorContext, ActorRole } from "../actor/actor-context.service.js";
-import { AuditService } from "../audit/audit.service.js";
-import { DomainError } from "../errors/domain-error.js";
-import { PiiMasker } from "../logging/pii-masker.js";
-import { PrismaService } from "../../prisma/prisma.service.js";
-import { TenantRepository } from "../../modules/tenant/tenant.repository.js";
-
+import { AuthRepository } from "./auth.repository.js";
 import { BruteForceGuard } from "./brute-force.js";
 import { hashPassword, verifyPassword } from "./password.js";
 import { generateToken, hashToken } from "./token.js";
-import { AuthRepository } from "./auth.repository.js";
+import { TenantRepository } from "../../modules/tenant/tenant.repository.js";
+import { AuditService } from "../audit/audit.service.js";
+import { DomainError } from "../errors/domain-error.js";
+import { PiiMasker } from "../logging/pii-masker.js";
+
+import type {
+  ActorContext,
+  ActorRole,
+} from "../actor/actor-context.service.js";
+import type { User } from "@prisma/client";
 
 /** Login denemesinde toplanan metadata. */
 interface AttemptContext {
@@ -77,7 +75,6 @@ export class AuthService {
 
   public constructor(
     private readonly repo: AuthRepository,
-    private readonly prisma: PrismaService,
     private readonly tenants: TenantRepository,
     private readonly audit: AuditService,
     private readonly bruteForce: BruteForceGuard,
@@ -120,7 +117,7 @@ export class AuthService {
         userAgentHash: ctx.userAgentHash,
         severity: "warning",
       });
-      throw failGeneric();
+      return failGeneric();
     }
 
     // Bu noktadan sonra user non-null. TypeScript narrowing için
@@ -140,7 +137,7 @@ export class AuthService {
         userAgentHash: ctx.userAgentHash,
         severity: "warning",
       });
-      throw failGeneric();
+      return failGeneric();
     }
 
     // Kilitli mi?
@@ -157,7 +154,8 @@ export class AuthService {
       });
       throw new DomainError({
         errorCode: "VET-AUTH-0003",
-        message: "Hesap geçici olarak kilitli; lütfen daha sonra tekrar deneyin",
+        message:
+          "Hesap geçici olarak kilitli; lütfen daha sonra tekrar deneyin",
         httpStatus: 423,
         severity: "warning",
         i18nKey: "error.VET-AUTH-0003",
@@ -196,15 +194,14 @@ export class AuthService {
       if (shouldLock) {
         throw new DomainError({
           errorCode: "VET-AUTH-0003",
-          message:
-            "Çok sayıda hatalı deneme; hesap geçici olarak kilitlendi",
+          message: "Çok sayıda hatalı deneme; hesap geçici olarak kilitlendi",
           httpStatus: 423,
           severity: "error",
           i18nKey: "error.VET-AUTH-0003",
           details: { remainingSeconds: ACCOUNT_LOCK_SECONDS },
         });
       }
-      throw failGeneric();
+      return failGeneric();
     }
 
     // Başarılı: sayacı sıfırla + session oluştur.
@@ -241,11 +238,7 @@ export class AuthService {
     // Tenant'ın varsayılan branch'ını çözümle (pilot tek şube).
     let defaultBranchId: string | null = null;
     if (tenantCtx) {
-      const def = await this.prisma.branch.findFirst({
-        where: { tenantId: tenantCtx.tenantId, status: "active" },
-        orderBy: { createdAt: "asc" },
-        select: { id: true },
-      });
+      const def = await this.repo.findDefaultActiveBranch(tenantCtx.tenantId);
       defaultBranchId = def?.id ?? null;
     }
 
@@ -303,7 +296,7 @@ export class AuthService {
         `Kullanıcının tüm session'ları iptal: user=${userId} count=${count}`,
       );
     } else {
-      await this.repo.revokeSession(sessionId, "logout");
+      await this.repo.revokeSession(sessionId, userId, "logout");
     }
     await this.auditAuthEvent("audit:auth.logout", {
       userId,
@@ -328,7 +321,12 @@ export class AuthService {
     ctx: AttemptContext,
   ): Promise<{ sessionToken: string; expiresAt: string }> {
     const newSession = await this.createSessionForUserById(userId, ctx);
-    await this.repo.revokeSession(currentSessionId, "rotated", newSession.id);
+    await this.repo.revokeSession(
+      currentSessionId,
+      userId,
+      "rotated",
+      newSession.id,
+    );
 
     await this.auditAuthEvent("audit:auth.session.rotate", {
       userId,
@@ -419,7 +417,7 @@ export class AuthService {
     const userId = user.id;
     const passwordHash = await hashPassword(input.newPassword);
     await this.repo.updatePassword(userId, passwordHash);
-    await this.repo.markPasswordResetUsed(reset.id);
+    await this.repo.markPasswordResetUsed(reset.id, userId);
     const revoked = await this.repo.revokeAllSessions(userId, "password_reset");
 
     await this.auditAuthEvent("audit:auth.password.reset_success", {
@@ -497,9 +495,10 @@ export class AuthService {
     expiresAt: string;
     invitationUrl: string;
   }> {
-    const existing = await this.prisma.userInvitation.findFirst({
-      where: { tenantId, email: input.email, status: "pending" },
-    });
+    const existing = await this.repo.findPendingInvitation(
+      tenantId,
+      input.email,
+    );
     if (existing) {
       throw new DomainError({
         errorCode: "VET-AUTH-0005",
@@ -558,7 +557,9 @@ export class AuthService {
       });
     }
     if (invitation.expiresAt < new Date()) {
-      await this.repo.updateInvitation(invitation.id, { status: "expired" });
+      await this.repo.updateInvitation(invitation.tenantId, invitation.id, {
+        status: "expired",
+      });
       throw new DomainError({
         errorCode: "VET-AUTH-0005",
         message: "Davet geçersiz veya süresi dolmuş",
@@ -583,27 +584,13 @@ export class AuthService {
     }
 
     const userId = user.id;
-    await this.prisma.userTenantMembership.upsert({
-      where: {
-        userId_tenantId: {
-          userId,
-          tenantId: invitation.tenantId,
-        },
-      },
-      create: {
-        userId,
-        tenantId: invitation.tenantId,
-        role: invitation.role,
-      },
-      update: {
-        role: invitation.role,
-        status: "active",
-        revokedAt: null,
-        assignedAt: new Date(),
-      },
+    await this.repo.upsertMembershipForTenant({
+      userId,
+      tenantId: invitation.tenantId,
+      role: invitation.role,
     });
 
-    await this.repo.updateInvitation(invitation.id, {
+    await this.repo.updateInvitation(invitation.tenantId, invitation.id, {
       status: "accepted",
       acceptedAt: new Date(),
     });
@@ -659,9 +646,7 @@ export class AuthService {
         i18nKey: "error.VET-AUTH-0001",
       });
     }
-    const session = await this.prisma.userSession.findUnique({
-      where: { id: sessionId },
-    });
+    const session = await this.repo.findSessionByIdForUser(sessionId, userId);
     if (!session) {
       throw new DomainError({
         errorCode: "VET-AUTH-0001",
@@ -671,29 +656,21 @@ export class AuthService {
         i18nKey: "error.VET-AUTH-0001",
       });
     }
-    const memberships = await this.prisma.userTenantMembership.findMany({
-      where: { userId, status: "active" },
-      include: { tenant: { select: { id: true, slug: true, name: true } } },
-    });
+    const memberships = await this.repo.listActiveMembershipsWithTenant(userId);
     // İlk aktif üyelik varsa tenant + role + branch çözümle.
     const first = memberships[0];
     let tenant: MeResponse["tenant"] = null;
     let role: MeResponse["role"] = null;
     if (first) {
-      const t = await this.prisma.tenant.findUnique({
-        where: { id: first.tenantId },
-      });
-      if (t) {
-        tenant = {
-          id: t.id,
-          slug: t.slug,
-          name: t.name,
-          country: t.country,
-          defaultLocale: t.defaultLocale,
-          timezone: t.timezone,
-        };
-        role = actorRoleSchema.parse(first.role);
-      }
+      tenant = {
+        id: first.tenant.id,
+        slug: first.tenant.slug,
+        name: first.tenant.name,
+        country: first.tenant.country,
+        defaultLocale: first.tenant.defaultLocale,
+        timezone: first.tenant.timezone,
+      };
+      role = actorRoleSchema.parse(first.role);
     } else if (user.isSuperadmin) {
       role = "SUPERADMIN";
     }
@@ -733,6 +710,11 @@ export class AuthService {
    *
    * SUPERADMIN kullanıcılar için herhangi bir tenant'ın branch'ına
    * geçiş kabul edilir (cross-tenant görünüm).
+   * @param userId
+   * @param sessionId
+   * @param branchId
+   * @param isSuperadmin
+   * @param ctx
    */
   public async setActiveBranch(
     userId: string,
@@ -741,9 +723,11 @@ export class AuthService {
     isSuperadmin: boolean,
     ctx: AttemptContext,
   ): Promise<{ branchId: string }> {
-    const branch = await this.prisma.branch.findUnique({
-      where: { id: branchId },
-    });
+    const branch = await this.repo.findActiveBranchForUser(
+      userId,
+      branchId,
+      isSuperadmin,
+    );
     if (!branch || branch.archivedAt) {
       throw new DomainError({
         errorCode: "VET-BRANCH-0001",
@@ -753,22 +737,7 @@ export class AuthService {
         i18nKey: "error.VET-BRANCH-0001",
       });
     }
-    if (!isSuperadmin) {
-      // Normal kullanıcı: kendi tenant'ının branch'ı mı?
-      const membership = await this.prisma.userTenantMembership.findFirst({
-        where: { userId, status: "active", tenantId: branch.tenantId },
-      });
-      if (!membership) {
-        throw new DomainError({
-          errorCode: "VET-AUTHZ-0004",
-          message: "Bu şubeye erişim yetkiniz yok",
-          httpStatus: 403,
-          severity: "warning",
-          i18nKey: "error.VET-AUTHZ-0004",
-        });
-      }
-    }
-    await this.repo.setSessionActiveBranch(sessionId, branchId);
+    await this.repo.setSessionActiveBranch(sessionId, userId, branchId);
     await this.auditAuthEvent("audit:auth.branch.switch", {
       userId,
       tenantId: branch.tenantId,
@@ -800,19 +769,23 @@ export class AuthService {
     // Idle timeout kontrolü.
     const idleMs = Date.now() - session.lastUsedAt.getTime();
     if (idleMs > SESSION_IDLE_TIMEOUT_SECONDS * 1000) {
-      await this.repo.revokeSession(session.id, "idle_timeout");
+      await this.repo.revokeSession(session.id, session.userId, "idle_timeout");
       return null;
     }
 
     // Hesap hâlâ aktif mi? (kullanıcı suspend edilmiş olabilir).
     const user = await this.repo.findUserById(session.userId);
     if (!user || user.status !== "active") {
-      await this.repo.revokeSession(session.id, "user_inactive");
+      await this.repo.revokeSession(
+        session.id,
+        session.userId,
+        "user_inactive",
+      );
       return null;
     }
 
     // lastUsedAt güncelle (fire-and-forget).
-    void this.repo.touchSession(session.id, new Date());
+    void this.repo.touchSession(session.id, session.userId, new Date());
 
     return {
       userId: session.userId,
@@ -853,9 +826,7 @@ export class AuthService {
     userId: string,
     ctx: AttemptContext,
   ): Promise<void> {
-    const target = await this.prisma.userSession.findUnique({
-      where: { id: sessionId },
-    });
+    const target = await this.repo.findSessionByIdForUser(sessionId, userId);
     if (!target || target.userId !== userId) {
       throw new DomainError({
         errorCode: "VET-AUTH-0001",
@@ -865,7 +836,7 @@ export class AuthService {
         i18nKey: "error.VET-AUTH-0001",
       });
     }
-    await this.repo.revokeSession(sessionId, "user_revoked");
+    await this.repo.revokeSession(sessionId, userId, "user_revoked");
     await this.auditAuthEvent("audit:auth.session.revoke", {
       userId,
       tenantId: null,
@@ -885,14 +856,10 @@ export class AuthService {
     userId: string,
     input: SwitchTenantRequest,
   ): Promise<{ tenantId: string; role: string }> {
-    const membership = await this.prisma.userTenantMembership.findFirst({
-      where: {
-        userId,
-        status: "active",
-        tenant: { slug: input.tenantSlug },
-      },
-      include: { tenant: true },
-    });
+    const membership = await this.repo.findActiveMembershipWithTenant(
+      userId,
+      input.tenantSlug,
+    );
     if (!membership) {
       throw new DomainError({
         errorCode: "VET-AUTH-0001",
@@ -917,10 +884,9 @@ export class AuthService {
    *
    * `isSuperadmin` bayrağı user tablosundan okunur; tenant üyeliği
    * gerektirmez. GOAL-012 ile birlikte.
+   * @param userId
    */
-  public async resolveActorContext(
-    userId: string,
-  ): Promise<{
+  public async resolveActorContext(userId: string): Promise<{
     role: ActorRole;
     tenantId: string | null;
     isSuperadmin: boolean;
@@ -932,10 +898,7 @@ export class AuthService {
     if (user.isSuperadmin) {
       return { role: "SUPERADMIN", tenantId: null, isSuperadmin: true };
     }
-    const first = await this.prisma.userTenantMembership.findFirst({
-      where: { userId, status: "active" },
-      orderBy: { assignedAt: "asc" },
-    });
+    const first = await this.repo.findActiveMembershipWithTenant(userId);
     if (!first) {
       return { role: "STAFF", tenantId: null, isSuperadmin: false };
     }
@@ -956,6 +919,9 @@ export class AuthService {
    * GOAL-012: `activeBranchId` opsiyonel olarak set edilir; pilot
    * tenant tek şube ile başladığı için login sırasında default
    * branch atanır.
+   * @param userId
+   * @param ctx
+   * @param activeBranchId
    */
   private async createSessionForUserById(
     userId: string,
@@ -994,36 +960,17 @@ export class AuthService {
     country: string;
     role: ActorRole;
   } | null> {
-    if (tenantSlug) {
-      const membership = await this.prisma.userTenantMembership.findFirst({
-        where: {
-          userId,
-          status: "active",
-          tenant: { slug: tenantSlug },
-        },
-        include: { tenant: true },
-      });
-      if (!membership) return null;
-      return {
-        tenantId: membership.tenantId,
-        tenantSlug: membership.tenant.slug,
-        tenantName: membership.tenant.name,
-        country: membership.tenant.country,
-        role: membership.role as ActorRole,
-      };
-    }
-    const first = await this.prisma.userTenantMembership.findFirst({
-      where: { userId, status: "active" },
-      include: { tenant: true },
-      orderBy: { assignedAt: "asc" },
-    });
-    if (!first) return null;
+    const membership = await this.repo.findActiveMembershipWithTenant(
+      userId,
+      tenantSlug,
+    );
+    if (!membership) return null;
     return {
-      tenantId: first.tenantId,
-      tenantSlug: first.tenant.slug,
-      tenantName: first.tenant.name,
-      country: first.tenant.country,
-      role: first.role as ActorRole,
+      tenantId: membership.tenantId,
+      tenantSlug: membership.tenant.slug,
+      tenantName: membership.tenant.name,
+      country: membership.tenant.country,
+      role: membership.role as ActorRole,
     };
   }
 
@@ -1035,15 +982,11 @@ export class AuthService {
       [k: string]: unknown;
     },
   ): Promise<void> {
-    const correlationId =
-      (details["correlationId"] as string) ?? "req-unknown";
+    const correlationId = (details["correlationId"] as string) ?? "req-unknown";
     const ipAddress = (details["ipAddress"] as string | null) ?? null;
     const userAgentHash = (details["userAgentHash"] as string | null) ?? null;
     const severity = ((details["severity"] as string) ?? "info") as
-      | "info"
-      | "warning"
-      | "error"
-      | "critical";
+      "info" | "warning" | "error" | "critical";
 
     const metadata: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(details)) {
@@ -1051,7 +994,12 @@ export class AuthService {
         ["correlationId", "ipAddress", "userAgentHash", "severity"].includes(k)
       )
         continue;
-      metadata[k] = v;
+      Object.defineProperty(metadata, k, {
+        value: v,
+        enumerable: true,
+        configurable: true,
+        writable: true,
+      });
     }
 
     await this.audit.record({
@@ -1086,10 +1034,13 @@ export class AuthService {
     payload: Record<string, unknown> | null | undefined,
   ): Record<string, unknown> | null {
     if (!payload) return null;
-    return this.masker.mask(payload) as Record<string, unknown>;
+    return this.masker.mask(payload);
   }
 
-  /** Sistem için actor context factory. */
+  /**
+   * Sistem için actor context factory.
+   * @param correlationId
+   */
   public systemActor(correlationId: string): ActorContext {
     return {
       actorId: null,

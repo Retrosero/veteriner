@@ -13,7 +13,6 @@
  */
 
 process.env["NODE_ENV"] = "test";
-process.env["REDIS_URL"] =
-  process.env["REDIS_URL"] ?? "redis://localhost:6379";
+process.env["REDIS_URL"] = process.env["REDIS_URL"] ?? "redis://localhost:6379";
 process.env["LOG_LEVEL"] = process.env["LOG_LEVEL"] ?? "silent";
 process.env["APP_VERSION"] = process.env["APP_VERSION"] ?? "0.0.0-test";

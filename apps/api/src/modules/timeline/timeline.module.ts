@@ -14,19 +14,18 @@
 
 import { Module } from "@nestjs/common";
 
-import { AlertsModule } from "../alerts/alerts.module.js";
-import { FilesModule } from "../files/files.module.js";
-import { OwnershipHistoryModule } from "../ownership-history/ownership-history.module.js";
-import { PatientsModule } from "../patients/patients.module.js";
-
+import { TimelineController } from "./timeline.controller.js";
+import { TimelineService } from "./timeline.service.js";
 import {
   AlertTimelineSource,
   FileTimelineSource,
   OwnershipTimelineSource,
   TIMELINE_EVENT_SOURCES,
 } from "./timeline.sources.js";
-import { TimelineController } from "./timeline.controller.js";
-import { TimelineService } from "./timeline.service.js";
+import { AlertsModule } from "../alerts/alerts.module.js";
+import { FilesModule } from "../files/files.module.js";
+import { OwnershipHistoryModule } from "../ownership-history/ownership-history.module.js";
+import { PatientsModule } from "../patients/patients.module.js";
 
 @Module({
   imports: [PatientsModule, AlertsModule, OwnershipHistoryModule, FilesModule],

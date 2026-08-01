@@ -109,10 +109,7 @@ export class ProductsRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): ProductRecord | null {
+  public findById(tenantId: string, id: string): ProductRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -123,10 +120,7 @@ export class ProductsRepository {
    * benzersizdir. Arşivlenmiş kayıtlar da döner (caller
    * kontrol eder).
    */
-  public findBySku(
-    tenantId: string,
-    sku: string,
-  ): ProductRecord | null {
+  public findBySku(tenantId: string, sku: string): ProductRecord | null {
     const id = this.bySku.get(this.skuKey(tenantId, sku));
     if (!id) return null;
     const rec = this.byId.get(id);
@@ -167,18 +161,13 @@ export class ProductsRepository {
         this.bySku.delete(this.skuKey(rec.tenantId, rec.sku));
       }
       if (patch.sku !== null) {
-        this.bySku.set(
-          this.skuKey(rec.tenantId, patch.sku),
-          rec.id,
-        );
+        this.bySku.set(this.skuKey(rec.tenantId, patch.sku), rec.id);
       }
     }
     // Barcode değişiyorsa eski index'i sil.
     if (patch.barcode !== undefined && patch.barcode !== rec.barcode) {
       if (rec.barcode !== null) {
-        this.byBarcode.delete(
-          this.barcodeKey(rec.tenantId, rec.barcode),
-        );
+        this.byBarcode.delete(this.barcodeKey(rec.tenantId, rec.barcode));
       }
       if (patch.barcode !== null) {
         this.byBarcode.set(

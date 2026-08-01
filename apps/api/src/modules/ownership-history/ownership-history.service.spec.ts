@@ -12,16 +12,16 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { OwnershipHistoryRepository } from "./ownership-history.repository.js";
+import { OwnershipHistoryService } from "./ownership-history.service.js";
+import { PatientsRepository } from "../patients/patients.repository.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
 import type { Owner } from "../../common/owners/owner.types.js";
 import type { Ownership } from "../../common/ownership/ownership.types.js";
 import type { OwnersService } from "../owners/owners.service.js";
 import type { PatientRecord } from "../patients/patients.repository.js";
-import { PatientsRepository } from "../patients/patients.repository.js";
-
-import { OwnershipHistoryRepository } from "./ownership-history.repository.js";
-import { OwnershipHistoryService } from "./ownership-history.service.js";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -135,12 +135,7 @@ describe("OwnershipHistoryService", () => {
   describe("createInitial", () => {
     it("ilk sahiplik kaydını açar (reason=initial, endDate=null)", async () => {
       const p = seedPatient(patients, TENANT_A, "pat-1", OWNER_A);
-      const own = await service.createInitial(
-        TENANT_A,
-        p.id,
-        OWNER_A,
-        STAFF_A,
-      );
+      const own = await service.createInitial(TENANT_A, p.id, OWNER_A, STAFF_A);
       expect(own.reason).toBe("initial");
       expect(own.endDate).toBeNull();
       expect(own.startDate).toBe(p.createdAt);
@@ -337,6 +332,9 @@ describe("OwnershipHistoryService", () => {
       );
       expect(audit.record).toHaveBeenCalledWith(
         expect.objectContaining({
+          // Vitest asymmetric matcher API'si `any` dondurur; burada sadece
+          // portal yenileme sinyalinin audit metadata'sinda oldugu sinanir.
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           metadata: expect.objectContaining({
             portal: "refresh_required",
           }),
@@ -392,11 +390,7 @@ describe("OwnershipHistoryService", () => {
         STAFF_A,
       );
 
-      const active = await service.findActiveByPatient(
-        TENANT_A,
-        p.id,
-        STAFF_A,
-      );
+      const active = await service.findActiveByPatient(TENANT_A, p.id, STAFF_A);
       expect(active?.ownerId).toBe(OWNER_A2);
       expect(active?.reason).toBe("gift");
       expect(active?.endDate).toBeNull();
@@ -405,11 +399,7 @@ describe("OwnershipHistoryService", () => {
     it("farklı tenant aynı hastaId → null", async () => {
       const p = seedPatient(patients, TENANT_A, "pat-22", OWNER_A);
       await service.createInitial(TENANT_A, p.id, OWNER_A, STAFF_A);
-      const cross = await service.findActiveByPatient(
-        TENANT_B,
-        p.id,
-        STAFF_B,
-      );
+      const cross = await service.findActiveByPatient(TENANT_B, p.id, STAFF_B);
       expect(cross).toBeNull();
     });
   });
@@ -430,7 +420,7 @@ describe("OwnershipHistoryService", () => {
         await service.transfer(
           TENANT_A,
           p.id,
-          { newOwnerId: next, reason: reasons[i]! },
+          { newOwnerId: next, reason: reasons.at(i)! },
           STAFF_A,
         );
         prev = next;
@@ -441,9 +431,7 @@ describe("OwnershipHistoryService", () => {
         { patientId: p.id, limit: 100, offset: 0 },
         STAFF_A,
       );
-      const activeCount = list.items.filter(
-        (o) => o.endDate === null,
-      ).length;
+      const activeCount = list.items.filter((o) => o.endDate === null).length;
       expect(activeCount).toBe(1);
       expect(list.items[0]?.ownerId).toBe(prev);
     });

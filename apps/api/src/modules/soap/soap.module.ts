@@ -12,11 +12,13 @@
 
 import { Module } from "@nestjs/common";
 
-import { ExaminationsModule } from "../examinations/examinations.module.js";
-
 import { SoapController } from "./soap.controller.js";
-import { SoapAmendsRepository, SoapNotesRepository } from "./soap.repository.js";
+import {
+  SoapAmendsRepository,
+  SoapNotesRepository,
+} from "./soap.repository.js";
 import { SoapService } from "./soap.service.js";
+import { ExaminationsModule } from "../examinations/examinations.module.js";
 
 @Module({
   imports: [ExaminationsModule],

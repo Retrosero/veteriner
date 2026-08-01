@@ -1,7 +1,6 @@
 /**
  * @file Vaccine card (aşı kartı) domain tipleri.
  * @module apps/api/common/vaccines/vaccine-card.types
- *
  * @description GOAL-052 aşı kartı domain modeli. Bir hastanın tüm
  * aşı takvimini derleyen pure fonksiyonlar içerir. Bu katman
  * service'e veri sağlar; DB/IO burada YOK (pure compute).
@@ -22,18 +21,20 @@
  * In-memory; production'a geçişte Prisma `VaccineCard` view
  * veya materialized view ile değiştirilecek (API sözleşmesi
  * sabit).
- *
  * @security Tenant bilgisi burada YOK; service katmanı
  *   actor.tenantId'den alır ve tüm sorguları tenant-scoped
  *   yapar.
- *
  * @since GOAL-052 (FAZ-5) aşı kartı core
  */
+
+import { VACCINE_CARD_UPCOMING_WINDOW_DAYS } from "@vetniva/contracts";
+
+import { toVaccineApplication } from "./vaccine-application.types.js";
+import { toVaccineProtocol } from "./vaccine.types.js";
 
 import type {
   Patient,
   VaccineApplication,
-  VaccineCard,
   VaccineCardEntry,
   VaccineCardEntryStatus,
   VaccineCardOptions,
@@ -41,12 +42,10 @@ import type {
   VaccineProtocolStep,
 } from "@vetniva/contracts";
 
-import { VACCINE_CARD_UPCOMING_WINDOW_DAYS } from "@vetniva/contracts";
-
-import { toVaccineApplication } from "./vaccine-application.types.js";
-import { toVaccineProtocol } from "./vaccine.types.js";
-
-/** Bugünün UTC ISO datetime'ı (gün başlangıcı, 00:00:00Z). */
+/**
+ * Bugünün UTC ISO datetime'ı (gün başlangıcı, 00:00:00Z).
+ * @param referenceIso
+ */
 export function todayUtcIso(referenceIso?: string): string {
   const ref = referenceIso ? new Date(referenceIso) : new Date();
   if (Number.isNaN(ref.getTime())) {
@@ -58,7 +57,10 @@ export function todayUtcIso(referenceIso?: string): string {
   return `${y}-${m}-${d}T00:00:00.000Z`;
 }
 
-/** ISO datetime → UTC `YYYY-MM-DD` date string. */
+/**
+ * ISO datetime → UTC `YYYY-MM-DD` date string.
+ * @param isoDatetime
+ */
 export function toUtcDateString(isoDatetime: string): string {
   const d = new Date(isoDatetime);
   if (Number.isNaN(d.getTime())) return isoDatetime.slice(0, 10);
@@ -68,14 +70,22 @@ export function toUtcDateString(isoDatetime: string): string {
   return `${y}-${m}-${day}`;
 }
 
-/** İki ISO date arasındaki tam gün farkı (b - a). */
+/**
+ * İki ISO date arasındaki tam gün farkı (b - a).
+ * @param aIso
+ * @param bIso
+ */
 export function diffDaysUtc(aIso: string, bIso: string): number {
   const a = new Date(`${toUtcDateString(aIso)}T00:00:00.000Z`).getTime();
   const b = new Date(`${toUtcDateString(bIso)}T00:00:00.000Z`).getTime();
   return Math.round((b - a) / 86_400_000);
 }
 
-/** ISO date + gün sayısı → yeni ISO date. Negatif gün kabul edilir. */
+/**
+ * ISO date + gün sayısı → yeni ISO date. Negatif gün kabul edilir.
+ * @param isoDate
+ * @param days
+ */
 export function addDaysUtc(isoDate: string, days: number): string {
   const base = new Date(`${toUtcDateString(isoDate)}T00:00:00.000Z`);
   base.setUTCDate(base.getUTCDate() + days);
@@ -84,8 +94,11 @@ export function addDaysUtc(isoDate: string, days: number): string {
 
 /**
  * Patient'ın doğum tarihi + step.ageWeeks'ten beklenen uygulama
- * tarihini (ISO date) üretir. birthDate null ise bugüne
+ * tarihini (ISO date) üretir. BirthDate null ise bugüne
  * dayandırılır (en kötü senaryo: klinik yaş bilmiyor).
+ * @param birthDate
+ * @param step
+ * @param referenceIso
  */
 export function expectedStepDate(
   birthDate: string | null,
@@ -96,7 +109,15 @@ export function expectedStepDate(
   return addDaysUtc(base, step.ageWeeks * 7);
 }
 
-/** Status çözümle. */
+/**
+ * Status çözümle.
+ * @param args
+ * @param args.totalSteps
+ * @param args.completedSteps
+ * @param args.nextDueDate
+ * @param args.referenceDate
+ * @param args.upcomingWindowDays
+ */
 export function resolveEntryStatus(args: {
   totalSteps: number;
   completedSteps: number;
@@ -104,8 +125,13 @@ export function resolveEntryStatus(args: {
   referenceDate: string;
   upcomingWindowDays: number;
 }): VaccineCardEntryStatus {
-  const { totalSteps, completedSteps, nextDueDate, referenceDate, upcomingWindowDays } =
-    args;
+  const {
+    totalSteps,
+    completedSteps,
+    nextDueDate,
+    referenceDate,
+    upcomingWindowDays,
+  } = args;
 
   if (completedSteps === 0) return "not_started";
   if (nextDueDate === null) {
@@ -136,6 +162,11 @@ export function resolveEntryStatus(args: {
  *   `nextDueDate`'i döner; yoksa `null` (booster yok).
  * - Eğer steps eksik: sonraki eksik step'in `ageWeeks`'inden
  *   tahmini tarih (doğum tarihine göre).
+ * @param args
+ * @param args.steps
+ * @param args.applications
+ * @param args.birthDate
+ * @param args.referenceDate
  */
 export function resolveEntryNextDueDate(args: {
   steps: VaccineProtocolStep[];
@@ -181,6 +212,12 @@ export function resolveEntryNextDueDate(args: {
  *
  * Not: tüm `applications` zaten tenant-scoped ve patient'a
  * ait olduğu varsayılır; service katmanı filtreler.
+ * @param args
+ * @param args.protocol
+ * @param args.applications
+ * @param args.patientBirthDate
+ * @param args.options
+ * @param args.referenceDate
  */
 export function buildCardEntry(args: {
   protocol: VaccineProtocol;
@@ -244,7 +281,24 @@ export function defaultCardOptions(): VaccineCardOptions {
   return { upcomingWindowDays: VACCINE_CARD_UPCOMING_WINDOW_DAYS };
 }
 
-/** VaccineProtocol record → public VaccineProtocol yardımcısı. */
+/**
+ * VaccineProtocol record → public VaccineProtocol yardımcısı.
+ * @param rec
+ * @param rec.id
+ * @param rec.tenantId
+ * @param rec.name
+ * @param rec.species
+ * @param rec.category
+ * @param rec.manufacturer
+ * @param rec.defaultDose
+ * @param rec.steps
+ * @param rec.totalDurationMonths
+ * @param rec.isCore
+ * @param rec.createdAt
+ * @param rec.createdBy
+ * @param rec.updatedAt
+ * @param rec.archivedAt
+ */
 export function publicProtocol(rec: {
   id: string;
   tenantId: string;
@@ -264,8 +318,13 @@ export function publicProtocol(rec: {
   return toVaccineProtocol(rec);
 }
 
-/** VaccineApplication record → public VaccineApplication yardımcısı. */
-export function publicApplication(rec: Parameters<typeof toVaccineApplication>[0]): VaccineApplication {
+/**
+ * VaccineApplication record → public VaccineApplication yardımcısı.
+ * @param rec
+ */
+export function publicApplication(
+  rec: Parameters<typeof toVaccineApplication>[0],
+): VaccineApplication {
   return toVaccineApplication(rec);
 }
 

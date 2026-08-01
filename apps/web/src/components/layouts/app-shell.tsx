@@ -1,7 +1,6 @@
 /**
  * @file Uygulama kabuğu (app shell).
  * @module @vetniva/web/components/layouts/app-shell
- *
  * @description Sidebar + TopBar + içerik alanını bir araya getiren
  * layout primitive. Tüm kimliği doğrulanmış sayfalar bu kabuğu
  * kullanır. Login gibi kimlik doğrulama gerektirmeyen sayfalar
@@ -10,8 +9,7 @@
  * Erişilebilirlik:
  * - Skip-link: "İçeriğe geç" klavye kullanıcıları için
  * - `<main>` semantiği, `aria-label="Ana içerik"`
- * - Sidebar mobil drawer olarak klavye dostu (Escape kapatır)
- *
+ * - Sidebar mobil drawer olarak klavye dostu (Escape kapatır).
  * @security Tenant context bu katmanda gösterilmez; her sayfa
  * kendi tenant guard'ından sorumludur.
  */
@@ -22,6 +20,7 @@ import { useState, type ReactNode } from "react";
 
 import { Sidebar } from "./sidebar";
 import { TopBar } from "./top-bar";
+
 import type { Locale } from "@/lib/labels";
 
 export type AppShellProps = {
@@ -35,6 +34,15 @@ export type AppShellProps = {
   children: ReactNode;
 };
 
+/**
+ *
+ * @param root0
+ * @param root0.locale
+ * @param root0.pageTitle
+ * @param root0.pageDescription
+ * @param root0.user
+ * @param root0.children
+ */
 export function AppShell({
   locale,
   pageTitle,

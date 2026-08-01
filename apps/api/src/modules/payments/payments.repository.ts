@@ -12,9 +12,7 @@
 
 import { Injectable } from "@nestjs/common";
 
-import type {
-  PaymentRecord,
-} from "../../common/payments/payment.types.js";
+import type { PaymentRecord } from "../../common/payments/payment.types.js";
 import type {
   PaymentMethod,
   PaymentSourceType,
@@ -72,10 +70,7 @@ export class PaymentsRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): PaymentRecord | null {
+  public findById(tenantId: string, id: string): PaymentRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -148,18 +143,11 @@ export class PaymentsRepository {
     for (const rec of this.byId.values()) {
       if (rec.tenantId !== tenantId) continue;
       if (filters.status && rec.status !== filters.status) continue;
-      if (filters.sourceType && rec.sourceType !== filters.sourceType)
-        continue;
-      if (filters.sourceId && rec.sourceId !== filters.sourceId)
-        continue;
+      if (filters.sourceType && rec.sourceType !== filters.sourceType) continue;
+      if (filters.sourceId && rec.sourceId !== filters.sourceId) continue;
       if (filters.method && rec.method !== filters.method) continue;
       if (needle) {
-        const hay = [
-          rec.id,
-          rec.sourceId,
-          rec.reference ?? "",
-          rec.notes ?? "",
-        ]
+        const hay = [rec.id, rec.sourceId, rec.reference ?? "", rec.notes ?? ""]
           .join(" ")
           .toLowerCase();
         if (!hay.includes(needle)) continue;
@@ -183,10 +171,7 @@ export class PaymentsRepository {
     this.counters.clear();
   }
 
-  private idempotencyKeyMapKey(
-    tenantId: string,
-    key: string,
-  ): string {
+  private idempotencyKeyMapKey(tenantId: string, key: string): string {
     return `${tenantId}|${key}`;
   }
 }

@@ -1,9 +1,11 @@
 # Yedekleme ve Restore (GOAL-124)
 
 ## Faz
+
 FAZ-12 (Pilot, güvenlik, üretime hazırlık)
 
 ## Amaç
+
 PostgreSQL ve object storage için otomatik yedekleme ve
 restore prosedürü. Gerçek restore testi çalıştırılır.
 RPO/RTO hedefleri dokümante edilir.
@@ -11,6 +13,7 @@ RPO/RTO hedefleri dokümante edilir.
 ## Yedekleme Stratejisi
 
 ### PostgreSQL
+
 - **Yöntem:** `pg_dump` + WAL streaming (PITR).
 - **Sıklık:**
   - Full backup: günlük 03:00 UTC.
@@ -28,6 +31,7 @@ RPO/RTO hedefleri dokümante edilir.
   - Aylık toplam: ~25 GB.
 
 ### Object Storage (dosyalar)
+
 - **Yöntem:** S3 cross-region replication + Azure GRS.
 - **Sıklık:** sürekli (realtime).
 - **Retention:** tenant dosyaları silinmez (KVKK
@@ -45,15 +49,16 @@ RPO/RTO hedefleri dokümante edilir.
 
 ## RPO / RTO Hedefleri
 
-| Tier | RPO (veri kaybı) | RTO (kurtarma süresi) | Strateji |
-|------|------------------|----------------------|----------|
-| **Pilot (ilk 10 tenant)** | 5 dakika | 1 saat | Günlük + WAL |
-| **Production (100 tenant)** | 1 dakika | 30 dakika | Günlük + WAL streaming + standby |
-| **Critical (KVKK/UK GDPR)** | 0 (sıfır kayıp) | 15 dakika | Sync replica + multi-region |
+| Tier                        | RPO (veri kaybı) | RTO (kurtarma süresi) | Strateji                         |
+| --------------------------- | ---------------- | --------------------- | -------------------------------- |
+| **Pilot (ilk 10 tenant)**   | 5 dakika         | 1 saat                | Günlük + WAL                     |
+| **Production (100 tenant)** | 1 dakika         | 30 dakika             | Günlük + WAL streaming + standby |
+| **Critical (KVKK/UK GDPR)** | 0 (sıfır kayıp)  | 15 dakika             | Sync replica + multi-region      |
 
 ## Restore Prosedürü
 
 ### Senaryo 1: Veri bozulması (yanlış update)
+
 1. **Etki analizi:** Hangi saat aralığında bozulma
    olduğunu tespit et.
 2. **PITR seç:** Bozulma öncesi son temiz WAL
@@ -83,10 +88,12 @@ RPO/RTO hedefleri dokümante edilir.
 5. **Post-mortem:** Olay raporu + iyileştirme aksiyonları.
 
 ### Senaryo 2: Tenant yanlışlıkla tenant'ı sildi
+
 - Tenant hard delete YOK (soft delete + archive).
 - Restore: tenant_id ile PITR.
 
 ### Senaryo 3: Disaster (bölge kaybı)
+
 - Multi-region standby devreye alınır.
 - DNS failover (< 5 dakika).
 
@@ -122,6 +129,7 @@ echo "=== Restore test tamamlandı ==="
 - **WAL lag:** replica WAL lag > 60 saniye → P3 alert.
 
 ## Yapılmayanlar / Bilinçli Atlamalar
+
 - **Multi-region active-active** → Faz 13+ (100+ tenant
   için).
 - **S3 Glacier Deep Archive** → Faz 12+ (7 yıl tıbbi
@@ -132,4 +140,5 @@ echo "=== Restore test tamamlandı ==="
   (KVKK audit log).
 
 ## Commit
+
 - Docs: (bu commit) — `docs(operations): GOAL-124 yedekleme + restore prosedürü`

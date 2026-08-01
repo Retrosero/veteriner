@@ -81,10 +81,14 @@ describe("smoke", () => {
       await writeFile(mdPath, reportMd, "utf8");
 
       // 5) Dogrulama
-      const writtenSummary = JSON.parse(await readFile(summaryPath, "utf8")) as K6Summary;
+      const writtenSummary = JSON.parse(
+        await readFile(summaryPath, "utf8"),
+      ) as K6Summary;
       expect(writtenSummary.metrics["http_reqs"].value).toBe(1000);
 
-      const parsedReport = JSON.parse(await readFile(jsonPath, "utf8")) as typeof report;
+      const parsedReport = JSON.parse(
+        await readFile(jsonPath, "utf8"),
+      ) as typeof report;
       expect(parsedReport.allPassed).toBe(true);
       expect(parsedReport.passedCount).toBe(SCENARIOS.length);
 

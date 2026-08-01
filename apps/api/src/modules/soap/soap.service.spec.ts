@@ -13,17 +13,16 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
-import type { Examination } from "@vetniva/contracts";
-
-import type { ExaminationsService } from "../examinations/examinations.service.js";
-
-import { SoapService } from "./soap.service.js";
 import {
   SoapAmendsRepository,
   SoapNotesRepository,
 } from "./soap.repository.js";
+import { SoapService } from "./soap.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { AuditService } from "../../common/audit/audit.service.js";
+import type { ExaminationsService } from "../examinations/examinations.service.js";
+import type { Examination } from "@vetniva/contracts";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -178,12 +177,7 @@ describe("SoapService", () => {
 
     it("cross-tenant examination → 404 VET-CLINIC-0001", async () => {
       await expect(
-        service.create(
-          TENANT_A,
-          EXAM_ID_B,
-          { subjective: "x" },
-          VET_A,
-        ),
+        service.create(TENANT_A, EXAM_ID_B, { subjective: "x" }, VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-CLINIC-0001",
         httpStatus: 404,
@@ -194,12 +188,7 @@ describe("SoapService", () => {
     it("examination status≠in_progress (completed) → 409 VET-SOAP-0001", async () => {
       seedExam(TENANT_A, EXAM_ID_A, "completed");
       await expect(
-        service.create(
-          TENANT_A,
-          EXAM_ID_A,
-          { subjective: "x" },
-          VET_A,
-        ),
+        service.create(TENANT_A, EXAM_ID_A, { subjective: "x" }, VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-SOAP-0001",
         httpStatus: 409,
@@ -215,21 +204,13 @@ describe("SoapService", () => {
   describe("findByExamination", () => {
     it("kendi tenant'ından okur", async () => {
       await service.create(TENANT_A, EXAM_ID_A, { subjective: "x" }, VET_A);
-      const found = await service.findByExamination(
-        TENANT_A,
-        EXAM_ID_A,
-        VET_A,
-      );
+      const found = await service.findByExamination(TENANT_A, EXAM_ID_A, VET_A);
       expect(found?.examinationId).toBe(EXAM_ID_A);
     });
 
     it("cross-tenant → null", async () => {
       await service.create(TENANT_A, EXAM_ID_A, { subjective: "x" }, VET_A);
-      const found = await service.findByExamination(
-        TENANT_B,
-        EXAM_ID_A,
-        VET_B,
-      );
+      const found = await service.findByExamination(TENANT_B, EXAM_ID_A, VET_B);
       expect(found).toBeNull();
     });
   });
@@ -240,12 +221,7 @@ describe("SoapService", () => {
 
   describe("update", () => {
     it("draft iken güncelleme OK + audit.update (info)", async () => {
-      await service.create(
-        TENANT_A,
-        EXAM_ID_A,
-        { subjective: "eski" },
-        VET_A,
-      );
+      await service.create(TENANT_A, EXAM_ID_A, { subjective: "eski" }, VET_A);
       (audit.recordSimple as ReturnType<typeof vi.fn>).mockClear();
       const updated = await service.update(
         TENANT_A,
@@ -273,12 +249,7 @@ describe("SoapService", () => {
       await service.sign(TENANT_A, EXAM_ID_A, VET_A);
       (audit.recordSimple as ReturnType<typeof vi.fn>).mockClear();
       await expect(
-        service.update(
-          TENANT_A,
-          EXAM_ID_A,
-          { subjective: "yeni" },
-          VET_A,
-        ),
+        service.update(TENANT_A, EXAM_ID_A, { subjective: "yeni" }, VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-SOAP-0001",
         httpStatus: 409,

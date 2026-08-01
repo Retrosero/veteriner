@@ -19,7 +19,7 @@
     → null (controller 404).
   - `search(tenantId, filters, actor)` — case-insensitive
     ad/soyad/telefon/email/taxId araması + `phone`/`city` ek filtre
-    + pagination.
+    - pagination.
   - `archive(tenantId, id, actor)` — soft delete (`archivedAt`),
     idempotent, audit `audit:owner.archive` (warning).
 - **OwnersController** — 4 endpoint (`api/v1/clinic/owners`):
@@ -34,7 +34,7 @@
   normalize, audit yayını), valid TCKN, KVKK yoksa 422, invalid TCKN
   422, invalid VKN 422, duplicate telefon 409, cross-tenant aynı telefon
   çakışma yok, findById tenant izolasyonu, search ad/telefon/pagination
-  + tenant izolasyonu, archive audit + idempotent + 404.
+  - tenant izolasyonu, archive audit + idempotent + 404.
 
 ## Değişen dosyalar (core + docs)
 

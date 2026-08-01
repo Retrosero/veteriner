@@ -31,14 +31,7 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
-import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import {
   hospitalizationOrderApplyInputSchema,
   hospitalizationOrderCancelInputSchema,
@@ -64,14 +57,19 @@ import {
 } from "@vetniva/contracts";
 
 import { HospitalizationOrdersService } from "./hospitalization-orders.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("clinic/hospitalization-orders")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/clinic/hospitalization-orders")
 export class HospitalizationOrdersController {
-  public constructor(
-    private readonly service: HospitalizationOrdersService,
-  ) {}
+  public constructor(private readonly service: HospitalizationOrdersService) {}
 
   @Post()
   @RequirePermissions("clinic:hospitalization:add_note")
@@ -79,8 +77,7 @@ export class HospitalizationOrdersController {
   @ApiOperation({
     operationId: "hospitalizationOrderCreate",
     summary: "Yeni yatış order",
-    description:
-      "Yatış discharged/cancelled değilse 422 VET-HORD-0003.",
+    description: "Yatış discharged/cancelled değilse 422 VET-HORD-0003.",
   })
   public async createOrder(
     @Body(new ZodValidationPipe(hospitalizationOrderCreateInputSchema))
@@ -154,8 +151,7 @@ export class HospitalizationOrdersController {
   @ApiOperation({
     operationId: "hospitalizationOrderCancel",
     summary: "Yatış order iptali (active → cancelled)",
-    description:
-      "Yalnızca active (409 VET-HORD-0005). endsAt set edilir.",
+    description: "Yalnızca active (409 VET-HORD-0005). endsAt set edilir.",
   })
   public async cancelOrder(
     @Param("id") id: string,

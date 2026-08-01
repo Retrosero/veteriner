@@ -65,9 +65,7 @@ export const paymentMethodsReportSchema = z.object({
   totalAmount: z.string(),
   breakdown: z.array(paymentMethodBreakdownItemSchema),
 });
-export type PaymentMethodsReport = z.infer<
-  typeof paymentMethodsReportSchema
->;
+export type PaymentMethodsReport = z.infer<typeof paymentMethodsReportSchema>;
 
 /* --------------------------------------------------------------------------
  * Açık bakiye
@@ -121,6 +119,4 @@ export const reportExportResponseSchema = z.object({
   content: z.string(),
   generatedAt: z.string().datetime(),
 });
-export type ReportExportResponse = z.infer<
-  typeof reportExportResponseSchema
->;
+export type ReportExportResponse = z.infer<typeof reportExportResponseSchema>;

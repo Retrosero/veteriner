@@ -19,12 +19,12 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { SuppliersRepository } from "./suppliers.repository.js";
+import { SuppliersService } from "./suppliers.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 
-import { SuppliersService } from "./suppliers.service.js";
-import { SuppliersRepository } from "./suppliers.repository.js";
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { AuditService } from "../../common/audit/audit.service.js";
 import type {
   SupplierCreateInput,
   SupplierUpdateInput,
@@ -217,11 +217,7 @@ describe("SuppliersService", () => {
         makeCreateInput(),
         STAFF_A,
       );
-      await service.createSupplier(
-        TENANT_B,
-        makeCreateInput(),
-        STAFF_B,
-      );
+      await service.createSupplier(TENANT_B, makeCreateInput(), STAFF_B);
       const list = await service.listSuppliers(
         TENANT_A,
         { limit: 50, offset: 0 },
@@ -330,11 +326,7 @@ describe("SuppliersService", () => {
     });
 
     it("code değişirse unique kontrolü yapılır", async () => {
-      await service.createSupplier(
-        TENANT_A,
-        makeCreateInput(),
-        STAFF_A,
-      );
+      await service.createSupplier(TENANT_A, makeCreateInput(), STAFF_A);
       const second = await service.createSupplier(
         TENANT_A,
         makeCreateInput({ code: "OTHER-001" }),
@@ -428,19 +420,9 @@ describe("SuppliersService", () => {
         makeCreateInput(),
         STAFF_A,
       );
-      await service.archiveSupplier(
-        TENANT_A,
-        a.id,
-        { reason: "ilk" },
-        STAFF_A,
-      );
+      await service.archiveSupplier(TENANT_A, a.id, { reason: "ilk" }, STAFF_A);
       await expect(
-        service.archiveSupplier(
-          TENANT_A,
-          a.id,
-          { reason: "ikinci" },
-          STAFF_A,
-        ),
+        service.archiveSupplier(TENANT_A, a.id, { reason: "ikinci" }, STAFF_A),
       ).rejects.toMatchObject({
         errorCode: "VET-SUPPLIER-0003",
         httpStatus: 409,
@@ -455,11 +437,7 @@ describe("SuppliersService", () => {
   describe("tenant izolasyonu", () => {
     it("cross-tenant create 403 VET-AUTHZ-0001", async () => {
       await expect(
-        service.createSupplier(
-          TENANT_B,
-          makeCreateInput(),
-          STAFF_A,
-        ),
+        service.createSupplier(TENANT_B, makeCreateInput(), STAFF_A),
       ).rejects.toMatchObject({
         errorCode: "VET-AUTHZ-0001",
         httpStatus: 403,

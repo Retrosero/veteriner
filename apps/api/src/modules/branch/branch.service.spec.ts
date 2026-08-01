@@ -1,19 +1,18 @@
 /**
  * @file BranchService unit testleri.
  * @module apps/api/modules/branch/branch.service.spec
- *
  * @description Branch oluşturma, güncelleme, arşivleme ve cross-tenant
  * negatif testleri.
- *
  * @since GOAL-010 (FAZ-1) tenant ve şube altyapısı
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { BranchService } from "./branch.service.js";
+
+import type { BranchRepository } from "./branch.repository.js";
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-import { BranchService } from "./branch.service.js";
-import type { BranchRepository } from "./branch.repository.js";
 
 const SUPERADMIN: ActorContext = {
   actorId: "usr-super-1",
@@ -54,6 +53,10 @@ const STAFF_A: ActorContext = {
   source: "header",
 };
 
+/**
+ *
+ * @param overrides
+ */
 function makeRepo(
   overrides: Partial<{
     findById: ReturnType<typeof vi.fn>;
@@ -75,6 +78,9 @@ function makeRepo(
   } as unknown as BranchRepository;
 }
 
+/**
+ *
+ */
 function makeAudit(): AuditService {
   return {
     record: vi.fn().mockResolvedValue({}),
@@ -142,22 +148,14 @@ describe("BranchService", () => {
 
     it("STAFF branch oluşturamaz (yetki yok) → VET-AUTHZ-0001", async () => {
       await expect(
-        service.create(
-          "tnt-a",
-          { code: "kadikoy", name: "Kadıköy" },
-          STAFF_A,
-        ),
+        service.create("tnt-a", { code: "kadikoy", name: "Kadıköy" }, STAFF_A),
       ).rejects.toMatchObject({ errorCode: "VET-AUTHZ-0001" });
     });
 
     it("code çakışması → VET-BRANCH-0003", async () => {
       (repo.existsByCode as ReturnType<typeof vi.fn>).mockResolvedValue(true);
       await expect(
-        service.create(
-          "tnt-a",
-          { code: "taken", name: "X" },
-          SUPERADMIN,
-        ),
+        service.create("tnt-a", { code: "taken", name: "X" }, SUPERADMIN),
       ).rejects.toMatchObject({ errorCode: "VET-BRANCH-0003" });
     });
   });

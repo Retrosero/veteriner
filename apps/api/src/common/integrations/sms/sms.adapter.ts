@@ -18,7 +18,8 @@
  */
 
 /** SMS sağlayıcı türü. */
-export type SmsProvider = "netgsm" | "twilio" | "messagebird" | "iletimerkezi" | "noop";
+export type SmsProvider =
+  "netgsm" | "twilio" | "messagebird" | "iletimerkezi" | "noop";
 
 /** SMS gönderim girdisi. */
 export interface SmsSendInput {

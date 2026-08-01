@@ -1,30 +1,23 @@
 /**
  * @file DiagnosesService unit testleri.
  * @module apps/api/modules/diagnoses/diagnoses.service.spec
- *
  * @description Teşhis ekleme, tenant izolasyonu, status state
  * machine (active → resolved/chronic/ruled_out), hasta bazlı
  * problem listesi, soft delete (archive), audit event yayını.
  * DB migration olmadığı için in-memory repo + mock ExaminationsService
  * kullanılır.
- *
  * @since GOAL-043 (FAZ-4) teşhis ve problem listesi core
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { DiagnosesRepository } from "./diagnoses.repository.js";
+import { DiagnosesService } from "./diagnoses.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-import type {
-  Diagnosis,
-  DiagnosisCreateInput,
-  Examination,
-} from "@vetniva/contracts";
-
 import type { ExaminationsService } from "../examinations/examinations.service.js";
-
-import { DiagnosesService } from "./diagnoses.service.js";
-import { DiagnosesRepository } from "./diagnoses.repository.js";
+import type { DiagnosisCreateInput, Examination } from "@vetniva/contracts";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -61,7 +54,17 @@ const EXAM_ID_B = "exam-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
 
 /** Mock examination store. */
 const examStore = new Map<string, Examination>();
-function seedExamination(tenantId: string, id: string, patientId: string): void {
+/**
+ *
+ * @param tenantId
+ * @param id
+ * @param patientId
+ */
+function seedExamination(
+  tenantId: string,
+  id: string,
+  patientId: string,
+): void {
   const e: Examination = {
     id,
     tenantId,
@@ -80,6 +83,9 @@ function seedExamination(tenantId: string, id: string, patientId: string): void 
   };
   examStore.set(`${tenantId}|${id}`, e);
 }
+/**
+ *
+ */
 function makeExaminations(): ExaminationsService {
   return {
     findById: vi
@@ -91,6 +97,9 @@ function makeExaminations(): ExaminationsService {
   } as unknown as ExaminationsService;
 }
 
+/**
+ *
+ */
 function makeAudit(): AuditService {
   return {
     record: vi.fn().mockResolvedValue({ eventId: "ev-1" }),
@@ -98,7 +107,13 @@ function makeAudit(): AuditService {
   } as unknown as AuditService;
 }
 
-function validInput(overrides: Partial<DiagnosisCreateInput> = {}): DiagnosisCreateInput {
+/**
+ *
+ * @param overrides
+ */
+function validInput(
+  overrides: Partial<DiagnosisCreateInput> = {},
+): DiagnosisCreateInput {
   return {
     examinationId: EXAM_ID_A,
     name: "Deri enfeksiyonu",
@@ -153,11 +168,7 @@ describe("DiagnosesService", () => {
 
     it("cross-tenant examination → 404 VET-CLINIC-0001 (audit yazılmaz)", async () => {
       await expect(
-        service.add(
-          TENANT_A,
-          validInput({ examinationId: EXAM_ID_B }),
-          VET_A,
-        ),
+        service.add(TENANT_A, validInput({ examinationId: EXAM_ID_B }), VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-CLINIC-0001",
         httpStatus: 404,
@@ -191,11 +202,7 @@ describe("DiagnosesService", () => {
         VET_A,
       );
 
-      const list = await service.listForExamination(
-        TENANT_A,
-        EXAM_ID_A,
-        VET_A,
-      );
+      const list = await service.listForExamination(TENANT_A, EXAM_ID_A, VET_A);
       expect(list).toHaveLength(3);
       expect(list.map((x) => x.name)).toEqual([
         "Deri enfeksiyonu",
@@ -207,11 +214,7 @@ describe("DiagnosesService", () => {
     it("arşivlenmiş kayıt listelenmez", async () => {
       const a = await service.add(TENANT_A, validInput(), VET_A);
       await service.remove(TENANT_A, a.id, VET_A);
-      const list = await service.listForExamination(
-        TENANT_A,
-        EXAM_ID_A,
-        VET_A,
-      );
+      const list = await service.listForExamination(TENANT_A, EXAM_ID_A, VET_A);
       expect(list).toHaveLength(0);
     });
   });
@@ -231,12 +234,10 @@ describe("DiagnosesService", () => {
       // b'yi çözümle.
       await service.resolve(TENANT_A, b.id, VET_A);
 
-      const active = await service.listForPatient(
-        TENANT_A,
-        PATIENT_ID,
-        VET_A,
-        { status: "active", includeArchived: false },
-      );
+      const active = await service.listForPatient(TENANT_A, PATIENT_ID, VET_A, {
+        status: "active",
+        includeArchived: false,
+      });
       expect(active).toHaveLength(1);
       expect(active[0]?.id).toBe(a.id);
       expect(active.every((x) => x.status === "active")).toBe(true);
@@ -263,6 +264,9 @@ describe("DiagnosesService", () => {
         expect.objectContaining({ tenantId: TENANT_A }),
         "info",
         expect.objectContaining({
+          // Vitest asymmetric matcher API'si `any` dondurur; bu assertion
+          // yalnizca kalici taninin son durumunu dogrular.
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           after: expect.objectContaining({ status: "resolved" }),
         }),
       );
@@ -300,6 +304,9 @@ describe("DiagnosesService", () => {
         expect.any(Object),
         "info",
         expect.objectContaining({
+          // Vitest asymmetric matcher API'si `any` dondurur; assertion
+          // yalnizca durum gecisini dogrular.
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           after: expect.objectContaining({ status: "chronic" }),
         }),
       );
@@ -339,6 +346,9 @@ describe("DiagnosesService", () => {
         expect.any(Object),
         "info",
         expect.objectContaining({
+          // Vitest asymmetric matcher API'si `any` dondurur; assertion
+          // yalnizca durum gecisini dogrular.
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           after: expect.objectContaining({ status: "ruled_out" }),
         }),
       );
@@ -389,12 +399,12 @@ describe("DiagnosesService", () => {
 
     it("cross-tenant id → 404 VET-CLINIC-0001", async () => {
       const a = await service.add(TENANT_A, validInput(), VET_A);
-      await expect(
-        service.remove(TENANT_A, a.id, VET_B),
-      ).rejects.toMatchObject({
-        errorCode: "VET-AUTHZ-0001",
-        httpStatus: 403,
-      });
+      await expect(service.remove(TENANT_A, a.id, VET_B)).rejects.toMatchObject(
+        {
+          errorCode: "VET-AUTHZ-0001",
+          httpStatus: 403,
+        },
+      );
     });
   });
 });

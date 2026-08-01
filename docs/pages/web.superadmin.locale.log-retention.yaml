@@ -130,7 +130,9 @@ related_api:
   - "GET /api/v1/superadmin/log-retention/sweeps"
   - "GET /api/v1/superadmin/log-retention/sweeps/{id}"
 keywords:
-  tr-TR: [log retention, arşivleme, retention policy, sweep, KVKK, UK GDPR, PII mask]
-  en-GB: [log retention, archiving, retention policy, sweep, KVKK, UK GDPR, PII mask]
+  tr-TR:
+    [log retention, arşivleme, retention policy, sweep, KVKK, UK GDPR, PII mask]
+  en-GB:
+    [log retention, archiving, retention policy, sweep, KVKK, UK GDPR, PII mask]
 version: "1.0.0"
 last_verified_at: 2026-07-31

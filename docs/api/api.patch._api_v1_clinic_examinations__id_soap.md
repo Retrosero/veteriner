@@ -53,8 +53,9 @@ Gönderilmeyen alanlar değişmez. Tüm bölümleri yeniden yazmak için
   yer alır (klinik kayıt denetim izi).
 
 **Tenant izolasyonu:** Service `requireTenantScope(actor, tenantId)`
-+ repo `findByExamination/update(tenantId, ...)` tümü
-`actor.tenantId` kapsamında.
+
+- repo `findByExamination/update(tenantId, ...)` tümü
+  `actor.tenantId` kapsamında.
 
 **İlgili dokümanlar:**
 

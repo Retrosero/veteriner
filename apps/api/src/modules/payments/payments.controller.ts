@@ -36,13 +36,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   paymentCreateInputSchema,
   paymentFiltersSchema,
@@ -60,14 +53,19 @@ import {
 } from "@vetniva/contracts";
 
 import { PaymentsService } from "./payments.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("payments")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/payments")
 export class PaymentsController {
-  public constructor(
-    private readonly service: PaymentsService,
-  ) {}
+  public constructor(private readonly service: PaymentsService) {}
 
   // ===========================================================================
   // POST /api/v1/payments
@@ -104,8 +102,7 @@ export class PaymentsController {
     operationId: "paymentList",
     summary: "Tahsilat arama",
     description:
-      "Tenant-scoped arama. status/sourceType/sourceId/method " +
-      "filtreleri.",
+      "Tenant-scoped arama. status/sourceType/sourceId/method " + "filtreleri.",
   })
   public async list(
     @Query(new ZodValidationPipe(paymentFiltersSchema))

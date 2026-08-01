@@ -96,7 +96,9 @@ export class PortalAuthRepository {
   }
 
   /** Tenant-agnostic ID lookup (invitation accept sonrası gibi). */
-  public findPortalUserByIdGlobal(portalUserId: string): PortalUserRecord | null {
+  public findPortalUserByIdGlobal(
+    portalUserId: string,
+  ): PortalUserRecord | null {
     for (const rec of this.portalUsers.values()) {
       if (rec.id === portalUserId) return rec;
     }
@@ -170,9 +172,7 @@ export class PortalAuthRepository {
   // EMAIL VERIFICATION TOKENS
   // ===========================================================================
 
-  public insertEmailVerification(
-    record: PortalEmailVerificationRecord,
-  ): void {
+  public insertEmailVerification(record: PortalEmailVerificationRecord): void {
     this.emailVerifications.set(record.tokenHash, record);
   }
 

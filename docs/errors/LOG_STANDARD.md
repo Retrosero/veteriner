@@ -1,16 +1,29 @@
 # @file Log Standardı.
+
 # @module docs/errors/LOG_STANDARD
+
 #
+
 # @description VetNiva'da sistem, background job,
+
 # entegrasyon ve güvenlik loglarının yapısı, seviyeleri,
+
 # formatı ve PII maskeleme kuralları. Audit log'undan
+
 # ayrı bir kategori (bkz. AUDIT_LOG_STANDARD.md).
+
 #
+
 # @author GOAL-004 (FAZ-0) audit + log + hata standardı
+
 # @since 2026-07-30
+
 # @security Log'lar PII içermez. JSON format. Her
-#   satırda correlation_id zorunlu. Production'da
-#   level: info; development'ta: debug.
+
+# satırda correlation_id zorunlu. Production'da
+
+# level: info; development'ta: debug.
+
 # =============================================================================
 
 # Log Standardı
@@ -32,14 +45,14 @@ sorusunu cevaplamaz (bunun için audit log'a bakın).
 
 NestJS/Pino standart seviyeleri:
 
-| Seviye      | Kullanım                                       | Örnek |
-| ----------- | ---------------------------------------------- | ----- |
-| `trace`     | Çok detaylı (sadece dev).                      | "Prisma raw SQL" |
-| `debug`     | Geliştirme.                                    | "Cache hit" |
-| `info`      | Normal iş akışı.                              | "Patient created" |
-| `warn`      | Beklenen ama dikkat gereken durum.            | "Retry attempt 2/3" |
-| `error`     | Hata (4xx/5xx).                                | "Validation failed" |
-| `fatal`     | Kritik hata, process kapatılabilir.            | "DB connection lost" |
+| Seviye  | Kullanım                            | Örnek                |
+| ------- | ----------------------------------- | -------------------- |
+| `trace` | Çok detaylı (sadece dev).           | "Prisma raw SQL"     |
+| `debug` | Geliştirme.                         | "Cache hit"          |
+| `info`  | Normal iş akışı.                    | "Patient created"    |
+| `warn`  | Beklenen ama dikkat gereken durum.  | "Retry attempt 2/3"  |
+| `error` | Hata (4xx/5xx).                     | "Validation failed"  |
+| `fatal` | Kritik hata, process kapatılabilir. | "DB connection lost" |
 
 **Production'da:** `info` ve üzeri. Development'ta
 `debug` ve üzeri.
@@ -71,23 +84,23 @@ Her log satırı **tek satır JSON**:
 
 **Yapısal alanlar** (her log'da bulunur):
 
-| Alan            | Zorunlu | Açıklama |
-| --------------- | ------- | -------- |
-| `timestamp`     | evet    | ISO 8601 UTC. |
-| `level`         | evet    | trace/debug/info/warn/error/fatal. |
-| `service`       | evet    | `api` / `web` / `worker` / `integration`. |
-| `logger`        | evet    | Logger adı (sınıf/modül). |
-| `message`       | evet    | İnsan-okunabilir mesaj. |
-| `correlation_id`| evet    | `req-...` / `job-...` / `int-...`. |
-| `tenant_id`     | hayır   | Tenant context (varsa). |
-| `branch_id`     | hayır   | Şube (multi-branch). |
-| `user_id`       | hayır   | Aktif kullanıcı. |
-| `country`       | hayır   | Tenant ülkesi. |
-| `host`          | evet    | Container/pod adı. |
-| `pid`           | evet    | Process ID. |
-| `context`       | hayır   | Ek bağlam (request-specific). |
-| `duration_ms`   | hayır   | İşlem süresi (varsa). |
-| `error`         | hayır   | Hata durumunda `{name, message, stack}`. |
+| Alan             | Zorunlu | Açıklama                                  |
+| ---------------- | ------- | ----------------------------------------- |
+| `timestamp`      | evet    | ISO 8601 UTC.                             |
+| `level`          | evet    | trace/debug/info/warn/error/fatal.        |
+| `service`        | evet    | `api` / `web` / `worker` / `integration`. |
+| `logger`         | evet    | Logger adı (sınıf/modül).                 |
+| `message`        | evet    | İnsan-okunabilir mesaj.                   |
+| `correlation_id` | evet    | `req-...` / `job-...` / `int-...`.        |
+| `tenant_id`      | hayır   | Tenant context (varsa).                   |
+| `branch_id`      | hayır   | Şube (multi-branch).                      |
+| `user_id`        | hayır   | Aktif kullanıcı.                          |
+| `country`        | hayır   | Tenant ülkesi.                            |
+| `host`           | evet    | Container/pod adı.                        |
+| `pid`            | evet    | Process ID.                               |
+| `context`        | hayır   | Ek bağlam (request-specific).             |
+| `duration_ms`    | hayır   | İşlem süresi (varsa).                     |
+| `error`          | hayır   | Hata durumunda `{name, message, stack}`.  |
 
 ## 3. Log Türleri
 
@@ -208,14 +221,14 @@ this.securityLogger.log({
 
 ## 4. Log Seviyelerinin Operasyonel Kullanımı
 
-| Seviye   | Alert? | Retention | Yön |
-| -------- | ------ | --------- | --- |
-| `trace`  | hayır  | 1 gün     | sadece dosya |
-| `debug`  | hayır  | 1 gün     | sadece dosya |
-| `info`   | hayır  | 30 gün    | dosya + stdout |
-| `warn`   | hayır  | 90 gün    | dosya + stdout |
-| `error`  | evet*  | 90 gün    | dosya + stdout + alert |
-| `fatal`  | evet   | 1 yıl     | dosya + stdout + PagerDuty |
+| Seviye  | Alert? | Retention | Yön                        |
+| ------- | ------ | --------- | -------------------------- |
+| `trace` | hayır  | 1 gün     | sadece dosya               |
+| `debug` | hayır  | 1 gün     | sadece dosya               |
+| `info`  | hayır  | 30 gün    | dosya + stdout             |
+| `warn`  | hayır  | 90 gün    | dosya + stdout             |
+| `error` | evet*  | 90 gün    | dosya + stdout + alert     |
+| `fatal` | evet   | 1 yıl     | dosya + stdout + PagerDuty |
 
 *Error: Dakikada 10'dan fazla → alert.
 
@@ -255,9 +268,16 @@ export const logger = pino({
   // PII masker:
   redact: {
     paths: [
-      "*.first_name", "*.last_name", "*.email", "*.phone",
-      "*.tax_id", "*.iban", "*.password", "*.token",
-      "*.api_key", "*.secret",
+      "*.first_name",
+      "*.last_name",
+      "*.email",
+      "*.phone",
+      "*.tax_id",
+      "*.iban",
+      "*.password",
+      "*.token",
+      "*.api_key",
+      "*.secret",
     ],
     censor: "[REDACTED]",
   },
@@ -322,12 +342,12 @@ return next.handle().pipe(
 
 ## 7. Log Yönlendirme (Sink)
 
-| Ortam        | Sink                                        |
-| ------------ | ------------------------------------------- |
-| Development  | Console (pino-pretty) + dosya               |
-| Test         | Console                                     |
-| Staging      | Console + Elasticsearch (Loki)              |
-| Production   | Console (JSON) + Elasticsearch + S3 archive |
+| Ortam       | Sink                                        |
+| ----------- | ------------------------------------------- |
+| Development | Console (pino-pretty) + dosya               |
+| Test        | Console                                     |
+| Staging     | Console + Elasticsearch (Loki)              |
+| Production  | Console (JSON) + Elasticsearch + S3 archive |
 
 **Yapısal olmayan log kabul edilmez.** `console.log`
 ile string log atılamaz; tüm log'lar `logger` üzerinden.

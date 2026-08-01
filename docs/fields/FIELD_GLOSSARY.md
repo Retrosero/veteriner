@@ -535,8 +535,8 @@ branch.ts) tanımlıdır.
 - **Şema:**
   ```ts
   {
-    kvkk: boolean;       // zorunlu true; false → 422
-    marketing: boolean;  // opsiyonel; default false
+    kvkk: boolean; // zorunlu true; false → 422
+    marketing: boolean; // opsiyonel; default false
   }
   ```
 - **PII:** hayır
@@ -558,13 +558,13 @@ branch.ts) tanımlıdır.
 
 ### OwnerSearchQuery filtreleri
 
-| Ad | Tip | Açıklama |
-| --- | --- | --- |
+| Ad       | Tip    | Açıklama                                                |
+| -------- | ------ | ------------------------------------------------------- |
 | `search` | string | Ad/soyad/telefon/email/taxId case-insensitive substring |
-| `phone` | string | Telefon substring (ham veya E.164) |
-| `city` | string | Şehir filtresi |
-| `limit` | int | Default 20, max 100 |
-| `offset` | int | Default 0 |
+| `phone`  | string | Telefon substring (ham veya E.164)                      |
+| `city`   | string | Şehir filtresi                                          |
+| `limit`  | int    | Default 20, max 100                                     |
+| `offset` | int    | Default 0                                               |
 
 ---
 
@@ -683,13 +683,13 @@ branch.ts) tanımlıdır.
 
 ### PatientSearchQuery filtreleri
 
-| Ad | Tip | Açıklama |
-| --- | --- | --- |
-| `ownerId` | UUID | Owner ID filtresi |
-| `species` | enum | Tür filtresi (`dog` \| `cat` \| `bird` \| `other`) |
-| `search` | string | Ad/ırk/mikroçip case-insensitive substring (1-200 karakter) |
-| `limit` | int | Default 20, max 200 |
-| `offset` | int | Default 0, max 10000 |
+| Ad        | Tip    | Açıklama                                                    |
+| --------- | ------ | ----------------------------------------------------------- |
+| `ownerId` | UUID   | Owner ID filtresi                                           |
+| `species` | enum   | Tür filtresi (`dog` \| `cat` \| `bird` \| `other`)          |
+| `search`  | string | Ad/ırk/mikroçip case-insensitive substring (1-200 karakter) |
+| `limit`   | int    | Default 20, max 200                                         |
+| `offset`  | int    | Default 0, max 10000                                        |
 
 ---
 
@@ -781,18 +781,18 @@ DB üretir.
 
 ### ExaminationSearchQuery filtreleri
 
-| Ad | Tip | Açıklama |
-| --- | --- | --- |
-| `patientId` | UUID | Hasta filtresi |
-| `veterinarianId` | UUID | Veteriner filtresi |
-| `branchId` | UUID | Şube filtresi |
-| `kind` | enum | Tür filtresi |
-| `status` | enum | Durum filtresi |
-| `from` | ISO datetime | `startedAt >= from` |
-| `to` | ISO datetime | `startedAt <= to` |
-| `search` | string | chiefComplaint/diagnosis/treatmentPlan'da case-insensitive substring |
-| `limit` | int | Default 20, max 200 |
-| `offset` | int | Default 0, max 10000 |
+| Ad               | Tip          | Açıklama                                                             |
+| ---------------- | ------------ | -------------------------------------------------------------------- |
+| `patientId`      | UUID         | Hasta filtresi                                                       |
+| `veterinarianId` | UUID         | Veteriner filtresi                                                   |
+| `branchId`       | UUID         | Şube filtresi                                                        |
+| `kind`           | enum         | Tür filtresi                                                         |
+| `status`         | enum         | Durum filtresi                                                       |
+| `from`           | ISO datetime | `startedAt >= from`                                                  |
+| `to`             | ISO datetime | `startedAt <= to`                                                    |
+| `search`         | string       | chiefComplaint/diagnosis/treatmentPlan'da case-insensitive substring |
+| `limit`          | int          | Default 20, max 200                                                  |
+| `offset`         | int          | Default 0, max 10000                                                 |
 
 ---
 
@@ -974,35 +974,35 @@ DB üretir.
 
 ### Sayfa (pagination)
 
-| Ad | Tip | Default | Aralık | Açıklama |
-| --- | --- | --- | --- | --- |
-| `limit` | int | 50 | 1-200 | Sayfa başına kayıt |
-| `offset` | int | 0 | 0-10000 | Atlanan kayıt sayısı |
+| Ad       | Tip | Default | Aralık  | Açıklama             |
+| -------- | --- | ------- | ------- | -------------------- |
+| `limit`  | int | 50      | 1-200   | Sayfa başına kayıt   |
+| `offset` | int | 0       | 0-10000 | Atlanan kayıt sayısı |
 
 ### Para (currency)
 
-| Ad | Tip | Default | Açıklama |
-| --- | --- | --- | --- |
-| `amount` | Decimal | — | Tutar (2 ondalık, > 0) |
-| `currency` | enum | `TRY` | `TRY` \| `GBP` \| `USD` \| `EUR` |
+| Ad         | Tip     | Default | Açıklama                         |
+| ---------- | ------- | ------- | -------------------------------- |
+| `amount`   | Decimal | —       | Tutar (2 ondalık, > 0)           |
+| `currency` | enum    | `TRY`   | `TRY` \| `GBP` \| `USD` \| `EUR` |
 
 ### Tarih/saat (datetime)
 
-| Ad | Tip | Format | Açıklama |
-| --- | --- | --- | --- |
-| `date` | date | `YYYY-MM-DD` | Tarih (saat yok) |
+| Ad         | Tip      | Format                     | Açıklama                                 |
+| ---------- | -------- | -------------------------- | ---------------------------------------- |
+| `date`     | date     | `YYYY-MM-DD`               | Tarih (saat yok)                         |
 | `datetime` | ISO 8601 | `2026-07-31T16:00:00.000Z` | UTC datetime (service); TIMESTAMPTZ (DB) |
 
 ### PII alanları (mask'lenir)
 
-| Alan | Mask formatı | Açıklama |
-| --- | --- | --- |
-| `email` | `u***@e******.com` | E-posta |
-| `phone` | `+90*******` | Telefon (E.164) |
-| `taxId` (TCKN) | `1**********` | TCKN (11 hane) |
-| `taxId` (VKN) | `1********` | VKN (10 hane) |
-| `iban` | `TR** **** **** **** **** **** **` | IBAN |
-| `microchip` | `mask'lı değil` (unique olduğu için) | Mikroçip |
+| Alan           | Mask formatı                         | Açıklama        |
+| -------------- | ------------------------------------ | --------------- |
+| `email`        | `u***@e******.com`                   | E-posta         |
+| `phone`        | `+90*******`                         | Telefon (E.164) |
+| `taxId` (TCKN) | `1**********`                        | TCKN (11 hane)  |
+| `taxId` (VKN)  | `1********`                          | VKN (10 hane)   |
+| `iban`         | `TR** **** **** **** **** **** **`   | IBAN            |
+| `microchip`    | `mask'lı değil` (unique olduğu için) | Mikroçip        |
 
 PII mask context'ten geçirilir; tüm log + audit +
 notification payload'larında uygulanır.

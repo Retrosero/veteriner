@@ -16,13 +16,13 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
-
 import { KasaRepository } from "./kasa.repository.js";
 import { PaymentReversalsRepository } from "./payment-reversals.repository.js";
-import { PaymentsService } from "./payments.service.js";
 import { PaymentsRepository } from "./payments.repository.js";
+import { PaymentsService } from "./payments.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { AuditService } from "../../common/audit/audit.service.js";
 import type {
   PaymentCreateInput,
   PaymentReversalCreateInput,
@@ -439,14 +439,20 @@ describe("PaymentsService", () => {
       await service.reversePayment(
         TENANT_A,
         created.id,
-        { amount: "80", reason: "customer_request" } as PaymentReversalCreateInput,
+        {
+          amount: "80",
+          reason: "customer_request",
+        } as PaymentReversalCreateInput,
         STAFF_A,
       );
       await expect(
         service.reversePayment(
           TENANT_A,
           created.id,
-          { amount: "30", reason: "customer_request" } as PaymentReversalCreateInput,
+          {
+            amount: "30",
+            reason: "customer_request",
+          } as PaymentReversalCreateInput,
           STAFF_A,
         ),
       ).rejects.toMatchObject({
@@ -551,7 +557,10 @@ describe("PaymentsService", () => {
       await service.reversePayment(
         TENANT_A,
         created.id,
-        { amount: "30", reason: "customer_request" } as PaymentReversalCreateInput,
+        {
+          amount: "30",
+          reason: "customer_request",
+        } as PaymentReversalCreateInput,
         STAFF_A,
       );
       const list = await service.listPaymentReversals(
@@ -580,11 +589,7 @@ describe("PaymentsService", () => {
   describe("tenant izolasyonu", () => {
     it("cross-tenant create 403 VET-AUTHZ-0001", async () => {
       await expect(
-        service.createPayment(
-          TENANT_B,
-          makePaymentInput(),
-          STAFF_A,
-        ),
+        service.createPayment(TENANT_B, makePaymentInput(), STAFF_A),
       ).rejects.toMatchObject({
         errorCode: "VET-AUTHZ-0001",
         httpStatus: 403,

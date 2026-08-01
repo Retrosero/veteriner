@@ -17,9 +17,9 @@
 
 ## Query parametreleri
 
-| Parametre | Tip   | Zorunlu | Açıklama                                                                |
-| --------- | ----- | ------- | ----------------------------------------------------------------------- |
-| `userId`  | string | hayır   | Hedef kullanıcı ID. Belirtilmezse actor'un kendi ID'si kullanılır.        |
+| Parametre | Tip    | Zorunlu | Açıklama                                                           |
+| --------- | ------ | ------- | ------------------------------------------------------------------ |
+| `userId`  | string | hayır   | Hedef kullanıcı ID. Belirtilmezse actor'un kendi ID'si kullanılır. |
 
 ## Response 200
 
@@ -59,12 +59,12 @@ seviyesinde `request log` correlation_id ile bırakılır.
 
 ## Hata kodları
 
-| Kod                  | HTTP | Açıklama                                                |
-| -------------------- | ---- | ------------------------------------------------------- |
-| `VET-AUTH-0001`      | 401  | Oturum geçersiz veya süresi dolmuş.                     |
-| `VET-AUTHZ-0001`     | 403  | Permission yok (`common:notification:read`).            |
-| `VET-AUTHZ-0006`     | 403  | Aktif tenant bağlamı yok.                               |
-| `VET-NOTIF-0002`     | 404  | Şablon bulunamadı (yanıtta render edilemedi).           |
+| Kod              | HTTP | Açıklama                                      |
+| ---------------- | ---- | --------------------------------------------- |
+| `VET-AUTH-0001`  | 401  | Oturum geçersiz veya süresi dolmuş.           |
+| `VET-AUTHZ-0001` | 403  | Permission yok (`common:notification:read`).  |
+| `VET-AUTHZ-0006` | 403  | Aktif tenant bağlamı yok.                     |
+| `VET-NOTIF-0002` | 404  | Şablon bulunamadı (yanıtta render edilemedi). |
 
 ## Örnek
 

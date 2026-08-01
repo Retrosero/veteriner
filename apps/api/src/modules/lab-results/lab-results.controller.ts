@@ -31,13 +31,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   labResultAmendInputSchema,
   labResultApproveInputSchema,
@@ -54,14 +47,19 @@ import {
 } from "@vetniva/contracts";
 
 import { LabResultsService } from "./lab-results.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("clinic/lab-results")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/clinic/lab-orders/:orderId/result")
 export class LabResultsController {
-  public constructor(
-    private readonly service: LabResultsService,
-  ) {}
+  public constructor(private readonly service: LabResultsService) {}
 
   @Post()
   @RequirePermissions("clinic:lab:enter_result")
@@ -96,11 +94,7 @@ export class LabResultsController {
     @CurrentActor() actor: ActorContext,
   ): Promise<LabResult> {
     const tenantId = this.requireTenant(actor);
-    const r = await this.service.getLabResultDetail(
-      tenantId,
-      orderId,
-      actor,
-    );
+    const r = await this.service.getLabResultDetail(tenantId, orderId, actor);
     if (!r) {
       throw new DomainError({
         errorCode: "VET-LABRES-0001",
@@ -189,8 +183,7 @@ export class LabResultsController {
   @ApiOperation({
     operationId: "labResultAmend",
     summary: "Onaylanmış sonucu amendment ile düzelt",
-    description:
-      "approved → amended (eski) + yeni draft revision.",
+    description: "approved → amended (eski) + yeni draft revision.",
   })
   public async amend(
     @Param("orderId", new ParseUUIDPipe()) orderId: string,

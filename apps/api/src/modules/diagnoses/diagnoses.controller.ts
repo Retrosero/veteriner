@@ -1,7 +1,6 @@
 /**
  * @file Diagnosis (teşhis) controller.
  * @module apps/api/modules/diagnoses/diagnoses.controller
- *
  * @description GOAL-043 teşhis REST API. Tenant ID URL'de taşınmaz;
  * actor.tenantId'den alınır (cross-tenant IDOR koruması).
  *
@@ -12,8 +11,7 @@
  * - `POST   /api/v1/clinic/diagnoses/:id/resolve`       — Çözüldü
  * - `POST   /api/v1/clinic/diagnoses/:id/chronic`       — Kronik yap
  * - `POST   /api/v1/clinic/diagnoses/:id/ruled-out`     — Ele (ruled out)
- * - `DELETE /api/v1/clinic/diagnoses/:id`               — Soft delete (archive)
- *
+ * - `DELETE /api/v1/clinic/diagnoses/:id`               — Soft delete (archive).
  * @since GOAL-043 (FAZ-4) teşhis ve problem listesi core
  */
 
@@ -30,24 +28,24 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
-import type {
-  Diagnosis,
-  DiagnosisCreateInput,
-  DiagnosisPatientListFilters,
-} from "@vetniva/contracts";
 import {
   diagnosisCreateInputSchema,
   diagnosisPatientListFiltersSchema,
 } from "@vetniva/contracts";
 
 import { DiagnosesService } from "./diagnoses.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type {
+  Diagnosis,
+  DiagnosisCreateInput,
+  DiagnosisPatientListFilters,
+} from "@vetniva/contracts";
 
 @ApiTags("diagnoses")
 @UseGuards(PermissionsGuard)
@@ -80,11 +78,7 @@ export class DiagnosesController {
     @CurrentActor() actor: ActorContext,
   ): Promise<Diagnosis> {
     const tenantId = this.requireTenant(actor);
-    return this.service.add(
-      tenantId,
-      { ...body, examinationId },
-      actor,
-    );
+    return this.service.add(tenantId, { ...body, examinationId }, actor);
   }
 
   @Get("examinations/:id/diagnoses")

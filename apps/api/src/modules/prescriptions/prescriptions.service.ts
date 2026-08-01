@@ -34,9 +34,17 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { PrescriptionsRepository } from "./prescriptions.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
+import {
+  toPrescription,
+  type PrescriptionRecord,
+} from "../../common/prescriptions/prescription.types.js";
+import { ClinicalConsumptionService } from "../clinical-consumption/clinical-consumption.service.js";
+import { ExaminationsService } from "../examinations/examinations.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   ClinicalConsumptionLine,
   Prescription,
@@ -45,18 +53,6 @@ import type {
   PrescriptionFilters,
   PrescriptionListResponse,
 } from "@vetniva/contracts";
-
-import { ExaminationsService } from "../examinations/examinations.service.js";
-import { ClinicalConsumptionService } from "../clinical-consumption/clinical-consumption.service.js";
-
-import {
-  toPrescription,
-  type PrescriptionRecord,
-} from "../../common/prescriptions/prescription.types.js";
-import {
-  type PrescriptionPatch,
-  PrescriptionsRepository,
-} from "./prescriptions.repository.js";
 
 @Injectable()
 export class PrescriptionsService {
@@ -382,7 +378,10 @@ export class PrescriptionsService {
       this.actorToAuditActor(actor),
       "warning",
       {
-        before: { status: existing.status, cancelReason: existing.cancelReason },
+        before: {
+          status: existing.status,
+          cancelReason: existing.cancelReason,
+        },
         after: { status: updated.status, cancelReason: updated.cancelReason },
         reason: input.reason,
       },
@@ -505,7 +504,7 @@ export class PrescriptionsService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

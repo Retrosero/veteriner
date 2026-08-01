@@ -10,13 +10,13 @@ olarak DÖNMEZ (aktif kayıtlar).
 
 **Query parametreleri:**
 
-| Ad | Tip | Zorunlu | Açıklama |
-| --- | --- | --- | --- |
-| `search` | string | hayır | Ad/soyad/telefon/email/taxId içinde arama (1-100 karakter) |
-| `phone` | string | hayır | E.164 veya ham telefon (substring) |
-| `city` | string | hayır | Şehir filtresi |
-| `limit` | int | hayır | Sayfa boyutu (default 20, max 100) |
-| `offset` | int | hayır | Sayfa başlangıcı (default 0) |
+| Ad       | Tip    | Zorunlu | Açıklama                                                   |
+| -------- | ------ | ------- | ---------------------------------------------------------- |
+| `search` | string | hayır   | Ad/soyad/telefon/email/taxId içinde arama (1-100 karakter) |
+| `phone`  | string | hayır   | E.164 veya ham telefon (substring)                         |
+| `city`   | string | hayır   | Şehir filtresi                                             |
+| `limit`  | int    | hayır   | Sayfa boyutu (default 20, max 100)                         |
+| `offset` | int    | hayır   | Sayfa başlangıcı (default 0)                               |
 
 **Response 200:**
 

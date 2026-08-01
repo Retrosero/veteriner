@@ -38,6 +38,7 @@ export const tenantSlugSchema = z
   .min(2, "Slug en az 2 karakter olmalı")
   .max(64, "Slug en fazla 64 karakter olabilir")
   .regex(
+    // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, karakter sınıfı ve tekrarları üst sınırlı slug doğrulamasıdır.
     /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/,
     "Slug yalnızca küçük harf, rakam ve tire içerebilir",
   );
@@ -49,10 +50,7 @@ export const createTenantRequestSchema = z.object({
   slug: tenantSlugSchema,
   name: z.string().min(2).max(200),
   country: tenantCountrySchema,
-  defaultLocale: z
-    .enum(["tr-TR", "en-GB"])
-    .default("tr-TR")
-    .optional(),
+  defaultLocale: z.enum(["tr-TR", "en-GB"]).default("tr-TR").optional(),
   timezone: z.string().min(1).max(64).optional(),
   taxId: z.string().min(10).max(20).optional(),
   taxIdType: z.enum(["company", "personal"]).optional(),

@@ -1,7 +1,6 @@
 /**
  * @file Onboarding service unit testleri.
  * @module apps/api/common/onboarding/onboarding.service.spec
- *
  * @description OnboardingService'in temel davranışlarını doğrular:
  * - Role-bazlı senaryo filtreleme
  * - Modül-bazlı senaryo filtreleme
@@ -9,14 +8,14 @@
  * - Tıbbi soruların reddi (medical / dosage / diagnosis / treatment)
  * - Locale (tr-TR / en-GB) desteği
  * - Out-of-scope mesajı
- * - currentPage bonus scoring
- *
+ * - currentPage bonus scoring.
  * @since GOAL-117 (FAZ-11) ilk kullanım asistanı
  */
 
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { OnboardingService } from "./onboarding.service.js";
+
 import type { ActorContext } from "../actor/actor-context.service.js";
 import type { ModuleKey } from "../modules/module.types.js";
 
@@ -38,29 +37,6 @@ const STAFF: ActorContext = {
   actorId: "usr-staff-test",
   role: "STAFF",
   correlationId: "req-staff",
-};
-
-const OWNER: ActorContext = {
-  ...VET,
-  actorId: "usr-owner-test",
-  role: "OWNER",
-  correlationId: "req-owner",
-};
-
-const PORTAL: ActorContext = {
-  ...VET,
-  actorId: "usr-portal-test",
-  actorType: "portal_user",
-  role: "PET_OWNER_PORTAL",
-  correlationId: "req-portal",
-};
-
-const SUPERADMIN: ActorContext = {
-  ...VET,
-  actorId: "usr-super-test",
-  role: "SUPERADMIN",
-  isSuperadmin: true,
-  correlationId: "req-super",
 };
 
 describe("OnboardingService", () => {

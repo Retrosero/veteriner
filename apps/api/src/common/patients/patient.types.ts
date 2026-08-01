@@ -87,7 +87,11 @@ export interface Patient {
  * adaptörüne `isSpeciesAllowed(species)` eklenebilir; şimdilik
  * TR sabit olarak uygulanır.
  */
-export const TR_ALLOWED_SPECIES: ReadonlyArray<Species> = ["dog", "cat", "bird"];
+export const TR_ALLOWED_SPECIES: ReadonlyArray<Species> = [
+  "dog",
+  "cat",
+  "bird",
+];
 
 /** ISO `YYYY-MM-DD` formatı için temel regex. */
 export const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;

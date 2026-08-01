@@ -179,15 +179,15 @@ GOAL-010'da gerçek auth olmadığından actor bilgisi aşağıdaki
 header'lardan okunur. GOAL-011 ile bu header'lar kaldırılır ve
 JWT/session tabanlı kimlik doğrulama devreye girer.
 
-| Header          | Açıklama                                | Zorunlu (dev) | Zorunlu (prod) |
-| --------------- | --------------------------------------- | ------------- | -------------- |
-| `X-Actor-Id`    | Kullanıcı UUID (GOAL-010 placeholder)   | hayır         | hayır (auth zorunlu) |
-| `X-Actor-Role`  | SUPERADMIN / OWNER / VETERINARIAN / STAFF (placeholder) | hayır | hayır |
-| `X-Tenant-Id`   | Aktif tenant UUID (placeholder)         | hayır         | hayır |
-| `X-Branch-Id`   | Aktif şube UUID (placeholder)           | hayır         | hayır |
-| `X-Request-Id`  | Correlation ID (UUID v4)                | hayır         | önerilir        |
-| `Cookie: vetniva_session=<token>` | GOAL-011 session cookie | hayır | evet |
-| `Authorization: Bearer <token>`   | Alternatif: header tabanlı | hayır | evet |
+| Header                            | Açıklama                                                | Zorunlu (dev) | Zorunlu (prod)       |
+| --------------------------------- | ------------------------------------------------------- | ------------- | -------------------- |
+| `X-Actor-Id`                      | Kullanıcı UUID (GOAL-010 placeholder)                   | hayır         | hayır (auth zorunlu) |
+| `X-Actor-Role`                    | SUPERADMIN / OWNER / VETERINARIAN / STAFF (placeholder) | hayır         | hayır                |
+| `X-Tenant-Id`                     | Aktif tenant UUID (placeholder)                         | hayır         | hayır                |
+| `X-Branch-Id`                     | Aktif şube UUID (placeholder)                           | hayır         | hayır                |
+| `X-Request-Id`                    | Correlation ID (UUID v4)                                | hayır         | önerilir             |
+| `Cookie: vetniva_session=<token>` | GOAL-011 session cookie                                 | hayır         | evet                 |
+| `Authorization: Bearer <token>`   | Alternatif: header tabanlı                              | hayır         | evet                 |
 
 **Güvenlik notu (GOAL-011):** Production'da session cookie / bearer
 token zorunlu. `X-Actor-*` header'ları test/dev ortamında fallback
@@ -367,8 +367,8 @@ audit log'a yansır.
 - **Audit:** `audit:feature_flag.enable` (info) veya
   `audit:feature_flag.disable` (warning)
 - **Parametre:** `key` ∈ `clinic | appointments | vaccinations |
-  inventory | petshop | billing | hospitalization | laboratory |
-  imaging | portal`
+inventory | petshop | billing | hospitalization | laboratory |
+imaging | portal`
 
 **Request body:** `{ "enabled": boolean }`
 
@@ -432,7 +432,7 @@ Arşivleme (soft delete; fiziksel silme yok). Auth + `file:file:delete`.
 
 ### POST /api/v1/files/:id/signed-url
 
-S3 driver seçiliyse geçici imzalı URL (üretimde); stub. Auth +
+S3 driver seçiliyse geçici imzalı URL (üretimde). Auth +
 `file:file:read`.
 
 ---
@@ -447,12 +447,13 @@ S3 driver seçiliyse geçici imzalı URL (üretimde); stub. Auth +
 ### POST /api/v1/notifications
 
 Manuel bildirim gönderir. Template render + provider dispatch
-+ idempotency. Auth + `common:notification:manage`.
 
-- **Modül:** notifications
-- **Yetki:** `common:notification:manage`
-- **Idempotency:** Önerilir (`Idempotency-Key` header, 24 saat TTL)
-- **Audit:** `audit:notification.sent` (info) veya
+- idempotency. Auth + `common:notification:manage`.
+
+* **Modül:** notifications
+* **Yetki:** `common:notification:manage`
+* **Idempotency:** Önerilir (`Idempotency-Key` header, 24 saat TTL)
+* **Audit:** `audit:notification.sent` (info) veya
   `audit:notification.failed` (warning) veya
   `audit:notification.denied` (warning — consent reddi)
 

@@ -1,15 +1,14 @@
 /**
  * @file Override listesi yükleyici.
  * @module @vetniva/docs-check/load-overrides
- *
- * @description docs-check opt-out listesi yükler ve
+ * @description Docs-check opt-out listesi yükler ve
  * verilen bir route (METHOD + path) için opt-out
  * uygulanıp uygulanmadığını söyler.
- *
  * @since GOAL-118 (FAZ-11) pilot temizliği
  */
 
 import { readFile } from "node:fs/promises";
+
 import { load as parseYaml } from "js-yaml";
 
 /** Override kuralı. */
@@ -33,12 +32,16 @@ export interface LoadedOverrides {
   rules: OverrideRule[];
 }
 
-/** Yoldan override dosyasını yükler. Dosya yoksa boş set. */
+/**
+ * Yoldan override dosyasını yükler. Dosya yoksa boş set.
+ * @param filePath
+ */
 export async function loadOverrides(
   filePath: string,
 ): Promise<LoadedOverrides> {
   let parsed: OverridesFile | null = null;
   try {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- Yol yalnızca runner'ın repo kökünden üretilir.
     const raw = await readFile(filePath, "utf8");
     parsed = parseYaml(raw) as OverridesFile | null;
   } catch {
@@ -60,7 +63,12 @@ export async function loadOverrides(
   return { byRoute, rules: parsed.rules };
 }
 
-/** Verilen route override set'te var mı? */
+/**
+ * Verilen route override set'te var mı?
+ * @param set
+ * @param method
+ * @param path
+ */
 export function isOverridden(
   set: OverrideSet,
   method: string,
@@ -69,7 +77,12 @@ export function isOverridden(
   return set.has(`${method} ${path}`);
 }
 
-/** Override reason. */
+/**
+ * Override reason.
+ * @param set
+ * @param method
+ * @param path
+ */
 export function overrideReason(
   set: OverrideSet,
   method: string,

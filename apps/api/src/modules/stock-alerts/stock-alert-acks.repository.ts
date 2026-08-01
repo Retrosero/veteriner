@@ -21,9 +21,7 @@
 
 import { Injectable } from "@nestjs/common";
 
-import type {
-  StockAlertAckRecord,
-} from "../../common/stock-alerts/stock-alert.types.js";
+import type { StockAlertAckRecord } from "../../common/stock-alerts/stock-alert.types.js";
 
 @Injectable()
 export class StockAlertAcksRepository {
@@ -74,7 +72,9 @@ export class StockAlertAcksRepository {
     if (!set || set.size === 0) return [];
     const out: StockAlertAckRecord[] = [];
     for (const alertKey of set.values()) {
-      const rec = this.byTenantAndKey.get(this.compositeKey(tenantId, alertKey));
+      const rec = this.byTenantAndKey.get(
+        this.compositeKey(tenantId, alertKey),
+      );
       if (rec) out.push(rec);
     }
     return out;

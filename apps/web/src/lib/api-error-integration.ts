@@ -1,7 +1,6 @@
 /**
  * @file API client hata entegrasyonu.
  * @module @vetniva/web/lib/api-error-integration
- *
  * @description GOAL-101 (FAZ-10) frontend hata yakalama — API
  * istemcisinin döndürdüğü `ApiFailure` sonuçlarını otomatik olarak
  * `errorReporter`'a yönlendirir.
@@ -13,7 +12,6 @@
  *
  * Tüm metotlar no-throw; hata raporlama sırasında oluşan sorun
  * kullanıcı deneyimini engellemez.
- *
  * @security API'den dönen hata response'u zaten mask'lıdır (PII
  *   içermez). Reporter context'e `route + errorCode + statusCode`
  *   ekler; backend de ek bir PII masker'ından geçirir.
@@ -21,8 +19,9 @@
  * @since GOAL-101 (FAZ-10) frontend hata yakalama core
  */
 
-import type { ApiFailure, ApiResult } from "./api-client";
 import { errorReporter, type ErrorSeverity } from "./error-reporter";
+
+import type { ApiFailure, ApiResult } from "./api-client";
 
 /* --------------------------------------------------------------------------
  * Severity mapping
@@ -33,11 +32,12 @@ import { errorReporter, type ErrorSeverity } from "./error-reporter";
  * API hata kodundan severity tahmin eder. 5xx → error, 4xx → warning,
  * network/abort → warning. 401/403 gibi auth hataları warning; 5xx
  * sunucu hataları error.
+ * @param failure
  */
 export function severityForApiFailure(failure: ApiFailure): ErrorSeverity {
   const code = failure.error.error_code;
   // Bilinen ağ hata kodu her zaman warning.
-  if (code === "TR_COMMON_0001") return "warning";
+  if (code === "VET-COMMON-0001") return "warning";
   // 5xx (status code mesaj içinde) → error; 4xx → warning.
   if (/5\d\d/.test(failure.error.message)) return "error";
   // error_code "VET-AUTHZ-*" veya "TR_AUTH_*" genelde 403/401.
@@ -55,6 +55,7 @@ export function severityForApiFailure(failure: ApiFailure): ErrorSeverity {
 /**
  * Tek bir `ApiFailure`'ı reporter'a gönderir. `requestId` varsa
  * context'e eklenir (backend correlation).
+ * @param failure
  */
 export function reportApiFailure(failure: ApiFailure): void {
   if (!failure) return;
@@ -85,6 +86,7 @@ export function reportApiFailure(failure: ApiFailure): void {
  * raporlar; aksi halde sonucu aynen döner. Orijinal `apiRequest`
  * fonksiyonu parametre olarak alınır; bu sayede test'lerde mock
  * ile değiştirilebilir.
+ * @param caller
  */
 export async function wrapApiRequest<T>(
   caller: () => Promise<ApiResult<T>>,

@@ -21,8 +21,6 @@ import type {
   ErrorEventActorType,
   ErrorEventCountry,
   AnyErrorCode,
-} from "@vetniva/contracts";
-import type {
   JobRun,
   JobRunSource,
   JobRunStatus,

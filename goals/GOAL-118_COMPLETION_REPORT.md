@@ -1,9 +1,11 @@
 # GOAL-118 — Doküman-Kod CI Doğrulaması (Completion Report)
 
 ## Faz
+
 FAZ-11 (Dokümantasyon ve AI asistanı temeli)
 
 ## Özet
+
 Yeni alan, permission, API route, error code veya AI chunk
 eklendiğinde CI hata veren doküman-kod doğrulama pipeline'ı.
 `pnpm docs:check` komutu 7 scanner paralel çalıştırır; kod
@@ -12,15 +14,16 @@ ile doküman arasındaki tutarsızlıkları tespit eder.
 ## Çıktılar
 
 ### Core (`tools/docs-check/`)
+
 - `src/runner.ts` — sıralı/ paralel scanner koşum.
 - `src/scanners/api.ts` — API route'lar için doküman
   doğrulaması (kullanılan route → `docs/api/api.*.md` mevcut
   mu).
 - `src/scanners/error-codes.ts` — VET-XXX-NNNN hata
   kodları için katalog doğrulaması (kod → ERROR_CATALOG.md
-  + i18n parity).
+  - i18n parity).
 - `src/scanners/permissions.ts` — `<domain>:<resource>:
-  <action>` permission'lar için katalog doğrulaması.
+<action>` permission'lar için katalog doğrulaması.
 - `src/scanners/ai-chunks.ts` — `docs/ai/AI_CHUNKS.yaml`
   şema doğrulaması.
 - `src/scanners/fields.ts` — `entity.field` referansları
@@ -34,6 +37,7 @@ ile doküman arasındaki tutarsızlıkları tespit eder.
   `runner`.
 
 ## İş Kuralları
+
 - **API route eşleşmesi:** Kontrolörde tanımlı tüm
   endpoint'ler için `docs/api/api.<method>.<path>.md`
   dosyası mevcut olmalı. Eksikse HATA.
@@ -51,6 +55,7 @@ ile doküman arasındaki tutarsızlıkları tespit eder.
   kataloğunda yer almalı.
 
 ## Davranış
+
 - `pnpm docs:check` → 7 scanner sırayla çalışır.
 - Hata varsa: exit code 1 (CI kırmızı).
 - Yalnızca uyarı varsa: exit code 0 (CI yeşil).
@@ -58,6 +63,7 @@ ile doküman arasındaki tutarsızlıkları tespit eder.
   hata toleransı yüksek.
 
 ## Yapılmayanlar / Bilinçli Atlamalar
+
 - **Otomatik kod üretimi (kod → doküman)** → Faz 13+
   (ters yön: Zod şemadan otomatik API doc üretimi).
 - **Markdown lint (tutarlılık)** → Faz 12+ (markdownlint
@@ -69,11 +75,13 @@ ile doküman arasındaki tutarsızlıkları tespit eder.
   ile uyarılar da hata sayılır).
 
 ## Döküman Uyum
+
 - `pnpm docs:check` → 7 scanner çalışıyor, FAZ-10 + 11
   özgü hata yok.
 - `pnpm i18n:check` → temiz.
 
 ## Testler
+
 - `tools/docs-check/tests/runner.test.ts` → runner
   testleri.
 - `tools/docs-check/tests/api.test.ts` (yok; eksik).
@@ -103,5 +111,6 @@ pnpm docs:check
 - `.github/workflows/ci.yml` — CI gate.
 
 ## Commit
+
 - Core: (FAZ-0 + FAZ-11) — `tools/docs-check/`
 - Docs: (bu commit) — `goals/GOAL-118_COMPLETION_REPORT.md`

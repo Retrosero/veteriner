@@ -1,7 +1,6 @@
 /**
  * @file Retrieval service.
  * @module apps/api/common/ai/retrieval.service
- *
  * @description RAG retrieval servisi. Kullanıcı sorusunu
  * alır, embedding üretir, vector store'dan en ilgili
  * chunk'ları getirir. LLM çağrısı burada YAPILMAZ; yalnızca
@@ -9,23 +8,23 @@
  *
  * FAZ-0 iskeleti: in-memory vector store + basit embedding
  * (token overlap). Gerçek embedding (OpenAI ada-002) Faz 11+.
- *
  * @security Tenant filtreleme: retrieval sonuçları yalnızca
  *   kullanıcının tenantId'sine uygun chunk'ları döner.
- *
  * @since GOAL-005 (FAZ-0) dokümantasyon ve AI bilgi havuzu
  */
 
-import { Injectable, Logger } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
+
+import { Inject, Injectable, Logger } from "@nestjs/common";
+
+import { InMemoryVectorStore } from "./in-memory-vector-store.js";
+import { VECTOR_STORE, type VectorStore } from "./vector-store.js";
 
 import type {
   RetrieveRequest,
   RetrieveResponse,
   RetrievedChunk,
 } from "./chunk.types.js";
-import { InMemoryVectorStore } from "./in-memory-vector-store.js";
-import type { VectorStore } from "./vector-store.js";
 
 /**
  * RetrievalService. Vector store + basit retrieval.
@@ -36,8 +35,10 @@ export class RetrievalService {
   private readonly logger = new Logger(RetrievalService.name);
   private readonly store: VectorStore;
 
-  constructor(store?: VectorStore) {
-    this.store = store ?? new InMemoryVectorStore();
+  public constructor(
+    @Inject(VECTOR_STORE) store: VectorStore = new InMemoryVectorStore(),
+  ) {
+    this.store = store;
   }
 
   /**
@@ -45,6 +46,7 @@ export class RetrievalService {
    * token-overlap tabanlı "embedding" kullanılır; Faz 11+
    * ile OpenAI ada-002 / cohere / voyage embedding'i entegre
    * edilecek.
+   * @param request
    */
   public async retrieve(request: RetrieveRequest): Promise<RetrieveResponse> {
     const start = Date.now();
@@ -60,7 +62,9 @@ export class RetrievalService {
 
     // Tenant filtresi (FAZ-0'da no-op; Faz 11+'da metadata
     // `tenantId` alanına göre filtreleme yapacak).
-    const filtered = chunks.filter((c) => matchesTenant(c, request.context.tenantId));
+    const filtered = chunks.filter((c) =>
+      matchesTenant(c, request.context.tenantId),
+    );
 
     return {
       chunks: filtered,
@@ -77,6 +81,7 @@ export class RetrievalService {
   }
 }
 
+/** Geçici indeks küresel olduğundan chunk'ı tenant filtresinden geçirir. */
 function matchesTenant(_chunk: RetrievedChunk, _tenantId: string): boolean {
   // TODO(GOAL-011+): tenant_id metadata'sı eklenince burada filtrele.
   return true;
@@ -85,6 +90,7 @@ function matchesTenant(_chunk: RetrievedChunk, _tenantId: string): boolean {
 /**
  * Basit embedding: token overlap (kelime bazlı). 256 boyutlu
  * sabit vektör. Production'da OpenAI ada-002 (1536 dim) kullanılacak.
+ * @param text
  */
 function naiveEmbed(text: string): number[] {
   const vec = new Array<number>(256).fill(0);
@@ -99,13 +105,13 @@ function naiveEmbed(text: string): number[] {
       hash = (hash * 31 + tok.charCodeAt(i)) >>> 0;
     }
     const idx = hash % vec.length;
-    vec[idx] = (vec[idx] ?? 0) + 1;
+    vec.splice(idx, 1, (vec.at(idx) ?? 0) + 1);
   }
   // L2 normalize
   const norm = Math.sqrt(vec.reduce((s, v) => s + v * v, 0));
   if (norm > 0) {
     for (let i = 0; i < vec.length; i += 1) {
-      vec[i] = (vec[i] ?? 0) / norm;
+      vec.splice(i, 1, (vec.at(i) ?? 0) / norm);
     }
   }
   return vec;

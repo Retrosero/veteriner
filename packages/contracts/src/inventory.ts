@@ -112,17 +112,13 @@ export const warehouseListResponseSchema = z.object({
   items: z.array(warehouseSchema),
   total: z.number().int().nonnegative(),
 });
-export type WarehouseListResponse = z.infer<
-  typeof warehouseListResponseSchema
->;
+export type WarehouseListResponse = z.infer<typeof warehouseListResponseSchema>;
 
 /** Arşivleme isteği. */
 export const warehouseArchiveInputSchema = z.object({
   reason: z.string().min(1).max(2000),
 });
-export type WarehouseArchiveInput = z.infer<
-  typeof warehouseArchiveInputSchema
->;
+export type WarehouseArchiveInput = z.infer<typeof warehouseArchiveInputSchema>;
 
 /* --------------------------------------------------------------------------
  * Raf (Shelf)
@@ -246,6 +242,7 @@ export const stockLotCreateInputSchema = z
     shelfId: z.string().max(100).optional(),
     quantity: z
       .string()
+      // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden miktar doğrulamasıdır.
       .regex(/^\d+(\.\d{1,4})?$/)
       .optional(),
     notes: z.string().max(2000).optional(),
@@ -275,6 +272,7 @@ export const stockLotUpdateInputSchema = z
     shelfId: z.string().max(100).nullable().optional(),
     quantity: z
       .string()
+      // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden miktar doğrulamasıdır.
       .regex(/^\d+(\.\d{1,4})?$/)
       .nullable()
       .optional(),
@@ -340,6 +338,4 @@ export type StockLotListResponse = z.infer<typeof stockLotListResponseSchema>;
 export const stockLotArchiveInputSchema = z.object({
   reason: z.string().min(1).max(2000),
 });
-export type StockLotArchiveInput = z.infer<
-  typeof stockLotArchiveInputSchema
->;
+export type StockLotArchiveInput = z.infer<typeof stockLotArchiveInputSchema>;

@@ -31,8 +31,8 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { PetshopSalesRepository } from "./petshop-sales.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import {
   addDecimalString,
@@ -42,22 +42,20 @@ import {
   type PetshopSaleLineRecord,
   type PetshopSaleRecord,
 } from "../../common/petshop-sales/petshop-sale.types.js";
+import { ProductsService } from "../products/products.service.js";
+import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
-  PetshopSale,
   PetshopSaleCancelInput,
   PetshopSaleCompleteInput,
   PetshopSaleCreateInput,
   PetshopSaleDetail,
   PetshopSaleFilters,
-  PetshopSaleLine,
   PetshopSaleLineInput,
   PetshopSaleListResponse,
   PetshopSaleUpdateInput,
 } from "@vetniva/contracts";
-
-import { PetshopSalesRepository } from "./petshop-sales.repository.js";
-import { ProductsService } from "../products/products.service.js";
-import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
 
 /** Decimal string'in negatif işaretli kopyası (çıkış). */
 function toNegativeDecimal(value: string): string {
@@ -263,7 +261,11 @@ export class PetshopSalesService {
         totalAmount,
         input.globalDiscountPercent ?? existing.globalDiscountPercent,
       );
-      this.repo.update(tenantId, id, { totalAmount, netAmount, updatedAt: nowIso });
+      this.repo.update(tenantId, id, {
+        totalAmount,
+        netAmount,
+        updatedAt: nowIso,
+      });
     }
 
     if (input.customerOwnerId !== undefined) {
@@ -703,7 +705,7 @@ export class PetshopSalesService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,
@@ -715,7 +717,7 @@ export class PetshopSalesService {
 /**
  * Decimal string'i 100'e böl. 4 ondalık basamağa kadar. Geçersiz → null.
  */
-function divideBy100(value: string): string | null {
+function _divideBy100(value: string): string | null {
   if (!/^\d+(\.\d{1,4})?$/.test(value)) return null;
   const negative = value.startsWith("-");
   const abs = negative ? value.slice(1) : value;

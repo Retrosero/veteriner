@@ -2,46 +2,46 @@
 // k6 ortak helper: auth + PII mask + tenant header.
 // Bu dosya elle degistirilmemelidir; ureticiden gelir.
 
-import http from 'k6/http';
-import { check, fail, sleep } from 'k6';
-import { Counter, Rate, Trend } from 'k6/metrics';
+import http from "k6/http";
+import { check, fail, sleep } from "k6";
+import { Counter, Rate, Trend } from "k6/metrics";
 
 // ---- Konfig (env uzerinden override edilebilir) ----
-const BASE_URL = __ENV.BASE_URL || 'http://localhost:3001';
-const TENANT_ID = __ENV.TENANT_ID || 'tnt-pilot-kadikoy';
-const BRANCH_ID = __ENV.BRANCH_ID || 'brc-pilot-merkez';
-const AUTH_TOKEN = __ENV.AUTH_TOKEN || '';
-const USER_ID = __ENV.USER_ID || 'usr-pilot-vet';
+const BASE_URL = __ENV.BASE_URL || "http://localhost:3001";
+const TENANT_ID = __ENV.TENANT_ID || "tnt-pilot-kadikoy";
+const BRANCH_ID = __ENV.BRANCH_ID || "brc-pilot-merkez";
+const AUTH_TOKEN = __ENV.AUTH_TOKEN || "";
+const USER_ID = __ENV.USER_ID || "usr-pilot-vet";
 
 // ---- Custom metrikler ----
-export const errorCount = new Counter('vetniva_errors');
-export const piiRedactedCount = new Counter('vetniva_pii_redacted');
-export const tenantBoundaryCheck = new Rate('vetniva_tenant_boundary_ok');
+export const errorCount = new Counter("vetniva_errors");
+export const piiRedactedCount = new Counter("vetniva_pii_redacted");
+export const tenantBoundaryCheck = new Rate("vetniva_tenant_boundary_ok");
 
 // ---- Header fabrikasi ----
 export function authHeaders(extra) {
   const h = Object.assign(
     {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'X-Tenant-Id': TENANT_ID,
-      'X-Branch-Id': BRANCH_ID,
-      'X-User-Id': USER_ID,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "X-Tenant-Id": TENANT_ID,
+      "X-Branch-Id": BRANCH_ID,
+      "X-User-Id": USER_ID,
     },
     extra || {},
   );
-  if (AUTH_TOKEN) h['Authorization'] = 'Bearer ' + AUTH_TOKEN;
+  if (AUTH_TOKEN) h["Authorization"] = "Bearer " + AUTH_TOKEN;
   return h;
 }
 
 // ---- Tenant izolasyonu dogrulamasi ----
 export function assertTenantBoundary(res) {
-  const hdrTenant = res.headers['X-Tenant-Id'] || res.headers['x-tenant-id'];
+  const hdrTenant = res.headers["X-Tenant-Id"] || res.headers["x-tenant-id"];
   const ok = !hdrTenant || hdrTenant === TENANT_ID;
   tenantBoundaryCheck.add(ok ? 1 : 0);
   if (!ok) {
     errorCount.add(1);
-    fail('Tenant boundary breach: response X-Tenant-Id=' + hdrTenant);
+    fail("Tenant boundary breach: response X-Tenant-Id=" + hdrTenant);
   }
 }
 
@@ -51,16 +51,19 @@ export function assertTenantBoundary(res) {
 // yalnizca yuk testi istemcisi tarafinda olusan PII'nin loga
 // dusmesini engeller.
 export function maskString(s) {
-  if (typeof s !== 'string') return s;
+  if (typeof s !== "string") return s;
   return s
-    .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, '***@***')
-    .replace(/\b[5-9]\d{9}[0-9]\b/g, '***********') // TCKN
-    .replace(/\b0?5\d{9}\b/g, '0**********');        // TR telefon
+    .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, "***@***")
+    .replace(/\b[5-9]\d{9}[0-9]\b/g, "***********") // TCKN
+    .replace(/\b0?5\d{9}\b/g, "0**********"); // TR telefon
 }
 
 // ---- Request helper ----
 export function vetGet(path, params) {
-  const res = http.get(BASE_URL + path, Object.assign({ headers: authHeaders() }, params || {}));
+  const res = http.get(
+    BASE_URL + path,
+    Object.assign({ headers: authHeaders() }, params || {}),
+  );
   assertTenantBoundary(res);
   return res;
 }
@@ -96,7 +99,11 @@ export function vetPatch(path, body, params) {
 }
 
 export function vetDelete(path, params) {
-  const res = http.del(BASE_URL + path, null, Object.assign({ headers: authHeaders() }, params || {}));
+  const res = http.del(
+    BASE_URL + path,
+    null,
+    Object.assign({ headers: authHeaders() }, params || {}),
+  );
   assertTenantBoundary(res);
   return res;
 }

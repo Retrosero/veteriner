@@ -15,7 +15,6 @@
  */
 
 import type { FileMeta as PrismaFileMeta } from "@prisma/client";
-
 import type {
   FileCategory,
   FileMeta,
@@ -91,9 +90,13 @@ function inferCategory(
   relatedEntityType: string | null,
 ): FileCategory {
   if (relatedEntityType) {
-    const fromEntity = ENTITY_TYPE_TO_CATEGORY[relatedEntityType];
+    const fromEntity = Reflect.get(
+      ENTITY_TYPE_TO_CATEGORY,
+      relatedEntityType,
+    ) as FileCategory | undefined;
     if (fromEntity) return fromEntity;
   }
-  const fromMime = MIME_TO_CATEGORY[mime];
+  const fromMime = Reflect.get(MIME_TO_CATEGORY, mime) as
+    FileCategory | undefined;
   return fromMime ?? "other";
 }

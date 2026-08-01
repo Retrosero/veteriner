@@ -55,12 +55,10 @@
 import { z } from "zod";
 
 import {
-  anyErrorCodeSchema,
-} from "./error.js";
-import {
   errorEventActorTypeSchema,
   errorEventCountrySchema,
 } from "./error-event.js";
+import { anyErrorCodeSchema } from "./error.js";
 
 /* --------------------------------------------------------------------------
  * Enum'lar
@@ -183,8 +181,12 @@ export const jobRunFinishInputSchema = z
   )
   .refine(
     (v) =>
-      v.status === "succeeded" || (v.errorCode !== undefined && v.errorCode !== null),
-    { message: "failed/dead_letter durumda errorCode zorunludur", path: ["errorCode"] },
+      v.status === "succeeded" ||
+      (v.errorCode !== undefined && v.errorCode !== null),
+    {
+      message: "failed/dead_letter durumda errorCode zorunludur",
+      path: ["errorCode"],
+    },
   );
 export type JobRunFinishInput = z.infer<typeof jobRunFinishInputSchema>;
 

@@ -1,7 +1,6 @@
 /**
  * @file HealthModule.
  * @module apps/api/modules/health
- *
  * @description Sağlık kontrolü modülü. Liveness ve readiness
  * endpoint'lerini sağlar. PrismaService'i (global) kullanır.
  */

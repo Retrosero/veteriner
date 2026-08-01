@@ -13,15 +13,14 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { PrescriptionsRepository } from "./prescriptions.repository.js";
+import { PrescriptionsService } from "./prescriptions.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-import type { Examination } from "@vetniva/contracts";
-
-import type { ExaminationsService } from "../examinations/examinations.service.js";
 import type { ClinicalConsumptionService } from "../clinical-consumption/clinical-consumption.service.js";
-
-import { PrescriptionsService } from "./prescriptions.service.js";
-import { PrescriptionsRepository } from "./prescriptions.repository.js";
+import type { ExaminationsService } from "../examinations/examinations.service.js";
+import type { Examination } from "@vetniva/contracts";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -123,12 +122,14 @@ function validItem() {
   };
 }
 
-function validInput(overrides: Partial<{
-  examinationId: string;
-  items: ReturnType<typeof validItem>[];
-  notes: string;
-  durationDays: number;
-}> = {}) {
+function validInput(
+  overrides: Partial<{
+    examinationId: string;
+    items: ReturnType<typeof validItem>[];
+    notes: string;
+    durationDays: number;
+  }> = {},
+) {
   return {
     examinationId: EXAM_ID_A,
     items: [validItem()],
@@ -189,7 +190,9 @@ describe("PrescriptionsService", () => {
       // expiresAt = prescribedAt + 7 gün
       const prescribed = new Date(prsc.prescribedAt).getTime();
       const expires = new Date(prsc.expiresAt).getTime();
-      const diffDays = Math.round((expires - prescribed) / (24 * 60 * 60 * 1000));
+      const diffDays = Math.round(
+        (expires - prescribed) / (24 * 60 * 60 * 1000),
+      );
       expect(diffDays).toBe(7);
       // prescribedAt şimdiki zamana yakın olmalı
       expect(prescribed).toBeGreaterThanOrEqual(before);
@@ -308,11 +311,7 @@ describe("PrescriptionsService", () => {
     it("status=dispensed + dispensedAt + dispensedBy + audit.dispense", async () => {
       const created = await service.create(TENANT_A, validInput(), VET_A);
       (audit.recordSimple as ReturnType<typeof vi.fn>).mockClear();
-      const dispensed = await service.dispense(
-        TENANT_A,
-        created.id,
-        VET_A,
-      );
+      const dispensed = await service.dispense(TENANT_A, created.id, VET_A);
       expect(dispensed.status).toBe("dispensed");
       expect(dispensed.dispensedAt).toBeTruthy();
       expect(dispensed.dispensedBy).toBe("usr-vet-a");
@@ -369,12 +368,7 @@ describe("PrescriptionsService", () => {
 
     it("zaten iptal edilmişse → 409 VET-PRESC-0004", async () => {
       const created = await service.create(TENANT_A, validInput(), VET_A);
-      await service.cancel(
-        TENANT_A,
-        created.id,
-        { reason: "x" },
-        VET_A,
-      );
+      await service.cancel(TENANT_A, created.id, { reason: "x" }, VET_A);
       await expect(
         service.cancel(TENANT_A, created.id, { reason: "y" }, VET_A),
       ).rejects.toMatchObject({

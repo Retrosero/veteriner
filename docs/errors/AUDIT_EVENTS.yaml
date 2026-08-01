@@ -701,13 +701,34 @@ security:
 # SCHEMA
 # -----------------------------------------------------------------------------
 schema:
-  event: string  # format: ^audit:[a-z_]+:[a-z_]+$
+  event: string # format: ^audit:[a-z_]+:[a-z_]+$
   action:
     type: enum
-    values: [create, read, update, archive, restore, erase,
-             export, sign, amend, complete, cancel, reverse,
-             transfer, adjust, dispense, admit, discharge,
-             invite, assign_role, format_currency, send, receive]
+    values:
+      [
+        create,
+        read,
+        update,
+        archive,
+        restore,
+        erase,
+        export,
+        sign,
+        amend,
+        complete,
+        cancel,
+        reverse,
+        transfer,
+        adjust,
+        dispense,
+        admit,
+        discharge,
+        invite,
+        assign_role,
+        format_currency,
+        send,
+        receive,
+      ]
   severity:
     type: enum
     values: [info, warning, error, critical]

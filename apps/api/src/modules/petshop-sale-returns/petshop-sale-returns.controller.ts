@@ -29,13 +29,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   petshopSaleReturnCancelInputSchema,
   petshopSaleReturnCompleteInputSchema,
@@ -50,14 +43,19 @@ import {
 } from "@vetniva/contracts";
 
 import { PetshopSaleReturnsService } from "./petshop-sale-returns.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("petshop/sale-returns")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/petshop/sales/returns")
 export class PetshopSaleReturnsController {
-  public constructor(
-    private readonly service: PetshopSaleReturnsService,
-  ) {}
+  public constructor(private readonly service: PetshopSaleReturnsService) {}
 
   @Post()
   @RequirePermissions("petshop:sale:refund")
@@ -113,11 +111,7 @@ export class PetshopSaleReturnsController {
     @CurrentActor() actor: ActorContext,
   ): Promise<PetshopSaleReturnDetail> {
     const tenantId = this.requireTenant(actor);
-    const detail = await this.service.getReturnDetail(
-      tenantId,
-      id,
-      actor,
-    );
+    const detail = await this.service.getReturnDetail(tenantId, id, actor);
     if (!detail) {
       throw new DomainError({
         errorCode: "VET-RETURN-0001",

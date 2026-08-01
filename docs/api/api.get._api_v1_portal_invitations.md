@@ -9,9 +9,9 @@ revoked) döner; UI filtreleme yapabilir.
 
 **Query parametreleri:**
 
-| Ad | Tip | Zorunlu | Açıklama |
-| --- | --- | --- | --- |
-| `ownerId` | UUID | evet | Hasta sahibi ID. Aynı tenant'ta olmalı. |
+| Ad        | Tip  | Zorunlu | Açıklama                                |
+| --------- | ---- | ------- | --------------------------------------- |
+| `ownerId` | UUID | evet    | Hasta sahibi ID. Aynı tenant'ta olmalı. |
 
 **Response 200 (`PortalInvitationListResponse`):**
 
@@ -29,9 +29,7 @@ revoked) döner; UI filtreleme yapabilir.
       "acceptedAt": null,
       "revokedAt": null,
       "invitationToken": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
-      "patientIds": [
-        "33333333-3333-3333-3333-333333333333"
-      ],
+      "patientIds": ["33333333-3333-3333-3333-333333333333"],
       "locale": "tr-TR",
       "invitedBy": "usr-staff-uuid"
     }

@@ -1,0 +1,16 @@
+# Prettier ignore — bu dosyalar prettier tarafından
+# formatlanmaz. Sebebi: pre-commit/CI'da format:check hatası
+# vermemek için otomatik üretilen veya özel formatı olan
+# dosyaları muaf tutarız.
+#
+# Bu dosyalar:
+# - docs/ai/AI_CHUNKS.yaml: makinece üretilen karma YAML formatı
+#   (js-yaml.loadAll ile okunur; prettier strict YAML parser ile
+#   hata verir). rg-chunk-producer ile yeniden üretilir.
+# - pnpm-lock.yaml: bağımlılık kilidi; otomatik yönetilir.
+# - .todo.md: kişisel notlar.
+# - pnpm-workspace.yaml: workspace tanımı; elle düzenlenmez.
+
+pnpm-lock.yaml
+.todo.md
+pnpm-workspace.yaml

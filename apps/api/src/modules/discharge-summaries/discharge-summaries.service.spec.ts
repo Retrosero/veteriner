@@ -1,25 +1,23 @@
 /**
  * @file DischargeSummariesService unit testleri.
  * @module apps/api/modules/discharge-summaries/discharge-summaries.service.spec
- *
  * @description GOAL-086 gözlem + taburcu özeti service testleri.
  *   - addObservation: append-only; discharged/cancelled 422.
  *   - createDischargeSummary: yatış discharged olmalı 422.
  *   - update / finalize / amend / portal-share state transitions.
  *   - Cross-tenant IDOR → null/404; cross-tenant create 403.
- *
  * @since GOAL-086 (FAZ-8) gözlem ve taburcu özeti core
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { DischargeSummariesRepository } from "./discharge-summaries.repository.js";
+import { DischargeSummariesService } from "./discharge-summaries.service.js";
+import { HospitalizationRepository } from "../hospitalization/hospitalization.repository.js";
+import { HospitalizationService } from "../hospitalization/hospitalization.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-
-import { DischargeSummariesService } from "./discharge-summaries.service.js";
-import { DischargeSummariesRepository } from "./discharge-summaries.repository.js";
-import { HospitalizationService } from "../hospitalization/hospitalization.service.js";
-import { HospitalizationRepository } from "../hospitalization/hospitalization.repository.js";
 import type {
   DischargeSummaryAmendInput,
   DischargeSummaryCreateInput,
@@ -56,6 +54,9 @@ const STAFF_A: ActorContext = {
   source: "header",
 };
 
+/**
+ *
+ */
 function makeAudit(): AuditService {
   return {
     record: vi.fn().mockResolvedValue({ eventId: "ev-1" }),
@@ -76,12 +77,20 @@ function makeAudit(): AuditService {
 
 const PATIENT_A = "00000000-0000-0000-0000-000000000001";
 
+/**
+ *
+ * @param overrides
+ */
 function makeObsInput(
   overrides: Partial<ObservationCreateInput> = {},
 ): ObservationCreateInput {
   return { kind: "vital", value: "38.5°C", ...overrides };
 }
 
+/**
+ *
+ * @param overrides
+ */
 function makeSummaryInput(
   overrides: Partial<DischargeSummaryCreateInput> = {},
 ): DischargeSummaryCreateInput {
@@ -102,12 +111,20 @@ function makeSummaryInput(
   };
 }
 
+/**
+ *
+ * @param overrides
+ */
 function makeUpdateInput(
   overrides: Partial<DischargeSummaryUpdateInput> = {},
 ): DischargeSummaryUpdateInput {
   return { clinicalSummary: "güncellenmiş özet", ...overrides };
 }
 
+/**
+ *
+ * @param overrides
+ */
 function makeAmendInput(
   overrides: Partial<DischargeSummaryAmendInput> = {},
 ): DischargeSummaryAmendInput {
@@ -136,12 +153,7 @@ describe("DischargeSummariesService", () => {
       { patientId: PATIENT_A },
       VET_A,
     );
-    await hospService.admitHospitalization(
-      TENANT_A,
-      h.id,
-      {},
-      VET_A,
-    );
+    await hospService.admitHospitalization(TENANT_A, h.id, {}, VET_A);
     await hospService.dischargeHospitalization(
       TENANT_A,
       h.id,
@@ -162,12 +174,7 @@ describe("DischargeSummariesService", () => {
         { patientId: PATIENT_A },
         VET_A,
       );
-      await hospService.admitHospitalization(
-        TENANT_A,
-        h.id,
-        {},
-        VET_A,
-      );
+      await hospService.admitHospitalization(TENANT_A, h.id, {}, VET_A);
       const obs = await service.addObservation(
         TENANT_A,
         h.id,
@@ -182,12 +189,7 @@ describe("DischargeSummariesService", () => {
     it("discharged yatışa gözlem 422 VET-DSUM-0003", async () => {
       const hospId = await makeDischargedHosp();
       await expect(
-        service.addObservation(
-          TENANT_A,
-          hospId,
-          makeObsInput(),
-          VET_A,
-        ),
+        service.addObservation(TENANT_A, hospId, makeObsInput(), VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-DSUM-0003",
         httpStatus: 422,
@@ -221,12 +223,7 @@ describe("DischargeSummariesService", () => {
         { patientId: PATIENT_A },
         VET_A,
       );
-      await hospService.admitHospitalization(
-        TENANT_A,
-        h.id,
-        {},
-        VET_A,
-      );
+      await hospService.admitHospitalization(TENANT_A, h.id, {}, VET_A);
       await expect(
         service.createDischargeSummary(
           TENANT_A,
@@ -334,12 +331,7 @@ describe("DischargeSummariesService", () => {
         makeSummaryInput(),
         VET_A,
       );
-      await service.finalizeDischargeSummary(
-        TENANT_A,
-        hospId,
-        {},
-        VET_A,
-      );
+      await service.finalizeDischargeSummary(TENANT_A, hospId, {}, VET_A);
       await expect(
         service.updateDischargeSummary(
           TENANT_A,
@@ -367,12 +359,7 @@ describe("DischargeSummariesService", () => {
         makeSummaryInput(),
         VET_A,
       );
-      await service.finalizeDischargeSummary(
-        TENANT_A,
-        hospId,
-        {},
-        VET_A,
-      );
+      await service.finalizeDischargeSummary(TENANT_A, hospId, {}, VET_A);
       const newSummary = await service.amendDischargeSummary(
         TENANT_A,
         hospId,
@@ -428,12 +415,7 @@ describe("DischargeSummariesService", () => {
         makeSummaryInput(),
         VET_A,
       );
-      await service.finalizeDischargeSummary(
-        TENANT_A,
-        hospId,
-        {},
-        VET_A,
-      );
+      await service.finalizeDischargeSummary(TENANT_A, hospId, {}, VET_A);
       const out = await service.shareDischargeSummaryPortal(
         TENANT_A,
         hospId,
@@ -452,11 +434,7 @@ describe("DischargeSummariesService", () => {
         VET_A,
       );
       await expect(
-        service.shareDischargeSummaryPortal(
-          TENANT_A,
-          hospId,
-          VET_A,
-        ),
+        service.shareDischargeSummaryPortal(TENANT_A, hospId, VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-DSUM-0007",
         httpStatus: 409,
@@ -475,12 +453,7 @@ describe("DischargeSummariesService", () => {
         { patientId: PATIENT_A },
         VET_A,
       );
-      await hospService.admitHospitalization(
-        TENANT_A,
-        h.id,
-        {},
-        VET_A,
-      );
+      await hospService.admitHospitalization(TENANT_A, h.id, {}, VET_A);
       await service.addObservation(
         TENANT_A,
         h.id,

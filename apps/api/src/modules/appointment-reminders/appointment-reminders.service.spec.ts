@@ -1,16 +1,25 @@
 /**
  * @file AppointmentRemindersService unit testleri.
  * @module apps/api/modules/appointment-reminders/appointment-reminders.service.spec
- *
- * @description schedule (success/past/missing owner/patient), cancel
+ * @description Schedule (success/past/missing owner/patient), cancel
  * idempotency, reschedule (forward/past/negative delta), processDue
  * (success/failure/skipped-no-snapshot), list filter, tenant
  * izolasyonu ve audit event yayını.
- *
  * @since GOAL-036 (FAZ-3) randevu hatırlatma core
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { AppointmentRemindersRepository } from "./appointment-reminders.repository.js";
+import { AppointmentRemindersService } from "./appointment-reminders.service.js";
+import { ConsentService } from "../../common/notifications/consent.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { AuditService } from "../../common/audit/audit.service.js";
+import type { NotificationsService } from "../notifications/notifications.service.js";
+import type { OwnersService } from "../owners/owners.service.js";
+import type { PatientsService } from "../patients/patients.service.js";
+import type { TenantService } from "../tenant/tenant.service.js";
 import type {
   Appointment,
   AppointmentStatus,
@@ -20,17 +29,6 @@ import type {
   Patient,
   TenantResponse,
 } from "@vetniva/contracts";
-
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
-import { ConsentService } from "../../common/notifications/consent.service.js";
-import type { NotificationsService } from "../notifications/notifications.service.js";
-import type { OwnersService } from "../owners/owners.service.js";
-import type { PatientsService } from "../patients/patients.service.js";
-import type { TenantService } from "../tenant/tenant.service.js";
-
-import { AppointmentRemindersService } from "./appointment-reminders.service.js";
-import { AppointmentRemindersRepository } from "./appointment-reminders.repository.js";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -53,17 +51,27 @@ const PATIENT_ID_A = "pat-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const OWNER_ID_A = "own-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const VET_ID = "vet-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 
-/** Hours ahead ISO datetime. */
+/**
+ * Hours ahead ISO datetime.
+ * @param hoursAhead
+ */
 function futureIso(hoursAhead: number): string {
   return new Date(Date.now() + hoursAhead * 60 * 60 * 1000).toISOString();
 }
 
+/**
+ *
+ */
 function makeAudit(): AuditService {
   return {
     record: vi.fn().mockResolvedValue({ eventId: "ev-1" }),
   } as unknown as AuditService;
 }
 
+/**
+ *
+ * @param impl
+ */
 function makeNotifications(
   impl?: (req: unknown) => Promise<NotificationRecord>,
 ): { service: NotificationsService; send: ReturnType<typeof vi.fn> } {
@@ -85,6 +93,9 @@ function makeNotifications(
   return { service: { send } as unknown as NotificationsService, send };
 }
 
+/**
+ *
+ */
 function makePatient(): Patient {
   return {
     id: PATIENT_ID_A,
@@ -104,6 +115,10 @@ function makePatient(): Patient {
   };
 }
 
+/**
+ *
+ * @param extra
+ */
 function makeOwner(extra: Partial<Owner> = {}): Owner {
   return {
     id: OWNER_ID_A,
@@ -121,6 +136,10 @@ function makeOwner(extra: Partial<Owner> = {}): Owner {
   };
 }
 
+/**
+ *
+ * @param overrides
+ */
 function makeAppointment(overrides: Partial<Appointment> = {}): Appointment {
   const start = futureIso(48);
   const end = new Date(new Date(start).getTime() + 30 * 60_000).toISOString();
@@ -141,6 +160,11 @@ function makeAppointment(overrides: Partial<Appointment> = {}): Appointment {
   };
 }
 
+/**
+ *
+ * @param _patient
+ * @param owner
+ */
 function makeOwners(
   _patient: Patient | null,
   owner: Owner | null,
@@ -148,26 +172,32 @@ function makeOwners(
   return {
     findById: vi
       .fn()
-      .mockImplementation(
-        async (tenantId: string, id: string) =>
-          owner && tenantId === owner.tenantId && id === owner.id ? owner : null,
+      .mockImplementation(async (tenantId: string, id: string) =>
+        owner && tenantId === owner.tenantId && id === owner.id ? owner : null,
       ),
   } as unknown as OwnersService;
 }
 
+/**
+ *
+ * @param patient
+ */
 function makePatients(patient: Patient | null): PatientsService {
   return {
     findById: vi
       .fn()
-      .mockImplementation(
-        async (tenantId: string, id: string) =>
-          patient && tenantId === patient.tenantId && id === patient.id
-            ? patient
-            : null,
+      .mockImplementation(async (tenantId: string, id: string) =>
+        patient && tenantId === patient.tenantId && id === patient.id
+          ? patient
+          : null,
       ),
   } as unknown as PatientsService;
 }
 
+/**
+ *
+ * @param locale
+ */
 function makeTenants(locale: "tr-TR" | "en-GB" = "tr-TR"): TenantService {
   return {
     findById: vi
@@ -204,6 +234,14 @@ interface Harness {
   service: AppointmentRemindersService;
 }
 
+/**
+ *
+ * @param opts
+ * @param opts.notificationImpl
+ * @param opts.owner
+ * @param opts.patient
+ * @param opts.locale
+ */
 function makeHarness(opts?: {
   notificationImpl?: (req: unknown) => Promise<NotificationRecord>;
   owner?: Owner | null;
@@ -255,10 +293,20 @@ describe("AppointmentRemindersService", () => {
   describe("scheduleForAppointment", () => {
     it("default config ile sms+in_app oluşturur, audit yazar", async () => {
       const appt = makeAppointment();
-      const id = await h.service.scheduleForAppointment(TENANT_A, appt, STAFF_A);
+      const id = await h.service.scheduleForAppointment(
+        TENANT_A,
+        appt,
+        STAFF_A,
+      );
       expect(id).not.toBeNull();
 
-      const all = h.repo.listForAppointment(TENANT_A, APPT_ID_A, undefined, 50, 0);
+      const all = h.repo.listForAppointment(
+        TENANT_A,
+        APPT_ID_A,
+        undefined,
+        50,
+        0,
+      );
       expect(all.total).toBe(2);
       const channels = all.items.map((r) => r.channel).sort();
       expect(channels).toEqual(["in_app", "sms"]);
@@ -278,7 +326,11 @@ describe("AppointmentRemindersService", () => {
 
     it("appointment.start çok yakınsa (geçmiş) skip eder, null döner", async () => {
       const appt = makeAppointment({ start: futureIso(1) });
-      const id = await h.service.scheduleForAppointment(TENANT_A, appt, STAFF_A);
+      const id = await h.service.scheduleForAppointment(
+        TENANT_A,
+        appt,
+        STAFF_A,
+      );
       expect(id).toBeNull();
       expect(
         h.repo.listForAppointment(TENANT_A, APPT_ID_A, undefined, 50, 0).total,
@@ -301,24 +353,48 @@ describe("AppointmentRemindersService", () => {
       );
       const appt = makeAppointment();
       await h.service.scheduleForAppointment(TENANT_A, appt, STAFF_A);
-      const all = h.repo.listForAppointment(TENANT_A, APPT_ID_A, undefined, 50, 0);
+      const all = h.repo.listForAppointment(
+        TENANT_A,
+        APPT_ID_A,
+        undefined,
+        50,
+        0,
+      );
       expect(all.total).toBe(1);
       expect(all.items[0]!.channel).toBe("in_app");
     });
 
     it("idempotent: aynı planlama ikinci kez no-op", async () => {
       const appt = makeAppointment();
-      const id1 = await h.service.scheduleForAppointment(TENANT_A, appt, STAFF_A);
-      const id2 = await h.service.scheduleForAppointment(TENANT_A, appt, STAFF_A);
+      const id1 = await h.service.scheduleForAppointment(
+        TENANT_A,
+        appt,
+        STAFF_A,
+      );
+      const id2 = await h.service.scheduleForAppointment(
+        TENANT_A,
+        appt,
+        STAFF_A,
+      );
       expect(id1).toBe(id2);
-      const all = h.repo.listForAppointment(TENANT_A, APPT_ID_A, undefined, 50, 0);
+      const all = h.repo.listForAppointment(
+        TENANT_A,
+        APPT_ID_A,
+        undefined,
+        50,
+        0,
+      );
       expect(all.total).toBe(2);
     });
 
     it("patient bulunamadı → null + no audit", async () => {
       const local = makeHarness({ patient: null });
       const appt = makeAppointment();
-      const id = await local.service.scheduleForAppointment(TENANT_A, appt, STAFF_A);
+      const id = await local.service.scheduleForAppointment(
+        TENANT_A,
+        appt,
+        STAFF_A,
+      );
       expect(id).toBeNull();
       expect(local.audit.record).not.toHaveBeenCalled();
     });
@@ -339,7 +415,13 @@ describe("AppointmentRemindersService", () => {
         STAFF_A,
       );
       expect(cancelled).toBe(2);
-      const all = h.repo.listForAppointment(TENANT_A, APPT_ID_A, undefined, 50, 0);
+      const all = h.repo.listForAppointment(
+        TENANT_A,
+        APPT_ID_A,
+        undefined,
+        50,
+        0,
+      );
       expect(all.items.every((r) => r.status === "cancelled")).toBe(true);
       expect(h.audit.record).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -352,8 +434,16 @@ describe("AppointmentRemindersService", () => {
     it("idempotent: ikinci kez 0 döner", async () => {
       const appt = makeAppointment();
       await h.service.scheduleForAppointment(TENANT_A, appt, STAFF_A);
-      const c1 = await h.service.cancelForAppointment(TENANT_A, APPT_ID_A, STAFF_A);
-      const c2 = await h.service.cancelForAppointment(TENANT_A, APPT_ID_A, STAFF_A);
+      const c1 = await h.service.cancelForAppointment(
+        TENANT_A,
+        APPT_ID_A,
+        STAFF_A,
+      );
+      const c2 = await h.service.cancelForAppointment(
+        TENANT_A,
+        APPT_ID_A,
+        STAFF_A,
+      );
       expect(c1).toBe(2);
       expect(c2).toBe(0);
     });
@@ -442,7 +532,13 @@ describe("AppointmentRemindersService", () => {
       expect(result.sent).toBe(2);
       expect(result.failed).toBe(0);
       expect(h.notif.send).toHaveBeenCalledTimes(2);
-      const all = h.repo.listForAppointment(TENANT_A, APPT_ID_A, undefined, 50, 0);
+      const all = h.repo.listForAppointment(
+        TENANT_A,
+        APPT_ID_A,
+        undefined,
+        50,
+        0,
+      );
       expect(all.items.every((r) => r.status === "sent")).toBe(true);
     });
 
@@ -507,7 +603,13 @@ describe("AppointmentRemindersService", () => {
       const appt = makeAppointment();
       await h.service.scheduleForAppointment(TENANT_A, appt, STAFF_A);
       // Snapshot'ı cancelled yap.
-      const all = h.repo.listForAppointment(TENANT_A, APPT_ID_A, undefined, 50, 0);
+      const all = h.repo.listForAppointment(
+        TENANT_A,
+        APPT_ID_A,
+        undefined,
+        50,
+        0,
+      );
       for (const rec of all.items) {
         h.repo.updateSnapshot(TENANT_A, rec.id, {
           ...rec.snapshot!,
@@ -656,8 +758,20 @@ describe("AppointmentRemindersService", () => {
       // dedupeKey'i bozar; futureIso() her çağrıda yeni Date.now()
       // okur). Bu yüzden tek seferlik hesaplanır.
       const scheduled = futureIso(24);
-      const rec1 = makeRepoRecord(TENANT_A, "id-1", APPT_ID_A, scheduled, "sms");
-      const rec2 = makeRepoRecord(TENANT_A, "id-2", APPT_ID_A, scheduled, "sms");
+      const rec1 = makeRepoRecord(
+        TENANT_A,
+        "id-1",
+        APPT_ID_A,
+        scheduled,
+        "sms",
+      );
+      const rec2 = makeRepoRecord(
+        TENANT_A,
+        "id-2",
+        APPT_ID_A,
+        scheduled,
+        "sms",
+      );
       const r1 = h.repo.insert(rec1);
       const r2 = h.repo.insert(rec2);
       expect(r1.inserted).toBe(true);
@@ -666,7 +780,13 @@ describe("AppointmentRemindersService", () => {
     });
 
     it("findById cross-tenant → null", () => {
-      const rec = makeRepoRecord(TENANT_A, "id-1", APPT_ID_A, futureIso(24), "sms");
+      const rec = makeRepoRecord(
+        TENANT_A,
+        "id-1",
+        APPT_ID_A,
+        futureIso(24),
+        "sms",
+      );
       h.repo.insert(rec);
       expect(h.repo.findById(TENANT_B, "id-1")).toBeNull();
     });
@@ -708,6 +828,15 @@ describe("AppointmentRemindersService", () => {
   });
 });
 
+/**
+ *
+ * @param tenantId
+ * @param id
+ * @param appointmentId
+ * @param scheduledFor
+ * @param channel
+ * @param overrides
+ */
 function makeRepoRecord(
   tenantId: string,
   id: string,

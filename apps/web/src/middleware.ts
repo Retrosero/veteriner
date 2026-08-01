@@ -1,37 +1,39 @@
 /**
  * @file Next.js middleware — locale doğrulama.
  * @module @vetniva/web/middleware
- *
  * @description İstek geldiğinde pathname'in desteklenen bir locale ile
  * başlayıp başlamadığını denetler. Desteklenmeyen bir locale veya locale
  * eksikse, kullanıcıyı varsayılan locale'e yönlendirir. Statik
  * dosyalar, API route'ları ve Next.js iç rotaları matcher tarafından
  * dışlanır.
- *
  * @security Yanlış/eksik locale ile gelen istekler yönlendirilir; böylece
  * tenant bağlamı tutarsız başlamaz. Matcher, API rotalarını dışarıda
  * bırakarak API'nin kendi i18n davranışını korumasını sağlar.
  */
-
-import { NextResponse, type NextRequest } from "next/server";
 
 import {
   DEFAULT_LOCALE,
   SUPPORTED_LOCALES,
   type Locale,
 } from "@vetniva/contracts";
+import { NextResponse, type NextRequest } from "next/server";
 
 const LOCALE_SET = new Set<string>(SUPPORTED_LOCALES);
 
 /**
  * Verilen pathname'in ilk segmentinin geçerli bir locale olup olmadığını
- * döner. true dönerse locale segmenti korunur; aksi halde yönlendirme
+ * döner. True dönerse locale segmenti korunur; aksi halde yönlendirme
  * tetiklenir.
+ * @param segment
  */
 function isLocaleSegment(segment: string): segment is Locale {
   return LOCALE_SET.has(segment);
 }
 
+/**
+ *
+ * @param request
+ */
 export function middleware(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
 

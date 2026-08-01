@@ -13,14 +13,16 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { PatientsRepository } from "./patients.repository.js";
+import { PatientsService } from "./patients.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
+import type { AuditEventInput } from "../../common/audit/audit.types.js";
 import type { Owner } from "../../common/owners/owner.types.js";
+import type { AlertsService } from "../alerts/alerts.service.js";
 import type { OwnersService } from "../owners/owners.service.js";
 import type { OwnershipHistoryService } from "../ownership-history/ownership-history.service.js";
-
-import { PatientsService } from "./patients.service.js";
-import { PatientsRepository } from "./patients.repository.js";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -57,6 +59,7 @@ const OWNER_B_ID = "22222222-2222-2222-2222-222222222222";
 
 /** Mock owner store: key = tenantId|ownerId → Owner. */
 const ownersStore = new Map<string, Owner>();
+const auditEvents: AuditEventInput[] = [];
 
 function seedOwner(
   tenantId: string,
@@ -93,7 +96,10 @@ function makeOwners(): OwnersService {
 
 function makeAudit(): AuditService {
   return {
-    record: vi.fn().mockResolvedValue({ eventId: "ev-1" }),
+    record: vi.fn().mockImplementation(async (input: AuditEventInput) => {
+      auditEvents.push(input);
+      return { eventId: "ev-1" };
+    }),
   } as unknown as AuditService;
 }
 
@@ -105,10 +111,12 @@ function makeOwnership(): OwnershipHistoryService {
   } as unknown as OwnershipHistoryService;
 }
 
-function validInput(overrides: Partial<{
-  ownerId: string;
-  name: string;
-}> = {}) {
+function validInput(
+  overrides: Partial<{
+    ownerId: string;
+    name: string;
+  }> = {},
+) {
   return {
     ownerId: OLD_OWNER_ID,
     name: "Boncuk",
@@ -128,6 +136,7 @@ describe("PatientsService.transferOwnership", () => {
 
   beforeEach(async () => {
     ownersStore.clear();
+    auditEvents.length = 0;
     seedOwner(TENANT_A, OLD_OWNER_ID, {
       firstName: "Ahmet",
       lastName: "Yılmaz",
@@ -147,7 +156,7 @@ describe("PatientsService.transferOwnership", () => {
     ownership = makeOwnership();
     const alerts = {
       getActiveAlertsForPatient: vi.fn().mockResolvedValue([]),
-    } as unknown as import("../alerts/alerts.service.js").AlertsService;
+    } as unknown as AlertsService;
     service = new PatientsService(owners, repo, audit, ownership, alerts);
 
     // Hasta oluştur (createInitial mock'lu, audit çağrısı ayrı).
@@ -155,12 +164,10 @@ describe("PatientsService.transferOwnership", () => {
   });
 
   it("başarı: transfer edilir, audit:patient.transfer (warning) yayınlanır, transferId döner", async () => {
-    const created = (await service.search(
-      TENANT_A,
-      { limit: 20, offset: 0 },
-      STAFF_A,
-    )).items[0]!;
-    const before = (audit.record as ReturnType<typeof vi.fn>).mock.calls.length;
+    const created = (
+      await service.search(TENANT_A, { limit: 20, offset: 0 }, STAFF_A)
+    ).items[0]!;
+    const before = auditEvents.length;
 
     const result = await service.transferOwnership(
       TENANT_A,
@@ -175,11 +182,10 @@ describe("PatientsService.transferOwnership", () => {
     expect(result.patient.tenantId).toBe(TENANT_A);
 
     // Ek audit çağrısı (transfer) eklendi.
-    const after = (audit.record as ReturnType<typeof vi.fn>).mock.calls.length;
+    const after = auditEvents.length;
     expect(after).toBe(before + 1);
 
-    const lastCall = (audit.record as ReturnType<typeof vi.fn>).mock
-      .calls.at(-1)?.[0];
+    const lastCall = auditEvents.at(-1);
     expect(lastCall).toMatchObject({
       eventName: "audit:patient.transfer",
       targetType: "patient",
@@ -192,11 +198,9 @@ describe("PatientsService.transferOwnership", () => {
   });
 
   it("audit before/after ownerId doğru + PII alanları (firstName/email/phone) hazırlanır", async () => {
-    const created = (await service.search(
-      TENANT_A,
-      { limit: 20, offset: 0 },
-      STAFF_A,
-    )).items[0]!;
+    const created = (
+      await service.search(TENANT_A, { limit: 20, offset: 0 }, STAFF_A)
+    ).items[0]!;
 
     await service.transferOwnership(
       TENANT_A,
@@ -206,8 +210,11 @@ describe("PatientsService.transferOwnership", () => {
       STAFF_A,
     );
 
-    const call = (audit.record as ReturnType<typeof vi.fn>).mock
-      .calls.at(-1)?.[0];
+    const call = auditEvents.at(-1);
+    expect(call).toBeDefined();
+    if (!call) {
+      throw new Error("Transfer audit kaydı bulunamadı");
+    }
     // before: eski sahip bilgisi.
     expect(call.before).toMatchObject({
       ownerId: OLD_OWNER_ID,
@@ -232,11 +239,9 @@ describe("PatientsService.transferOwnership", () => {
   });
 
   it("in-memory transfer audit map güncellenir ve getTransferAudit döndürür", async () => {
-    const created = (await service.search(
-      TENANT_A,
-      { limit: 20, offset: 0 },
-      STAFF_A,
-    )).items[0]!;
+    const created = (
+      await service.search(TENANT_A, { limit: 20, offset: 0 }, STAFF_A)
+    ).items[0]!;
 
     const { transferId } = await service.transferOwnership(
       TENANT_A,
@@ -264,14 +269,12 @@ describe("PatientsService.transferOwnership", () => {
   });
 
   it("cross-tenant patient → 404 VET-AUTHZ-0002, audit çağrılmaz", async () => {
-    const created = (await service.search(
-      TENANT_A,
-      { limit: 20, offset: 0 },
-      STAFF_A,
-    )).items[0]!;
+    const created = (
+      await service.search(TENANT_A, { limit: 20, offset: 0 }, STAFF_A)
+    ).items[0]!;
 
-    const callsBefore = (audit.record as ReturnType<typeof vi.fn>).mock
-      .calls.length;
+    const callsBefore = (audit.record as ReturnType<typeof vi.fn>).mock.calls
+      .length;
 
     await expect(
       service.transferOwnership(
@@ -287,17 +290,15 @@ describe("PatientsService.transferOwnership", () => {
     });
 
     // create audit'i (info) tek call olmalı; transfer audit'i yok.
-    const callsAfter = (audit.record as ReturnType<typeof vi.fn>).mock
-      .calls.length;
+    const callsAfter = (audit.record as ReturnType<typeof vi.fn>).mock.calls
+      .length;
     expect(callsAfter).toBe(callsBefore);
   });
 
   it("cross-tenant new owner → 404 VET-AUTHZ-0002", async () => {
-    const created = (await service.search(
-      TENANT_A,
-      { limit: 20, offset: 0 },
-      STAFF_A,
-    )).items[0]!;
+    const created = (
+      await service.search(TENANT_A, { limit: 20, offset: 0 }, STAFF_A)
+    ).items[0]!;
 
     // OWNER_B_ID yalnızca TENANT_B'de seed'li; TENANT_A'da aranırsa
     // → null → 404 VET-AUTHZ-0002.
@@ -317,11 +318,9 @@ describe("PatientsService.transferOwnership", () => {
   });
 
   it("arşivli patient → 422 VET-CLINIC-0005, ownerId değişmez", async () => {
-    const created = (await service.search(
-      TENANT_A,
-      { limit: 20, offset: 0 },
-      STAFF_A,
-    )).items[0]!;
+    const created = (
+      await service.search(TENANT_A, { limit: 20, offset: 0 }, STAFF_A)
+    ).items[0]!;
     await service.archive(TENANT_A, created.id, STAFF_A);
 
     await expect(
@@ -343,11 +342,9 @@ describe("PatientsService.transferOwnership", () => {
   });
 
   it("aynı owner'a transfer → 422 VET-CLINIC-0007", async () => {
-    const created = (await service.search(
-      TENANT_A,
-      { limit: 20, offset: 0 },
-      STAFF_A,
-    )).items[0]!;
+    const created = (
+      await service.search(TENANT_A, { limit: 20, offset: 0 }, STAFF_A)
+    ).items[0]!;
 
     await expect(
       service.transferOwnership(

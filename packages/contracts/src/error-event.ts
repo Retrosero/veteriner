@@ -177,9 +177,7 @@ export const errorEventCreateInputSchema = z.object({
   country: errorEventCountrySchema,
   occurredAt: z.string().datetime().optional(),
 });
-export type ErrorEventCreateInput = z.infer<
-  typeof errorEventCreateInputSchema
->;
+export type ErrorEventCreateInput = z.infer<typeof errorEventCreateInputSchema>;
 
 /* --------------------------------------------------------------------------
  * Hata olayı response şeması
@@ -391,9 +389,7 @@ export const errorEventModuleCountSchema = z.object({
   module: errorEventModuleSchema,
   count: z.number().int().nonnegative(),
 });
-export type ErrorEventModuleCount = z.infer<
-  typeof errorEventModuleCountSchema
->;
+export type ErrorEventModuleCount = z.infer<typeof errorEventModuleCountSchema>;
 
 /** Genel özet. */
 export const errorEventSummarySchema = z.object({
@@ -558,9 +554,7 @@ export const errorEventSupportLinkSchema = z.object({
   createdByType: errorEventActorTypeSchema,
   createdAt: z.string().datetime(),
 });
-export type ErrorEventSupportLink = z.infer<
-  typeof errorEventSupportLinkSchema
->;
+export type ErrorEventSupportLink = z.infer<typeof errorEventSupportLinkSchema>;
 
 /** Destek kaydı bağlantısı oluşturma girdisi. */
 export const errorEventSupportLinkInputSchema = z
@@ -576,8 +570,7 @@ export const errorEventSupportLinkInputSchema = z
       v.url !== undefined ||
       v.title !== undefined,
     {
-      message:
-        "externalId, url veya title alanlarından en az biri zorunludur",
+      message: "externalId, url veya title alanlarından en az biri zorunludur",
       path: ["externalId"],
     },
   );
@@ -626,8 +619,7 @@ export const errorEventAssignmentInputSchema = z
     unassign: z.boolean().optional(),
   })
   .refine((v) => Boolean(v.assigneeId) || v.unassign === true, {
-    message:
-      "assigneeId veya unassign=true alanlarından en az biri zorunludur",
+    message: "assigneeId veya unassign=true alanlarından en az biri zorunludur",
     path: ["assigneeId"],
   });
 export type ErrorEventAssignmentInput = z.infer<
@@ -669,9 +661,7 @@ export const errorEventAuditActionSchema = z.enum([
   /** Yeni hata oluştu (resolved→reopened otomatik terfi). */
   "occurrence_recorded",
 ]);
-export type ErrorEventAuditAction = z.infer<
-  typeof errorEventAuditActionSchema
->;
+export type ErrorEventAuditAction = z.infer<typeof errorEventAuditActionSchema>;
 
 /**
  * Birleşik audit entry. `details` alanı aksiyona göre farklı
@@ -687,9 +677,7 @@ export const errorEventAuditEntrySchema = z.object({
   /** Aksiyon tipine göre farklı alanlar; payload serbest. */
   details: z.record(z.unknown()),
 });
-export type ErrorEventAuditEntry = z.infer<
-  typeof errorEventAuditEntrySchema
->;
+export type ErrorEventAuditEntry = z.infer<typeof errorEventAuditEntrySchema>;
 
 /** Birleşik audit log response. */
 export const errorEventAuditLogResponseSchema = z.object({

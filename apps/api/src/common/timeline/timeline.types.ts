@@ -1,7 +1,6 @@
 /**
  * @file Timeline (klinik zaman çizelgesi) domain tipleri.
  * @module apps/api/common/timeline/timeline.types
- *
  * @description GOAL-024 hayvan zaman çizelgesi domain modeli.
  * Multi-tenant bir ortamda bir hayvana (patient) ait tüm klinik,
  * petshop, dosya, uyarı ve sahiplik olaylarının birleşik bir
@@ -17,30 +16,33 @@
  *   ilgili modüller (FAZ-3+) hazır olduğunda otomatik olarak
  *   TimelineService'e event source olarak kayıt edilir.
  *   İlk aşamada bu kaynaklar boş döner; contract sabit kalır.
- *
  * @security Tenant izolasyonu service katmanında uygulanır. Her
  *   event source kendi tenant filtresini uygulamalıdır;
  *   TimelineService yalnızca toplama + sıralama + filtreleme
  *   yapar (kaynak doğrulaması tekrar etmez).
- *
  * @since GOAL-024 (FAZ-2) hayvan zaman çizelgesi core
  */
 
+import type { ActorContext } from "../actor/actor-context.service.js";
 import type {
   TimelineEvent,
   TimelineEventType,
   TimelineRelatedEntityType,
 } from "@vetniva/contracts";
 
-/** Service katmanında kullanılan timeline event tipi; contract ile
- *  bire bir aynıdır (yeniden export). */
+/**
+ * Service katmanında kullanılan timeline event tipi; contract ile
+ *  bire bir aynıdır (yeniden export).
+ */
 export type TimelineEventRecord = TimelineEvent;
 
 /** Contract'tan re-export: servis katmanı tüketicileri için. */
 export type { TimelineEvent, TimelineEventType, TimelineRelatedEntityType };
 
-/** Liste sorgu parametreleri. Controller Zod validation sonrası
- *  service'e bu tipte geçirir. */
+/**
+ * Liste sorgu parametreleri. Controller Zod validation sonrası
+ *  service'e bu tipte geçirir.
+ */
 export interface TimelineQuery {
   /** Opsiyonel alt sınır (ISO 8601 datetime). */
   from?: string | undefined;
@@ -48,7 +50,7 @@ export interface TimelineQuery {
   to?: string | undefined;
   /** Opsiyonel tip filtresi. Boş/undefined = tüm tipler. */
   types?: TimelineEventType[] | undefined;
-  /** Maks. event sayısı. */
+  /** Maks. Event sayısı. */
   limit: number;
   /** Skip sayısı (sayfa başlangıcı). */
   offset: number;
@@ -61,10 +63,12 @@ export interface TimelineListResult {
   total: number;
 }
 
-/** Timeline event source arayüzü. Her modül (alerts, ownership,
+/**
+ * Timeline event source arayüzü. Her modül (alerts, ownership,
  *  files, vb.) kendi event source'unu DI üzerinden TimelineService'e
  *  sağlar. `eventType` alanı sabit olup o source'un hangi tipte
- *  event ürettiğini belirtir; aynı source birden fazla tip üretemez. */
+ *  event ürettiğini belirtir; aynı source birden fazla tip üretemez.
+ */
 export interface TimelineEventSource {
   /** Bu source'un ürettiği event tipi (ör. "alert"). */
   readonly eventType: TimelineEventType;
@@ -81,6 +85,6 @@ export interface TimelineEventSource {
     patientId: string;
     from?: string;
     to?: string;
-    actor: import("../actor/actor-context.service.js").ActorContext;
+    actor: ActorContext;
   }): Promise<TimelineEvent[]>;
 }

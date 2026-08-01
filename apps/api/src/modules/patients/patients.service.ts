@@ -35,10 +35,14 @@
  * @updated GOAL-022 (FAZ-2) ilk sahiplik kaydı + sahiplik devri core
  */
 
-import { Inject, Injectable, Logger, forwardRef } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import { Inject, Injectable, Logger, forwardRef } from "@nestjs/common";
+
+import {
+  PatientsRepository,
+  type PatientRecord,
+} from "./patients.repository.js";
 import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import {
@@ -49,15 +53,12 @@ import {
   type PatientCreateInput,
   type PatientFilters,
 } from "../../common/patients/patient.types.js";
-import type { AlertRecord } from "../../common/alerts/alert.types.js";
-
+import { AlertsService } from "../alerts/alerts.service.js";
 import { OwnersService } from "../owners/owners.service.js";
 import { OwnershipHistoryService } from "../ownership-history/ownership-history.service.js";
-import { AlertsService } from "../alerts/alerts.service.js";
-import {
-  PatientsRepository,
-  type PatientRecord,
-} from "./patients.repository.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { AlertRecord } from "../../common/alerts/alert.types.js";
 
 /**
  * In-memory transfer audit entry. `PatientOwnerHistory` tablosu
@@ -204,12 +205,7 @@ export class PatientsService {
     // var olması veri bütünlüğünü bozar. createInitial kendi
     // audit'ini yayar; burada ek bir event yayınlamaya gerek yok.
     try {
-      await this.ownership.createInitial(
-        tenantId,
-        id,
-        record.ownerId,
-        actor,
-      );
+      await this.ownership.createInitial(tenantId, id, record.ownerId, actor);
     } catch (err) {
       // Sahiplik kaydı açılamadıysa hasta kaydını da geri al
       // (transactional compensation). Hasta append-only olmadığı

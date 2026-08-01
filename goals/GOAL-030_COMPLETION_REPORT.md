@@ -28,6 +28,7 @@ yok → 404 `VET-APPT-0002`; audit `audit:calendar.unblock` (info).
 
 **CalendarController** — 4 endpoint
 (`apps/api/src/modules/calendar/calendar.controller.ts`):
+
 - `GET    /api/v1/calendar/days/:date?veterinarianId=...` —
   `clinic:appointment:read`, 200.
 - `PUT    /api/v1/calendar/working-hours` —
@@ -35,7 +36,7 @@ yok → 404 `VET-APPT-0002`; audit `audit:calendar.unblock` (info).
 - `POST   /api/v1/calendar/block` — `tenant:tenant:update`, 201.
 - `DELETE /api/v1/calendar/block/:id` — `tenant:tenant:update`, 200.
   Swagger `operationId: calendarGetDay | calendarSetWorkingHours |
-  calendarBlockSlot | calendarUnblockSlot`. `ZodValidationPipe` ile
+calendarBlockSlot | calendarUnblockSlot`. `ZodValidationPipe` ile
   input doğrulama; `requireTenant()` tenant bağlamı zorunlu
   (`VET-TENANT-0001`).
 
@@ -111,16 +112,17 @@ core'da kullanıldığı şekliyle), 4 API doc
 Yok. In-memory `workingHoursByTenant` Map + `bookedSlots` Map +
 `blockedById` Map. Production'a geçişte `WorkingHours`,
 `BlockedSlot` tabloları + `tenantId/veterinarianId/start` index'leri
-+ Appointment modeli ile `bookedSlots` derive.
+
+- Appointment modeli ile `bookedSlots` derive.
 
 ## API
 
-| Method | Path                                       | Yetki                    | Kod |
-| ------ | ------------------------------------------ | ------------------------ | --- |
-| GET    | /api/v1/calendar/days/:date                | clinic:appointment:read  | 200 |
-| PUT    | /api/v1/calendar/working-hours             | tenant:tenant:update     | 200 |
-| POST   | /api/v1/calendar/block                     | tenant:tenant:update     | 201 |
-| DELETE | /api/v1/calendar/block/:id                 | tenant:tenant:update     | 200 |
+| Method | Path                           | Yetki                   | Kod |
+| ------ | ------------------------------ | ----------------------- | --- |
+| GET    | /api/v1/calendar/days/:date    | clinic:appointment:read | 200 |
+| PUT    | /api/v1/calendar/working-hours | tenant:tenant:update    | 200 |
+| POST   | /api/v1/calendar/block         | tenant:tenant:update    | 201 |
+| DELETE | /api/v1/calendar/block/:id     | tenant:tenant:update    | 200 |
 
 Hatalar: 404 `VET-APPT-0002` (block bulunamadı / cross-tenant),
 422 `VET-APPT-0001` (geçersiz zaman aralığı), 422 `VET-APPT-0003`
@@ -146,5 +148,6 @@ durumları, cross-tenant guard, SUPERADMIN bypass, Pazar 0-slot,
 ## Sıradaki
 
 FAZ-3 — Randevu + portal. GOAL-031 (Appointment oluşturma + yönetim
-+ booked slot Map'ten Appointment modeline geçiş), GOAL-032
-(bekleme listesi), GOAL-035 (online randevu talebi).
+
+- booked slot Map'ten Appointment modeline geçiş), GOAL-032
+  (bekleme listesi), GOAL-035 (online randevu talebi).

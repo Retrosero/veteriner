@@ -15,9 +15,10 @@ cross-tenant doğrular (404 `VET-AUTHZ-0002`); tür TR whitelist
 tenant'ta unique (duplicate → 409 `VET-CLINIC-0003`); doğum tarihi
 gelecekte olamaz → 422 `VET-VALIDATION-0009`. `findById` tenant-scoped
 (cross-tenant → null). `search` name/breed/microchip case-insensitive
-+ ownerId/species filtre + pagination. `archive` soft delete,
-idempotent. Audit: `audit:patient.create` (info),
-`audit:patient.archive` (warning).
+
+- ownerId/species filtre + pagination. `archive` soft delete,
+  idempotent. Audit: `audit:patient.create` (info),
+  `audit:patient.archive` (warning).
 
 **PatientsController** — 4 endpoint (`api/v1/clinic/patients`): POST
 create, GET search, GET :id, DELETE :id (archive).
@@ -38,7 +39,7 @@ archive audit + idempotent + 404.
   kayıtlarda unique; farklı tenant aynı mikroçipi kullanabilir.
   Arşivli kayıtlar duplicate kontrolünde DAHİL değildir.
 - **Tür whitelist (TR pilot):** `TR_ALLOWED_SPECIES = ["dog","cat",
-  "bird"]`. `other` henüz aktif değil; genişletme
+"bird"]`. `other` henüz aktif değil; genişletme
   `CountryAdapter.isSpeciesAllowed` ile.
 - **Owner cross-tenant:** `owners.findById` tenant-scoped çağrılır;
   farklı tenant ID → null → 404 (bilgi sızdırmaz).
@@ -55,8 +56,9 @@ patients/patient.types.ts`, `apps/api/src/app.module.ts`,
 `packages/contracts/src/patient.ts` + index.
 
 **Docs & i18n (bu commit):** bu rapor + `PROJECT_CONTEXT.md` ⏳ → ✅
-+ 4 API doc + `AI_CHUNKS.yaml` (2 yeni chunk: `flow-patient-create`,
-`error-VET-CLINIC-0003`) + `FIELD_GLOSSARY.md` (Patient bölümü).
+
+- 4 API doc + `AI_CHUNKS.yaml` (2 yeni chunk: `flow-patient-create`,
+  `error-VET-CLINIC-0003`) + `FIELD_GLOSSARY.md` (Patient bölümü).
 
 ## Veritabanı
 
@@ -65,11 +67,11 @@ Prisma `Patient` modeli + RLS GOAL-026+ ile.
 
 ## API
 
-| Method | Path | Yetki | Kod |
-| --- | --- | --- | --- |
-| POST   | /api/v1/clinic/patients     | clinic:patient:create  | 201 |
-| GET    | /api/v1/clinic/patients     | clinic:patient:read    | 200 |
-| GET    | /api/v1/clinic/patients/:id | clinic:patient:read    | 200/404 |
+| Method | Path                        | Yetki                  | Kod                  |
+| ------ | --------------------------- | ---------------------- | -------------------- |
+| POST   | /api/v1/clinic/patients     | clinic:patient:create  | 201                  |
+| GET    | /api/v1/clinic/patients     | clinic:patient:read    | 200                  |
+| GET    | /api/v1/clinic/patients/:id | clinic:patient:read    | 200/404              |
 | DELETE | /api/v1/clinic/patients/:id | clinic:patient:archive | 200/404 (idempotent) |
 
 Hatalar: 404 `VET-AUTHZ-0002` (owner yok), 404 `VET-CLINIC-0001`

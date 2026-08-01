@@ -13,14 +13,13 @@
 
 import { Module } from "@nestjs/common";
 
-import { AuthModule } from "../../common/auth/auth.module.js";
-import { AuditModule } from "../../common/audit/audit.module.js";
-import { PortalModule } from "../portal/portal.module.js";
-
 import { PortalAuthController } from "./portal-auth.controller.js";
 import { PortalAuthRepository } from "./portal-auth.repository.js";
 import { PortalAuthService } from "./portal-auth.service.js";
 import { PortalSessionGuard } from "./portal-session.guard.js";
+import { AuditModule } from "../../common/audit/audit.module.js";
+import { AuthModule } from "../../common/auth/auth.module.js";
+import { PortalModule } from "../portal/portal.module.js";
 
 @Module({
   imports: [AuthModule, AuditModule, PortalModule],

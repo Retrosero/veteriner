@@ -10,13 +10,13 @@ urgent > normal**, sonra `createdAt asc` (en eski waiting acil kayıt
 
 **Query (`WaitlistFilters`):**
 
-| Param   | Tip     | Açıklama |
-| ------- | ------- | -------- |
-| status  | enum    | `waiting | notified | scheduled | cancelled | expired` |
-| priority | enum   | `normal | urgent | emergency` |
-| patientId | string | Hasta ID filtresi. |
-| from    | ISO 8601 | `createdAt >= from`. |
-| to      | ISO 8601 | `createdAt <= to`. |
+| Param     | Tip      | Açıklama             |
+| --------- | -------- | -------------------- |
+| status    | enum     | `waiting             | notified | scheduled  | cancelled | expired` |
+| priority  | enum     | `normal              | urgent   | emergency` |
+| patientId | string   | Hasta ID filtresi.   |
+| from      | ISO 8601 | `createdAt >= from`. |
+| to        | ISO 8601 | `createdAt <= to`.   |
 
 **Response 200 (`WaitlistListResponse`):**
 

@@ -17,14 +17,13 @@
 
 import { Module } from "@nestjs/common";
 
+import { StockAlertAcksRepository } from "./stock-alert-acks.repository.js";
+import { StockAlertsController } from "./stock-alerts.controller.js";
+import { StockAlertsService } from "./stock-alerts.service.js";
 import { AuditModule } from "../../common/audit/audit.module.js";
 import { InventoryModule } from "../inventory/inventory.module.js";
 import { ProductsModule } from "../products/products.module.js";
 import { StockMovementsModule } from "../stock-movements/stock-movements.module.js";
-
-import { StockAlertAcksRepository } from "./stock-alert-acks.repository.js";
-import { StockAlertsController } from "./stock-alerts.controller.js";
-import { StockAlertsService } from "./stock-alerts.service.js";
 
 @Module({
   imports: [AuditModule, ProductsModule, InventoryModule, StockMovementsModule],

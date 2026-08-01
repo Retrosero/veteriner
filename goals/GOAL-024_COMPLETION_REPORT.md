@@ -26,13 +26,14 @@ placeholder; FAZ-3+ modülleri hazır olduğunda DI token'ı
 
 **TimelineController** — 1 yeni endpoint
 (`apps/api/src/modules/timeline/timeline.controller.ts`):
+
 - `GET /api/v1/clinic/patients/:patientId/timeline?from=&to=&types=&limit=&offset=`
   — `clinic:patient:read`, 200. `limit` 1-200 (default 20),
   `offset` 0-10000 (default 0). `types` virgülle ayrılmış string
   olarak gelir, controller Zod `safeParse` ile enum'a karşı
   doğrular. Audit **yayınlamaz** (gürültü kontrolü; hayvan detayı
   her açıldığında audit log şişer). Swagger `operationId:
-  patientTimeline`.
+patientTimeline`.
 
 **Sözleşme** (`packages/contracts/src/timeline.ts`): 12 event
 tipi enum (`appointment | examination | vaccination | prescription
@@ -54,9 +55,9 @@ set üzerinde uygulanır.
 - **Event source registry (DI token):** `TIMELINE_EVENT_SOURCES`
   token'ı altında her modül kendi source'unu çoklu provider olarak
   sağlar. TimelineService `ModuleRef.get(TIMELINE_EVENT_SOURCES,
-  { strict: false })` ile toplar. Yeni modül (examination vb.)
+{ strict: false })` ile toplar. Yeni modül (examination vb.)
   hazır olduğunda `provide: TIMELINE_EVENT_SOURCES, useClass:
-  XTimelineSource, multi: true` satırı eklemesi yeterlidir; core
+XTimelineSource, multi: true` satırı eklemesi yeterlidir; core
   değişmez.
 - **Sıralama:** `occurredAt` ISO string locale-compare azalan.
   Ties (aynı timestamp) için `id` artan stabil sıralama; UI
@@ -71,9 +72,9 @@ set üzerinde uygulanır.
   flag ile opsiyonel audit açılabilir.
 - **Tip filtresi parsing:** Schema generic uyumu için
   `ZodValidationPipe` ham string kabul eder; controller `,`-split
-  + `safeParse` ile enum'a karşı doğrular. Geçersiz tip
-  sessizce atlanır (boş liste = tüm tipler); "Bilinmeyen
-  kaynak" semantiği UI için unexpected değil.
+  - `safeParse` ile enum'a karşı doğrular. Geçersiz tip
+    sessizce atlanır (boş liste = tüm tipler); "Bilinmeyen
+    kaynak" semantiği UI için unexpected değil.
 - **PII:** `actorName` maskelenmiş görünen addır; plain PII
   (TCKN/email/telefon) içermez. `summary` klinik içerik
   özetidir.
@@ -99,9 +100,9 @@ occurred_at DESC)`) FAZ-3+'da değerlendirilir.
 
 ## API
 
-| Method | Path                                              | Yetki                  | Kod |
-| ------ | ------------------------------------------------- | ---------------------- | --- |
-| GET    | /api/v1/clinic/patients/:patientId/timeline       | clinic:patient:read    | 200 |
+| Method | Path                                        | Yetki               | Kod |
+| ------ | ------------------------------------------- | ------------------- | --- |
+| GET    | /api/v1/clinic/patients/:patientId/timeline | clinic:patient:read | 200 |
 
 Hatalar: 404 `VET-AUTHZ-0001` (patient cross-tenant), 400
 `VET-TENANT-0001`, 401 `VET-AUTH-0001`, 400 `VET-VALIDATION-0001`.

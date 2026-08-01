@@ -1,7 +1,6 @@
 /**
  * @file ErrorEvent repository (in-memory).
  * @module apps/api/modules/error-events/error-events.repository
- *
  * @description GOAL-100 (FAZ-10) merkezi backend hata kayıt
  * deposu. In-memory Map'te tutulur; DB migration sonraya
  * bırakıldı. Tenant izolasyonu YOKTUR (SUPERADMIN cross-tenant
@@ -32,12 +31,13 @@
  *   (assignee + unassign aksiyonları ayrı kayıt).
  * - Yardımcı metotlar: `addNote`, `listNotes`, `addSupportLink`,
  *   `listSupportLinks`, `addAssignment`, `listAssignments`.
- *
  * @since GOAL-100 (FAZ-10) merkezi backend hata yakalama core
  * @updated GOAL-104 (FAZ-10) hata atama ve çözüm notları core
  */
 
 import { Injectable } from "@nestjs/common";
+
+import { UNASSIGNED } from "../../common/error-events/error-event.types.js";
 
 import type {
   ErrorEventAssignmentRecordInternal,
@@ -47,15 +47,15 @@ import type {
   ErrorEventStatusTransitionRecord,
   ErrorEventSupportLinkRecord,
 } from "../../common/error-events/error-event.types.js";
-import { UNASSIGNED } from "../../common/error-events/error-event.types.js";
 import type {
   ErrorEventCountry,
   ErrorEventModule,
   ErrorEventActorType,
   ErrorEventStatus,
   ErrorEventSupportSystem,
+  ErrorCode,
+  ErrorSeverity,
 } from "@vetniva/contracts";
-import type { ErrorCode, ErrorSeverity } from "@vetniva/contracts";
 
 /** Arama filtreleri. */
 export interface ErrorEventSearchFilters {
@@ -120,26 +120,26 @@ export interface ErrorEventAssignmentCreate {
 
 @Injectable()
 export class ErrorEventsRepository {
-  /** key: id → error event. */
+  /** Key: id → error event. */
   private readonly byId = new Map<string, ErrorEventRecord>();
-  /** fingerprint → id (sık karşılaşılan hataların hızlı tespiti). */
+  /** Fingerprint → id (sık karşılaşılan hataların hızlı tespiti). */
   private readonly byFingerprint = new Map<string, string>();
-  /** fingerprint → status transition listesi (append-only). */
+  /** Fingerprint → status transition listesi (append-only). */
   private readonly transitionsByFingerprint = new Map<
     string,
     ErrorEventStatusTransitionRecord[]
   >();
-  /** fingerprint → çözüm notu listesi (append-only — GOAL-104). */
+  /** Fingerprint → çözüm notu listesi (append-only — GOAL-104). */
   private readonly notesByFingerprint = new Map<
     string,
     ErrorEventNoteRecord[]
   >();
-  /** fingerprint → destek bağlantısı listesi (GOAL-104). */
+  /** Fingerprint → destek bağlantısı listesi (GOAL-104). */
   private readonly supportLinksByFingerprint = new Map<
     string,
     ErrorEventSupportLinkRecord[]
   >();
-  /** fingerprint → atama geçmişi (append-only — GOAL-104). */
+  /** Fingerprint → atama geçmişi (append-only — GOAL-104). */
   private readonly assignmentsByFingerprint = new Map<
     string,
     ErrorEventAssignmentRecordInternal[]
@@ -187,6 +187,9 @@ export class ErrorEventsRepository {
    * NOT: `firstSeenAt`, `lastSeenAt`, `status`, `assignedToUserId`
    * alanları repo tarafından otomatik yönetilir; caller bunları
    * göndermemelidir.
+   * @param args
+   * @param args.fingerprint
+   * @param args.record
    */
   public upsertByFingerprint(args: {
     fingerprint: string;
@@ -243,9 +246,7 @@ export class ErrorEventsRepository {
     return this.byId.get(id) ?? null;
   }
 
-  public findByFingerprint(
-    fingerprint: string,
-  ): ErrorEventRecord | null {
+  public findByFingerprint(fingerprint: string): ErrorEventRecord | null {
     const id = this.byFingerprint.get(fingerprint);
     if (!id) return null;
     return this.byId.get(id) ?? null;
@@ -256,19 +257,18 @@ export class ErrorEventsRepository {
    * filtresi opsiyonel. `search` route + message alanlarında
    * case-insensitive substring arar. `from`/`to` artık
    * `lastSeenAt` üzerinde filtreler (görüldüğü son an).
+   * @param filters
    */
-  public search(
-    filters: ErrorEventSearchFilters,
-  ): { items: ErrorEventRecord[]; total: number } {
+  public search(filters: ErrorEventSearchFilters): {
+    items: ErrorEventRecord[];
+    total: number;
+  } {
     const all: ErrorEventRecord[] = [];
     for (const rec of this.byId.values()) {
       if (filters.severity && rec.severity !== filters.severity) continue;
       if (filters.module && rec.module !== filters.module) continue;
       if (filters.errorCode && rec.errorCode !== filters.errorCode) continue;
-      if (
-        filters.fingerprint &&
-        rec.fingerprint !== filters.fingerprint
-      ) {
+      if (filters.fingerprint && rec.fingerprint !== filters.fingerprint) {
         continue;
       }
       if (filters.tenantId && rec.tenantId !== filters.tenantId) continue;
@@ -306,9 +306,13 @@ export class ErrorEventsRepository {
   /**
    * Tüm fingerprint'leri occurrenceCount'a göre azalan
    * sırada döner (özet için).
+   * @param filters
    */
   public listByFingerprint(
-    filters: Omit<ErrorEventSearchFilters, "fingerprint" | "sort" | "limit" | "offset">,
+    filters: Omit<
+      ErrorEventSearchFilters,
+      "fingerprint" | "sort" | "limit" | "offset"
+    >,
   ): ErrorEventRecord[] {
     const out: ErrorEventRecord[] = [];
     for (const rec of this.byId.values()) {
@@ -344,6 +348,8 @@ export class ErrorEventsRepository {
   /**
    * Bir kaydın durumunu ve atamasını günceller. Transition
    * log'a yeni kayıt eklenir. Mevcut kayıt yoksa null döner.
+   * @param id
+   * @param update
    */
   public updateStatus(
     id: string,
@@ -384,6 +390,7 @@ export class ErrorEventsRepository {
   /**
    * Bir fingerprint'in tüm status geçişlerini tarih sırasıyla
    * döner. Bulunamazsa boş liste.
+   * @param fingerprint
    */
   public listTransitionsByFingerprint(
     fingerprint: string,
@@ -399,6 +406,7 @@ export class ErrorEventsRepository {
   /**
    * Yeni çözüm notu ekler. Append-only; mevcut notlar etkilenmez.
    * Sıralama: createdAt artan. UI tarafı desc ile gösterir.
+   * @param input
    */
   public addNote(input: ErrorEventNoteCreate): ErrorEventNoteRecord {
     const rec: ErrorEventNoteRecord = {
@@ -416,14 +424,18 @@ export class ErrorEventsRepository {
     return rec;
   }
 
-  /** Bir fingerprint'in tüm notlarını createdAt artan sırada döner. */
-  public listNotesByFingerprint(
-    fingerprint: string,
-  ): ErrorEventNoteRecord[] {
+  /**
+   * Bir fingerprint'in tüm notlarını createdAt artan sırada döner.
+   * @param fingerprint
+   */
+  public listNotesByFingerprint(fingerprint: string): ErrorEventNoteRecord[] {
     return [...(this.notesByFingerprint.get(fingerprint) ?? [])];
   }
 
-  /** Tek bir notu id üzerinden döner (test/düzeltme için). */
+  /**
+   * Tek bir notu id üzerinden döner (test/düzeltme için).
+   * @param id
+   */
   public findNoteById(id: string): ErrorEventNoteRecord | null {
     for (const list of this.notesByFingerprint.values()) {
       for (const n of list) {
@@ -438,7 +450,10 @@ export class ErrorEventsRepository {
    * ------------------------------------------------------------------------
    */
 
-  /** Yeni destek bağlantısı ekler. */
+  /**
+   * Yeni destek bağlantısı ekler.
+   * @param input
+   */
   public addSupportLink(
     input: ErrorEventSupportLinkCreate,
   ): ErrorEventSupportLinkRecord {
@@ -459,7 +474,10 @@ export class ErrorEventsRepository {
     return rec;
   }
 
-  /** Bir fingerprint'in tüm destek bağlantılarını döner. */
+  /**
+   * Bir fingerprint'in tüm destek bağlantılarını döner.
+   * @param fingerprint
+   */
   public listSupportLinksByFingerprint(
     fingerprint: string,
   ): ErrorEventSupportLinkRecord[] {
@@ -478,6 +496,7 @@ export class ErrorEventsRepository {
    * Yan etki: `byId` içindeki ilgili kaydın `assignedToUserId`
    * alanı güncellenir (en son atama = kaydın güncel durumu). UNASSIGNED
    * ise null yapılır.
+   * @param input
    */
   public addAssignment(
     input: ErrorEventAssignmentCreate,
@@ -508,7 +527,10 @@ export class ErrorEventsRepository {
     return rec;
   }
 
-  /** Bir fingerprint'in tüm atama geçmişini assignedAt artan sırada döner. */
+  /**
+   * Bir fingerprint'in tüm atama geçmişini assignedAt artan sırada döner.
+   * @param fingerprint
+   */
   public listAssignmentsByFingerprint(
     fingerprint: string,
   ): ErrorEventAssignmentRecordInternal[] {
@@ -548,6 +570,9 @@ export class ErrorEventsRepository {
    * NOT: dryRun desteği bu metoda parametre olarak eklenmemiştir;
    *   üst katman (LogRetentionService) dryRun ise bu metodu hiç
    *   çağırmaz, yalnız `countOlderThan` ile sayım yapar.
+   * @param args
+   * @param args.cutoff
+   * @param args.tenantId
    */
   public expireOlderThan(args: {
     cutoff: string;
@@ -579,6 +604,9 @@ export class ErrorEventsRepository {
    * `lastSeenAt` alanı `cutoff` değerinden küçük veya eşit olan
    * (yani cutoff'a kadar olan) hata kayıtlarını sayar. Tenant
    * filtresi opsiyoneldir. Dry-run sweep'lerde kullanılır.
+   * @param args
+   * @param args.cutoff
+   * @param args.tenantId
    */
   public countOlderThan(args: {
     cutoff: string;

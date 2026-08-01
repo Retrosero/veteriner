@@ -24,7 +24,7 @@ POST /api/v1/payments/pay-uuid/reverse
 
 - `reason` (string, 1-2000) zorunlu.
 - `reasonCode` (enum: `refund|customer_request|error|duplicate|
-  other`) zorunlu.
+other`) zorunlu.
 
 **Response 201 (`PaymentReversal`):**
 

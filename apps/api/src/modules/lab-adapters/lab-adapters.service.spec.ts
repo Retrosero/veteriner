@@ -16,14 +16,14 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
-import type { LabAdapter } from "../../common/lab-adapters/lab-adapter.types.js";
+import { LabAdaptersRepository } from "./lab-adapters.repository.js";
+import { LabAdaptersService } from "./lab-adapters.service.js";
 import { MockExternalLabAdapter } from "../../common/lab-adapters/mock-external-lab-adapter.js";
 import { MockLabDeviceAdapter } from "../../common/lab-adapters/mock-lab-device-adapter.js";
 
-import { LabAdaptersService } from "./lab-adapters.service.js";
-import { LabAdaptersRepository } from "./lab-adapters.repository.js";
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { AuditService } from "../../common/audit/audit.service.js";
+import type { LabAdapter } from "../../common/lab-adapters/lab-adapter.types.js";
 import type { LabOrdersService } from "../lab-orders/lab-orders.service.js";
 import type { LabResultsService } from "../lab-results/lab-results.service.js";
 import type {
@@ -35,7 +35,7 @@ import type {
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
 
-const STAFF_A: ActorContext = {
+const _STAFF_A: ActorContext = {
   actorId: "usr-staff-a",
   actorType: "user",
   role: "STAFF",
@@ -179,12 +179,14 @@ class StubLabResultsService {
   }
 }
 
-function makeService(opts: {
-  labOrders?: StubLabOrdersService;
-  labResults?: StubLabResultsService;
-  device?: LabAdapter;
-  external?: LabAdapter;
-} = {}) {
+function makeService(
+  opts: {
+    labOrders?: StubLabOrdersService;
+    labResults?: StubLabResultsService;
+    device?: LabAdapter;
+    external?: LabAdapter;
+  } = {},
+) {
   const repo = new LabAdaptersRepository();
   const labOrders = opts.labOrders ?? new StubLabOrdersService();
   const labResults = opts.labResults ?? new StubLabResultsService();
@@ -220,7 +222,12 @@ function makeImportInput(
     providerReference: "dev-abc-123",
     simulatePayload: {
       readings: [
-        { code: "CBC", value: "7.5", unit: "10^3/µL", referenceRange: "5.0-15.0" },
+        {
+          code: "CBC",
+          value: "7.5",
+          unit: "10^3/µL",
+          referenceRange: "5.0-15.0",
+        },
       ],
     },
     ...overrides,
@@ -336,12 +343,7 @@ describe("LabAdaptersService", () => {
     it("lab order bulunamazsa 404 VET-LABADAPTER-0003", async () => {
       const { service } = makeService();
       await expect(
-        service.exportOrder(
-          TENANT_A,
-          LAB_ORDER_ID,
-          makeExportInput(),
-          VET_A,
-        ),
+        service.exportOrder(TENANT_A, LAB_ORDER_ID, makeExportInput(), VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-LABADAPTER-0003",
         httpStatus: 404,
@@ -350,7 +352,9 @@ describe("LabAdaptersService", () => {
 
     it("cancelled order export edilemez 422 VET-LABADAPTER-0004", async () => {
       const { service, labOrders } = makeService();
-      labOrders.setOrder(makeOrder({ id: LAB_ORDER_ID_CANCELLED, status: "cancelled" }));
+      labOrders.setOrder(
+        makeOrder({ id: LAB_ORDER_ID_CANCELLED, status: "cancelled" }),
+      );
       await expect(
         service.exportOrder(
           TENANT_A,
@@ -431,11 +435,7 @@ describe("LabAdaptersService", () => {
       expect(created.status).toBe("rejected");
       // Retry: simulateFailure'siz yeni payload ile mock accepted
       // döner. attemptCount 2 olur.
-      const retried = await service.retryExport(
-        TENANT_A,
-        created.id,
-        VET_A,
-      );
+      const retried = await service.retryExport(TENANT_A, created.id, VET_A);
       expect(retried.attemptCount).toBe(2);
       expect(retried.status).toBe("accepted");
     });
@@ -504,12 +504,7 @@ describe("LabAdaptersService", () => {
       );
       expect(created.status).toBe("accepted");
       await expect(
-        service.cancelExport(
-          TENANT_A,
-          created.id,
-          { reason: "iptal" },
-          VET_A,
-        ),
+        service.cancelExport(TENANT_A, created.id, { reason: "iptal" }, VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-LABADAPTER-0008",
         httpStatus: 409,
@@ -646,7 +641,12 @@ describe("LabAdaptersService", () => {
     it("lab order bulunamazsa 404 VET-LABADAPTER-0003", async () => {
       const { service } = makeService();
       await expect(
-        service.importResult(TENANT_A, "non-existent", makeImportInput(), VET_A),
+        service.importResult(
+          TENANT_A,
+          "non-existent",
+          makeImportInput(),
+          VET_A,
+        ),
       ).rejects.toMatchObject({
         errorCode: "VET-LABADAPTER-0003",
         httpStatus: 404,

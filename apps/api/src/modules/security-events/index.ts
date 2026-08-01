@@ -7,9 +7,7 @@
  * @since GOAL-105 (FAZ-10) güvenlik logları ve alarm kuralları core
  */
 
-export {
-  SecurityEventsModule,
-} from "./security-events.module.js";
+export { SecurityEventsModule } from "./security-events.module.js";
 export {
   SecurityEventsService,
   NoopSecurityAlertAdapter,

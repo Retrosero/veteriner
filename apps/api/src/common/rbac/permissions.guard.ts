@@ -1,7 +1,6 @@
 /**
  * @file Permissions guard.
  * @module apps/api/common/rbac/permissions.guard
- *
  * @since GOAL-012 (FAZ-1) RBAC ve izin motoru
  */
 
@@ -13,12 +12,13 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import type { Request } from "express";
 
-import type { ActorContext } from "../actor/actor-context.service.js";
-import { DomainError } from "../errors/domain-error.js";
 import { RbacService } from "./rbac.service.js";
 import { PERMISSIONS_KEY } from "./require-permission.decorator.js";
+import { DomainError } from "../errors/domain-error.js";
+
+import type { ActorContext } from "../actor/actor-context.service.js";
+import type { Request } from "express";
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {

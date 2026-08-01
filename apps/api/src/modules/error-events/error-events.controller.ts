@@ -1,7 +1,6 @@
 /**
  * @file ErrorEvent controller.
  * @module apps/api/modules/error-events/error-events.controller
- *
  * @description GOAL-100 (FAZ-10) Superadmin hata merkezi için
  * read-only REST API. GOAL-101 ile birlikte frontend kaynaklı
  * hata raporlarını kabul eden `POST /api/v1/system/error-events`
@@ -32,18 +31,16 @@
  * - `POST   /api/v1/superadmin/error-events/:id/support-links` — Destek bağlantısı ekle
  * - `PATCH  /api/v1/superadmin/error-events/:id/assignment`    — Atama/unassign
  * - `GET    /api/v1/superadmin/error-events/:id/assignments`   — Atama geçmişi
- * - `GET    /api/v1/superadmin/error-events/:id/audit-log`     — Birleşik audit log
+ * - `GET    /api/v1/superadmin/error-events/:id/audit-log`     — Birleşik audit log.
  *
  * Endpoint'ler (System - frontend raporu, oturum gerekli):
- * - `POST /api/v1/system/error-events`               — Frontend hata raporu
- *
+ * - `POST /api/v1/system/error-events`               — Frontend hata raporu.
  * @security SUPERADMIN uçları `audit:log:read` permission'ı
  *   gerektirir; PII mask'lı context response'da yer alır. Stack
  *   trace yalnızca 5xx + critical için dolu. Frontend rapor uçnda
  *   ise auth placeholder'ı yeterlidir; impersonation saldırılarına
  *   karşı tenant/branch/userId/actorType/requestId/country
  *   istemciden alınmaz, aktör bağlamından türetilir.
- *
  * @since GOAL-100 (FAZ-10) merkezi backend hata yakalama core
  *        GOAL-101 (FAZ-10) frontend hata yakalama core
  *        GOAL-103 (FAZ-10) superadmin hata merkezi core
@@ -62,12 +59,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   clientErrorReportInputSchema,
   errorEventAssignmentInputSchema,
@@ -102,6 +93,12 @@ import {
 } from "@vetniva/contracts";
 
 import { ErrorEventsService } from "./error-events.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("superadmin/error-events")
 @UseGuards(PermissionsGuard)
@@ -454,7 +451,6 @@ export class ErrorEventsController {
  * Auth placeholder'ı bu endpoint'i kabul eder; gerçek auth
  * devreye girdiğinde JWT/session doğrulaması `ActorContextService`
  * üzerinden otomatik sağlanır.
- *
  * @since GOAL-101 (FAZ-10) frontend hata yakalama core
  */
 @ApiTags("system/error-events")

@@ -38,13 +38,15 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import { JobRunsRepository } from "./job-runs.repository.js";
 import { DomainError } from "../../common/errors/domain-error.js";
-import { PiiMasker } from "../../common/logging/pii-masker.js";
 import {
   toJobRun,
   type JobRunRecord,
 } from "../../common/job-runs/job-run.types.js";
+import { PiiMasker } from "../../common/logging/pii-masker.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   JobRun,
   JobRunAttemptsByKeyResponse,
@@ -59,8 +61,6 @@ import type {
   JobRunSummaryQuery,
   JobRunTriggeredBy,
 } from "@vetniva/contracts";
-
-import { JobRunsRepository } from "./job-runs.repository.js";
 
 /** Uygulama sürümü. `APP_VERSION` env ya da sabit. */
 const APP_RELEASE = process.env["APP_VERSION"] ?? "0.0.0-dev";
@@ -305,7 +305,7 @@ export class JobRunsService {
       finishedAt: null,
       durationMs: null,
       parentRunId: rec.id,
-      triggeredBy: "manual_retry" as JobRunTriggeredBy,
+      triggeredBy: "manual_retry",
       country: rec.country,
       release: rec.release,
     };
@@ -576,12 +576,17 @@ export class JobRunsService {
   ): Record<string, unknown> {
     if (!payload) return {};
     try {
-      const masked = this.masker.mask(payload) as Record<string, unknown>;
+      const masked = this.masker.mask(payload);
       const keys = Object.keys(masked);
       if (keys.length <= MAX_PAYLOAD_KEYS) return masked;
       const trimmed: Record<string, unknown> = {};
       for (const k of keys.slice(0, MAX_PAYLOAD_KEYS)) {
-        trimmed[k] = masked[k];
+        Object.defineProperty(trimmed, k, {
+          configurable: true,
+          enumerable: true,
+          value: Reflect.get(masked, k),
+          writable: true,
+        });
       }
       trimmed["__truncated__"] = true;
       return trimmed;

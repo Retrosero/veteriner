@@ -1,7 +1,6 @@
 /**
  * @file CustomerBalances controller.
  * @module apps/api/modules/customer-balances/customer-balances.controller
- *
  * @description GOAL-075 (FAZ-7) müşteri borç/alacak REST API.
  *   Tenant ID URL'de taşınmaz; actor.tenantId'den alınır.
  *
@@ -10,7 +9,6 @@
  *   → özet (toplam satış/tahsilat/ters kayıt/net/açık bakiye).
  * - `GET /api/v1/customer-balances/owners/:ownerId/transactions`
  *   → işlem geçmişi (satış + tahsilat karışık liste).
- *
  * @since GOAL-075 (FAZ-7) müşteri borç/alacak görünümü core
  */
 
@@ -23,12 +21,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   customerTransactionsFiltersSchema,
   type CustomerBalanceSummary,
@@ -37,14 +29,18 @@ import {
 } from "@vetniva/contracts";
 
 import { CustomerBalancesService } from "./customer-balances.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("customer-balances")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/customer-balances")
 export class CustomerBalancesController {
-  public constructor(
-    private readonly service: CustomerBalancesService,
-  ) {}
+  public constructor(private readonly service: CustomerBalancesService) {}
 
   @Get("owners/:ownerId")
   @RequirePermissions("clinic:payment:read")

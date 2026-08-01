@@ -21,14 +21,8 @@ import {
   HttpStatus,
   Post,
   Query,
-  Req,
   UseGuards,
 } from "@nestjs/common";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
-import { PermissionsGuard } from "../../common/rbac/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { CurrentUser } from "../../common/decorators/current-user.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import {
   type InboxResponse,
   type NotificationRecord,
@@ -38,6 +32,12 @@ import {
 } from "@vetniva/contracts";
 
 import { NotificationsService } from "./notifications.service.js";
+import { CurrentUser } from "../../common/decorators/current-user.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @Controller("api/v1/notifications")
 @UseGuards(PermissionsGuard)

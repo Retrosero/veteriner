@@ -14,22 +14,21 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { VaccineCardsRepository } from "./vaccine-cards.repository.js";
+import { VaccineCardsService } from "./vaccine-cards.service.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+
+import type { VaccineApplicationsService } from "./vaccine-applications.service.js";
+import type { VaccinesService } from "./vaccines.service.js";
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
 import type { Patient } from "../../common/patients/patient.types.js";
+import type { PatientsService } from "../patients/patients.service.js";
 import type {
   VaccineApplication,
-  VaccineApplicationListResponse,
   VaccineProtocol,
   VaccineProtocolListResponse,
 } from "@vetniva/contracts";
-import type { PatientsService } from "../patients/patients.service.js";
-import type { VaccineApplicationsService } from "./vaccine-applications.service.js";
-import type { VaccinesService } from "./vaccines.service.js";
-
-import { VaccineCardsRepository } from "./vaccine-cards.repository.js";
-import { VaccineCardsService } from "./vaccine-cards.service.js";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -163,9 +162,7 @@ function makeApplications(): VaccineApplicationsService {
         ): Promise<VaccineApplication[]> => {
           const arr = appsStore.get(`${tenantId}|${patientId}`) ?? [];
           return [...arr]
-            .sort((a, b) =>
-              b.applicationDate.localeCompare(a.applicationDate),
-            )
+            .sort((a, b) => b.applicationDate.localeCompare(a.applicationDate))
             .slice(0, limit);
         },
       ),
@@ -275,11 +272,7 @@ describe("VaccineCardsService", () => {
 
   describe("getVaccineCard", () => {
     it("başarı: uygulama olmayan hasta için not_started döner", async () => {
-      const card = await service.getVaccineCard(
-        TENANT_A,
-        "pat-dog-1",
-        VET_A,
-      );
+      const card = await service.getVaccineCard(TENANT_A, "pat-dog-1", VET_A);
       expect(card.patientId).toBe("pat-dog-1");
       expect(card.tenantId).toBe(TENANT_A);
       expect(card.species).toBe("dog");
@@ -307,12 +300,10 @@ describe("VaccineCardsService", () => {
       // Bu testte reference=2026-01-20 ile upcoming olduğunu doğrula.
       seedApplication(validApplication());
 
-      const card = await service.getVaccineCard(
-        TENANT_A,
-        "pat-dog-1",
-        VET_A,
-        { upcomingWindowDays: 30, referenceDate: "2026-01-20T00:00:00.000Z" },
-      );
+      const card = await service.getVaccineCard(TENANT_A, "pat-dog-1", VET_A, {
+        upcomingWindowDays: 30,
+        referenceDate: "2026-01-20T00:00:00.000Z",
+      });
       const e = card.entries[0]!;
       expect(e.completedStepsCount).toBe(1);
       // nextDueDate=2026-02-05, reference=2026-01-20 → 16 gün → upcoming.
@@ -327,15 +318,10 @@ describe("VaccineCardsService", () => {
     });
 
     it("başarı: nextDueDate geçmiş → overdue", async () => {
-      seedApplication(
-        validApplication({ nextDueDate: "2026-01-01" }),
-      );
-      const card = await service.getVaccineCard(
-        TENANT_A,
-        "pat-dog-1",
-        VET_A,
-        { referenceDate: "2026-02-15T00:00:00.000Z" },
-      );
+      seedApplication(validApplication({ nextDueDate: "2026-01-01" }));
+      const card = await service.getVaccineCard(TENANT_A, "pat-dog-1", VET_A, {
+        referenceDate: "2026-02-15T00:00:00.000Z",
+      });
       const e = card.entries[0]!;
       expect(e.status).toBe("overdue");
       expect(e.daysUntilDue).toBeLessThan(0);
@@ -357,12 +343,9 @@ describe("VaccineCardsService", () => {
           nextDueDate: null,
         }),
       );
-      const card = await service.getVaccineCard(
-        TENANT_A,
-        "pat-dog-1",
-        VET_A,
-        { referenceDate: "2026-12-01T00:00:00.000Z" },
-      );
+      const card = await service.getVaccineCard(TENANT_A, "pat-dog-1", VET_A, {
+        referenceDate: "2026-12-01T00:00:00.000Z",
+      });
       const e = card.entries[0]!;
       expect(e.completedStepsCount).toBe(2);
       expect(e.status).toBe("completed");
@@ -371,14 +354,8 @@ describe("VaccineCardsService", () => {
     });
 
     it("cancelled uygulama completedStepsCount'a katılmaz", async () => {
-      seedApplication(
-        validApplication({ id: "vaca-1", status: "cancelled" }),
-      );
-      const card = await service.getVaccineCard(
-        TENANT_A,
-        "pat-dog-1",
-        VET_A,
-      );
+      seedApplication(validApplication({ id: "vaca-1", status: "cancelled" }));
+      const card = await service.getVaccineCard(TENANT_A, "pat-dog-1", VET_A);
       const e = card.entries[0]!;
       // Cancelled sayılmaz → hâlâ not_started.
       expect(e.completedStepsCount).toBe(0);
@@ -388,15 +365,10 @@ describe("VaccineCardsService", () => {
     });
 
     it("amended uygulama completedStepsCount'a katılır", async () => {
-      seedApplication(
-        validApplication({ id: "vaca-1", status: "amended" }),
-      );
-      const card = await service.getVaccineCard(
-        TENANT_A,
-        "pat-dog-1",
-        VET_A,
-        { referenceDate: "2026-02-15T00:00:00.000Z" },
-      );
+      seedApplication(validApplication({ id: "vaca-1", status: "amended" }));
+      const card = await service.getVaccineCard(TENANT_A, "pat-dog-1", VET_A, {
+        referenceDate: "2026-02-15T00:00:00.000Z",
+      });
       const e = card.entries[0]!;
       expect(e.completedStepsCount).toBe(1);
     });
@@ -426,12 +398,9 @@ describe("VaccineCardsService", () => {
           },
         }),
       );
-      const card = await service.getVaccineCard(
-        TENANT_A,
-        "pat-dog-1",
-        VET_A,
-        { referenceDate: "2026-01-22T00:00:00.000Z" },
-      );
+      const card = await service.getVaccineCard(TENANT_A, "pat-dog-1", VET_A, {
+        referenceDate: "2026-01-22T00:00:00.000Z",
+      });
       const e = card.entries[0]!;
       // lastApplicationDate = en yeni (sort edilmiş liste başı).
       expect(e.lastApplicationDate).toBe("2026-01-20T10:00:00.000Z");
@@ -449,11 +418,7 @@ describe("VaccineCardsService", () => {
           species: "cat",
         }),
       );
-      const card = await service.getVaccineCard(
-        TENANT_A,
-        "pat-dog-1",
-        VET_A,
-      );
+      const card = await service.getVaccineCard(TENANT_A, "pat-dog-1", VET_A);
       // Sadece dog protokolü görünmeli.
       expect(card.entries).toHaveLength(1);
       expect(card.entries[0]!.protocol.id).toBe("vacp-dog-1");
@@ -467,14 +432,12 @@ describe("VaccineCardsService", () => {
           species: "all",
         }),
       );
-      const card = await service.getVaccineCard(
-        TENANT_A,
-        "pat-dog-1",
-        VET_A,
-      );
+      const card = await service.getVaccineCard(TENANT_A, "pat-dog-1", VET_A);
       // 2 protokol: dog + all.
       expect(card.entries).toHaveLength(2);
-      const ids = card.entries.map((e: { protocol: { id: string } }) => e.protocol.id).sort();
+      const ids = card.entries
+        .map((e: { protocol: { id: string } }) => e.protocol.id)
+        .sort();
       expect(ids).toEqual(["vacp-all-1", "vacp-dog-1"]);
     });
 
@@ -487,11 +450,7 @@ describe("VaccineCardsService", () => {
           species: "cat",
         }),
       );
-      const card = await service.getVaccineCard(
-        TENANT_A,
-        "pat-other-1",
-        VET_A,
-      );
+      const card = await service.getVaccineCard(TENANT_A, "pat-other-1", VET_A);
       // dog + cat + all (default) — ama cat'i seedProtocol ile ekledik, 3 entry.
       // Not: validProtocol default 'all' değil, 'dog'. all eklemek istersek
       // ayrıca ekleyebiliriz. Burada dog + cat = 2 bekliyoruz.
@@ -505,11 +464,7 @@ describe("VaccineCardsService", () => {
           archivedAt: "2025-12-01T00:00:00.000Z",
         }),
       );
-      const card = await service.getVaccineCard(
-        TENANT_A,
-        "pat-dog-1",
-        VET_A,
-      );
+      const card = await service.getVaccineCard(TENANT_A, "pat-dog-1", VET_A);
       // mock listProtocols archived filtreliyor.
       expect(card.entries).toHaveLength(1);
     });
@@ -544,7 +499,12 @@ describe("VaccineCardsService", () => {
     });
 
     it("superadmin başka tenant'a erişebilir", async () => {
-      const SUPERADMIN: ActorContext = { ...VET_A, role: "SUPERADMIN", tenantId: null, isSuperadmin: true };
+      const SUPERADMIN: ActorContext = {
+        ...VET_A,
+        role: "SUPERADMIN",
+        tenantId: null,
+        isSuperadmin: true,
+      };
       const card = await service.getVaccineCard(
         TENANT_A,
         "pat-dog-1",
@@ -597,12 +557,9 @@ describe("VaccineCardsService", () => {
         }),
       );
 
-      const card = await service.getVaccineCard(
-        TENANT_A,
-        "pat-dog-1",
-        VET_A,
-        { referenceDate: "2026-02-15T00:00:00.000Z" },
-      );
+      const card = await service.getVaccineCard(TENANT_A, "pat-dog-1", VET_A, {
+        referenceDate: "2026-02-15T00:00:00.000Z",
+      });
       // pat-dog-1 için: dog (not_started) + kuduz (overdue).
       const statuses = card.entries.map((e: { status: string }) => e.status);
       // İlk overdue olmalı.
@@ -736,12 +693,9 @@ describe("VaccineCardsService", () => {
 
   it("smoke: sıralama + summary tutarlı", async () => {
     seedApplication(validApplication());
-    const card = await service.getVaccineCard(
-      TENANT_A,
-      "pat-dog-1",
-      VET_A,
-      { referenceDate: "2026-01-20T00:00:00.000Z" },
-    );
+    const card = await service.getVaccineCard(TENANT_A, "pat-dog-1", VET_A, {
+      referenceDate: "2026-01-20T00:00:00.000Z",
+    });
     // 1 entry: dog, 1 step uygulanmış, nextDueDate 2026-02-05 → upcoming.
     expect(card.entries).toHaveLength(1);
     const e = card.entries[0]!;
@@ -749,6 +703,8 @@ describe("VaccineCardsService", () => {
     expect(e.applications).toHaveLength(1);
     expect(e.lastApplicationBy).toBe("usr-vet-a");
     expect(card.summary.upcoming).toBe(1);
-    expect(card.summary.overdue + card.summary.completed + card.summary.notStarted).toBe(0);
+    expect(
+      card.summary.overdue + card.summary.completed + card.summary.notStarted,
+    ).toBe(0);
   });
 });

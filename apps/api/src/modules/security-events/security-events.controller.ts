@@ -35,12 +35,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   clientSecurityEventInputSchema,
   securityEventFiltersSchema,
@@ -55,6 +49,12 @@ import {
 } from "@vetniva/contracts";
 
 import { SecurityEventsService } from "./security-events.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("superadmin/security-events")
 @UseGuards(PermissionsGuard)
@@ -104,8 +104,7 @@ export class SecurityEventsController {
   @ApiOperation({
     operationId: "securityEventDetail",
     summary: "Güvenlik olayı detayı (SUPERADMIN)",
-    description:
-      "Tek güvenlik olayı detayı (mask'li IP, PII mask'lı context).",
+    description: "Tek güvenlik olayı detayı (mask'li IP, PII mask'lı context).",
   })
   public async detail(
     @Param("id") id: string,

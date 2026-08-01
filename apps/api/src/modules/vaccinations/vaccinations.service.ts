@@ -35,8 +35,8 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { VaccinationsRepository } from "./vaccinations.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import {
   toVaccination,
@@ -45,6 +45,8 @@ import {
   type VaccinationRecord,
   type VaccinationStatus,
 } from "../../common/vaccinations/vaccination.types.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { PatientsService } from "../patients/patients.service.js";
 import type { VaccinesService } from "../vaccines/vaccines.service.js";
 import type {
@@ -53,8 +55,6 @@ import type {
   VaccineProtocol,
   VaccineProtocolStep,
 } from "@vetniva/contracts";
-
-import { VaccinationsRepository } from "./vaccinations.repository.js";
 
 @Injectable()
 export class VaccinationsService {
@@ -377,7 +377,7 @@ export class VaccinationsService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

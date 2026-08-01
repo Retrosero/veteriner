@@ -1,30 +1,32 @@
 /**
  * @file ModuleEnabledGuard unit testleri.
  * @module apps/api/common/guards/module-enabled.guard.spec
- *
  * @description Guard davranışlarını doğrular:
  * - @RequireModule yoksa guard pasif
  * - Modül enabled → geçer
  * - Modül disabled → 403 VET-MODULE-0001
  * - SUPERADMIN modülden bağımsız geçer
- * - Birden fazla modülde OR mantığı (bir tane enabled yeterli)
- *
+ * - Birden fazla modülde OR mantığı (bir tane enabled yeterli).
  * @since GOAL-013 (FAZ-1) modül/feature flag altyapısı
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ExecutionContext } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { ModuleEnabledGuard } from "./module-enabled.guard.js";
+import { FeatureFlagService } from "../../modules/feature-flag/feature-flag.service.js";
+import { REQUIRE_MODULE_KEY } from "../decorators/require-module.decorator.js";
 
 import type { ActorContext } from "../actor/actor-context.service.js";
-import { REQUIRE_MODULE_KEY } from "../decorators/require-module.decorator.js";
 import type { ModuleKey } from "../modules/module.types.js";
-import { FeatureFlagService } from "../../modules/feature-flag/feature-flag.service.js";
-import { ModuleEnabledGuard } from "./module-enabled.guard.js";
+import type { ExecutionContext } from "@nestjs/common";
 
-function makeContext(args: {
-  actor?: ActorContext;
-}): ExecutionContext {
+/**
+ *
+ * @param args
+ * @param args.actor
+ */
+function makeContext(args: { actor?: ActorContext }): ExecutionContext {
   return {
     getHandler: () => ({}) as never,
     getClass: () => ({}) as never,
@@ -34,17 +36,23 @@ function makeContext(args: {
   } as unknown as ExecutionContext;
 }
 
+/**
+ *
+ * @param required
+ */
 function makeReflector(required: ReadonlyArray<ModuleKey>): Reflector {
   const r = new Reflector();
-  vi.spyOn(r, "getAllAndOverride").mockImplementation(
-    ((key: string) => {
-      if (key === REQUIRE_MODULE_KEY) return required;
-      return undefined;
-    }) as never,
-  );
+  vi.spyOn(r, "getAllAndOverride").mockImplementation(((key: string) => {
+    if (key === REQUIRE_MODULE_KEY) return required;
+    return undefined;
+  }) as never);
   return r;
 }
 
+/**
+ *
+ * @param overrides
+ */
 function makeActor(overrides: Partial<ActorContext> = {}): ActorContext {
   return {
     actorId: "user-1",

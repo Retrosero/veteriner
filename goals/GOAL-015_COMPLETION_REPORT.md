@@ -151,11 +151,11 @@ Yok (in-memory). Faz 11+ planı:
 ## Log ve audit
 
 - `audit:notification.sent` (info) — `metadata: { notificationId,
-  channel, category, templateKey, attempts }`.
+channel, category, templateKey, attempts }`.
 - `audit:notification.failed` (warning) — `metadata: { notificationId,
-  channel, attempts, lastError }`.
+channel, attempts, lastError }`.
 - `audit:notification.denied` (warning) — `metadata: { userId,
-  channel, category, reason: 'consent' }`.
+channel, category, reason: 'consent' }`.
 
 PII (telefon, e-posta) mask'lenerek loglanır. Provider response
 tokenları loglanmaz.

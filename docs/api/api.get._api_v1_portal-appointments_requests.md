@@ -68,7 +68,7 @@ Query: Yok (FAZ-0). İleride `?status=pending&limit=...` eklenebilir.
 ```
 
 - `items[].status` — `pending | approved | rejected | cancelled |
-  auto_scheduled`.
+auto_scheduled`.
 - `items[].approvedAppointmentId` — yalnızca `approved` ise dolu;
   `GET /api/v1/clinic/appointments/{id}` ile detay alınabilir.
 - `total` — `items.length` (pagination FAZ-0'da yok).

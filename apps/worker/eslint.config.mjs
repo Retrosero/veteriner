@@ -15,7 +15,11 @@
 
 import js from "@eslint/js";
 import globals from "globals";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import tseslint from "typescript-eslint";
+
+const configDirectory = path.dirname(fileURLToPath(import.meta.url));
 
 export default tseslint.config(
   {
@@ -34,6 +38,10 @@ export default tseslint.config(
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "module",
+      parserOptions: {
+        project: "./tsconfig.json",
+        tsconfigRootDir: configDirectory,
+      },
       globals: {
         ...globals.node,
       },
@@ -69,5 +77,11 @@ export default tseslint.config(
     // Test dosyaları: aynı kurallar, no-console zaten var.
     files: ["src/**/*.spec.ts", "src/**/*.test.ts"],
     rules: {},
+  },
+  {
+    files: ["src/main.ts"],
+    rules: {
+      "no-process-exit": "off",
+    },
   },
 );

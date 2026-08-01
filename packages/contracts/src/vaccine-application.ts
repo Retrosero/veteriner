@@ -32,6 +32,7 @@ import { vaccineDoseSchema } from "./vaccine.js";
 
 /** ISO 8601 datetime regex (Z veya ±HH:MM). */
 const ISO_DATETIME_REGEX =
+  // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, tüm tekrarlar sabit/üst sınırlı ISO-8601 doğrulamasıdır.
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/;
 
 /** ISO `YYYY-MM-DD` formatı. */
@@ -91,10 +92,7 @@ export const vaccineApplicationCreateInputSchema = z.object({
   dose: vaccineDoseSchema.optional(),
   administeredBy: z.string().min(1).max(100).optional(),
   applicationDate: z.string().regex(ISO_DATETIME_REGEX),
-  nextDueDate: z
-    .string()
-    .regex(ISO_DATE_REGEX)
-    .optional(),
+  nextDueDate: z.string().regex(ISO_DATE_REGEX).optional(),
   notes: z.string().max(2000).optional(),
 });
 export type VaccineApplicationCreateInput = z.infer<
@@ -120,10 +118,7 @@ export type VaccineApplicationCreateInput = z.infer<
  */
 export const vaccineApplicationAmendInputSchema = z.object({
   dose: vaccineDoseSchema.optional(),
-  nextDueDate: z
-    .string()
-    .regex(ISO_DATE_REGEX)
-    .optional(),
+  nextDueDate: z.string().regex(ISO_DATE_REGEX).optional(),
   notes: z.string().max(2000).optional(),
   /**
    * Düzeltilen lot bilgisi (opsiyonel). Farklı lot/stok

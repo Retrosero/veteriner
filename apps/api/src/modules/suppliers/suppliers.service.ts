@@ -27,13 +27,18 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import {
+  type SupplierPatch,
+  SuppliersRepository,
+} from "./suppliers.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import {
   toSupplier,
   type SupplierRecord,
 } from "../../common/suppliers/supplier.types.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   Supplier,
   SupplierArchiveInput,
@@ -42,11 +47,6 @@ import type {
   SupplierListResponse,
   SupplierUpdateInput,
 } from "@vetniva/contracts";
-
-import {
-  type SupplierPatch,
-  SuppliersRepository,
-} from "./suppliers.repository.js";
 
 @Injectable()
 export class SuppliersService {
@@ -368,7 +368,7 @@ export class SuppliersService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

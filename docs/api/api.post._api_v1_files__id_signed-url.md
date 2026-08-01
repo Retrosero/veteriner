@@ -23,7 +23,10 @@ dosya için 404 (`VET-FILE-0001`).
 **Response 200:**
 
 ```json
-{ "url": "https://storage.vetniva.local/...?token=...", "expiresAt": "2026-07-30T12:05:00.000Z" }
+{
+  "url": "https://storage.vetniva.local/...?token=...",
+  "expiresAt": "2026-07-30T12:05:00.000Z"
+}
 ```
 
 **Hata kodları:**

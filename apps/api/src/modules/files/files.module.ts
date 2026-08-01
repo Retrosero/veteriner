@@ -12,19 +12,21 @@
 
 import { Module } from "@nestjs/common";
 
-import { ClamAvAntivirusDriver } from "../../common/files/clamav-antivirus.driver.js";
-import { LocalStorageDriver } from "../../common/files/local-storage.driver.js";
-import { ANTIVIRUS_DRIVER } from "../../common/files/antivirus.interface.js";
-import { STORAGE_DRIVER } from "../../common/files/storage.interface.js";
-
 import { FilesController } from "./files.controller.js";
 import { FilesService } from "./files.service.js";
+import { ANTIVIRUS_DRIVER } from "../../common/files/antivirus.interface.js";
+import { ClamAvAntivirusDriver } from "../../common/files/clamav-antivirus.driver.js";
+import { LocalStorageDriver } from "../../common/files/local-storage.driver.js";
+import { STORAGE_DRIVER } from "../../common/files/storage.interface.js";
 
 @Module({
   controllers: [FilesController],
   providers: [
     FilesService,
-    LocalStorageDriver,
+    {
+      provide: LocalStorageDriver,
+      useFactory: (): LocalStorageDriver => new LocalStorageDriver(),
+    },
     ClamAvAntivirusDriver,
     {
       provide: STORAGE_DRIVER,

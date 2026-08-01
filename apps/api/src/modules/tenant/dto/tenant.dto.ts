@@ -14,7 +14,6 @@
  */
 
 import type { Tenant } from "@prisma/client";
-
 import type { TenantResponse } from "@vetniva/contracts";
 
 /**
@@ -28,7 +27,7 @@ export function toTenantResponse(t: Tenant): TenantResponse {
     country: t.country as TenantResponse["country"],
     defaultLocale: t.defaultLocale,
     timezone: t.timezone,
-    status: t.status as TenantResponse["status"],
+    status: t.status,
     taxId: t.taxId,
     taxIdType: (t.taxIdType as TenantResponse["taxIdType"]) ?? null,
     contactEmail: t.contactEmail,

@@ -16,11 +16,11 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ImagingOrdersRepository } from "./imaging-orders.repository.js";
+import { ImagingOrdersService } from "./imaging-orders.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-
-import { ImagingOrdersService } from "./imaging-orders.service.js";
-import { ImagingOrdersRepository } from "./imaging-orders.repository.js";
 import type {
   ImagingOrderAmendReportInput,
   ImagingOrderApproveReportInput,
@@ -587,11 +587,7 @@ describe("ImagingOrdersService", () => {
 
   describe("listImagingOrders", () => {
     it("tüm tenant kayıtlarını listeler", async () => {
-      await service.createImagingOrder(
-        TENANT_A,
-        makeCreateInput(),
-        VET_A,
-      );
+      await service.createImagingOrder(TENANT_A, makeCreateInput(), VET_A);
       await service.createImagingOrder(
         TENANT_A,
         makeCreateInput({ priority: "urgent" }),
@@ -629,11 +625,7 @@ describe("ImagingOrdersService", () => {
     });
 
     it("cross-tenant IDOR → boş", async () => {
-      await service.createImagingOrder(
-        TENANT_A,
-        makeCreateInput(),
-        VET_A,
-      );
+      await service.createImagingOrder(TENANT_A, makeCreateInput(), VET_A);
       const list = await service.listImagingOrders(
         TENANT_B,
         { limit: 50, offset: 0 },
@@ -680,11 +672,7 @@ describe("ImagingOrdersService", () => {
   describe("tenant izolasyonu", () => {
     it("cross-tenant list 403 VET-AUTHZ-0001", async () => {
       await expect(
-        service.listImagingOrders(
-          TENANT_B,
-          { limit: 50, offset: 0 },
-          STAFF_A,
-        ),
+        service.listImagingOrders(TENANT_B, { limit: 50, offset: 0 }, STAFF_A),
       ).rejects.toMatchObject({
         errorCode: "VET-AUTHZ-0001",
         httpStatus: 403,

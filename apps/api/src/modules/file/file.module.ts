@@ -8,39 +8,65 @@
  *
  * Adapter seçimi:
  * - `STORAGE_DRIVER=local` (default): `LocalStorageAdapter`.
- * - `STORAGE_DRIVER=s3`: `S3StorageAdapter` (skeleton; SDK entegrasyonu
- *   sonraki tick).
+ * - `STORAGE_DRIVER=s3`: `S3StorageAdapter` (S3/MinIO/R2).
  * - `SCAN_DRIVER=noop` (default): `NoopScanAdapter`.
- * - `SCAN_DRIVER=clamav`: `ClamAvScanAdapter` (skeleton; gerçek
- *   implementasyon sonraki tick).
+ * - `SCAN_DRIVER=clamav`: `ClamAvScanAdapter` (`clamd` INSTREAM).
  *
  * @since GOAL-014 (FAZ-1) dosya ve medya servisi
  */
 
 import { Module, type Provider } from "@nestjs/common";
 
-import { AuditModule } from "../../common/audit/audit.module.js";
-import { LocalStorageAdapter } from "../../common/adapters/local-storage.adapter.js";
-import { S3StorageAdapter } from "../../common/adapters/s3-storage.adapter.js";
-import type { ScanAdapter } from "../../common/adapters/scan.adapter.js";
-import type { StorageAdapter } from "../../common/adapters/storage.adapter.js";
-import { NoopScanAdapter } from "../../common/adapters/noop-scan.adapter.js";
-import { ClamAvScanAdapter } from "../../common/adapters/clamav-scan.adapter.js";
-
 import { FileController } from "./file.controller.js";
 import { FileRepository } from "./file.repository.js";
 import { FileService } from "./file.service.js";
+import { SCAN_ADAPTER, STORAGE_ADAPTER } from "./file.tokens.js";
+import { ClamAvScanAdapter } from "../../common/adapters/clamav-scan.adapter.js";
+import { LocalStorageAdapter } from "../../common/adapters/local-storage.adapter.js";
+import { NoopScanAdapter } from "../../common/adapters/noop-scan.adapter.js";
+import { S3StorageAdapter } from "../../common/adapters/s3-storage.adapter.js";
+import { AuditModule } from "../../common/audit/audit.module.js";
+
+import type { ScanAdapter } from "../../common/adapters/scan.adapter.js";
+import type { StorageAdapter } from "../../common/adapters/storage.adapter.js";
 
 /**
  * Storage adapter provider. Env değişkenine göre seçim yapar.
  */
-export const STORAGE_ADAPTER = Symbol("STORAGE_ADAPTER");
-export const SCAN_ADAPTER = Symbol("SCAN_ADAPTER");
+export { SCAN_ADAPTER, STORAGE_ADAPTER } from "./file.tokens.js";
+
+/** Ortamda izin verilen storage sürücüsünü doğrular. */
+export function resolveStorageDriver(
+  raw = process.env["STORAGE_DRIVER"] ?? "local",
+): "local" | "s3" {
+  const driver = raw.toLowerCase();
+  if (driver !== "local" && driver !== "s3") {
+    throw new Error(`file-storage-driver-invalid-${driver}`);
+  }
+  if (process.env["NODE_ENV"] === "production" && driver !== "s3") {
+    throw new Error("file-storage-driver-production-requires-s3");
+  }
+  return driver;
+}
+
+/** Ortamda izin verilen malware tarama sürücüsünü doğrular. */
+export function resolveScanDriver(
+  raw = process.env["SCAN_DRIVER"] ?? "noop",
+): "noop" | "clamav" {
+  const driver = raw.toLowerCase();
+  if (driver !== "noop" && driver !== "clamav") {
+    throw new Error(`file-scan-driver-invalid-${driver}`);
+  }
+  if (process.env["NODE_ENV"] === "production" && driver !== "clamav") {
+    throw new Error("file-scan-driver-production-requires-clamav");
+  }
+  return driver;
+}
 
 const storageProvider: Provider = {
   provide: STORAGE_ADAPTER,
   useFactory: (): StorageAdapter => {
-    const driver = (process.env["STORAGE_DRIVER"] ?? "local").toLowerCase();
+    const driver = resolveStorageDriver();
     if (driver === "s3") {
       return new S3StorageAdapter({
         bucket: process.env["S3_BUCKET"] ?? "",
@@ -53,6 +79,9 @@ const storageProvider: Provider = {
           : {}),
         ...(process.env["S3_SECRET_ACCESS_KEY"] !== undefined
           ? { secretAccessKey: process.env["S3_SECRET_ACCESS_KEY"] }
+          : {}),
+        ...(process.env["S3_FORCE_PATH_STYLE"] !== undefined
+          ? { forcePathStyle: process.env["S3_FORCE_PATH_STYLE"] === "true" }
           : {}),
       });
     }
@@ -74,7 +103,7 @@ const storageProvider: Provider = {
 const scanProvider: Provider = {
   provide: SCAN_ADAPTER,
   useFactory: (): ScanAdapter => {
-    const driver = (process.env["SCAN_DRIVER"] ?? "noop").toLowerCase();
+    const driver = resolveScanDriver();
     if (driver === "clamav") {
       return new ClamAvScanAdapter({
         ...(process.env["CLAMAV_SOCKET"] !== undefined
@@ -95,12 +124,7 @@ const scanProvider: Provider = {
 @Module({
   imports: [AuditModule],
   controllers: [FileController],
-  providers: [
-    FileService,
-    FileRepository,
-    storageProvider,
-    scanProvider,
-  ],
+  providers: [FileService, FileRepository, storageProvider, scanProvider],
   exports: [FileService, FileRepository, STORAGE_ADAPTER, SCAN_ADAPTER],
 })
 export class FileModule {}

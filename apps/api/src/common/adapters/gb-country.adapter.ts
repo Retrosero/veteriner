@@ -1,16 +1,22 @@
 /**
- * @file Birleşik Krallık ülke adaptörü (iskelet).
+ * @file Birleşik Krallık ülke adaptörü.
  * @module @vetniva/api/common/adapters/gb-country
+ * @description GB ülkesi için pilot kapsamda TAM implementasyon.
+ * HMRC (vergi), Ofcom (telefon numara planı), Royal Mail
+ * (posta kodu), ISO 13616 (IBAN mod 97-10) kuralları.
  *
- * @description GB ülkesi için İSKELET implementasyon. Gerçek
- * mevzuat (RCVS, VMD, HMRC MTD, BVA standartları, GDPR/PECR
- * detayları) Faz 14'te (en-GB pazarı açılışı) tamamlanacak.
+ * Pilot kapsamda formatlama (Intl API), doğrulama (regex +
+ * checksum), KDV oranları (FAZ-141) ve reçete kuralları
+ * (RCVS 28 gün) sağlanır.
  *
- * Pilot kapsamda yalnızca temel formatlama (Intl API) sağlanır;
- * vergi, reçete, belge formatları placeholder.
- *
- * @author GOAL-003 (FAZ-0 devamı) iskelet
+ * Faz 14+ kapsamda eklenecekler:
+ * - MTD (Making Tax Digital) entegrasyonu
+ * - Reverse charge (B2B KDV)
+ * - POM-V reçete kategorisi (POM-V, POM-VPS, NFA-VPS)
+ * - HMRC senkronizasyonu (vergili satışlar).
+ * @author GOAL-003 (FAZ-0 iskelet) + GOAL-141 (FAZ-14 core)
  * @see docs/i18n/COUNTRY_ADAPTER_CONTRACT.md
+ * @see docs/finance/GB_VAT.md
  */
 
 import { Decimal } from "@prisma/client/runtime/library";
@@ -34,33 +40,135 @@ import type {
 } from "./country-adapter.js";
 
 /**
- * GB placeholder KDV oranları. Faz 14'te HMRC ile uyumlu
- * detaylı oran listesi gelecek.
+ * GB KDV oranları (FAZ-141 / HMRC Notice 709/3, 2024 itibarıyla).
+ *
+ * Standart %20, indirilmiş %0 (POM-V ilaç, pet food temel).
+ * "service" kategorisi standart oran; pet_accessory da standart.
+ * @see https://www.gov.uk/guidance/rates-of-vat-on-different-goods-and-services
  */
-const GB_VAT_RATES_PLACEHOLDER: VatRate[] = [
+const GB_VAT_RATES: VatRate[] = [
   { category: "medicine", rate: 0.0, effectiveFrom: new Date("2024-01-01") },
   { category: "vaccine", rate: 0.0, effectiveFrom: new Date("2024-01-01") },
   { category: "pet_food", rate: 0.0, effectiveFrom: new Date("2024-01-01") },
-  { category: "pet_accessory", rate: 0.2, effectiveFrom: new Date("2024-01-01") },
+  {
+    category: "pet_accessory",
+    rate: 0.2,
+    effectiveFrom: new Date("2024-01-01"),
+  },
   { category: "service", rate: 0.2, effectiveFrom: new Date("2024-01-01") },
   { category: "other", rate: 0.2, effectiveFrom: new Date("2024-01-01") },
 ];
 
 /**
- * GB placeholder bildirim kuralları. Faz 14'te GDPR + PECR
- * detayları eklenecek.
+ * GB bildirim kuralları (UK GDPR + PECR uyumlu).
+ *
+ * - requiresOptIn: UK GDPR Madde 6/7 gereği pazarlama
+ *   iletişimi için önceden açık rıza zorunlu.
+ * - smsQuietHours: PECR + ICO rehberliği; 21:00-09:00
+ *   arası pazarlama SMS'i gönderilmez.
+ * - emailDailyLimit: Günde 3 e-posta; GDPR orantılılık.
+ * - marketingConsentRequired: Pazarlama için ayrı onay
+ *   (genel bildirim izninden bağımsız).
  */
-const GB_NOTIFICATION_RULES_PLACEHOLDER: NotificationRules = {
-  requiresOptIn: true, // GDPR Madde 6/7 — açık rıza
+const GB_NOTIFICATION_RULES: NotificationRules = {
+  requiresOptIn: true,
   defaultOptIn: false,
-  smsQuietHours: { start: "21:00", end: "09:00" }, // Yaz saati uygulanmaz
-  emailDailyLimit: 3, // GDPR uyumlu, daha düşük limit
-  marketingConsentRequired: true, // PECR — pazarlama için soft opt-in
+  smsQuietHours: { start: "21:00", end: "09:00" },
+  emailDailyLimit: 3,
+  marketingConsentRequired: true,
 };
 
 /**
- * GB adaptör iskeleti. Faz 14'te HMRC, RCVS, VMD, BVA
- * standartlarına göre genişletilecek.
+ * UK posta kodu regex'i (Royal Mail standardı).
+ *
+ * Format: 1-2 harfli alan kodu + 1-2 rakam/harf + opsiyonel
+ * boşluk + 1 rakam + 2 harf.
+ *
+ * Örnekler: SW1A 1AA, M1 1AA, B33 8TH, CR2 6XH, DN55 1PT,
+ * EC1A 1BB.
+ * @see https://en.wikipedia.org/wiki/Postcodes_in_the_United_Kingdom
+ */
+const UK_POSTCODE_REGEX = /^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/;
+
+/**
+ * UK telefon numarası regex'i (E.164 +44 ile başlayan).
+ *
+ * Ofcom numara planına göre:
+ * - Mobil: +44 7XXX XXXXXX (10 hane, 7 ile başlar)
+ * - Sabit (coğrafi): +44 1XXX XXXXXX veya +44 2X XXXX XXXX.
+ *
+ * Toplam 13 karakter: +44 + 10 hane. Alan kodu (10X, 11X,
+ * 12X, 20X, vb.) Ofcom tarafından tahsis edilir; burada
+ * yaygın aralıkları kabul ediyoruz.
+ */
+const UK_PHONE_REGEX = /^\+44[127]\d{9}$/;
+
+/**
+ * UTR (Unique Taxpayer Reference) — bireysel vergi mükellefi
+ * kimlik numarası. 10 haneli sayı.
+ * @see https://www.gov.uk/find-lost-utr-number
+ */
+const UTR_REGEX = /^\d{10}$/;
+
+/**
+ * VRN (VAT Registration Number) — şirket KDV kayıt numarası.
+ * HMRC formatı: GB + 9 hane = 11 karakter toplam.
+ * @see https://www.gov.uk/vat-registration
+ */
+const VRN_REGEX = /^GB\d{9}$/;
+
+/**
+ * IBAN (ISO 13616) mod 97-10 doğrulaması — GB için.
+ *
+ * GB IBAN toplam 22 karakter: GB + 2 kontrol + 4 banka (BIC) +
+ * 6 sort code + 8 hesap no.
+ * @param iban Doğrulanacak IBAN (boşluklu veya boşluksuz).
+ * @returns Geçerli ise true.
+ */
+function isValidGBIBAN(iban: string): boolean {
+  const cleaned = iban.replace(/\s/g, "").toUpperCase();
+  if (!/^GB\d{2}[A-Z]{4}\d{14}$/.test(cleaned)) {
+    return false;
+  }
+  // İlk 4 karakteri sona taşı
+  const rearranged = cleaned.slice(4) + cleaned.slice(0, 4);
+  // Harfleri sayıya çevir (A=10, B=11, ... Z=35)
+  let numeric = "";
+  for (const ch of rearranged) {
+    if (ch >= "A" && ch <= "Z") {
+      numeric += (ch.charCodeAt(0) - 55).toString();
+    } else {
+      numeric += ch;
+    }
+  }
+  // Mod 97 hesapla (büyük sayılar için parça parça)
+  let remainder = 0;
+  for (const ch of numeric) {
+    remainder = (remainder * 10 + Number(ch)) % 97;
+  }
+  return remainder === 1;
+}
+
+/**
+ * UK telefon numarasını E.164 → okunabilir formata çevirir.
+ *
+ * +44 7XXX XXXXXX → +44 7XXX XXXXXX (zaten doğru ise olduğu gibi)
+ * +447700900123 → +44 7700 900123.
+ * @param phone E.164 formatında telefon (+44 ile başlayan).
+ * @returns İnsan-okunabilir format.
+ */
+function formatUKPhoneDisplay(phone: string): string {
+  // cleaned zaten +44 ile başlıyor ve 13 karakter
+  if (phone.length === 13) {
+    return `${phone.slice(0, 3)} ${phone.slice(3, 7)} ${phone.slice(7)}`;
+  }
+  return phone;
+}
+
+/**
+ * GB adaptör implementasyonu. Pilot kapsamda formatlama +
+ * doğrulama + KDV + reçete kuralları. Faz 14+'da MTD ve
+ * HMRC senkronizasyonu eklenecek.
  */
 export class GbCountryAdapter implements CountryAdapter {
   readonly code: CountryCode = "GB";
@@ -84,6 +192,7 @@ export class GbCountryAdapter implements CountryAdapter {
       intlOptions.month = "long";
       intlOptions.year = "numeric";
     } else {
+      // short: dd/MM/yyyy (en-GB default)
       intlOptions.day = "2-digit";
       intlOptions.month = "2-digit";
       intlOptions.year = "numeric";
@@ -141,78 +250,100 @@ export class GbCountryAdapter implements CountryAdapter {
   // -- Telefon --
 
   formatPhone(phone: string, _options: PhoneFormatOptions = {}): string {
-    // TODO (Faz 14): Ofcom numara planına göre detaylı formatlama.
     const cleaned = phone.replace(/\s/g, "");
-    if (cleaned.startsWith("+44")) {
-      return cleaned.replace(/(\+44)(\d{4})(\d{6})/, "$1 $2 $3");
+    if (UK_PHONE_REGEX.test(cleaned)) {
+      return formatUKPhoneDisplay(cleaned);
     }
     return phone;
   }
 
-  validatePhone(_phone: string): ValidationResult {
-    // TODO (Faz 14): Ofcom kurallarına göre detaylı doğrulama.
+  validatePhone(phone: string): ValidationResult {
+    const cleaned = phone.replace(/\s/g, "");
+    if (UK_PHONE_REGEX.test(cleaned)) {
+      return { valid: true, normalized: formatUKPhoneDisplay(cleaned) };
+    }
     return {
-      valid: true,
-      error: "validation.phone.gb_not_implemented",
+      valid: false,
+      error: "validation.phone.invalid_gb",
     };
   }
 
   // -- Posta kodu --
 
   formatPostalCode(code: string): string {
-    return code.toUpperCase().trim();
+    const compact = code.toUpperCase().replace(/\s+/g, "").trim();
+    return compact.replace(/^(.+?)(\d[A-Z]{2})$/, "$1 $2");
   }
 
-  validatePostalCode(_code: string): ValidationResult {
-    // TODO (Faz 14): UK posta kodu regex
-    // (örn. SW1A 1AA, M1 1AA, B33 8TH).
+  validatePostalCode(code: string): ValidationResult {
+    const compact = code.toUpperCase().replace(/\s+/g, "").trim();
+    if (UK_POSTCODE_REGEX.test(compact)) {
+      // Outward + inward code'u normalize et (orta boşluk)
+      const normalized = compact.replace(/^(.+?)(\d[A-Z]{2})$/, "$1 $2");
+      return { valid: true, normalized };
+    }
     return {
-      valid: true,
-      error: "validation.postal_code.gb_not_implemented",
+      valid: false,
+      error: "validation.postal_code.invalid_gb",
     };
   }
 
   // -- Vergi --
 
   formatTaxId(taxId: string): string {
-    return taxId.toUpperCase().trim();
+    return taxId.toUpperCase().replace(/\s/g, "").trim();
   }
 
-  validateTaxId(_taxId: string, _type: "company" | "personal"): ValidationResult {
-    // TODO (Faz 14): UTR (Unique Taxpayer Reference, 10 hane)
-    // ve VRN (VAT Registration Number, GB + 9 hane) doğrulama.
-    return {
-      valid: true,
-      error: "validation.tax_id.gb_not_implemented",
-    };
+  validateTaxId(taxId: string, type: "company" | "personal"): ValidationResult {
+    const cleaned = taxId.toUpperCase().replace(/\s/g, "").trim();
+    if (type === "company") {
+      // VRN: GB + 9 hane
+      if (VRN_REGEX.test(cleaned)) {
+        return { valid: true, normalized: cleaned };
+      }
+      return { valid: false, error: "validation.tax_id.vrn_invalid" };
+    }
+    // UTR: 10 hane sayı
+    if (UTR_REGEX.test(cleaned)) {
+      return { valid: true, normalized: cleaned };
+    }
+    return { valid: false, error: "validation.tax_id.utr_invalid" };
   }
 
   // -- IBAN --
 
   formatIBAN(iban: string): string {
-    return iban
-      .replace(/\s/g, "")
-      .toUpperCase()
-      .match(/.{1,4}/g)
-      ?.join(" ") ?? iban;
+    return (
+      iban
+        .replace(/\s/g, "")
+        .toUpperCase()
+        .match(/.{1,4}/g)
+        ?.join(" ") ?? iban
+    );
   }
 
-  validateIBAN(_iban: string): ValidationResult {
-    // TODO (Faz 14): GB IBAN mod 97-10 doğrulaması.
-    return {
-      valid: true,
-      error: "validation.iban.gb_not_implemented",
-    };
+  validateIBAN(iban: string): ValidationResult {
+    const cleaned = iban.replace(/\s/g, "").toUpperCase();
+    if (!cleaned.startsWith("GB")) {
+      return { valid: false, error: "validation.iban.country_mismatch" };
+    }
+    if (cleaned.length !== 22) {
+      return { valid: false, error: "validation.iban.length_invalid" };
+    }
+    if (!isValidGBIBAN(cleaned)) {
+      return { valid: false, error: "validation.iban.checksum_invalid" };
+    }
+    return { valid: true, normalized: cleaned };
   }
 
   // -- KDV --
 
   getVatRates(): VatRate[] {
-    return [...GB_VAT_RATES_PLACEHOLDER];
+    return [...GB_VAT_RATES];
   }
 
   getVatRateFor(category: VatCategory, date: Date): number {
-    const applicable = GB_VAT_RATES_PLACEHOLDER.filter(
+    const applicable = GB_VAT_RATES.filter(
       (r) =>
         r.category === category &&
         r.effectiveFrom <= date &&
@@ -251,7 +382,7 @@ export class GbCountryAdapter implements CountryAdapter {
   }
 
   getPrescriptionValidityDays(): number {
-    return 28; // UK'de 28 gün (veteriner reçeteleri)
+    return 28; // UK'de 28 gün (RCVS standart)
   }
 
   // -- Adres --
@@ -269,6 +400,6 @@ export class GbCountryAdapter implements CountryAdapter {
   // -- Bildirim --
 
   getNotificationRules(): NotificationRules {
-    return { ...GB_NOTIFICATION_RULES_PLACEHOLDER };
+    return { ...GB_NOTIFICATION_RULES };
   }
 }

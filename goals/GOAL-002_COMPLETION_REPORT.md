@@ -40,8 +40,8 @@
    - `VETERINARIAN` — klinik tıbbi (muayene, aşı, reçete, ameliyat)
    - `STAFF` — resepsiyon + petshop (tıbbi değil)
    - `PET_OWNER_PORTAL` — salt okunur kendi hayvanları
-   Her rol için: sorumluluklar, kapsam dışı, tipik senaryolar,
-   dikkat noktaları. Sonunda karşılaştırma tablosu.
+     Her rol için: sorumluluklar, kapsam dışı, tipik senaryolar,
+     dikkat noktaları. Sonunda karşılaştırma tablosu.
 
 4. **`docs/permissions/README.md`** oluşturuldu. Üç ana
    dokümanın indeksi, format açıklaması, ekleme kuralı (CI

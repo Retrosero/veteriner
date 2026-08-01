@@ -28,10 +28,10 @@
  *   - status='amended', amendedAt+amendedBy+amendedReason.
  *   - `dose` / `nextDueDate` / `notes` değişirse stok etkisi yok.
  *   - `lot` değişirse:
- *       * Yeni lot SKT'si geçmişse → 422 VET-VACC-0010.
- *       * Yeni lot yeterli stok yoksa → 422 VET-VACC-0009.
- *       * Eski lot'a ters kayıt + yeni lot'tan düşüm.
- *       * Hareket ID'leri `stockMovementIds`'e append edilir.
+ *       Yeni lot SKT'si geçmişse → 422 VET-VACC-0010.
+ *       Yeni lot yeterli stok yoksa → 422 VET-VACC-0009.
+ *       Eski lot'a ters kayıt + yeni lot'tan düşüm.
+ *       Hareket ID'leri `stockMovementIds`'e append edilir.
  *   - Audit `audit:vaccine.application.amend` (warning);
  *     `lotChange` varsa audit detail'inde before/after.
  * - `cancelApplication`: status='cancelled' ise → 409
@@ -50,21 +50,26 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
 import {
-  VaccineStockLedger,
-  type StockMovement,
-} from "../../common/vaccines/vaccine-stock-ledger.js";
+  VaccineApplicationsRepository,
+  type VaccineApplicationPatch,
+} from "./vaccine-applications.repository.js";
+import { VaccinesService } from "./vaccines.service.js";
+import { AuditService } from "../../common/audit/audit.service.js";
+import { DomainError } from "../../common/errors/domain-error.js";
 import {
   isLotExpired,
   resolveApplicationDose,
   toVaccineApplication,
   type VaccineApplicationRecord,
 } from "../../common/vaccines/vaccine-application.types.js";
-import { VaccinesService } from "./vaccines.service.js";
+import {
+  VaccineStockLedger,
+  type StockMovement,
+} from "../../common/vaccines/vaccine-stock-ledger.js";
 import { PatientsService } from "../patients/patients.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   VaccineApplication,
   VaccineApplicationAmendInput,
@@ -73,11 +78,6 @@ import type {
   VaccineApplicationFilters,
   VaccineApplicationListResponse,
 } from "@vetniva/contracts";
-
-import {
-  VaccineApplicationsRepository,
-  type VaccineApplicationPatch,
-} from "./vaccine-applications.repository.js";
 
 @Injectable()
 export class VaccineApplicationsService {
@@ -147,14 +147,10 @@ export class VaccineApplicationsService {
     }
 
     // 3) Species uyumu. 'all' her türe uygulanabilir.
-    if (
-      protocol.species !== "all" &&
-      protocol.species !== patient.species
-    ) {
+    if (protocol.species !== "all" && protocol.species !== patient.species) {
       throw new DomainError({
         errorCode: "VET-VACC-0006",
-        message:
-          "Aşı protokolü türü, hastanın türüyle uyumlu değil",
+        message: "Aşı protokolü türü, hastanın türüyle uyumlu değil",
         httpStatus: 422,
         severity: "warning",
         i18nKey: "error.VET-VACC-0006",
@@ -437,11 +433,7 @@ export class VaccineApplicationsService {
       //    hareketi tersine çevirmiyoruz.
       const reversedMovementIds: string[] = [];
       for (const movementId of existing.stockMovementIds) {
-        const reversed = this.stock.reverse(
-          tenantId,
-          movementId,
-          amendedBy,
-        );
+        const reversed = this.stock.reverse(tenantId, movementId, amendedBy);
         if (!reversed) {
           // Reverse başarısız: yeni lot'tan düşülen hareketi
           // geri almak için iade (negative) hareketi oluştur.
@@ -456,8 +448,7 @@ export class VaccineApplicationsService {
             "critical",
             {
               reason: input.reason,
-              error:
-                "Stok ters kayıt başarısız; yeni lot hareketi iade edildi",
+              error: "Stok ters kayıt başarısız; yeni lot hareketi iade edildi",
               before,
               after: {
                 dose: existing.dose,
@@ -608,16 +599,12 @@ export class VaccineApplicationsService {
     }
 
     const nowIso = new Date().toISOString();
-    const cancelledBy = actor.actorId ?? "system";
     const updated = this.repo.update(tenantId, id, {
       status: "cancelled",
       updatedAt: nowIso,
       cancelledAt: nowIso,
       cancellationReason: input.reason,
-      stockMovementIds: [
-        ...existing.stockMovementIds,
-        ...newMovementIds,
-      ],
+      stockMovementIds: [...existing.stockMovementIds, ...newMovementIds],
     });
     if (!updated) {
       throw new DomainError({
@@ -709,7 +696,7 @@ export class VaccineApplicationsService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

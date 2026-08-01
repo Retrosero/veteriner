@@ -10,7 +10,7 @@ Tenant-scoped görüntüleme arama. `status`/`modality`/
 **Query parametreleri (`ImagingOrderFilters`):**
 
 - `status` (enum: `ordered|scheduled|performed|reported|
-  completed|cancelled`) opsiyonel.
+completed|cancelled`) opsiyonel.
 - `modality` (enum) opsiyonel.
 - `patientId` (string) opsiyonel.
 - `priority` (enum) opsiyonel.

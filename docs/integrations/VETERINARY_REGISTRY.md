@@ -1,11 +1,14 @@
 # Resmî Veteriner Sistemleri Adapter (GOAL-134)
 
 ## Faz
+
 FAZ-13 (Türkiye uyumluluk ve entegrasyonlar)
 
 ## Amaç
+
 Türkiye'deki resmî veteriner sistemlerine zorunlu veri
 aktarımı:
+
 - **Türkvet** (T.C. Tarım ve Orman Bakanlığı): kedi/köpek
   aşı + mikroçip + sahiplik kayıtları.
 - **PETVET** (TVHB): muayene + tedavi kayıtları (opsiyonel).
@@ -28,20 +31,23 @@ tanımlı. `VeterinaryRegistryAdapter` interface'i:
 ```typescript
 interface VeterinaryRegistryAdapter {
   readonly name: VeterinaryRegistry; // "turkveteriner" | "petvet" | "il_tarim"
-  submit(records: RegistryRecord[], actor: ActorContext): Promise<RegistrySubmitResult[]>;
+  submit(
+    records: RegistryRecord[],
+    actor: ActorContext,
+  ): Promise<RegistrySubmitResult[]>;
   query(externalId: string): Promise<RegistrySubmitResult>;
 }
 ```
 
 ## Kayıt Türleri
 
-| Tip | Açıklama | Sıklık |
-|----|----------|--------|
-| `vaccination` | Aşı uygulaması kaydı | her uygulamada |
-| `microchip` | Mikroçip implantasyonu | implantasyon sonrası |
-| `ownership` | Sahiplik devri | transfer sonrası |
-| `examination` | Muayene kaydı (PETVET için) | her muayene |
-| `death` | Ölüm kaydı | ölüm sonrası |
+| Tip           | Açıklama                    | Sıklık               |
+| ------------- | --------------------------- | -------------------- |
+| `vaccination` | Aşı uygulaması kaydı        | her uygulamada       |
+| `microchip`   | Mikroçip implantasyonu      | implantasyon sonrası |
+| `ownership`   | Sahiplik devri              | transfer sonrası     |
+| `examination` | Muayene kaydı (PETVET için) | her muayene          |
+| `death`       | Ölüm kaydı                  | ölüm sonrası         |
 
 ## İş Akışı
 
@@ -61,15 +67,15 @@ interface VeterinaryRegistryAdapter {
 
 ```typescript
 interface RegistryRecord {
-  id: string;                  // local ID
+  id: string; // local ID
   type: RegistryRecordType;
-  patientMicrochip: string;     // 15 hane ISO
+  patientMicrochip: string; // 15 hane ISO
   patientSpecies: "dog" | "cat" | "bird";
   ownerFullName: string;
   ownerPhone: string;
-  ownerIdentityNumber: string;  // TCKN
+  ownerIdentityNumber: string; // TCKN
   veterinarianLicenseNumber: string; // Veteriner Hekim Sicil No
-  occurredAt: string;          // ISO datetime
+  occurredAt: string; // ISO datetime
   payload: Record<string, unknown>;
 }
 ```
@@ -84,23 +90,27 @@ TURKVETERINER_CLIENT_ID=xxx
 ```
 
 ## Audit (zorunlu)
+
 - `audit:veterinary_registry.submitted` (info).
 - `audit:veterinary_registry.rejected` (warning).
 - Append-only (5 yıl saklama, KVKK gereği).
 
 ## Güvenlik
+
 - **TLS 1.3** zorunlu.
 - **mTLS** (client certificate) önerilir.
 - **API key rotation:** 90 günde bir.
 - **Rate limit:** 10 req/saat (provider bazında).
 
 ## Testler
+
 - **Mock provider:** development + test.
 - **Sandbox (varsa):** staging.
 - **Production:** pilot onayından sonra + Gİb/Bakanlık
   onayı.
 
 ## Yapılmayanlar / Bilinçli Atlamalar
+
 - **Hayvan sağlığı sertifikaları (aşı pasaportu PDF)** →
   Faz 14+ (mevcut `clinic-record-share.ts` kullanılabilir).
 - **Antibiyotik kullanım raporu (resmî)** → Faz 14+.
@@ -108,5 +118,6 @@ TURKVETERINER_CLIENT_ID=xxx
   ile birlikte).
 
 ## Commit
+
 - Core: (bu commit) — `apps/api/src/common/integrations/veterinary/registry.adapter.ts`
 - Real: Faz 14+ (Bakanlık onayı + Gİb entegrasyonu).

@@ -15,11 +15,10 @@
 
 import { Module } from "@nestjs/common";
 
-import { AuditModule } from "../../common/audit/audit.module.js";
-
 import { InventoryController } from "./inventory.controller.js";
 import { InventoryRepository } from "./inventory.repository.js";
 import { InventoryService } from "./inventory.service.js";
+import { AuditModule } from "../../common/audit/audit.module.js";
 
 @Module({
   imports: [AuditModule],

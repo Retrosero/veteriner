@@ -16,9 +16,10 @@
  */
 
 import { Injectable, Logger } from "@nestjs/common";
-import type { Prisma, FileMeta as PrismaFileMeta } from "@prisma/client";
 
 import { PrismaService } from "../../prisma/prisma.service.js";
+
+import type { Prisma, FileMeta as PrismaFileMeta } from "@prisma/client";
 import type { FileVisibility } from "@vetniva/contracts";
 
 export interface CreateFileMetaInput {
@@ -66,9 +67,9 @@ export class FileRepository {
     id: string,
     tenantId: string,
   ): Promise<PrismaFileMeta | null> {
-    return this.prisma.fileMeta.findFirst({
-      where: { id, tenantId },
-    });
+    return this.withTenant(tenantId, (tx) =>
+      tx.fileMeta.findFirst({ where: { id, tenantId } }),
+    );
   }
 
   /**
@@ -79,9 +80,9 @@ export class FileRepository {
     storageKey: string,
     tenantId: string,
   ): Promise<PrismaFileMeta | null> {
-    return this.prisma.fileMeta.findFirst({
-      where: { storageKey, tenantId },
-    });
+    return this.withTenant(tenantId, (tx) =>
+      tx.fileMeta.findFirst({ where: { storageKey, tenantId } }),
+    );
   }
 
   /**
@@ -92,9 +93,9 @@ export class FileRepository {
     tenantId: string,
     checksumSha256: string,
   ): Promise<PrismaFileMeta | null> {
-    return this.prisma.fileMeta.findFirst({
-      where: { tenantId, checksumSha256 },
-    });
+    return this.withTenant(tenantId, (tx) =>
+      tx.fileMeta.findFirst({ where: { tenantId, checksumSha256 } }),
+    );
   }
 
   /**
@@ -118,7 +119,9 @@ export class FileRepository {
       relatedEntityId: input.relatedEntityId,
       description: input.description,
     };
-    return this.prisma.fileMeta.create({ data });
+    return this.withTenant(input.tenantId, (tx) =>
+      tx.fileMeta.create({ data }),
+    );
   }
 
   /**
@@ -132,14 +135,16 @@ export class FileRepository {
       scanResult: string | null;
     },
   ): Promise<PrismaFileMeta> {
-    return this.prisma.fileMeta.update({
-      where: { id },
-      data: {
-        scanStatus: result.scanStatus,
-        scanResult: result.scanResult,
-        scannedAt: new Date(),
-      },
-    });
+    return this.withTenant(tenantId, (tx) =>
+      tx.fileMeta.update({
+        where: { id },
+        data: {
+          scanStatus: result.scanStatus,
+          scanResult: result.scanResult,
+          scannedAt: new Date(),
+        },
+      }),
+    );
   }
 
   /**
@@ -152,14 +157,16 @@ export class FileRepository {
     archivedBy: string,
     reason: string,
   ): Promise<PrismaFileMeta> {
-    return this.prisma.fileMeta.update({
-      where: { id },
-      data: {
-        archivedAt: new Date(),
-        archivedBy,
-        archiveReason: reason,
-      },
-    });
+    return this.withTenant(tenantId, (tx) =>
+      tx.fileMeta.update({
+        where: { id },
+        data: {
+          archivedAt: new Date(),
+          archivedBy,
+          archiveReason: reason,
+        },
+      }),
+    );
   }
 
   /**
@@ -171,20 +178,35 @@ export class FileRepository {
       where.archivedAt = null;
     }
     if (args.mimeType) where.mimeType = args.mimeType;
-    if (args.relatedEntityType) where.relatedEntityType = args.relatedEntityType;
+    if (args.relatedEntityType)
+      where.relatedEntityType = args.relatedEntityType;
     if (args.relatedEntityId) where.relatedEntityId = args.relatedEntityId;
     if (args.visibility) where.visibility = args.visibility;
 
-    const [items, total] = await Promise.all([
-      this.prisma.fileMeta.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        skip: (args.page - 1) * args.pageSize,
-        take: args.pageSize,
-      }),
-      this.prisma.fileMeta.count({ where }),
-    ]);
-    return { items, total };
+    return this.withTenant(args.tenantId, async (tx) => {
+      const [items, total] = await Promise.all([
+        tx.fileMeta.findMany({
+          where,
+          orderBy: { createdAt: "desc" },
+          skip: (args.page - 1) * args.pageSize,
+          take: args.pageSize,
+        }),
+        tx.fileMeta.count({ where }),
+      ]);
+      return { items, total };
+    });
+  }
+
+  /** Tenant RLS bağlamını sorguyla aynı transaction ve bağlantıda kurar. */
+  private async withTenant<T>(
+    tenantId: string,
+    fn: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'false', true)`;
+      await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
+      return fn(tx);
+    });
   }
 
   /**

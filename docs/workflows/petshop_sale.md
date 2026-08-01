@@ -6,15 +6,18 @@
 **Sayfa:** `/[locale]/petshop/sales/new`
 
 ## Amaç
+
 Petshop kasasından ürün satışı yapmak. Müşteri (var veya
 yeni), satılan ürünler (lot ile), ödeme yöntemi ve varsa
 hayvan bağlantısı girilir.
 
 ## Aktör
+
 - STAFF (petshop kasiyer)
 - VETERINARIAN (kendi kliniğinde petshop varsa)
 
 ## Tetikleyici
+
 - Müşteri kasaya gelir.
 - Online sipariş (FAZ-12+) iptali.
 
@@ -73,25 +76,28 @@ hayvan bağlantısı girilir.
       hayvana ilişkilendirilir.
 
 ## Tenant izolasyonu
+
 - Tüm ürün + lot aynı tenant'ta olmalı.
 
 ## Audit
+
 - `audit:petshop_sale.create` (info).
 - `audit:petshop_sale.cancel` (warning; iptal).
 - `audit:stock_movement.create` (info).
 
 ## Hata senaryoları
 
-| Senaryo | HTTP | Hata kodu |
-|---------|------|-----------|
-| Pasif ürün | 409 | `VET-PRODUCT-0001` |
-| Stok yetersiz | 409 | `VET-INVENTORY-0001` |
-| Lot SKT geçmiş | 422 | `VET-INVENTORY-0002` |
-| Eksik ödeme | 422 | `VET-VALIDATION-0010` |
-| Cross-tenant | 404 | `VET-CLINIC-0001` |
-| Yetkisiz | 403 | `VET-AUTHZ-0001` |
+| Senaryo        | HTTP | Hata kodu             |
+| -------------- | ---- | --------------------- |
+| Pasif ürün     | 409  | `VET-PRODUCT-0001`    |
+| Stok yetersiz  | 409  | `VET-INVENTORY-0001`  |
+| Lot SKT geçmiş | 422  | `VET-INVENTORY-0002`  |
+| Eksik ödeme    | 422  | `VET-VALIDATION-0010` |
+| Cross-tenant   | 404  | `VET-CLINIC-0001`     |
+| Yetkisiz       | 403  | `VET-AUTHZ-0001`      |
 
 ## İlgili dokümanlar
+
 - `docs/api/api.post._api_v1_petshop_sales.md`
 - `goals/GOAL-064_COMPLETION_REPORT.md`
 - `docs/permissions/PERMISSION_CATALOG.yaml#petshop:sale:create`

@@ -112,3 +112,6 @@ export interface EsmmAdapter {
    */
   cancelDocument(providerDocumentId: string): Promise<EsmmSubmitResponse>;
 }
+
+/** e-SMM adapterını çalışma zamanında çözmek için NestJS tokenı. */
+export const ESMM_ADAPTER = Symbol("ESMM_ADAPTER");

@@ -84,7 +84,7 @@ Body: Yok.
 - `VET-TENANT-0001` (400) — Aktif tenant yok.
 - `VET-CLINIC-0001` (404) — Talep bulunamadı / cross-tenant.
 - `VET-PORTAL-0006` (422) — Talep `pending` değil (`approved |
-  rejected | cancelled`).
+rejected | cancelled`).
 - `VET-VALIDATION-0009` (422) — Onay anında `preferredDate` artık
   geçmişte.
 - `VET-APPT-0005` (409) — `AppointmentsService.create` slot

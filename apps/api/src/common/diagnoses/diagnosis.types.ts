@@ -24,7 +24,11 @@
  * @since GOAL-043 (FAZ-4) teşhis ve problem listesi core
  */
 
-import type { Diagnosis, DiagnosisCategory, DiagnosisStatus } from "@vetniva/contracts";
+import type {
+  Diagnosis,
+  DiagnosisCategory,
+  DiagnosisStatus,
+} from "@vetniva/contracts";
 
 /** Repository'nin tuttuğu internal record (archivedAt public tipte yok). */
 export interface DiagnosisRecord {

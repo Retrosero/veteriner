@@ -31,20 +31,20 @@
  * @since GOAL-105 (FAZ-10) güvenlik logları ve alarm kuralları core
  */
 
-import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
-
 import { createHash } from "node:crypto";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
+
+import { SecurityEventsRepository } from "./security-events.repository.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import { PiiMasker } from "../../common/logging/pii-masker.js";
 import {
   toSecurityEvent,
   type SecurityEventRecord,
 } from "../../common/security-events/security-event.types.js";
-import {
-  moduleFromRoute as errorModuleFromRoute,
-} from "../error-events/error-events.service.js";
+import { moduleFromRoute as errorModuleFromRoute } from "../error-events/error-events.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   ClientSecurityEventInput,
   ClientSecurityEventResponse,
@@ -59,8 +59,6 @@ import type {
   SecurityEventSummary,
   SecurityEventSummaryQuery,
 } from "@vetniva/contracts";
-
-import { SecurityEventsRepository } from "./security-events.repository.js";
 
 /** Uygulama sürümü. `APP_VERSION` env ya da sabit. */
 const APP_RELEASE = process.env["APP_VERSION"] ?? "0.0.0-dev";
@@ -98,9 +96,7 @@ export class NoopSecurityAlertAdapter implements SecurityAlertAdapter {
   public readonly name = "noop";
   private readonly logger = new Logger(NoopSecurityAlertAdapter.name);
 
-  public async sendAlert(
-    event: SecurityEvent,
-  ): Promise<{ success: boolean }> {
+  public async sendAlert(event: SecurityEvent): Promise<{ success: boolean }> {
     this.logger.warn(
       `[${event.type}] security alert (${event.severity}) fingerprint=${event.fingerprint} route=${event.route}`,
     );
@@ -116,7 +112,10 @@ export class NoopSecurityAlertAdapter implements SecurityAlertAdapter {
 /** Mesajı fingerprint üretimi için normalize eder. */
 export function normalizeSecurityMessage(msg: string): string {
   return msg
-    .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, "<uuid>")
+    .replace(
+      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
+      "<uuid>",
+    )
     .replace(/\b\d+\b/g, "<n>")
     .replace(/\s+/g, " ")
     .trim()
@@ -162,14 +161,22 @@ const DEFAULT_SEVERITY: Readonly<Record<string, SecurityEventSeverity>> = {
 export function defaultErrorCodeForType(
   type: SecurityEventCreateInput["type"],
 ): ErrorCode {
-  return DEFAULT_ERROR_CODE[type] ?? "VET-SEC-0001";
+  const errorCode: ErrorCode | undefined = Reflect.get(
+    DEFAULT_ERROR_CODE,
+    type,
+  );
+  return errorCode ?? "VET-SEC-0001";
 }
 
 /** Type'a göre default severity. */
 export function defaultSeverityForType(
   type: SecurityEventCreateInput["type"],
 ): SecurityEventSeverity {
-  return DEFAULT_SEVERITY[type] ?? "warning";
+  const severity: SecurityEventSeverity | undefined = Reflect.get(
+    DEFAULT_SEVERITY,
+    type,
+  );
+  return severity ?? "warning";
 }
 
 /* --------------------------------------------------------------------------
@@ -455,10 +462,7 @@ export class SecurityEventsService {
         rec.severity,
         (bySeverity.get(rec.severity) ?? 0) + rec.occurrenceCount,
       );
-      byType.set(
-        rec.type,
-        (byType.get(rec.type) ?? 0) + rec.occurrenceCount,
-      );
+      byType.set(rec.type, (byType.get(rec.type) ?? 0) + rec.occurrenceCount);
       const key = rec.fingerprint;
       const existing = bucketMap.get(key);
       if (existing) {

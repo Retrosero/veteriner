@@ -16,12 +16,11 @@
 
 import { Module } from "@nestjs/common";
 
-import { NotificationsModule } from "../notifications/notifications.module.js";
-import { PatientsModule } from "../patients/patients.module.js";
-
 import { WaitlistController } from "./waitlist.controller.js";
 import { WaitlistRepository } from "./waitlist.repository.js";
 import { WaitlistService } from "./waitlist.service.js";
+import { NotificationsModule } from "../notifications/notifications.module.js";
+import { PatientsModule } from "../patients/patients.module.js";
 
 @Module({
   imports: [PatientsModule, NotificationsModule],

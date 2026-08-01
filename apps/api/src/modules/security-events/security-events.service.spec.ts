@@ -22,10 +22,7 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-
-import type { SecurityEvent } from "@vetniva/contracts";
-import { DomainError } from "../../common/errors/domain-error.js";
+import { SecurityEventsRepository } from "./security-events.repository.js";
 import {
   SecurityEventsService,
   NoopSecurityAlertAdapter,
@@ -35,7 +32,10 @@ import {
   defaultErrorCodeForType,
   defaultSeverityForType,
 } from "./security-events.service.js";
-import { SecurityEventsRepository } from "./security-events.repository.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { SecurityEvent } from "@vetniva/contracts";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -111,7 +111,10 @@ class StubAlertAdapter implements SecurityAlertAdapter {
 
 class ThrowingAlertAdapter implements SecurityAlertAdapter {
   public readonly name = "throwing";
-  public async sendAlert(): Promise<{ success: boolean; errorMessage?: string }> {
+  public async sendAlert(): Promise<{
+    success: boolean;
+    errorMessage?: string;
+  }> {
     throw new Error("adapter boom");
   }
 }
@@ -320,7 +323,7 @@ describe("SecurityEventsService", () => {
       );
       // email mask'lı olmalı; note dokunulmamalı.
       const ctx = out.context as Record<string, unknown>;
-      const masked = String(ctx["email"] ?? "");
+      const masked = typeof ctx["email"] === "string" ? ctx["email"] : "";
       expect(masked).not.toBe("user@example.com");
       expect(masked).toMatch(/\*\*\*/);
       expect(ctx["note"]).toBe("Bu temiz not");
@@ -373,11 +376,13 @@ describe("SecurityEventsService", () => {
       expect(defaultErrorCodeForType("unauthorized_access_attempt")).toBe(
         "VET-AUTHZ-0002",
       );
-      expect(defaultErrorCodeForType("suspicious_export")).toBe("VET-AUDIT-0002");
+      expect(defaultErrorCodeForType("suspicious_export")).toBe(
+        "VET-AUDIT-0002",
+      );
       expect(defaultErrorCodeForType("role_change")).toBe("VET-RBAC-0002");
-      expect(
-        defaultErrorCodeForType("tenant_isolation_breach_attempt"),
-      ).toBe("VET-TENANT-0002");
+      expect(defaultErrorCodeForType("tenant_isolation_breach_attempt")).toBe(
+        "VET-TENANT-0002",
+      );
     });
 
     it("defaultSeverityForType kataloğu tüm tipleri kapsar", () => {
@@ -387,9 +392,9 @@ describe("SecurityEventsService", () => {
       );
       expect(defaultSeverityForType("suspicious_export")).toBe("error");
       expect(defaultSeverityForType("role_change")).toBe("info");
-      expect(
-        defaultSeverityForType("tenant_isolation_breach_attempt"),
-      ).toBe("critical");
+      expect(defaultSeverityForType("tenant_isolation_breach_attempt")).toBe(
+        "critical",
+      );
     });
   });
 
@@ -399,10 +404,7 @@ describe("SecurityEventsService", () => {
 
   describe("listSecurityEvents", () => {
     it("SUPERADMIN filtreli liste döner", async () => {
-      service.recordSecurityEvent(
-        makeInput({ type: "failed_login" }),
-        STAFF_A,
-      );
+      service.recordSecurityEvent(makeInput({ type: "failed_login" }), STAFF_A);
       service.recordSecurityEvent(
         makeInput({ type: "suspicious_export" }),
         SUPERADMIN,
@@ -425,10 +427,7 @@ describe("SecurityEventsService", () => {
     });
 
     it("type filtresi uygulanır", async () => {
-      service.recordSecurityEvent(
-        makeInput({ type: "failed_login" }),
-        STAFF_A,
-      );
+      service.recordSecurityEvent(makeInput({ type: "failed_login" }), STAFF_A);
       service.recordSecurityEvent(
         makeInput({ type: "suspicious_export" }),
         SUPERADMIN,
@@ -443,7 +442,10 @@ describe("SecurityEventsService", () => {
 
     it("tenant filtresi uygulanır", async () => {
       service.recordSecurityEvent(
-        makeInput({ type: "failed_login", message: "Wrong password for staff-a" }),
+        makeInput({
+          type: "failed_login",
+          message: "Wrong password for staff-a",
+        }),
         STAFF_A,
       );
       const tenantB: ActorContext = {
@@ -453,7 +455,10 @@ describe("SecurityEventsService", () => {
         correlationId: "req-b",
       };
       service.recordSecurityEvent(
-        makeInput({ type: "failed_login", message: "Wrong password for staff-b" }),
+        makeInput({
+          type: "failed_login",
+          message: "Wrong password for staff-b",
+        }),
         tenantB,
       );
       const res = await service.listSecurityEvents(
@@ -475,7 +480,10 @@ describe("SecurityEventsService", () => {
         makeInput({ type: "failed_login" }),
         STAFF_A,
       );
-      const detail = await service.getSecurityEventDetail(created.id, SUPERADMIN);
+      const detail = await service.getSecurityEventDetail(
+        created.id,
+        SUPERADMIN,
+      );
       expect(detail.id).toBe(created.id);
       expect(detail.tenantId).toBe(TENANT_A);
     });
@@ -521,14 +529,13 @@ describe("SecurityEventsService", () => {
         }),
         SUPERADMIN,
       );
-      const summary = await service.getSecurityEventSummary(
-        {},
-        SUPERADMIN,
-      );
+      const summary = await service.getSecurityEventSummary({}, SUPERADMIN);
       expect(summary.total).toBe(3);
       const warning = summary.bySeverity.find((b) => b.severity === "warning");
       expect(warning?.count).toBe(2);
-      const critical = summary.bySeverity.find((b) => b.severity === "critical");
+      const critical = summary.bySeverity.find(
+        (b) => b.severity === "critical",
+      );
       expect(critical?.count).toBe(1);
       const failedLogin = summary.byType.find((b) => b.type === "failed_login");
       expect(failedLogin?.count).toBe(2);
@@ -554,10 +561,7 @@ describe("SecurityEventsService", () => {
       );
       // fireAlert async; alarm adapter'ın çalışması için bekle.
       await new Promise((r) => setTimeout(r, 10));
-      const summary = await service.getSecurityEventSummary(
-        {},
-        SUPERADMIN,
-      );
+      const summary = await service.getSecurityEventSummary({}, SUPERADMIN);
       const breach = summary.topGroups.find(
         (g) => g.type === "tenant_isolation_breach_attempt",
       );

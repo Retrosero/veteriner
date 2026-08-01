@@ -17,41 +17,41 @@ doğrulaması ile genişletildi. 18 unit test geçti.
 
 ### Dokümanlar (4 yeni şema + 1 seed)
 
-| Dosya | Açıklama |
-| --- | --- |
-| `docs/ai/CHUNK_SCHEMA.md` | RAG chunk yapısı, 12 chunk türü, metadata, versiyonlama, PII etiketi. |
-| `docs/ai/AI_CHUNKS.yaml` | Initial seed: 28 chunk (glossary/flow/error/audit/log/pii/correlation/country/page/permission/api). |
-| `docs/pages/PAGE_SCHEMA.md` | Sayfa kataloğu şeması: page_id, route, module, fields, actions, step_by_step, possible_errors, related_*, keywords, version. |
-| `docs/api/API_SCHEMA.md` | API endpoint şeması: method & path, modül, yetkilendirme, request/response, idempotency, audit, örnek. |
-| `docs/fields/FIELD_SCHEMA.md` | Alan sözlüğü şeması: field_id, entity, name, type, required, pii, validation, related_chunk. |
+| Dosya                         | Açıklama                                                                                                                     |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `docs/ai/CHUNK_SCHEMA.md`     | RAG chunk yapısı, 12 chunk türü, metadata, versiyonlama, PII etiketi.                                                        |
+| `docs/ai/AI_CHUNKS.yaml`      | Initial seed: 28 chunk (glossary/flow/error/audit/log/pii/correlation/country/page/permission/api).                          |
+| `docs/pages/PAGE_SCHEMA.md`   | Sayfa kataloğu şeması: page_id, route, module, fields, actions, step_by_step, possible_errors, related_*, keywords, version. |
+| `docs/api/API_SCHEMA.md`      | API endpoint şeması: method & path, modül, yetkilendirme, request/response, idempotency, audit, örnek.                       |
+| `docs/fields/FIELD_SCHEMA.md` | Alan sözlüğü şeması: field_id, entity, name, type, required, pii, validation, related_chunk.                                 |
 
 ### Kod (RAG iskeleti)
 
-| Dosya | Açıklama |
-| --- | --- |
-| `apps/api/src/common/ai/chunk.types.ts` | RAG chunk TypeScript tipleri. |
-| `apps/api/src/common/ai/vector-store.ts` | VectorStore interface (Qdrant/pgvector sözleşmesi). |
+| Dosya                                              | Açıklama                                            |
+| -------------------------------------------------- | --------------------------------------------------- |
+| `apps/api/src/common/ai/chunk.types.ts`            | RAG chunk TypeScript tipleri.                       |
+| `apps/api/src/common/ai/vector-store.ts`           | VectorStore interface (Qdrant/pgvector sözleşmesi). |
 | `apps/api/src/common/ai/in-memory-vector-store.ts` | FAZ-0 in-memory implementasyon (cosine similarity). |
-| `apps/api/src/common/ai/retrieval.service.ts` | RetrievalService — query → embedding → topK. |
-| `apps/api/src/common/ai/ai.module.ts` | NestJS Global modül. |
-| `apps/api/src/common/ai/index.ts` | Public API export'ları. |
-| `apps/api/src/common/ai/retrieval.service.spec.ts` | 5 unit test. |
-| `apps/api/src/modules/ai/ai.controller.ts` | `POST /api/v1/ai/help` controller iskeleti. |
-| `apps/api/src/modules/ai/ai.module.ts` | AI feature modülü. |
-| `apps/api/src/modules/ai/ai.controller.spec.ts` | 2 unit test. |
+| `apps/api/src/common/ai/retrieval.service.ts`      | RetrievalService — query → embedding → topK.        |
+| `apps/api/src/common/ai/ai.module.ts`              | NestJS Global modül.                                |
+| `apps/api/src/common/ai/index.ts`                  | Public API export'ları.                             |
+| `apps/api/src/common/ai/retrieval.service.spec.ts` | 5 unit test.                                        |
+| `apps/api/src/modules/ai/ai.controller.ts`         | `POST /api/v1/ai/help` controller iskeleti.         |
+| `apps/api/src/modules/ai/ai.module.ts`             | AI feature modülü.                                  |
+| `apps/api/src/modules/ai/ai.controller.spec.ts`    | 2 unit test.                                        |
 
 ### tools/docs-check (CI doğrulama)
 
-| Dosya | Değişiklik |
-| --- | --- |
-| `tools/docs-check/src/scanners/error-codes.ts` | VET- + legacy format ayrımı. |
-| `tools/docs-check/src/scanners/ai-chunks.ts` | YENİ: AI chunk şema doğrulama. |
-| `tools/docs-check/src/scanners/docs.ts` | VET- format + AI_CHUNKS.yaml envanter. |
-| `tools/docs-check/src/types.ts` | `aiChunks: Set<string>` eklendi. |
-| `tools/docs-check/src/runner.ts` | Yeni alanlar: `errorCodesVet`, `errorCodesLegacy`, `aiChunks`. |
-| `tools/docs-check/src/index.ts` | Çıktı güncellendi. |
-| `tools/docs-check/tests/ai-chunks.test.ts` | YENİ: 6 test (yok, geçerli, eksik alan, type, duplicate, degraded). |
-| `tools/docs-check/tests/error-codes-vet.test.ts` | YENİ: 3 test (VET-, legacy EN_, boş). |
+| Dosya                                            | Değişiklik                                                          |
+| ------------------------------------------------ | ------------------------------------------------------------------- |
+| `tools/docs-check/src/scanners/error-codes.ts`   | VET- + legacy format ayrımı.                                        |
+| `tools/docs-check/src/scanners/ai-chunks.ts`     | YENİ: AI chunk şema doğrulama.                                      |
+| `tools/docs-check/src/scanners/docs.ts`          | VET- format + AI_CHUNKS.yaml envanter.                              |
+| `tools/docs-check/src/types.ts`                  | `aiChunks: Set<string>` eklendi.                                    |
+| `tools/docs-check/src/runner.ts`                 | Yeni alanlar: `errorCodesVet`, `errorCodesLegacy`, `aiChunks`.      |
+| `tools/docs-check/src/index.ts`                  | Çıktı güncellendi.                                                  |
+| `tools/docs-check/tests/ai-chunks.test.ts`       | YENİ: 6 test (yok, geçerli, eksik alan, type, duplicate, degraded). |
+| `tools/docs-check/tests/error-codes-vet.test.ts` | YENİ: 3 test (VET-, legacy EN_, boş).                               |
 
 ### Cross-refs
 
@@ -60,17 +60,17 @@ doğrulaması ile genişletildi. 18 unit test geçti.
 
 ## Kabul kriterleri ve doğrulama
 
-| Kriter | Durum | Kanıt |
-| --- | :-: | --- |
-| Kod çalışıyor | ✅ | Type-check geçti (apps/api + tools). |
-| Lint, type-check, build | ✅ | `npx tsc --noEmit` temiz. |
-| Unit testler | ✅ | 18 test geçti (5 retrieval + 2 ai.controller + 11 docs-check). |
-| Tenant izolasyonu / yetki | ⏳ | FAZ-0 dışı; standartlar `tenantId` alanını zorunlu kılar. |
-| Audit + merkezi hata | ✅ | AI help endpoint audit event'leri için `log_security` standardına uygun yapısal log yazar. |
-| Türkçe teknik açıklamalar | ✅ | Her yeni dosyada `/** */` Türkçe JSDoc. |
-| Kullanıcı eğitimi, hata kataloğu, AI havuzu | ✅ | Dokümanlar tamamlandı; eğitim içeriği (Faz 2+) bu şemalara göre yazılacak. |
-| Migration / rollback | ✅ | Legacy `TR_/EN_` kodları 6 ay alias (GOAL-004); AI chunk'ları versiyonlanır. |
-| `GOAL_COMPLETION_REPORT.md` | ✅ | Bu dosya. |
+| Kriter                                      | Durum | Kanıt                                                                                      |
+| ------------------------------------------- | :---: | ------------------------------------------------------------------------------------------ |
+| Kod çalışıyor                               |  ✅   | Type-check geçti (apps/api + tools).                                                       |
+| Lint, type-check, build                     |  ✅   | `npx tsc --noEmit` temiz.                                                                  |
+| Unit testler                                |  ✅   | 18 test geçti (5 retrieval + 2 ai.controller + 11 docs-check).                             |
+| Tenant izolasyonu / yetki                   |  ⏳   | FAZ-0 dışı; standartlar `tenantId` alanını zorunlu kılar.                                  |
+| Audit + merkezi hata                        |  ✅   | AI help endpoint audit event'leri için `log_security` standardına uygun yapısal log yazar. |
+| Türkçe teknik açıklamalar                   |  ✅   | Her yeni dosyada `/** */` Türkçe JSDoc.                                                    |
+| Kullanıcı eğitimi, hata kataloğu, AI havuzu |  ✅   | Dokümanlar tamamlandı; eğitim içeriği (Faz 2+) bu şemalara göre yazılacak.                 |
+| Migration / rollback                        |  ✅   | Legacy `TR_/EN_` kodları 6 ay alias (GOAL-004); AI chunk'ları versiyonlanır.               |
+| `GOAL_COMPLETION_REPORT.md`                 |  ✅   | Bu dosya.                                                                                  |
 
 ## Test özeti
 
@@ -154,6 +154,7 @@ TOPLAM (GOAL-005 eklenen)                            ✓ 18 tests passed
 ## Sıradaki
 
 **Faz 1 — Platform çekirdeği (GOAL-010+)**
+
 - GOAL-010 tenant ve şube altyapısı
 - GOAL-011 kimlik doğrulama ve oturum
 - GOAL-012 RBAC ve izin motoru

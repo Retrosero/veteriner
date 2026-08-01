@@ -28,7 +28,7 @@ eklenir ve `CalendarService.bookSlot` ile booked slot yazılır.
 - `veterinarianId` (string, zorunlu) — boş olamaz; yoksa 422
   `VET-VALIDATION-0009`. Tenant kuralı actor üzerinden enforce edilir.
 - `type` (enum, zorunlu) — `consultation | vaccination | surgery |
-  follow_up | lab_visit | grooming`.
+follow_up | lab_visit | grooming`.
 - `start` (ISO 8601, zorunlu) — gelecekte olmalı. Geçmiş → 422
   `VET-VALIDATION-0009`.
 - `durationMin` (int, zorunlu) — `1-240`. `0` veya negatif → 422

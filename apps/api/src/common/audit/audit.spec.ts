@@ -1,11 +1,9 @@
 /**
  * @file Audit service unit testleri.
  * @module apps/api/common/audit/audit.spec
- *
  * @description AuditService'in temel davranışlarını doğrular:
  * event ID üretimi, severity eşlemesi, metadata iletimi, Prisma
  * mock ile DB yazımı.
- *
  * @since GOAL-004 (FAZ-0) audit + log + hata standardı
  * @updated GOAL-010 (FAZ-1) Prisma DB yazımı testleri eklendi
  */
@@ -13,6 +11,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AuditService } from "./audit.service.js";
+
 import type { AuditEventInput } from "./audit.types.js";
 
 describe("AuditService", () => {
@@ -21,10 +20,18 @@ describe("AuditService", () => {
 
   beforeEach(() => {
     prismaAuditCreate = vi.fn().mockResolvedValue({ id: "mock-id" });
+    const transactionClient = {
+      $executeRaw: vi.fn().mockResolvedValue(undefined),
+      auditEvent: { create: prismaAuditCreate },
+    };
     const prisma = {
       auditEvent: {
         create: prismaAuditCreate,
       },
+      $transaction: vi.fn(
+        async (fn: (tx: typeof transactionClient) => Promise<unknown>) =>
+          fn(transactionClient),
+      ),
     } as unknown as ConstructorParameters<typeof AuditService>[0];
     service = new AuditService(prisma);
   });

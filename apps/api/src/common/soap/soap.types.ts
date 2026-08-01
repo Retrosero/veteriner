@@ -1,7 +1,6 @@
 /**
  * @file SOAP klinik kaydı domain tipleri.
  * @module apps/api/common/soap/soap.types
- *
  * @description GOAL-041 SOAP (Subjective, Objective, Assessment, Plan)
  * domain modeli. Sözleşme katmanındaki (@vetniva/contracts/soap)
  * tipleri re-export eder; ileride domain'e özgü yardımcı tipler
@@ -32,8 +31,9 @@ import type {
 } from "@vetniva/contracts";
 
 /** Service katmanında create için opsiyonel bölüm partial'ı. */
-export interface SoapInitial
-  extends Partial<Pick<SoapCreateInput, "subjective" | "objective" | "assessment" | "plan">> {}
+export type SoapInitial = Partial<
+  Pick<SoapCreateInput, "subjective" | "objective" | "assessment" | "plan">
+>;
 
 export type {
   SoapAmendInput,

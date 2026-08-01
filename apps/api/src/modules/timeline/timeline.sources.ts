@@ -15,17 +15,18 @@
  * @since GOAL-024 (FAZ-2) hayvan zaman çizelgesi core
  */
 
+import { type AlertsService } from "../alerts/alerts.service.js";
+import { type FilesService } from "../files/files.service.js";
+import { type OwnershipHistoryRepository } from "../ownership-history/ownership-history.repository.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AlertRecord } from "../../common/alerts/alert.types.js";
+import type { FileMeta } from "../../common/files/file.types.js";
+import type { Ownership } from "../../common/ownership/ownership.types.js";
 import type {
   TimelineEvent,
   TimelineEventSource,
 } from "../../common/timeline/timeline.types.js";
-import { AlertsService } from "../alerts/alerts.service.js";
-import { OwnershipHistoryRepository } from "../ownership-history/ownership-history.repository.js";
-import { FilesService } from "../files/files.service.js";
-import type { FileMeta } from "../../common/files/file.types.js";
-import type { Ownership } from "../../common/ownership/ownership.types.js";
 
 /** DI token: TimelineService'in kullandığı source listesi. */
 export const TIMELINE_EVENT_SOURCES = Symbol("TIMELINE_EVENT_SOURCES");
@@ -88,9 +89,7 @@ export class OwnershipTimelineSource implements TimelineEventSource {
   public readonly eventType = "transfer" as const;
   public readonly relatedEntityType = "ownership" as const;
 
-  public constructor(
-    private readonly repo: OwnershipHistoryRepository,
-  ) {}
+  public constructor(private readonly repo: OwnershipHistoryRepository) {}
 
   public async fetchForPatient(args: {
     tenantId: string;

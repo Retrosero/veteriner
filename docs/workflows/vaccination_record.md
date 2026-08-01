@@ -6,15 +6,18 @@
 **Sayfa:** `/[locale]/clinic/patients/{patientId}/vaccinations/new`
 
 ## Amaç
+
 Hayvana aşı uygulaması kaydetmek. Aşı kataloğundan (protokol)
 seçim, lot numarası, son kullanma tarihi, uygulayan kişi ve
 bir sonraki hatırlatma tarihi otomatik hesaplanır.
 
 ## Aktör
+
 - VETERINARIAN
 - STAFF (yardımcı)
 
 ## Tetikleyici
+
 - Aşı protokolü tamamlandığında (tek seferlik puppy vaccine
   series).
 - Yıllık booster zamanı geldiğinde.
@@ -78,24 +81,27 @@ bir sonraki hatırlatma tarihi otomatik hesaplanır.
       görünür olur.
 
 ## Tenant izolasyonu
+
 - Patient + vaccine + lot aynı tenant'ta olmalı.
 
 ## Audit
+
 - `audit:vaccination.create` (info).
 - `audit:vaccination.amend` (info; hatalı kayıt düzeltme).
 - `audit:stock_movement.create` (info; stok düşümü).
 
 ## Hata senaryoları
 
-| Senaryo | HTTP | Hata kodu |
-|---------|------|-----------|
-| Pasif aşı kataloğu | 409 | `VET-VACC-0001` |
-| Stok yetersiz | 409 | `VET-INVENTORY-0001` |
-| Lot SKT geçmiş | 422 | `VET-VACC-0003` |
-| Cross-tenant | 404 | `VET-CLINIC-0001` |
-| Yetkisiz | 403 | `VET-AUTHZ-0001` |
+| Senaryo            | HTTP | Hata kodu            |
+| ------------------ | ---- | -------------------- |
+| Pasif aşı kataloğu | 409  | `VET-VACC-0001`      |
+| Stok yetersiz      | 409  | `VET-INVENTORY-0001` |
+| Lot SKT geçmiş     | 422  | `VET-VACC-0003`      |
+| Cross-tenant       | 404  | `VET-CLINIC-0001`    |
+| Yetkisiz           | 403  | `VET-AUTHZ-0001`     |
 
 ## İlgili dokümanlar
+
 - `docs/api/api.post._api_v1_clinic_vaccines_applications.md`
 - `goals/GOAL-050 → GOAL-054_COMPLETION_REPORT.md`
 - `docs/permissions/PERMISSION_CATALOG.yaml#clinic:vaccine:apply`

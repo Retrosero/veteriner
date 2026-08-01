@@ -20,22 +20,14 @@
  * kataloğunda yer alır; kategori değişimi audit edilir.
  */
 export type FileCategory =
-  | "patient_photo"
-  | "lab_report"
-  | "imaging"
-  | "consent"
-  | "invoice"
-  | "other";
+  "patient_photo" | "lab_report" | "imaging" | "consent" | "invoice" | "other";
 
 /**
  * İzin verilen MIME tipleri. Whitelist dışı MIME upload'da
  * `VET-FILE-0002` (415) ile reddedilir.
  */
 export type FileMimeType =
-  | "image/jpeg"
-  | "image/png"
-  | "application/pdf"
-  | "application/dicom";
+  "image/jpeg" | "image/png" | "application/pdf" | "application/dicom";
 
 /**
  * Upload input. Multipart handler tarafından doldurulur, service'e

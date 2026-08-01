@@ -18,15 +18,15 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { OperationNotesRepository } from "./operation-notes.repository.js";
+import { OperationNotesService } from "./operation-notes.service.js";
+import { StockMovementsRepository } from "../stock-movements/stock-movements.repository.js";
+import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
+import { SurgeryPlansRepository } from "../surgery-plans/surgery-plans.repository.js";
+import { SurgeryPlansService } from "../surgery-plans/surgery-plans.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-
-import { OperationNotesService } from "./operation-notes.service.js";
-import { OperationNotesRepository } from "./operation-notes.repository.js";
-import { SurgeryPlansService } from "../surgery-plans/surgery-plans.service.js";
-import { SurgeryPlansRepository } from "../surgery-plans/surgery-plans.repository.js";
-import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
-import { StockMovementsRepository } from "../stock-movements/stock-movements.repository.js";
 import type {
   OperationNoteCreateInput,
   OperationNoteFinalizeInput,
@@ -400,12 +400,7 @@ describe("OperationNotesService", () => {
         makeNoteInput({ surgeryPlanId: planId }),
         VET_A,
       );
-      await service.addTeamMember(
-        TENANT_A,
-        note.id,
-        makeTeamInput(),
-        VET_A,
-      );
+      await service.addTeamMember(TENANT_A, note.id, makeTeamInput(), VET_A);
       const mat = await service.addMaterial(
         TENANT_A,
         note.id,
@@ -458,12 +453,7 @@ describe("OperationNotesService", () => {
         VET_A,
       );
       await expect(
-        service.addMaterial(
-          TENANT_A,
-          note.id,
-          makeMaterialInput(),
-          VET_A,
-        ),
+        service.addMaterial(TENANT_A, note.id, makeMaterialInput(), VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-OPNOTE-0002",
         httpStatus: 409,
@@ -544,12 +534,7 @@ describe("OperationNotesService", () => {
         VET_A,
       );
       await expect(
-        service.amendOperationNote(
-          TENANT_A,
-          note.id,
-          { reason: "x" },
-          VET_A,
-        ),
+        service.amendOperationNote(TENANT_A, note.id, { reason: "x" }, VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-OPNOTE-0005",
         httpStatus: 409,
@@ -569,18 +554,8 @@ describe("OperationNotesService", () => {
         makeNoteInput({ surgeryPlanId: planId }),
         VET_A,
       );
-      await service.addTeamMember(
-        TENANT_A,
-        note.id,
-        makeTeamInput(),
-        VET_A,
-      );
-      await service.addMaterial(
-        TENANT_A,
-        note.id,
-        makeMaterialInput(),
-        VET_A,
-      );
+      await service.addTeamMember(TENANT_A, note.id, makeTeamInput(), VET_A);
+      await service.addMaterial(TENANT_A, note.id, makeMaterialInput(), VET_A);
 
       const list = await service.listOperationNotes(
         TENANT_A,

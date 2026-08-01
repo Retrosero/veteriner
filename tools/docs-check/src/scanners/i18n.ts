@@ -1,7 +1,6 @@
 /**
- * @file i18n locale anahtar parity tarayıcısı.
+ * @file I18n locale anahtar parity tarayıcısı.
  * @module @vetniva/docs-check/scanners/i18n
- *
  * @description `packages/i18n/src/locales/` altındaki tüm JSON locale
  * dosyalarını okur; iç içe (nested) anahtarları düzleştirip referans
  * locale (alfabetik ilk dosya) ile karşılaştırır. Eksik veya fazla
@@ -21,15 +20,15 @@
  *   olarak nadiren kullanılır, ama kullanılırsa anahtar dizi adıdır).
  * - JSON parse hatasında tüm dosya için tek `error` issue üretilir;
  *   diğer dosyalar taranmaya devam eder.
- *
  * @author GOAL-118 (FAZ-11) doküman-kod CI doğrulaması
  * @since 2026-08-01
  * @security Tarayıcı yalnızca public UI metinlerini okur; PII içermez.
  */
 
-import fg from "fast-glob";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+
+import fg from "fast-glob";
 
 import type { Issue } from "../types.js";
 
@@ -48,6 +47,7 @@ export interface I18nScanResult {
  * Verilen kök dizinde `packages/i18n/src/locales/` altındaki tüm
  * JSON dosyalarını bulur; ilkini (alfabetik) referans alır ve
  * diğerlerini karşılaştırır.
+ * @param packagesRoot
  */
 export async function scanI18nParity(
   packagesRoot: string,
@@ -128,13 +128,16 @@ export async function scanI18nParity(
 /**
  * JSON dosyasını okur ve anahtarları `a.b.c` formatında düzleştirir.
  * Hata durumunda null döner.
+ * @param absPath
+ * @param _displayName
  */
 async function loadFlattenedKeys(
   absPath: string,
-  displayName: string,
+  _displayName: string,
 ): Promise<Set<string> | null> {
   let raw: string;
   try {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- Yol packages/i18n altındaki kontrollü locale taramasından gelir.
     raw = await readFile(absPath, "utf8");
   } catch {
     return null;
@@ -156,11 +159,10 @@ async function loadFlattenedKeys(
  * Array'ler primitive kabul edilir; array'in kendisi anahtar olarak
  * yazılır (içindeki elemanlar düzleştirilmez — i18n string'lerde
  * array değerleri nadiren iç içe çeviri gerektirir).
+ * @param value
+ * @param prefix
  */
-function flattenKeys(
-  value: Record<string, unknown>,
-  prefix = "",
-): Set<string> {
+function flattenKeys(value: Record<string, unknown>, prefix = ""): Set<string> {
   const result = new Set<string>();
   for (const [k, v] of Object.entries(value)) {
     const key = prefix ? `${prefix}.${k}` : k;
@@ -175,6 +177,10 @@ function flattenKeys(
   return result;
 }
 
+/**
+ * Bir locale dizininin tarama için erişilebilir olup olmadığını doğrular.
+ * @param p
+ */
 async function dirExists(p: string): Promise<boolean> {
   try {
     const items = await fg(["."], { cwd: p, onlyFiles: false, deep: 0 });

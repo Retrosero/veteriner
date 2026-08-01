@@ -24,14 +24,7 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
-import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import {
   reportDateRangeSchema,
   reportExportInputSchema,
@@ -44,14 +37,19 @@ import {
 } from "@vetniva/contracts";
 
 import { ReportsService } from "./reports.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("reports")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/reports")
 export class ReportsController {
-  public constructor(
-    private readonly service: ReportsService,
-  ) {}
+  public constructor(private readonly service: ReportsService) {}
 
   @Get("daily-sales")
   @RequirePermissions("clinic:report:financial:read")
@@ -94,8 +92,7 @@ export class ReportsController {
   @ApiOperation({
     operationId: "reportOpenBalances",
     summary: "Açık bakiye",
-    description:
-      "Tamamlanmış satışların tahsil edilmemiş kalan bakiyeleri.",
+    description: "Tamamlanmış satışların tahsil edilmemiş kalan bakiyeleri.",
   })
   public async openBalances(
     @CurrentActor() actor: ActorContext,

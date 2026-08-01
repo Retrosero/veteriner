@@ -70,8 +70,8 @@ Cross-tenant → 404 `VET-CLINIC-0001`.
 - PDF buffer `generatePdf` üzerinden yeniden üretilir (audit + size
   takibi aynıdır).
 - `FileService.upload` — `category: "lab_report"`, `mimeType:
-  "application/pdf"`, `visibility: "portal"`, `relatedEntityType:
-  "examination"`, `relatedEntityId: exam.id`. Gerçek S3/object
+"application/pdf"`, `visibility: "portal"`, `relatedEntityType:
+"examination"`, `relatedEntityId: exam.id`. Gerçek S3/object
   storage entegrasyonu FAZ-10+'da.
 - `getSignedUrl` 1 saat geçerli URL üretir; FAZ-0 stub hata
   durumunda `null` döner (warn log) — gerçek signed URL FAZ-10+'da.

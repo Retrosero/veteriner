@@ -1,13 +1,12 @@
 /**
  * @file DischargeSummaries controller.
  * @module apps/api/modules/discharge-summaries/discharge-summaries.controller
- *
  * @description GOAL-086 (FAZ-8) gözlem + taburcu özeti REST
  * API. Tenant ID URL'de taşınmaz; actor.tenantId'den alınır.
  *
  * Endpoint'ler — Observation (yatanın gözlemleri):
  * - `POST /api/v1/clinic/hospitalizations/:hospitalizationId/observations` — Ekle
- * - `GET  /api/v1/clinic/hospitalizations/:hospitalizationId/observations` — Arama
+ * - `GET  /api/v1/clinic/hospitalizations/:hospitalizationId/observations` — Arama.
  *
  * Endpoint'ler — DischargeSummary (taburcu özeti):
  * - `POST /api/v1/clinic/hospitalizations/:hospitalizationId/discharge-summary`             — Oluştur (draft)
@@ -15,8 +14,7 @@
  * - `PATCH /api/v1/clinic/hospitalizations/:hospitalizationId/discharge-summary`            — Güncelle (draft)
  * - `POST /api/v1/clinic/hospitalizations/:hospitalizationId/discharge-summary/finalize`   — Finalize
  * - `POST /api/v1/clinic/hospitalizations/:hospitalizationId/discharge-summary/amend`      — Amendment
- * - `POST /api/v1/clinic/hospitalizations/:hospitalizationId/discharge-summary/portal-share` — Portal paylaşımı
- *
+ * - `POST /api/v1/clinic/hospitalizations/:hospitalizationId/discharge-summary/portal-share` — Portal paylaşımı.
  * @since GOAL-086 (FAZ-8) gözlem ve taburcu özeti core
  */
 
@@ -32,14 +30,7 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
-import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import {
   dischargeSummaryAmendInputSchema,
   dischargeSummaryCreateInputSchema,
@@ -59,14 +50,19 @@ import {
 } from "@vetniva/contracts";
 
 import { DischargeSummariesService } from "./discharge-summaries.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("clinic/discharge-summaries")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/clinic/hospitalizations/:hospitalizationId")
 export class DischargeSummariesController {
-  public constructor(
-    private readonly service: DischargeSummariesService,
-  ) {}
+  public constructor(private readonly service: DischargeSummariesService) {}
 
   // ===========================================================================
   // OBSERVATION
@@ -88,7 +84,12 @@ export class DischargeSummariesController {
     @CurrentActor() actor: ActorContext,
   ): Promise<Observation> {
     const tenantId = this.requireTenant(actor);
-    return this.service.addObservation(tenantId, hospitalizationId, body, actor);
+    return this.service.addObservation(
+      tenantId,
+      hospitalizationId,
+      body,
+      actor,
+    );
   }
 
   @Get("observations")
@@ -175,8 +176,7 @@ export class DischargeSummariesController {
   @ApiOperation({
     operationId: "dischargeSummaryUpdate",
     summary: "Taburcu özeti güncelle (draft)",
-    description:
-      "Finalized/amended düzenlenemez (409 VET-DSUM-0006).",
+    description: "Finalized/amended düzenlenemez (409 VET-DSUM-0006).",
   })
   public async updateSummary(
     @Param("hospitalizationId") hospitalizationId: string,

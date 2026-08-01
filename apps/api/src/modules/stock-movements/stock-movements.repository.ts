@@ -25,9 +25,7 @@
 
 import { Injectable } from "@nestjs/common";
 
-import type {
-  StockMovementRecord,
-} from "../../common/stock-movements/stock-movement.types.js";
+import type { StockMovementRecord } from "../../common/stock-movements/stock-movement.types.js";
 import type { StockMovementType } from "@vetniva/contracts";
 
 /* --------------------------------------------------------------------------
@@ -155,7 +153,8 @@ export class StockMovementsRepository {
       if (f.productId && rec.productId !== f.productId) continue;
       if (f.lotId && rec.lotId !== f.lotId) continue;
       if (f.type && rec.type !== f.type) continue;
-      if (f.types && f.types.length > 0 && !f.types.includes(rec.type)) continue;
+      if (f.types && f.types.length > 0 && !f.types.includes(rec.type))
+        continue;
       if (f.sourceType && rec.sourceType !== f.sourceType) continue;
       if (f.sourceId && rec.sourceId !== f.sourceId) continue;
       if (f.occurredFrom && rec.occurredAt < f.occurredFrom) continue;

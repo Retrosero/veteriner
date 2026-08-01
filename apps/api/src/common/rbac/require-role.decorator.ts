@@ -31,5 +31,4 @@ export const ROLE_KEY = "rbac:role";
  */
 export const RequireRole = (
   ...roles: ReadonlyArray<ActorRole>
-): MethodDecorator & ClassDecorator =>
-  SetMetadata(ROLE_KEY, roles);
+): MethodDecorator & ClassDecorator => SetMetadata(ROLE_KEY, roles);

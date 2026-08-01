@@ -1,15 +1,27 @@
 # @file AI Chunk Şeması.
+
 # @module docs/ai/CHUNK_SCHEMA
+
 #
+
 # @description VetNiva AI asistanının bilgi tabanındaki
+
 # her chunk'ın yapısı, metadata alanları ve RAG ingest
+
 # pipeline sözleşmesi. Tüm chunk'lar bu şemaya uygun
+
 # üretilir; `pnpm docs:check` tutarlılığı doğrular.
+
 #
+
 # @author GOAL-005 (FAZ-0) dokümantasyon ve AI bilgi havuzu
+
 # @since 2026-07-30
+
 # @security PII içeren chunk'lar mask'lenir (PII_MASKING.md).
-#   Hasta adı, TCKN, telefon vb. asla plain text olmaz.
+
+# Hasta adı, TCKN, telefon vb. asla plain text olmaz.
+
 # =============================================================================
 
 # AI Chunk Şeması
@@ -21,20 +33,20 @@ bilgi parçasını temsil eder ve metadata + içerik taşır.
 
 ## 1. Chunk Türleri
 
-| Tür (`type`)   | Kaynak dosya                                  | Örnek `chunk_id`          |
-| -------------- | --------------------------------------------- | ------------------------- |
-| `glossary`     | `docs/domain/DOMAIN_GLOSSARY.md`              | `glossary-patient-owner`  |
-| `flow`         | `docs/domain/CLINICAL_FLOWS.md`               | `flow-vaccination`        |
-| `field`        | `docs/fields/FIELD_GLOSSARY.md`               | `field-patient.microchip` |
-| `permission`   | `docs/permissions/PERMISSION_CATALOG.yaml`    | `permission-clinic:owner:erase` |
-| `error`        | `docs/errors/ERROR_CATALOG.md`                | `error-VET-CLINIC-0001`   |
-| `audit`        | `docs/errors/AUDIT_LOG_STANDARD.md` vb.       | `audit-overview`          |
-| `page`         | `docs/pages/<page>.yaml`                      | `page-web.app.locale.health` |
-| `api`          | `docs/api/<endpoint>.md`                      | `api-get._api_v1_health`  |
-| `country`      | `apps/api/src/common/adapters/*.adapter.ts`   | `country-tr.format_currency` |
-| `log-standard` | `docs/errors/LOG_STANDARD.md` vb.             | `log-sistem`              |
-| `pii-rule`     | `docs/errors/PII_MASKING.md`                  | `pii-phone-mask`          |
-| `correlation`  | `docs/errors/CORRELATION_ID.md`               | `correlation-req-prefix`  |
+| Tür (`type`)   | Kaynak dosya                                | Örnek `chunk_id`                |
+| -------------- | ------------------------------------------- | ------------------------------- |
+| `glossary`     | `docs/domain/DOMAIN_GLOSSARY.md`            | `glossary-patient-owner`        |
+| `flow`         | `docs/domain/CLINICAL_FLOWS.md`             | `flow-vaccination`              |
+| `field`        | `docs/fields/FIELD_GLOSSARY.md`             | `field-patient.microchip`       |
+| `permission`   | `docs/permissions/PERMISSION_CATALOG.yaml`  | `permission-clinic:owner:erase` |
+| `error`        | `docs/errors/ERROR_CATALOG.md`              | `error-VET-CLINIC-0001`         |
+| `audit`        | `docs/errors/AUDIT_LOG_STANDARD.md` vb.     | `audit-overview`                |
+| `page`         | `docs/pages/<page>.yaml`                    | `page-web.app.locale.health`    |
+| `api`          | `docs/api/<endpoint>.md`                    | `api-get._api_v1_health`        |
+| `country`      | `apps/api/src/common/adapters/*.adapter.ts` | `country-tr.format_currency`    |
+| `log-standard` | `docs/errors/LOG_STANDARD.md` vb.           | `log-sistem`                    |
+| `pii-rule`     | `docs/errors/PII_MASKING.md`                | `pii-phone-mask`                |
+| `correlation`  | `docs/errors/CORRELATION_ID.md`             | `correlation-req-prefix`        |
 
 ## 2. Yapısal Şema
 
@@ -48,9 +60,9 @@ Her chunk aşağıdaki alanları taşır:
   locale: tr-TR
   version: "1.0.0"
   last_verified_at: 2026-07-30
-  confidence: high                # high | medium | low
-  pii: true                       # bu chunk PII içerir mi?
-  expires_at: null                # opsiyonel, geçici bilgi için
+  confidence: high # high | medium | low
+  pii: true # bu chunk PII içerir mi?
+  expires_at: null # opsiyonel, geçici bilgi için
   keywords:
     - hasta sahibi
     - patient owner
@@ -73,34 +85,34 @@ Her chunk aşağıdaki alanları taşır:
 
 ### 2.1 Zorunlu alanlar
 
-| Alan              | Tür          | Açıklama |
-| ----------------- | ------------ | -------- |
-| `chunk_id`        | string       | Benzersiz ID. Küçük harf + tire. `<type>-<slug>` formatı. |
-| `type`            | enum         | `glossary` / `flow` / `field` / `permission` / `error` / `audit` / `page` / `api` / `country` / `log-standard` / `pii-rule` / `correlation`. |
-| `source`          | string       | Kaynak dosya yolu (repo göreli). |
-| `locale`          | enum         | `tr-TR` / `en-GB`. |
-| `version`         | string       | Semver. Chunk içeriği değiştikçe artırılır. |
-| `last_verified_at`| ISO 8601     | Son doğrulama tarihi. 90 günü geçerse `degraded` flag'i alır. |
-| `title`           | string       | Kısa başlık (max 100 karakter). |
-| `content`         | string       | Markdown/multiline. Asıl bilgi. |
+| Alan               | Tür      | Açıklama                                                                                                                                     |
+| ------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `chunk_id`         | string   | Benzersiz ID. Küçük harf + tire. `<type>-<slug>` formatı.                                                                                    |
+| `type`             | enum     | `glossary` / `flow` / `field` / `permission` / `error` / `audit` / `page` / `api` / `country` / `log-standard` / `pii-rule` / `correlation`. |
+| `source`           | string   | Kaynak dosya yolu (repo göreli).                                                                                                             |
+| `locale`           | enum     | `tr-TR` / `en-GB`.                                                                                                                           |
+| `version`          | string   | Semver. Chunk içeriği değiştikçe artırılır.                                                                                                  |
+| `last_verified_at` | ISO 8601 | Son doğrulama tarihi. 90 günü geçerse `degraded` flag'i alır.                                                                                |
+| `title`            | string   | Kısa başlık (max 100 karakter).                                                                                                              |
+| `content`          | string   | Markdown/multiline. Asıl bilgi.                                                                                                              |
 
 ### 2.2 Opsiyonel alanlar
 
-| Alan              | Tür          | Açıklama |
-| ----------------- | ------------ | -------- |
-| `entity`          | string       | İlgili domain entity (chunk type=glossary ise). |
-| `page_id`         | string       | Sayfa kaydı ID (type=page ise). |
-| `endpoint_id`     | string       | API endpoint ID (type=api ise). |
-| `permission`      | string       | Permission spec (type=permission ise). |
-| `error_code`      | string       | Hata kodu (type=error ise). |
-| `confidence`      | enum         | `high` / `medium` / `low`. |
-| `pii`             | boolean      | Bu chunk PII içeriyor mu? (mask'leme için). |
-| `expires_at`      | ISO 8601     | Geçici bilgi için son kullanma. |
-| `keywords`        | string[]     | Arama için anahtar kelimeler. Locale'e göre değişir. |
-| `related_chunks`  | string[]     | Diğer ilgili chunk'lar. |
-| `related_pages`   | string[]     | İlgili sayfa kayıtları. |
-| `related_api`     | string[]     | İlgili API endpoint'leri. |
-| `embedding_model` | string       | Embedding için kullanılan model. |
+| Alan              | Tür      | Açıklama                                             |
+| ----------------- | -------- | ---------------------------------------------------- |
+| `entity`          | string   | İlgili domain entity (chunk type=glossary ise).      |
+| `page_id`         | string   | Sayfa kaydı ID (type=page ise).                      |
+| `endpoint_id`     | string   | API endpoint ID (type=api ise).                      |
+| `permission`      | string   | Permission spec (type=permission ise).               |
+| `error_code`      | string   | Hata kodu (type=error ise).                          |
+| `confidence`      | enum     | `high` / `medium` / `low`.                           |
+| `pii`             | boolean  | Bu chunk PII içeriyor mu? (mask'leme için).          |
+| `expires_at`      | ISO 8601 | Geçici bilgi için son kullanma.                      |
+| `keywords`        | string[] | Arama için anahtar kelimeler. Locale'e göre değişir. |
+| `related_chunks`  | string[] | Diğer ilgili chunk'lar.                              |
+| `related_pages`   | string[] | İlgili sayfa kayıtları.                              |
+| `related_api`     | string[] | İlgili API endpoint'leri.                            |
+| `embedding_model` | string   | Embedding için kullanılan model.                     |
 
 ## 3. Chunk Üretim Kuralları
 
@@ -112,15 +124,15 @@ Her chunk aşağıdaki alanları taşır:
 
 ### 3.2 Bölümleme (Chunking Strategy)
 
-| Kaynak türü   | Bölümleme kuralı |
-| ------------- | ---------------- |
-| `glossary`    | Her entity bir chunk. Tanım + ilişkiler + alanlar tek chunk. |
-| `flow`        | Her akış adımı bir chunk. Veya her akış bir chunk (kısa ise). |
-| `field`       | Her alan bir chunk. |
-| `permission`  | Her permission bir chunk. |
-| `error`       | Her hata kodu bir chunk. |
-| `page`        | Her sayfa kaydı bir chunk (kısa) veya `actions` başına bir chunk (uzun). |
-| `api`         | Her endpoint bir chunk. |
+| Kaynak türü  | Bölümleme kuralı                                                         |
+| ------------ | ------------------------------------------------------------------------ |
+| `glossary`   | Her entity bir chunk. Tanım + ilişkiler + alanlar tek chunk.             |
+| `flow`       | Her akış adımı bir chunk. Veya her akış bir chunk (kısa ise).            |
+| `field`      | Her alan bir chunk.                                                      |
+| `permission` | Her permission bir chunk.                                                |
+| `error`      | Her hata kodu bir chunk.                                                 |
+| `page`       | Her sayfa kaydı bir chunk (kısa) veya `actions` başına bir chunk (uzun). |
+| `api`        | Her endpoint bir chunk.                                                  |
 
 ### 3.3 ID Kuralı
 

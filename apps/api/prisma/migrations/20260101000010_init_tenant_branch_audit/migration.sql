@@ -160,8 +160,9 @@ COMMENT ON TABLE audit_events IS
 CREATE OR REPLACE FUNCTION audit_events_append_only()
 RETURNS TRIGGER AS $$
 BEGIN
-  RAISE EXCEPTION 'VET-AUDIT-0001: audit_events tablosu append-only; UPDATE/DELETE yasak (event_id=%.% hedef:%.%)',
-    COALESCE(OLD.id, NEW.id), TG_OP, COALESCE(OLD.target_id, NEW.target_id)
+  -- Trigger statement seviyesinde çalışır; OLD/NEW satır referansı yoktur.
+  -- Operasyon bilgisi, append-only ihlalini teşhis etmek için yeterlidir.
+  RAISE EXCEPTION 'VET-AUDIT-0001: audit_events tablosu append-only; operation=% yasak', TG_OP
     USING ERRCODE = 'check_violation';
 END;
 $$ LANGUAGE plpgsql;

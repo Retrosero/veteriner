@@ -20,10 +20,7 @@
  * @since GOAL-062 (FAZ-6) tedarikçi ve satın alma core
  */
 
-import type {
-  Supplier,
-  SupplierType,
-} from "@vetniva/contracts";
+import type { Supplier, SupplierType } from "@vetniva/contracts";
 
 /**
  * Persist edilmiş supplier record. API sözleşmesinden (public

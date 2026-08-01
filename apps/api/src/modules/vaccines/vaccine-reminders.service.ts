@@ -43,24 +43,12 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { VaccineApplicationsService } from "./vaccine-applications.service.js";
+import { VaccineRemindersRepository } from "./vaccine-reminders.repository.js";
+import { VaccinesService } from "./vaccines.service.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import { ConsentService } from "../../common/notifications/consent.service.js";
-import type { NotificationsService } from "../notifications/notifications.service.js";
-import type { OwnersService } from "../owners/owners.service.js";
-import type { PatientsService } from "../patients/patients.service.js";
-import type { TenantService } from "../tenant/tenant.service.js";
-import type {
-  NotificationChannel,
-  Owner,
-  Patient,
-  VaccineApplication,
-  VaccineProtocol,
-  VaccineReminderChannel,
-  VaccineReminderListQuery,
-} from "@vetniva/contracts";
-
 import {
   DEFAULT_VACCINE_REMINDER_CONFIG,
   computeScheduledFor,
@@ -70,12 +58,21 @@ import {
   type VaccineReminderConfig,
   type VaccineReminderRecord,
 } from "../../common/vaccines/vaccine-reminder.types.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
+import { OwnersService } from "../owners/owners.service.js";
+import { PatientsService } from "../patients/patients.service.js";
+import { TenantService } from "../tenant/tenant.service.js";
 
-import {
-  VaccineRemindersRepository,
-} from "./vaccine-reminders.repository.js";
-import type { VaccineApplicationsService } from "./vaccine-applications.service.js";
-import type { VaccinesService } from "./vaccines.service.js";
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type {
+  NotificationChannel,
+  Owner,
+  Patient,
+  VaccineApplication,
+  VaccineProtocol,
+  VaccineReminderChannel,
+  VaccineReminderListQuery,
+} from "@vetniva/contracts";
 
 /** ProcessDueReminders tek seferde işleyeceği üst sınır. */
 const DUE_BATCH_SIZE = 100;
@@ -128,11 +125,7 @@ export class VaccineRemindersService {
       });
       return [];
     }
-    const owner = await this.owners.findById(
-      tenantId,
-      patient.ownerId,
-      actor,
-    );
+    const owner = await this.owners.findById(tenantId, patient.ownerId, actor);
     if (!owner) {
       this.logger.warn({
         msg: "vaccine_reminder.schedule.skip",
@@ -181,7 +174,8 @@ export class VaccineRemindersService {
       });
       return [];
     }
-    const nextDueDate = application.nextDueDate ?? this.computeDueDateFromStep(application, step);
+    const nextDueDate =
+      application.nextDueDate ?? this.computeDueDateFromStep(application, step);
     if (!nextDueDate) {
       this.logger.debug({
         msg: "vaccine_reminder.schedule.skip",
@@ -279,8 +273,7 @@ export class VaccineRemindersService {
         scheduledFor,
         nextDueDate,
         locale,
-        daysBeforeDue:
-          this.resolveConfig(tenantId).daysBeforeDue,
+        daysBeforeDue: this.resolveConfig(tenantId).daysBeforeDue,
       },
     );
     return result.record.id;
@@ -390,9 +383,7 @@ export class VaccineRemindersService {
    * NotificationsService.send çağrılır. Sonuca göre status
    * güncellenir.
    */
-  public async processDueReminders(
-    now: number = Date.now(),
-  ): Promise<{
+  public async processDueReminders(now: number = Date.now()): Promise<{
     processed: number;
     sent: number;
     failed: number;
@@ -463,12 +454,8 @@ export class VaccineRemindersService {
 
       // 3) Consent kontrolü: vaccine_reminder category.
       const notifChannel: NotificationChannel =
-        rec.channel === "in_app"
-          ? "in_app"
-          : (rec.channel as NotificationChannel);
-      if (
-        !this.consent.canSend(owner.id, notifChannel, "vaccine_reminder")
-      ) {
+        rec.channel === "in_app" ? "in_app" : rec.channel;
+      if (!this.consent.canSend(owner.id, notifChannel, "vaccine_reminder")) {
         this.repo.update(rec.tenantId, rec.id, {
           status: "cancelled",
           lastError: "opted_out",
@@ -484,8 +471,13 @@ export class VaccineRemindersService {
         patientName: patient.name,
         owner,
         protocolName:
-          (await this.vaccines.getProtocol(rec.tenantId, app.protocolId, systemActor))
-            ?.name ?? "",
+          (
+            await this.vaccines.getProtocol(
+              rec.tenantId,
+              app.protocolId,
+              systemActor,
+            )
+          )?.name ?? "",
         locale,
       });
       const idempotencyKey = `vacc-reminder|${rec.id}`;
@@ -685,7 +677,10 @@ export class VaccineRemindersService {
         channels: [...cfg.channels],
       };
     }
-    return { ...DEFAULT_VACCINE_REMINDER_CONFIG, channels: [...DEFAULT_VACCINE_REMINDER_CONFIG.channels] };
+    return {
+      ...DEFAULT_VACCINE_REMINDER_CONFIG,
+      channels: [...DEFAULT_VACCINE_REMINDER_CONFIG.channels],
+    };
   }
 
   /**
@@ -784,7 +779,7 @@ export class VaccineRemindersService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

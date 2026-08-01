@@ -3,18 +3,18 @@
 // Profil: pilot (10 VU, 2dk — pilot dogrulama)
 // Bu dosya elle degistirilmemelidir; ureticiden gelir.
 
-import { vetGet, check, jitterSleep } from './shared.js';
+import { vetGet, check, jitterSleep } from "./shared.js";
 
 export const options = {
   vus: 10,
-  duration: '2m',
+  duration: "2m",
   thresholds: {
     // k6 tarafinda hizli baseline; detayli kontrol TypeScript
     // tarafinda (evaluateScenario) yapilir.
-    http_req_failed: ['rate<0.05'],
-    http_req_duration: ['p(95)<2000'],
+    http_req_failed: ["rate<0.05"],
+    http_req_duration: ["p(95)<2000"],
   },
-  tags: { suite: 'vetniva-load-test' },
+  tags: { suite: "vetniva-load-test" },
 };
 
 export default async function () {
@@ -24,9 +24,11 @@ export default async function () {
     undefined,
   );
   check(res0, {
-    'patient_timeline_status_200': (r) => r.status === 200,
-    'patient_timeline_no_pii_leak': (r) => !/[\\w.+-]+@[\\w-]+\\.[\\w.-]+|\\b[5-9]\\d{9}[0-9]\\b|\\b0?5\\d{9}\\b/.test(typeof r.body === 'string' ? r.body : ''),
+    patient_timeline_status_200: (r) => r.status === 200,
+    patient_timeline_no_pii_leak: (r) =>
+      !/[\\w.+-]+@[\\w-]+\\.[\\w.-]+|\\b[5-9]\\d{9}[0-9]\\b|\\b0?5\\d{9}\\b/.test(
+        typeof r.body === "string" ? r.body : "",
+      ),
   });
   jitterSleep(50, 200);
-
 }

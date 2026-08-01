@@ -80,7 +80,12 @@ export class SecurityEventsRepository {
     fingerprint: string;
     record: Omit<
       SecurityEventRecord,
-      "id" | "fingerprint" | "occurrenceCount" | "firstSeenAt" | "lastSeenAt" | "alertSent"
+      | "id"
+      | "fingerprint"
+      | "occurrenceCount"
+      | "firstSeenAt"
+      | "lastSeenAt"
+      | "alertSent"
     >;
     /** Mevcut kayıt yoksa default `alertSent=false`. */
     initialAlertSent?: boolean;
@@ -127,9 +132,7 @@ export class SecurityEventsRepository {
     return this.byId.get(id) ?? null;
   }
 
-  public findByFingerprint(
-    fingerprint: string,
-  ): SecurityEventRecord | null {
+  public findByFingerprint(fingerprint: string): SecurityEventRecord | null {
     const id = this.byFingerprint.get(fingerprint);
     if (!id) return null;
     return this.byId.get(id) ?? null;
@@ -141,18 +144,16 @@ export class SecurityEventsRepository {
    * case-insensitive substring arar. `from`/`to` `lastSeenAt`
    * üzerinde filtreler.
    */
-  public search(
-    filters: SecurityEventSearchFilters,
-  ): { items: SecurityEventRecord[]; total: number } {
+  public search(filters: SecurityEventSearchFilters): {
+    items: SecurityEventRecord[];
+    total: number;
+  } {
     const all: SecurityEventRecord[] = [];
     for (const rec of this.byId.values()) {
       if (filters.type && rec.type !== filters.type) continue;
       if (filters.severity && rec.severity !== filters.severity) continue;
       if (filters.module && rec.module !== filters.module) continue;
-      if (
-        filters.fingerprint &&
-        rec.fingerprint !== filters.fingerprint
-      ) {
+      if (filters.fingerprint && rec.fingerprint !== filters.fingerprint) {
         continue;
       }
       if (filters.tenantId && rec.tenantId !== filters.tenantId) continue;

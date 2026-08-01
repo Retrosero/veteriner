@@ -12,11 +12,11 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { VaccinesRepository } from "./vaccines.repository.js";
+import { VaccinesService } from "./vaccines.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-
-import { VaccinesService } from "./vaccines.service.js";
-import { VaccinesRepository } from "./vaccines.repository.js";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -147,11 +147,7 @@ describe("VaccinesService", () => {
 
     it("empty steps → 422 VET-VALIDATION-0010", async () => {
       await expect(
-        service.createProtocol(
-          TENANT_A,
-          validInput({ steps: [] }),
-          VET_A,
-        ),
+        service.createProtocol(TENANT_A, validInput({ steps: [] }), VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-VALIDATION-0010",
         httpStatus: 422,
@@ -303,7 +299,11 @@ describe("VaccinesService", () => {
         expect.objectContaining({ tenantId: TENANT_A }),
         "info",
         expect.objectContaining({
+          // Vitest asymmetric matcher API'si `any` dondurur; assertion
+          // sadece append-only oncesi durum snapshot'ini dogrular.
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           before: expect.objectContaining({ isCore: true }),
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           after: expect.objectContaining({ isCore: false }),
         }),
       );

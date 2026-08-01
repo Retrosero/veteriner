@@ -13,19 +13,18 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { FollowupsService } from "./followups.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
+import type { AppointmentsService } from "../appointments/appointments.service.js";
+import type { ExaminationsService } from "../examinations/examinations.service.js";
+import type { PrescriptionsService } from "../prescriptions/prescriptions.service.js";
 import type {
   Appointment,
   Examination,
   Prescription,
 } from "@vetniva/contracts";
-
-import type { AppointmentsService } from "../appointments/appointments.service.js";
-import type { ExaminationsService } from "../examinations/examinations.service.js";
-import type { PrescriptionsService } from "../prescriptions/prescriptions.service.js";
-
-import { FollowupsService } from "./followups.service.js";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -219,7 +218,8 @@ function makeAppointments(): {
         },
       ) => {
         const filtered = listedItems.filter((a) => {
-          if (filters.patientId && a.patientId !== filters.patientId) return false;
+          if (filters.patientId && a.patientId !== filters.patientId)
+            return false;
           if (filters.status && a.status !== filters.status) return false;
           if (filters.from && a.start < filters.from) return false;
           return true;
@@ -554,9 +554,7 @@ describe("FollowupsService", () => {
       VET_A,
     );
     const calls = (audit.recordSimple as ReturnType<typeof vi.fn>).mock.calls;
-    const followupCalls = calls.filter(
-      (c) => c[0] === "audit:followup.create",
-    );
+    const followupCalls = calls.filter((c) => c[0] === "audit:followup.create");
     expect(followupCalls).toHaveLength(2);
   });
 });

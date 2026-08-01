@@ -12,19 +12,18 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
-import type { Appointment } from "@vetniva/contracts";
-import type { Patient } from "../../common/patients/patient.types.js";
-
-import type { AppointmentsService } from "../appointments/appointments.service.js";
-import type { PatientsService } from "../patients/patients.service.js";
-
-import { ExaminationsService } from "./examinations.service.js";
 import {
   ExaminationAmendsRepository,
   ExaminationsRepository,
 } from "./examinations.repository.js";
+import { ExaminationsService } from "./examinations.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { AuditService } from "../../common/audit/audit.service.js";
+import type { Patient } from "../../common/patients/patient.types.js";
+import type { AppointmentsService } from "../appointments/appointments.service.js";
+import type { PatientsService } from "../patients/patients.service.js";
+import type { Appointment } from "@vetniva/contracts";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -135,11 +134,13 @@ function makeAudit(): AuditService {
   } as unknown as AuditService;
 }
 
-function validInput(overrides: Partial<{
-  appointmentId: string;
-  type: "consultation" | "follow_up" | "emergency" | "routine_check";
-  chiefComplaint: string;
-}> = {}) {
+function validInput(
+  overrides: Partial<{
+    appointmentId: string;
+    type: "consultation" | "follow_up" | "emergency" | "routine_check";
+    chiefComplaint: string;
+  }> = {},
+) {
   return {
     appointmentId: APPT_ID_A,
     type: "consultation" as const,
@@ -378,11 +379,7 @@ describe("ExaminationsService", () => {
       );
       expect(amended.status).toBe("amended");
 
-      const amendList = await service.listAmends(
-        TENANT_A,
-        created.id,
-        VET_A,
-      );
+      const amendList = await service.listAmends(TENANT_A, created.id, VET_A);
       expect(amendList).toHaveLength(1);
       expect(amendList[0]?.reason).toBe("Yanlış teşhis düzeltme");
       expect(amendList[0]?.amendedBy).toBe("usr-vet-a");

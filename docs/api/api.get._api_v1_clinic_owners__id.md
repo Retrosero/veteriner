@@ -21,7 +21,11 @@ sızdırmaz).
   "phone": "+905321234567",
   "email": "ayse@example.com",
   "taxId": "12345678950",
-  "address": { "city": "Istanbul", "district": "Kadıköy", "fullAddress": "..." },
+  "address": {
+    "city": "Istanbul",
+    "district": "Kadıköy",
+    "fullAddress": "..."
+  },
   "consents": { "kvkk": true, "marketing": false },
   "createdAt": "2026-07-30T12:00:00.000Z",
   "archivedAt": null

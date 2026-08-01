@@ -52,8 +52,9 @@ ack çağrısı 200 döner (mevcut ack + aynı notes veya yeni
 notes).
 
 **Audit detayı:** `firstAcknowledgedAt` (eğer yeniden ack)
-+ `lastAcknowledgedAt` + `lastAcknowledgedBy` +
-`acknowledgeNotes` payload'a eklenir.
+
+- `lastAcknowledgedAt` + `lastAcknowledgedBy` +
+  `acknowledgeNotes` payload'a eklenir.
 
 **İlgili dokümanlar:**
 

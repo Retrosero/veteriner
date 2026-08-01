@@ -1,7 +1,6 @@
 /**
  * @file İlk kullanım asistanı (onboarding) servisi.
  * @module apps/api/common/onboarding/onboarding.service
- *
  * @description GOAL-117 (FAZ-11) — Uygulama kullanımı ve
  * navigasyon sorularına cevap veren, role/modül-bazlı senaryo
  * eşleştirme yapan, tıbbi soruları reddeden asistan servisi.
@@ -14,7 +13,6 @@
  *   docs/ai/AI_CHUNKS.yaml'a taşınır.
  * - LLM entegrasyonu YOK (template-based); retrieval ile zenginleştirme
  *   Faz 12+'da.
- *
  * @security PII taşımaz. Sadece public sayfa yolu + buton adı.
  * @since GOAL-117 (FAZ-11) ilk kullanım asistanı
  */
@@ -22,17 +20,20 @@
 import { Injectable, Logger } from "@nestjs/common";
 
 import { isModuleKey, type ModuleKey } from "../modules/module.types.js";
-import type { ActorContext, ActorRole } from "../actor/actor-context.service.js";
+
 import type {
   LocalizedOnboardingScenario,
   OnboardingAskInput,
   OnboardingAskResponse,
-  OnboardingCategory,
   OnboardingRefusalReason,
   OnboardingRole,
   OnboardingScenario,
   OnboardingScenarioListResponse,
 } from "./onboarding.types.js";
+import type {
+  ActorContext,
+  ActorRole,
+} from "../actor/actor-context.service.js";
 
 /**
  * Tıbbi içerik reddi için anahtar kelime → kategori eşlemesi
@@ -102,7 +103,6 @@ const MEDICAL_REFUSAL_KEYWORDS_EN: ReadonlyArray<MedicalRefusalKeyword> = [
  * Tüm onboarding senaryoları. Senaryo eklemek için yalnızca bu
  * listeye bir kayıt eklemek yeterlidir. Cross-ref'ler
  * (related_chunks / related_pages / related_api) opsiyoneldir.
- *
  * @since GOAL-117 (FAZ-11)
  */
 const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
@@ -143,8 +143,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
           "en-GB": "Open the owners list page",
         },
         description: {
-          "tr-TR":
-            "Sol menüden 'Müşteriler / Sahipler' bağlantısına tıklayın.",
+          "tr-TR": "Sol menüden 'Müşteriler / Sahipler' bağlantısına tıklayın.",
           "en-GB": "Click 'Owners' in the left menu.",
         },
         action: "navigate",
@@ -158,8 +157,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
           "en-GB": "Click 'New Owner'",
         },
         description: {
-          "tr-TR":
-            "Sağ üstteki 'Yeni Sahip' butonu ile form açılır.",
+          "tr-TR": "Sağ üstteki 'Yeni Sahip' butonu ile form açılır.",
           "en-GB": "Click the 'New Owner' button on the top right.",
         },
         action: "open_form",
@@ -204,8 +202,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
       "en-GB": "Register a new patient (animal)",
     },
     summary: {
-      "tr-TR":
-        "Kliniğe gelen yeni bir hayvanı sisteme ekleme adımları.",
+      "tr-TR": "Kliniğe gelen yeni bir hayvanı sisteme ekleme adımları.",
       "en-GB": "Steps to register a new animal in the clinic system.",
     },
     roles: ["STAFF", "VETERINARIAN", "OWNER"],
@@ -236,8 +233,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
           "en-GB": "Click 'New Patient'",
         },
         description: {
-          "tr-TR":
-            "Sağ üstteki 'Yeni Hasta' butonu ile form açılır.",
+          "tr-TR": "Sağ üstteki 'Yeni Hasta' butonu ile form açılır.",
           "en-GB": "Click the 'New Patient' button on the top right.",
         },
         action: "open_form",
@@ -251,8 +247,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
           "en-GB": "Select or create the owner",
         },
         description: {
-          "tr-TR":
-            "Önce sahibi seçin; sahip yoksa 'Yeni Sahip' ile ekleyin.",
+          "tr-TR": "Önce sahibi seçin; sahip yoksa 'Yeni Sahip' ile ekleyin.",
           "en-GB":
             "Select an existing owner or create a new one with 'New Owner'.",
         },
@@ -298,8 +293,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
       "en-GB": "Create an appointment",
     },
     summary: {
-      "tr-TR":
-        "Telefon, içeriden veya portal üzerinden randevu alma adımları.",
+      "tr-TR": "Telefon, içeriden veya portal üzerinden randevu alma adımları.",
       "en-GB":
         "Steps to book an appointment by phone, in-clinic or via the portal.",
     },
@@ -333,8 +327,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
         description: {
           "tr-TR":
             "Açılan hızlı formda sahibi, hayvanı, hizmeti ve notu girin.",
-          "en-GB":
-            "Pick owner, pet, service and notes in the quick form.",
+          "en-GB": "Pick owner, pet, service and notes in the quick form.",
         },
         action: "open_form",
         required_permission: "clinic:appointment:create",
@@ -347,8 +340,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
           "en-GB": "Reserve",
         },
         description: {
-          "tr-TR":
-            "'Rezerve Et' butonu ile sistem uygunluk kontrolü yapar.",
+          "tr-TR": "'Rezerve Et' butonu ile sistem uygunluk kontrolü yapar.",
           "en-GB":
             "'Reserve' button validates availability and creates the appointment.",
         },
@@ -378,8 +370,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
       "en-GB": "Record a vaccination",
     },
     summary: {
-      "tr-TR":
-        "Bir hayvana aşı uygulaması kaydetme adımları.",
+      "tr-TR": "Bir hayvana aşı uygulaması kaydetme adımları.",
       "en-GB": "Steps to record a vaccine application.",
     },
     roles: ["VETERINARIAN", "STAFF", "OWNER"],
@@ -395,8 +386,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
           "en-GB": "Open the patient detail page",
         },
         description: {
-          "tr-TR":
-            "Hasta listesinden hayvanın detay sayfasını açın.",
+          "tr-TR": "Hasta listesinden hayvanın detay sayfasını açın.",
           "en-GB": "Open the patient detail from the patients list.",
         },
         action: "navigate",
@@ -410,8 +400,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
           "en-GB": "Click 'New Vaccination'",
         },
         description: {
-          "tr-TR":
-            "Aşı kartı sekmesinden 'Yeni Aşı' butonuna tıklayın.",
+          "tr-TR": "Aşı kartı sekmesinden 'Yeni Aşı' butonuna tıklayın.",
           "en-GB": "Click 'New Vaccination' in the vaccine card tab.",
         },
         action: "open_form",
@@ -428,8 +417,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
         description: {
           "tr-TR":
             "Katalogdan aşı seçin, lot numarası ve uygulama yolunu girin.",
-          "en-GB":
-            "Pick the vaccine from the catalog and fill lot + route.",
+          "en-GB": "Pick the vaccine from the catalog and fill lot + route.",
         },
         action: "submit",
         required_permission: "clinic:vaccine:apply",
@@ -457,8 +445,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
       "en-GB": "Create a stock movement",
     },
     summary: {
-      "tr-TR":
-        "Depo / raf / lot üzerinden stok girişi veya çıkışı oluşturma.",
+      "tr-TR": "Depo / raf / lot üzerinden stok girişi veya çıkışı oluşturma.",
       "en-GB": "Create a stock in/out movement for a lot.",
     },
     roles: ["STAFF", "VETERINARIAN", "OWNER"],
@@ -474,8 +461,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
           "en-GB": "Open the stock movements page",
         },
         description: {
-          "tr-TR":
-            "Sol menüden 'Stok Hareketleri' bağlantısına tıklayın.",
+          "tr-TR": "Sol menüden 'Stok Hareketleri' bağlantısına tıklayın.",
           "en-GB": "Click 'Stock Movements' in the left menu.",
         },
         action: "navigate",
@@ -489,8 +475,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
           "en-GB": "Pick movement type (in/out)",
         },
         description: {
-          "tr-TR":
-            "Üst sağdaki 'Yeni Hareket' butonu ile tipi seçin.",
+          "tr-TR": "Üst sağdaki 'Yeni Hareket' butonu ile tipi seçin.",
           "en-GB": "Click 'New Movement' and pick the type.",
         },
         action: "open_form",
@@ -504,8 +489,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
           "en-GB": "Enter lot, quantity and reason",
         },
         description: {
-          "tr-TR":
-            "Lot seçin, miktar ve hareket nedeni zorunludur.",
+          "tr-TR": "Lot seçin, miktar ve hareket nedeni zorunludur.",
           "en-GB": "Pick a lot and enter quantity + reason.",
         },
         action: "submit",
@@ -533,8 +517,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
       "en-GB": "Petshop POS sale",
     },
     summary: {
-      "tr-TR":
-        "Petshop / mağaza ürünlerinde yeni satış oluşturma.",
+      "tr-TR": "Petshop / mağaza ürünlerinde yeni satış oluşturma.",
       "en-GB": "Create a new sale in the petshop POS.",
     },
     roles: ["STAFF", "OWNER"],
@@ -550,8 +533,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
           "en-GB": "Open the petshop sales screen",
         },
         description: {
-          "tr-TR":
-            "Sol menüden 'Petshop → Satışlar' bağlantısına tıklayın.",
+          "tr-TR": "Sol menüden 'Petshop → Satışlar' bağlantısına tıklayın.",
           "en-GB": "Click 'Petshop → Sales' in the left menu.",
         },
         action: "navigate",
@@ -566,10 +548,8 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
           "en-GB": "Add items to the cart",
         },
         description: {
-          "tr-TR":
-            "Barkod okutarak veya ürün arayarak ürünleri ekleyin.",
-          "en-GB":
-            "Add items by scanning a barcode or searching the catalog.",
+          "tr-TR": "Barkod okutarak veya ürün arayarak ürünleri ekleyin.",
+          "en-GB": "Add items by scanning a barcode or searching the catalog.",
         },
         action: "add_to_cart",
         required_permission: "petshop:sale:create",
@@ -582,8 +562,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
           "en-GB": "Take payment and complete sale",
         },
         description: {
-          "tr-TR":
-            "Ödeme yöntemini (nakit/kart/havale) seçin ve 'Onayla'.",
+          "tr-TR": "Ödeme yöntemini (nakit/kart/havale) seçin ve 'Onayla'.",
           "en-GB": "Pick a payment method (cash/card/transfer) and 'Confirm'.",
         },
         action: "submit",
@@ -611,8 +590,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
       "en-GB": "Collect a payment",
     },
     summary: {
-      "tr-TR":
-        "Açık fatura için tahsilat kaydı oluşturma.",
+      "tr-TR": "Açık fatura için tahsilat kaydı oluşturma.",
       "en-GB": "Create a payment record for an open invoice.",
     },
     roles: ["STAFF", "OWNER"],
@@ -628,8 +606,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
           "en-GB": "Open the invoices page",
         },
         description: {
-          "tr-TR":
-            "Sol menüden 'Faturalar' bağlantısına tıklayın.",
+          "tr-TR": "Sol menüden 'Faturalar' bağlantısına tıklayın.",
           "en-GB": "Click 'Invoices' in the left menu.",
         },
         action: "navigate",
@@ -643,8 +620,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
           "en-GB": "Click 'Collect'",
         },
         description: {
-          "tr-TR":
-            "Açık faturada 'Tahsil Et' butonu ödeme formunu açar.",
+          "tr-TR": "Açık faturada 'Tahsil Et' butonu ödeme formunu açar.",
           "en-GB": "Click 'Collect' on an open invoice.",
         },
         action: "open_form",
@@ -659,8 +635,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
           "en-GB": "Pick payment method and save",
         },
         description: {
-          "tr-TR":
-            "Tutar ve ödeme yöntemini seçin, kasa ile eşleştirin.",
+          "tr-TR": "Tutar ve ödeme yöntemini seçin, kasa ile eşleştirin.",
           "en-GB": "Pick amount and method, link to a cash session.",
         },
         action: "submit",
@@ -686,8 +661,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
       "en-GB": "Enter a lab result",
     },
     summary: {
-      "tr-TR":
-        "Tamamlanmış bir laboratuvar isteği için sonuç kaydetme.",
+      "tr-TR": "Tamamlanmış bir laboratuvar isteği için sonuç kaydetme.",
       "en-GB": "Record a result for a completed lab order.",
     },
     roles: ["VETERINARIAN", "STAFF"],
@@ -718,8 +692,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
           "en-GB": "Click 'Enter Result'",
         },
         description: {
-          "tr-TR":
-            "Detay sayfasında 'Sonuç Gir' butonu formu açar.",
+          "tr-TR": "Detay sayfasında 'Sonuç Gir' butonu formu açar.",
           "en-GB": "Click 'Enter Result' on the detail page.",
         },
         action: "open_form",
@@ -734,8 +707,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
           "en-GB": "Enter analyte + value + flag",
         },
         description: {
-          "tr-TR":
-            "Analyte, değer, birim ve abnormal flag seçilir.",
+          "tr-TR": "Analyte, değer, birim ve abnormal flag seçilir.",
           "en-GB": "Pick analyte, value, unit and abnormal flag.",
         },
         action: "submit",
@@ -806,10 +778,8 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
           "en-GB": "Detail",
         },
         description: {
-          "tr-TR":
-            "Aşı kartı, randevu ve sağlık kayıtları görüntülenir.",
-          "en-GB":
-            "Vaccine card, appointments and medical records are listed.",
+          "tr-TR": "Aşı kartı, randevu ve sağlık kayıtları görüntülenir.",
+          "en-GB": "Vaccine card, appointments and medical records are listed.",
         },
         action: "open_detail",
       },
@@ -864,8 +834,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
           "en-GB": "New Tenant",
         },
         description: {
-          "tr-TR":
-            "Sağ üstteki 'Yeni Tenant' ile form açılır.",
+          "tr-TR": "Sağ üstteki 'Yeni Tenant' ile form açılır.",
           "en-GB": "Click 'New Tenant' on the top right.",
         },
         action: "open_form",
@@ -881,8 +850,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
         description: {
           "tr-TR":
             "Ülke, paket ve özellikleri seçin, yönetici kullanıcı atayın.",
-          "en-GB":
-            "Pick country, plan and features, assign an admin user.",
+          "en-GB": "Pick country, plan and features, assign an admin user.",
         },
         action: "submit",
         required_permission: "superadmin:tenant:create",
@@ -897,8 +865,7 @@ const ONBOARDING_SCENARIOS: ReadonlyArray<OnboardingScenario> = [
  *
  * - `ask(input, actor)` → kullanıcı sorusunu yanıtla
  * - `listScenarios(role, enabledModules)` → role/modül-bazlı liste
- * - `isMedicalRefusal(query, locale)` → dışarıdan test edilebilir
- *
+ * - `isMedicalRefusal(query, locale)` → dışarıdan test edilebilir.
  * @since GOAL-117 (FAZ-11)
  */
 @Injectable()
@@ -909,6 +876,8 @@ export class OnboardingService {
    * Tüm senaryoları role/modül filtresinden geçirerek döner.
    * `enabledModules` boşsa modül filtresi uygulanmaz (tümü
    * varsayılır).
+   * @param role
+   * @param enabledModules
    */
   public listScenarios(
     role: OnboardingRole,
@@ -941,6 +910,8 @@ export class OnboardingService {
    *
    * `currentPage` verildiyse senaryo adımları kullanıcının
    * bulunduğu sayfaya yakınsa highlight yapılır.
+   * @param input
+   * @param actor
    */
   public ask(
     input: OnboardingAskInput,
@@ -976,18 +947,13 @@ export class OnboardingService {
     const enabledModules = this.parseEnabledModules(input.enabledModules);
     const normalized = this.normalize(input.query);
 
-    const candidates = ONBOARDING_SCENARIOS
-      .map((sc) => ({
-        scenario: sc,
-        score: this.scoreScenario(sc, normalized, input.currentPage),
-      }))
+    const candidates = ONBOARDING_SCENARIOS.map((sc) => ({
+      scenario: sc,
+      score: this.scoreScenario(sc, normalized, input.currentPage),
+    }))
       .filter((c) => c.score > 0)
       .filter((c) =>
-        this.isScenarioVisible(
-          c.scenario,
-          role,
-          enabledModules ?? null,
-        ),
+        this.isScenarioVisible(c.scenario, role, enabledModules ?? null),
       )
       .sort((a, b) => b.score - a.score);
 
@@ -1038,10 +1004,7 @@ export class OnboardingService {
       scenario: localized,
       alternatives: rest.slice(0, 2).map((c) => ({
         id: c.scenario.id,
-        title: this.localizeString(
-          c.scenario.title,
-          input.locale,
-        ),
+        title: this.localizeString(c.scenario.title, input.locale),
         score: c.score,
       })),
       duration_ms: Date.now() - start,
@@ -1061,6 +1024,8 @@ export class OnboardingService {
    * Reddi nedeni eşleşen satırın `category` alanından gelir;
    * "doz" kelimesinin geçtiği anahtar satırda bile "tedavi"
    * kelimesi de varsa "treatment" dönülür (kategoriye bağlı).
+   * @param query
+   * @param locale
    */
   public detectMedicalRefusal(
     query: string,
@@ -1104,6 +1069,9 @@ export class OnboardingService {
 
   /**
    * Senaryo bu role + modül setinde görünür mü?
+   * @param scenario
+   * @param role
+   * @param enabledModules
    */
   private isScenarioVisible(
     scenario: OnboardingScenario,
@@ -1122,7 +1090,7 @@ export class OnboardingService {
   }
 
   /**
-   * Trigger kelimelerine göre eşleşme skoru. currentPage verildiyse
+   * Trigger kelimelerine göre eşleşme skoru. CurrentPage verildiyse
    * o sayfayla ilgili senaryolara küçük bonus.
    *
    * Eşleşme kuralı:
@@ -1132,6 +1100,9 @@ export class OnboardingService {
    *   Bu sayede "pet" tetikleyicisi "petshop" sorgusuna yanlış
    *   pozitif dönmez; "ekle" tetikleyicisi "eklenir" sözcüğüne
    *   eşleşmez.
+   * @param scenario
+   * @param normalizedQuery
+   * @param currentPage
    */
   private scoreScenario(
     scenario: OnboardingScenario,
@@ -1213,7 +1184,7 @@ export class OnboardingService {
     value: { "tr-TR": string; "en-GB": string },
     locale: OnboardingAskInput["locale"],
   ): string {
-    return value[locale];
+    return locale === "tr-TR" ? value["tr-TR"] : value["en-GB"];
   }
 
   private localizeScenario(
@@ -1254,9 +1225,7 @@ export class OnboardingService {
     );
   }
 
-  private outOfScopeMessage(
-    locale: OnboardingAskInput["locale"],
-  ): string {
+  private outOfScopeMessage(locale: OnboardingAskInput["locale"]): string {
     if (locale === "tr-TR") {
       return (
         "Bu konu için uygun bir uygulama adımı bulunamadı. " +

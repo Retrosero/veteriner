@@ -1,7 +1,6 @@
 /**
  * @file ClinicalConsumption (klinik tüketim) repository (in-memory).
  * @module apps/api/modules/clinical-consumption/clinical-consumption.repository
- *
  * @description GOAL-066 (FAZ-6) klinik tüketimden otomatik stok
  * düşümü veri erişim katmanı. DB migration sonraya bırakıldı;
  * tenant-scoped in-memory Map'ler kullanılır. Production'a
@@ -16,7 +15,6 @@
  * - `byPatient` — patientId → Set<consumptionId> (opsiyonel; klinik
  *   geçmiş için).
  * - `counters` — tenant başına ID counter.
- *
  * @security Tüm sorgular tenantId ile filtrelenir. RLS olmadığı
  *   için uygulama katmanı tenant izolasyonundan sorumludur.
  *
@@ -25,11 +23,11 @@
 
 import { Injectable } from "@nestjs/common";
 
+import type { ClinicalConsumptionRecord } from "../../common/clinical-consumption/clinical-consumption.types.js";
 import type {
   ClinicalConsumptionContext,
   ClinicalConsumptionStatus,
 } from "@vetniva/contracts";
-import type { ClinicalConsumptionRecord } from "../../common/clinical-consumption/clinical-consumption.types.js";
 
 /* --------------------------------------------------------------------------
  * Arama filtreleri
@@ -54,15 +52,18 @@ export interface ClinicalConsumptionSearchFilters {
 
 @Injectable()
 export class ClinicalConsumptionRepository {
-  /** id → record. */
+  /** Id → record. */
   private readonly byId = new Map<string, ClinicalConsumptionRecord>();
-  /** contextRefId → Set<consumptionId>. */
+  /** ContextRefId → Set<consumptionId>. */
   private readonly byContextRef = new Map<string, Set<string>>();
-  /** context → Set<consumptionId>. */
-  private readonly byContext = new Map<ClinicalConsumptionContext, Set<string>>();
-  /** patientId → Set<consumptionId>. */
+  /** Context → Set<consumptionId>. */
+  private readonly byContext = new Map<
+    ClinicalConsumptionContext,
+    Set<string>
+  >();
+  /** PatientId → Set<consumptionId>. */
   private readonly byPatient = new Map<string, Set<string>>();
-  /** tenantId → next sequence. */
+  /** TenantId → next sequence. */
   private readonly counters = new Map<string, number>();
 
   /* ---------- ID üretimi ---------- */
@@ -87,13 +88,20 @@ export class ClinicalConsumptionRepository {
 
   /* ---------- Basit sorgular ---------- */
 
-  public findById(tenantId: string, id: string): ClinicalConsumptionRecord | null {
+  public findById(
+    tenantId: string,
+    id: string,
+  ): ClinicalConsumptionRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
   }
 
-  /** Üst klinik kayıt için tüketim listesi (ör. muayene ID'si). */
+  /**
+   * Üst klinik kayıt için tüketim listesi (ör. Muayene ID'si).
+   * @param tenantId
+   * @param contextRefId
+   */
   public listByContextRef(
     tenantId: string,
     contextRefId: string,
@@ -181,11 +189,7 @@ export class ClinicalConsumptionRepository {
 
   /* ---------- Private helpers ---------- */
 
-  private addToIndex<K>(
-    map: Map<K, Set<string>>,
-    key: K,
-    id: string,
-  ): void {
+  private addToIndex<K>(map: Map<K, Set<string>>, key: K, id: string): void {
     let set = map.get(key);
     if (!set) {
       set = new Set();

@@ -76,7 +76,9 @@ export class VaccineCardsRepository {
   }
 
   /** Record → public. */
-  public toPublic(rec: TenantVaccineCardSettingRecord): TenantVaccineCardPortalSetting {
+  public toPublic(
+    rec: TenantVaccineCardSettingRecord,
+  ): TenantVaccineCardPortalSetting {
     return {
       tenantId: rec.tenantId,
       portalVaccineCardEnabled: rec.portalVaccineCardEnabled,

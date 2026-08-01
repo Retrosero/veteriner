@@ -1,15 +1,15 @@
 /**
  * @file Request ID interceptor.
  * @module apps/api/common/interceptors/request-id
- *
  * @description Her isteğe bir correlation/request ID atar. İstemci
  * `X-Request-Id` başlığı gönderdiyse onu kullanır; aksi halde yeni
  * UUID üretir. Response header'ına yazılır. Logger ve audit altyapısı
  * bu ID ile ilişkilendirme yapar.
- *
  * @security ID formatı UUID v4; tahmin edilemez. Tek bir request
  * akışında sabit kalır; background job'lar için jobId ayrıca üretilir.
  */
+
+import { randomUUID } from "node:crypto";
 
 import {
   CallHandler,
@@ -17,9 +17,8 @@ import {
   Injectable,
   NestInterceptor,
 } from "@nestjs/common";
-import { randomUUID } from "node:crypto";
-import { Observable } from "rxjs";
 import { Request, Response } from "express";
+import { Observable } from "rxjs";
 
 export const REQUEST_ID_HEADER = "x-request-id";
 

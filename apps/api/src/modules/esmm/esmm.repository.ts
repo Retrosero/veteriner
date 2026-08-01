@@ -12,13 +12,8 @@
 
 import { Injectable } from "@nestjs/common";
 
-import type {
-  EsmmDocumentRecord,
-} from "../../common/esmm/esmm.types.js";
-import type {
-  EsmmDocumentStatus,
-  EsmmDocumentType,
-} from "@vetniva/contracts";
+import type { EsmmDocumentRecord } from "../../common/esmm/esmm.types.js";
+import type { EsmmDocumentStatus, EsmmDocumentType } from "@vetniva/contracts";
 
 /** Patch tipi. */
 export interface EsmmDocumentPatch {
@@ -64,10 +59,7 @@ export class EsmmDocumentsRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): EsmmDocumentRecord | null {
+  public findById(tenantId: string, id: string): EsmmDocumentRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -100,10 +92,8 @@ export class EsmmDocumentsRepository {
       if (rec.tenantId !== tenantId) continue;
       if (filters.type && rec.type !== filters.type) continue;
       if (filters.status && rec.status !== filters.status) continue;
-      if (filters.sourceType && rec.sourceType !== filters.sourceType)
-        continue;
-      if (filters.sourceId && rec.sourceId !== filters.sourceId)
-        continue;
+      if (filters.sourceType && rec.sourceType !== filters.sourceType) continue;
+      if (filters.sourceId && rec.sourceId !== filters.sourceId) continue;
       if (needle) {
         const hay = [
           rec.id,

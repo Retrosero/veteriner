@@ -2,7 +2,13 @@
   "$schema": "https://turbo.build/schema.json",
   "ui": "stream",
   "globalDependencies": [".env", ".env.local"],
-  "globalEnv": ["NODE_ENV", "APP_VERSION", "DATABASE_URL", "REDIS_URL"],
+  "globalEnv": [
+    "NODE_ENV",
+    "APP_VERSION",
+    "DATABASE_URL",
+    "DATABASE_MIGRATOR_URL",
+    "REDIS_URL"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -26,13 +32,19 @@
       "outputs": ["coverage/**"]
     },
     "e2e:smoke": {
+      "dependsOn": ["build"],
       "cache": false,
-      "outputs": []
+      "outputs": [],
+      "env": ["E2E_BASE_URL"]
     },
     "db:generate": {
       "outputs": ["node_modules/.prisma/**", "src/generated/**"]
     },
     "db:migrate": {
+      "cache": false,
+      "outputs": []
+    },
+    "db:verify-runtime-role": {
       "cache": false,
       "outputs": []
     },

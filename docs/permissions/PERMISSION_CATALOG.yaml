@@ -69,7 +69,6 @@ roles:
     self_only_scope: owner_id
 
 permissions:
-
   # ----------------------------------------------------------------
   # COMMON — Genel
   # ----------------------------------------------------------------
@@ -2670,61 +2669,9 @@ permissions:
     applies_to_roles: [OWNER]
     notes: "Pilot kapsamda export endpoint'i Faz 8'de eklenecek."
 
-# ----------------------------------------------------------------
-# GOAL-118 (FAZ-11) pilot temizliği: toplu eklenen permission'lar
-# ----------------------------------------------------------------
-  - permission: "auth:is"
-    description: "auth:is (FAZ-11 stub)."
-    resource_type: _self
-    action: is
-    tenant_scope: required
-    branch_scope: not_required
-    self_only: false
-    audit: false
-    pii: false
-    amend: false
-    system_only: false
-    applies_to_roles: ['OWNER', 'VETERINARIAN', 'STAFF']
-    notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
-  - permission: "aws:kms"
-    description: "aws:kms (FAZ-11 stub)."
-    resource_type: _self
-    action: kms
-    tenant_scope: not_required
-    branch_scope: not_required
-    self_only: false
-    audit: false
-    pii: false
-    amend: false
-    system_only: true
-    applies_to_roles: ['SUPERADMIN']
-    notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
-  - permission: "billing:invoice:read"
-    description: "billing:invoice:read (FAZ-11 stub)."
-    resource_type: invoice
-    action: read
-    tenant_scope: required
-    branch_scope: not_required
-    self_only: false
-    audit: false
-    pii: false
-    amend: false
-    system_only: false
-    applies_to_roles: ['OWNER', 'VETERINARIAN', 'STAFF']
-    notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
-  - permission: "billing:payment:create"
-    description: "billing:payment:create (FAZ-11 stub)."
-    resource_type: payment
-    action: create
-    tenant_scope: required
-    branch_scope: not_required
-    self_only: false
-    audit: false
-    pii: false
-    amend: false
-    system_only: false
-    applies_to_roles: ['OWNER', 'VETERINARIAN', 'STAFF']
-    notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
+  # ----------------------------------------------------------------
+  # GOAL-118 (FAZ-11) pilot temizliği: toplu eklenen permission'lar
+  # ----------------------------------------------------------------
   - permission: "cash_register:movement:export"
     description: "cash_register:movement:export (FAZ-11 stub)."
     resource_type: movement
@@ -2736,7 +2683,7 @@ permissions:
     pii: false
     amend: false
     system_only: false
-    applies_to_roles: ['OWNER', 'VETERINARIAN', 'STAFF']
+    applies_to_roles: ["OWNER", "VETERINARIAN", "STAFF"]
     notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
   - permission: "cash_register:movement:read"
     description: "cash_register:movement:read (FAZ-11 stub)."
@@ -2749,7 +2696,7 @@ permissions:
     pii: false
     amend: false
     system_only: false
-    applies_to_roles: ['OWNER', 'VETERINARIAN', 'STAFF']
+    applies_to_roles: ["OWNER", "VETERINARIAN", "STAFF"]
     notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
   - permission: "cash_register:session:close"
     description: "cash_register:session:close (FAZ-11 stub)."
@@ -2762,7 +2709,7 @@ permissions:
     pii: false
     amend: false
     system_only: false
-    applies_to_roles: ['OWNER', 'VETERINARIAN', 'STAFF']
+    applies_to_roles: ["OWNER", "VETERINARIAN", "STAFF"]
     notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
   - permission: "cash_register:session:open"
     description: "cash_register:session:open (FAZ-11 stub)."
@@ -2775,7 +2722,7 @@ permissions:
     pii: false
     amend: false
     system_only: false
-    applies_to_roles: ['OWNER', 'VETERINARIAN', 'STAFF']
+    applies_to_roles: ["OWNER", "VETERINARIAN", "STAFF"]
     notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
   - permission: "cash_register:session:read"
     description: "cash_register:session:read (FAZ-11 stub)."
@@ -2788,7 +2735,7 @@ permissions:
     pii: false
     amend: false
     system_only: false
-    applies_to_roles: ['OWNER', 'VETERINARIAN', 'STAFF']
+    applies_to_roles: ["OWNER", "VETERINARIAN", "STAFF"]
     notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
   - permission: "cash_register:session:reopen"
     description: "cash_register:session:reopen (FAZ-11 stub)."
@@ -2801,246 +2748,47 @@ permissions:
     pii: false
     amend: false
     system_only: false
-    applies_to_roles: ['OWNER', 'VETERINARIAN', 'STAFF']
+    applies_to_roles: ["OWNER", "VETERINARIAN", "STAFF"]
     notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
-  - permission: "clinic:lab_order:read"
-    description: "clinic:lab_order:read (FAZ-11 stub)."
-    resource_type: lab_order
-    action: read
-    tenant_scope: required
-    branch_scope: not_required
-    self_only: false
-    audit: false
-    pii: false
-    amend: false
-    system_only: false
-    applies_to_roles: ['OWNER', 'VETERINARIAN', 'STAFF']
-    notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
-  - permission: "clinic:lab_result:create"
-    description: "clinic:lab_result:create (FAZ-11 stub)."
-    resource_type: lab_result
-    action: create
-    tenant_scope: required
-    branch_scope: not_required
-    self_only: false
-    audit: false
-    pii: false
-    amend: false
-    system_only: false
-    applies_to_roles: ['OWNER', 'VETERINARIAN', 'STAFF']
-    notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
-  - permission: "clinic:vaccine:apply"
-    description: "clinic:vaccine:apply (FAZ-11 stub)."
-    resource_type: vaccine
-    action: apply
-    tenant_scope: required
-    branch_scope: not_required
-    self_only: false
-    audit: false
-    pii: false
-    amend: false
-    system_only: false
-    applies_to_roles: ['OWNER', 'VETERINARIAN', 'STAFF']
-    notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
-  - permission: "expiring:lot"
-    description: "expiring:lot (FAZ-11 stub)."
-    resource_type: _self
-    action: lot
-    tenant_scope: required
-    branch_scope: not_required
-    self_only: false
-    audit: false
-    pii: false
-    amend: false
-    system_only: false
-    applies_to_roles: ['OWNER', 'VETERINARIAN', 'STAFF']
-    notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
-  - permission: "feature-flag:module:update"
-    description: "feature-flag:module:update (FAZ-11 stub)."
-    resource_type: module
-    action: update
-    tenant_scope: required
-    branch_scope: not_required
-    self_only: false
-    audit: false
-    pii: false
-    amend: false
-    system_only: false
-    applies_to_roles: ['OWNER', 'VETERINARIAN', 'STAFF']
-    notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
-  - permission: "feature-flag:require-module"
-    description: "feature-flag:require-module (FAZ-11 stub)."
-    resource_type: _self
-    action: require-module
-    tenant_scope: not_required
-    branch_scope: not_required
-    self_only: false
-    audit: false
-    pii: false
-    amend: false
-    system_only: true
-    applies_to_roles: ['SUPERADMIN']
-    notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
-  - permission: "inventory:stock:read"
-    description: "inventory:stock:read (FAZ-11 stub)."
-    resource_type: stock
-    action: read
-    tenant_scope: required
-    branch_scope: not_required
-    self_only: false
-    audit: false
-    pii: false
-    amend: false
-    system_only: false
-    applies_to_roles: ['OWNER', 'VETERINARIAN', 'STAFF']
-    notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
-  - permission: "inventory:stock:write"
-    description: "inventory:stock:write (FAZ-11 stub)."
-    resource_type: stock
-    action: write
-    tenant_scope: required
-    branch_scope: not_required
-    self_only: false
-    audit: false
-    pii: false
-    amend: false
-    system_only: false
-    applies_to_roles: ['OWNER', 'VETERINARIAN', 'STAFF']
-    notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
-  # NOT: Eski "low", "auth:is", "portal:is", "expiring:lot" gibi
-  # case-sensitive truncation'lar kaldırıldı. Tam isimler
-  # PERMISSION_MATRIX.md'de backtick'li olarak bulunur.
-  - permission: "portal:is"
-    description: "portal:is (FAZ-11 stub)."
-    resource_type: _self
-    action: is
-    tenant_scope: required
-    branch_scope: not_required
-    self_only: false
-    audit: false
-    pii: false
-    amend: false
-    system_only: false
-    applies_to_roles: ['OWNER', 'VETERINARIAN', 'STAFF']
-    notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
-  - permission: "rbac:permissions"
-    description: "rbac:permissions (FAZ-11 stub)."
-    resource_type: _self
-    action: permissions
-    tenant_scope: not_required
-    branch_scope: not_required
-    self_only: false
-    audit: false
-    pii: false
-    amend: false
-    system_only: true
-    applies_to_roles: ['SUPERADMIN']
-    notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
-  - permission: "rbac:role"
-    description: "rbac:role (FAZ-11 stub)."
-    resource_type: _self
-    action: role
-    tenant_scope: required
-    branch_scope: not_required
-    self_only: false
-    audit: false
-    pii: false
-    amend: false
-    system_only: false
-    applies_to_roles: ['OWNER', 'VETERINARIAN', 'STAFF']
-    notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
-  - permission: "rbac:roles"
-    description: "rbac:roles (FAZ-11 stub)."
-    resource_type: _self
-    action: roles
-    tenant_scope: not_required
-    branch_scope: not_required
-    self_only: false
-    audit: false
-    pii: false
-    amend: false
-    system_only: true
-    applies_to_roles: ['SUPERADMIN']
-    notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
-  - permission: "superadmin:tenant:create"
-    description: "superadmin:tenant:create (FAZ-11 stub)."
-    resource_type: tenant
-    action: create
-    tenant_scope: required
-    branch_scope: not_required
-    self_only: false
-    audit: false
-    pii: false
-    amend: false
-    system_only: false
-    applies_to_roles: ['OWNER', 'VETERINARIAN', 'STAFF']
-    notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
-  - permission: "superadmin:tenant:read"
-    description: "superadmin:tenant:read (FAZ-11 stub)."
-    resource_type: tenant
-    action: read
-    tenant_scope: required
-    branch_scope: not_required
-    self_only: false
-    audit: false
-    pii: false
-    amend: false
-    system_only: false
-    applies_to_roles: ['OWNER', 'VETERINARIAN', 'STAFF']
-    notes: "GOAL-118 pilot temizliği kapsamında otomatik eklendi."
-
 
 # =============================================================================
 # TOPLAMLAR (otomatik hesaplanır, referans için)
 # =============================================================================
 summary:
-  total_permissions: 161
+  total_permissions: 192
   by_action:
-    read: 35
-    create: 28
-    update: 30
-    archive: 17
-    export: 16
-    acknowledge: 10
+    read: 52
+    create: 37
+    update: 44
+    archive: 22
+    export: 23
+    amend: 7
+    cancel: 1
+    close: 1
+    open: 1
+    reopen: 1
+    acknowledge: 1
     manage: 2
   by_role:
-    SUPERADMIN: 12
-    OWNER: 94
-    VETERINARIAN: 84
-    STAFF: 60
-    PET_OWNER_PORTAL: 20
+    SUPERADMIN: 25
+    OWNER: 155
+    VETERINARIAN: 108
+    STAFF: 96
+    PET_OWNER_PORTAL: 24
   by_module:
-    common: 6
+    common: 7
     tenant: 4
     branch: 4
     user: 5
     role: 3
     auth: 5
-    clinic_owner: 6
-    clinic_patient: 6
-    clinic_appointment: 7
-    clinic_examination: 5
-    clinic_soap: 4
-    clinic_vaccination: 4
-    clinic_prescription: 6
-    clinic_surgery: 8
-    clinic_consent: 2
-    clinic_anesthesia: 4
-    clinic_hospitalization: 5
-    clinic_lab: 6
-    clinic_imaging: 6
-    clinic_stock: 5
-    petshop_config: 2
-    petshop_product: 5
-    catalog_product: 5
-    inventory: 31
-    petshop_stock: 5
-    petshop_sale: 4
-    clinic_payment: 3
-    petshop_payment: 3
+    clinic: 81
+    petshop: 19
+    catalog: 9
+    inventory: 29
     cash: 2
+    cash_register: 6
     portal: 8
-    report: 4
     audit: 2
     file: 3
     pricing: 5

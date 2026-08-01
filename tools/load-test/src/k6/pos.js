@@ -3,48 +3,46 @@
 // Profil: pilot (10 VU, 2dk — pilot dogrulama)
 // Bu dosya elle degistirilmemelidir; ureticiden gelir.
 
-import { vetPost, check, jitterSleep } from './shared.js';
+import { vetPost, check, jitterSleep } from "./shared.js";
 
 export const options = {
   vus: 10,
-  duration: '2m',
+  duration: "2m",
   thresholds: {
     // k6 tarafinda hizli baseline; detayli kontrol TypeScript
     // tarafinda (evaluateScenario) yapilir.
-    http_req_failed: ['rate<0.05'],
-    http_req_duration: ['p(95)<2000'],
+    http_req_failed: ["rate<0.05"],
+    http_req_duration: ["p(95)<2000"],
   },
-  tags: { suite: 'vetniva-load-test' },
+  tags: { suite: "vetniva-load-test" },
 };
 
 export default async function () {
   // step 1: create_sale_draft
-  const res0 = vetPost(
-    "/api/v1/clinic/sales",
-    {
-  "items": [],
-  "branchId": "{branchId}"
-},
-  );
+  const res0 = vetPost("/api/v1/clinic/sales", {
+    items: [],
+    branchId: "{branchId}",
+  });
   check(res0, {
-    'create_sale_draft_status_201': (r) => r.status === 201,
-    'create_sale_draft_no_pii_leak': (r) => !/[\\w.+-]+@[\\w-]+\\.[\\w.-]+|\\b[5-9]\\d{9}[0-9]\\b|\\b0?5\\d{9}\\b/.test(typeof r.body === 'string' ? r.body : ''),
+    create_sale_draft_status_201: (r) => r.status === 201,
+    create_sale_draft_no_pii_leak: (r) =>
+      !/[\\w.+-]+@[\\w-]+\\.[\\w.-]+|\\b[5-9]\\d{9}[0-9]\\b|\\b0?5\\d{9}\\b/.test(
+        typeof r.body === "string" ? r.body : "",
+      ),
   });
   jitterSleep(50, 200);
-
 
   // step 2: add_item
-  const res1 = vetPost(
-    "/api/v1/clinic/sales/{saleId}/items",
-    {
-  "productId": "{productId}",
-  "quantity": 1
-},
-  );
+  const res1 = vetPost("/api/v1/clinic/sales/{saleId}/items", {
+    productId: "{productId}",
+    quantity: 1,
+  });
   check(res1, {
-    'add_item_status_201': (r) => r.status === 201,
-    'add_item_no_pii_leak': (r) => !/[\\w.+-]+@[\\w-]+\\.[\\w.-]+|\\b[5-9]\\d{9}[0-9]\\b|\\b0?5\\d{9}\\b/.test(typeof r.body === 'string' ? r.body : ''),
+    add_item_status_201: (r) => r.status === 201,
+    add_item_no_pii_leak: (r) =>
+      !/[\\w.+-]+@[\\w-]+\\.[\\w.-]+|\\b[5-9]\\d{9}[0-9]\\b|\\b0?5\\d{9}\\b/.test(
+        typeof r.body === "string" ? r.body : "",
+      ),
   });
   jitterSleep(50, 200);
-
 }

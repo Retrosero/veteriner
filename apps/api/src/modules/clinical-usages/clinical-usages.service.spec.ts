@@ -1,7 +1,6 @@
 /**
  * @file ClinicalUsagesService unit testleri.
  * @module apps/api/modules/clinical-usages/clinical-usages.service.spec
- *
  * @description GOAL-066 klinik tüketimden otomatik stok düşümü
  *   service testleri.
  *   - recordUsage (purchaseTracked → clinical_use hareketi).
@@ -11,27 +10,26 @@
  *     (stok hareketi yeniden oluşmaz).
  *   - idempotency: aynı key + farklı body → 409 VET-CLINICAL-USE-0005.
  *   - Cross-tenant IDOR → null; cross-tenant create 403.
- *
  * @since GOAL-066 (FAZ-6) klinik tüketimden otomatik stok düşümü core
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ClinicalUsagesRepository } from "./clinical-usages.repository.js";
+import { ClinicalUsagesService } from "./clinical-usages.service.js";
+import { InventoryRepository } from "../inventory/inventory.repository.js";
+import { InventoryService } from "../inventory/inventory.service.js";
+import { ProductsRepository } from "../products/products.repository.js";
+import { ProductsService } from "../products/products.service.js";
+import { StockMovementsRepository } from "../stock-movements/stock-movements.repository.js";
+import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-
-import { ClinicalUsagesService } from "./clinical-usages.service.js";
-import { ClinicalUsagesRepository } from "./clinical-usages.repository.js";
-import { ProductsService } from "../products/products.service.js";
-import { ProductsRepository } from "../products/products.repository.js";
-import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
-import { StockMovementsRepository } from "../stock-movements/stock-movements.repository.js";
-import { InventoryService } from "../inventory/inventory.service.js";
-import { InventoryRepository } from "../inventory/inventory.repository.js";
 import type {
   ClinicalUsageCreateInput,
+  ProductCreateInput,
 } from "@vetniva/contracts";
-import type { ProductCreateInput } from "@vetniva/contracts";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -62,6 +60,9 @@ const STAFF_B: ActorContext = {
   source: "header",
 };
 
+/**
+ *
+ */
 function makeAudit(): AuditService {
   return {
     record: vi.fn().mockResolvedValue({ eventId: "ev-1" }),
@@ -80,6 +81,10 @@ function makeAudit(): AuditService {
   } as unknown as AuditService;
 }
 
+/**
+ *
+ * @param overrides
+ */
 function makeProductInput(
   overrides: Partial<ProductCreateInput> = {},
 ): ProductCreateInput {
@@ -99,6 +104,11 @@ function makeProductInput(
   };
 }
 
+/**
+ *
+ * @param productId
+ * @param overrides
+ */
 function makeUsageInput(
   productId: string,
   overrides: Partial<ClinicalUsageCreateInput> = {},
@@ -106,9 +116,7 @@ function makeUsageInput(
   return {
     sourceType: "examination",
     sourceId: "exam-001",
-    lines: [
-      { productId, unit: "unit", quantity: "3" },
-    ],
+    lines: [{ productId, unit: "unit", quantity: "3" }],
     ...overrides,
   };
 }
@@ -144,6 +152,12 @@ describe("ClinicalUsagesService", () => {
     );
   });
 
+  /**
+   *
+   * @param sku
+   * @param kind
+   * @param purchaseTracked
+   */
   async function seedProduct(
     sku: string,
     kind: ProductCreateInput["kind"] = "stock_product",
@@ -176,11 +190,9 @@ describe("ClinicalUsagesService", () => {
       expect(out.usage.sourceType).toBe("examination");
       expect(out.lines.length).toBe(1);
       // Bakiye: -3 (3 adet tüketildi)
-      const balances = await stockService.listBalances(
-        TENANT_A,
-        STAFF_A,
-        { productId: pid },
-      );
+      const balances = stockService.listBalances(TENANT_A, STAFF_A, {
+        productId: pid,
+      });
       expect(balances.items[0]?.netQuantity).toBe("-3");
       expect(audit.recordSimple).toHaveBeenCalledWith(
         "audit:clinical_usage.create",
@@ -194,22 +206,16 @@ describe("ClinicalUsagesService", () => {
     });
 
     it("purchaseTracked=false ürün için stok hareketi oluşmaz", async () => {
-      const pid = await seedProduct(
-        "CU-2",
-        "consumable",
-        false,
-      );
+      const pid = await seedProduct("CU-2", "consumable", false);
       const out = await service.recordUsage(
         TENANT_A,
         makeUsageInput(pid, { sourceType: "surgery", sourceId: "s-1" }),
         STAFF_A,
       );
       expect(out.lines.length).toBe(1);
-      const balances = await stockService.listBalances(
-        TENANT_A,
-        STAFF_A,
-        { productId: pid },
-      );
+      const balances = stockService.listBalances(TENANT_A, STAFF_A, {
+        productId: pid,
+      });
       expect(balances.items.length).toBe(0);
     });
 
@@ -291,11 +297,9 @@ describe("ClinicalUsagesService", () => {
       );
       expect(second.usage.id).toBe(first.usage.id);
       // Bakiye hâlâ -3 (toplam tek hareket).
-      const balances = await stockService.listBalances(
-        TENANT_A,
-        STAFF_A,
-        { productId: pid },
-      );
+      const balances = stockService.listBalances(TENANT_A, STAFF_A, {
+        productId: pid,
+      });
       expect(balances.items[0]?.netQuantity).toBe("-3");
     });
 

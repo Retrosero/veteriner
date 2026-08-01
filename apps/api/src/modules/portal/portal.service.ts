@@ -32,12 +32,17 @@
  * @since GOAL-025 (FAZ-2) portal erişim daveti
  */
 
-import { Injectable, Logger } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import { Injectable, Logger } from "@nestjs/common";
+
+import { PortalRepository } from "./portal.repository.js";
 import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
+import { OwnersService } from "../owners/owners.service.js";
+import { PatientsService } from "../patients/patients.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   PortalAcceptInput,
   PortalAcceptResult,
@@ -45,11 +50,6 @@ import type {
   PortalInviteInput,
   PortalUser,
 } from "../../common/portal/portal.types.js";
-
-import { OwnersService } from "../owners/owners.service.js";
-import { PatientsService } from "../patients/patients.service.js";
-
-import { PortalRepository } from "./portal.repository.js";
 
 /** Davet expiration üst sınırı (gün). */
 export const PORTAL_INVITE_MAX_DAYS = 30;
@@ -221,7 +221,10 @@ export class PortalService {
 
     const now = new Date();
     const expiresAtMs = new Date(inv.expiresAt).getTime();
-    if (inv.status === "expired" || (inv.status === "pending" && expiresAtMs <= now.getTime())) {
+    if (
+      inv.status === "expired" ||
+      (inv.status === "pending" && expiresAtMs <= now.getTime())
+    ) {
       // Pending ama süresi geçmiş → 410. Idempotent: status'ü expired olarak işaretle.
       if (inv.status === "pending") {
         const expired: PortalInvitation = { ...inv, status: "expired" };

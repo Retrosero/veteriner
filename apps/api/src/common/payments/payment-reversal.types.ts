@@ -55,9 +55,7 @@ export interface PaymentReversalRecord {
 export type { PaymentReverseReason, PaymentReversal };
 
 /** Record → public PaymentReversal. */
-export function toPaymentReversal(
-  rec: PaymentReversalRecord,
-): PaymentReversal {
+export function toPaymentReversal(rec: PaymentReversalRecord): PaymentReversal {
   return {
     id: rec.id,
     tenantId: rec.tenantId,
@@ -145,7 +143,11 @@ export function validateReversalAmount(
   const scaledAmount = reversalAmountToScaled(amount);
   const scaledPayment = reversalAmountToScaled(paymentAmount);
   const scaledReversed = reversalAmountToScaled(currentReversedTotal);
-  if (scaledAmount === null || scaledPayment === null || scaledReversed === null) {
+  if (
+    scaledAmount === null ||
+    scaledPayment === null ||
+    scaledReversed === null
+  ) {
     return { ok: false, code: "VET-PAYMENT-0007" };
   }
   if (scaledAmount <= BigInt(0)) {

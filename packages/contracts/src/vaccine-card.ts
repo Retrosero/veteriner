@@ -34,9 +34,9 @@
 
 import { z } from "zod";
 
+import { speciesSchema } from "./patient.js";
 import { vaccineApplicationSchema } from "./vaccine-application.js";
 import { vaccineProtocolSchema } from "./vaccine.js";
-import { speciesSchema } from "./patient.js";
 
 /** ISO `YYYY-MM-DD` formatı. */
 const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;

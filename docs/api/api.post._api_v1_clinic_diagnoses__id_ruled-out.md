@@ -56,8 +56,9 @@ teşhisler de elenebilir (FAZ-4 istisnası).
   problem listesinde görünmez (default `?status=active+chronic`).
 
 **Tenant izolasyonu:** Service `requireTenantScope(actor, tenantId)`
-+ `findById(tenantId, id)` tenant-scoped; cross-tenant denemesi →
-403 `VET-AUTHZ-0001` veya 404 `VET-CLINIC-0001`.
+
+- `findById(tenantId, id)` tenant-scoped; cross-tenant denemesi →
+  403 `VET-AUTHZ-0001` veya 404 `VET-CLINIC-0001`.
 
 **İlgili dokümanlar:**
 

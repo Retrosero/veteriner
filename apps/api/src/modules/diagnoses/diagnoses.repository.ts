@@ -1,19 +1,21 @@
 /**
  * @file Diagnosis (teşhis) repository (in-memory).
  * @module apps/api/modules/diagnoses/diagnoses.repository
- *
  * @description GOAL-043 teşhis kayıt veri erişim katmanı. DB migration
  * sonraya bırakıldı; tenant-scoped in-memory Map kullanılır.
  * Production'a geçişte Prisma repository'si ile değiştirilecek
  * (API sözleşmesi sabit kalır).
- *
  * @security Tüm sorgular tenantId ile filtrelenir. RLS olmadığı
  *   için uygulama katmanı tenant izolasyonundan sorumludur.
- *
  * @since GOAL-043 (FAZ-4) teşhis ve problem listesi core
  */
 
 import { Injectable } from "@nestjs/common";
+
+import {
+  toDiagnosis,
+  type DiagnosisRecord,
+} from "../../common/diagnoses/diagnosis.types.js";
 
 import type {
   Diagnosis,
@@ -21,17 +23,12 @@ import type {
   DiagnosisStatus,
 } from "@vetniva/contracts";
 
-import {
-  toDiagnosis,
-  type DiagnosisRecord,
-} from "../../common/diagnoses/diagnosis.types.js";
-
 // Re-export internal record tipini module barrel'ı için dışa aç.
 export type { DiagnosisRecord };
 
 @Injectable()
 export class DiagnosesRepository {
-  /** key: id → record. */
+  /** Key: id → record. */
   private readonly byId = new Map<string, DiagnosisRecord>();
   /** Her tenant için id counter. */
   private readonly counters = new Map<string, number>();
@@ -47,10 +44,7 @@ export class DiagnosesRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): DiagnosisRecord | null {
+  public findById(tenantId: string, id: string): DiagnosisRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -59,6 +53,8 @@ export class DiagnosesRepository {
   /**
    * Bir muayeneye bağlı tüm aktif (archivedAt=null) teşhisleri
    * sıralı getirir.
+   * @param tenantId
+   * @param examinationId
    */
   public findByExaminationId(
     tenantId: string,
@@ -79,6 +75,11 @@ export class DiagnosesRepository {
    * Bir hastanın tüm muayenelerinden teşhisleri toplar. Opsiyonel
    * status filtresi uygulanır. Arşivlenmiş kayıtlar default olarak
    * gizlenir.
+   * @param tenantId
+   * @param patientId
+   * @param filters
+   * @param filters.status
+   * @param filters.includeArchived
    */
   public findByPatientId(
     tenantId: string,
@@ -103,6 +104,15 @@ export class DiagnosesRepository {
   /**
    * Kısmi güncelleme. `undefined` atlanır; `null` açıkça null yapar.
    * Sadece izin verilen alanlar patch'e kabul edilir.
+   * @param tenantId
+   * @param id
+   * @param patch
+   * @param patch.status
+   * @param patch.category
+   * @param patch.notes
+   * @param patch.code
+   * @param patch.resolvedAt
+   * @param patch.archivedAt
    */
   public update(
     tenantId: string,
@@ -138,7 +148,10 @@ export class DiagnosesRepository {
   }
 }
 
-/** Record → public Diagnosis. */
+/**
+ * Record → public Diagnosis.
+ * @param rec
+ */
 export function toDiagnosisPublic(rec: DiagnosisRecord): Diagnosis {
   return toDiagnosis(rec);
 }

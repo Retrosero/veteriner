@@ -27,12 +27,7 @@ export interface LabResultPatch {
   abnormalFlag?: LabAbnormalFlag | undefined;
   attachments?: string[] | undefined;
   notes?: string | null | undefined;
-  status?:
-    | "draft"
-    | "pending_review"
-    | "approved"
-    | "amended"
-    | undefined;
+  status?: "draft" | "pending_review" | "approved" | "amended" | undefined;
   reviewedBy?: string | null | undefined;
   reviewedAt?: string | null | undefined;
   reviewNotes?: string | null | undefined;
@@ -58,20 +53,14 @@ export class LabResultsRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): LabResultRecord | null {
+  public findById(tenantId: string, id: string): LabResultRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
   }
 
   /** Order için tüm revizyonları döner (en yeni önce). */
-  public listByOrder(
-    tenantId: string,
-    labOrderId: string,
-  ): LabResultRecord[] {
+  public listByOrder(tenantId: string, labOrderId: string): LabResultRecord[] {
     const out: LabResultRecord[] = [];
     for (const rec of this.byId.values()) {
       if (rec.tenantId === tenantId && rec.labOrderId === labOrderId) {

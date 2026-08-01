@@ -6,15 +6,18 @@
 **Sayfa:** `/[locale]/clinic/calendar/new`
 
 ## Amaç
+
 Belirli bir tarih/saatte belirli bir hayvan için randevu
 rezerve etmek. Klinik takvimi üzerinden slot seçilir.
 
 ## Aktör
+
 - VETERINARIAN
 - STAFF (resepsiyon)
 - OWNER (kendi hayvanı için self-service)
 
 ## Tetikleyici
+
 - Hayvan sahibi telefonla/içeriden randevu talep eder.
 - Klinik dashboard'unda "yeni randevu" butonuna tıklanır.
 - Portal self-service randevu talebi (GOAL-035) onaylanır.
@@ -66,24 +69,27 @@ rezerve etmek. Klinik takvimi üzerinden slot seçilir.
 12. **UI randevu detay sayfasına yönlendirir.**
 
 ## Tenant izolasyonu
+
 - Patient + veterinarian + branch aynı tenant'ta olmalı.
 - Cross-tenant → 404 `VET-CLINIC-0001`.
 
 ## Audit
+
 - `audit:appointment.create` (info).
 - `audit:appointment_notification.schedule` (info; hatırlatma).
 
 ## Hata senaryoları
 
-| Senaryo | HTTP | Hata kodu |
-|---------|------|-----------|
-| Slot çakışması | 409 | `VET-APPT-0005` |
-| Çalışma saati dışı | 422 | `VET-APPT-0003` |
-| End < start | 422 | `VET-APPT-0001` |
-| Geçersiz tarih | 422 | `VET-APPT-0004` |
-| Yetkisiz | 403 | `VET-AUTHZ-0001` |
+| Senaryo            | HTTP | Hata kodu        |
+| ------------------ | ---- | ---------------- |
+| Slot çakışması     | 409  | `VET-APPT-0005`  |
+| Çalışma saati dışı | 422  | `VET-APPT-0003`  |
+| End < start        | 422  | `VET-APPT-0001`  |
+| Geçersiz tarih     | 422  | `VET-APPT-0004`  |
+| Yetkisiz           | 403  | `VET-AUTHZ-0001` |
 
 ## İlgili dokümanlar
+
 - `docs/api/api.post._api_v1_calendar_appointments.md`
 - `goals/GOAL-031_COMPLETION_REPORT.md`
 - `goals/GOAL-036_COMPLETION_REPORT.md` (hatırlatma)

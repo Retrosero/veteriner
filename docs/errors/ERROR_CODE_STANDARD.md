@@ -1,15 +1,27 @@
 # @file Hata Kodu Standardı.
+
 # @module docs/errors/ERROR_CODE_STANDARD
+
 #
+
 # @description VetNiva'nın tüm API ve UI hata kodları için
+
 # standart. Format, prefix, domain listesi, severity
+
 # seviyesi, HTTP eşlemesi ve CI doğrulama kuralları.
+
 #
+
 # @author GOAL-004 (FAZ-0) hata kodu standardı
+
 # @since 2026-07-30
+
 # @security Hata kodları bilgi sızdırmaz yapıda olmalı;
-#   cross-tenant erişim denemeleri 404 ile eşleşir (kod
-#   detayı verilmez).
+
+# cross-tenant erişim denemeleri 404 ile eşleşir (kod
+
+# detayı verilmez).
+
 # =============================================================================
 
 # Hata Kodu Standardı
@@ -45,74 +57,74 @@ VET-<MODULE>-<NNN>
 Aşağıdaki modüller tanımlıdır. Yeni modül eklemek için bu
 listeye eklenmeli ve `pnpm docs:check` güncellenmelidir.
 
-| Modül | Açıklama | Örnek kod |
-| --- | --- | --- |
-| `COMMON` | Genel sunucu/istem hataları | `VET-COMMON-0001` |
-| `VALIDATION` | Form/alan doğrulama | `VET-VALIDATION-0001` |
-| `AUTH` | Kimlik doğrulama, oturum, davet | `VET-AUTH-0001` |
-| `AUTHZ` | Yetkilendirme (RBAC, tenant) | `VET-AUTHZ-0001` |
-| `TENANT` | Tenant yönetimi | `VET-TENANT-0001` |
-| `BRANCH` | Şube yönetimi | `VET-BRANCH-0001` |
-| `USER` | Kullanıcı yönetimi | `VET-USER-0001` |
-| `ROLE` | Rol yönetimi | `VET-ROLE-0001` |
-| `COUNTRY` | Ülke adaptörü | `VET-COUNTRY-0001` |
-| `CLINIC` | Klinik genel (owner, patient) | `VET-CLINIC-0001` |
-| `APPT` | Randevu | `VET-APPT-0001` |
-| `EXAM` | Muayene | `VET-EXAM-0001` |
-| `SOAP` | SOAP notu | `VET-SOAP-0001` |
-| `VACC` | Aşı | `VET-VACC-0001` |
-| `PRESC` | Reçete | `VET-PRESC-0001` |
-| `SURG` | Ameliyat | `VET-SURG-0001` |
-| `ANESTH` | Anestezi | `VET-ANESTH-0001` |
-| `HOSP` | Yatış | `VET-HOSP-0001` |
-| `LAB` | Laboratuvar | `VET-LAB-0001` |
-| `IMAG` | Görüntüleme | `VET-IMAG-0001` |
-| `STOCK` | Stok (klinik) | `VET-STOCK-0001` |
-| `PETSHOP` | Petshop genel | `VET-PETSHOP-0001` |
-| `PRODUCT` | Ürün kataloğu | `VET-PRODUCT-0001` |
-| `SALE` | Satış (POS) | `VET-SALE-0001` |
-| `PAYMENT` | Tahsilat | `VET-PAYMENT-0001` |
-| `CASH` | Kasa | `VET-CASH-0001` |
-| `CONSENT` | Onam | `VET-CONSENT-0001` |
-| `KVKK` | KVKK silme talepleri | `VET-KVKK-0001` |
-| `REPORT` | Raporlar | `VET-REPORT-0001` |
-| `AUDIT` | Audit log | `VET-AUDIT-0001` |
-| `FILE` | Dosya servisi | `VET-FILE-0001` |
-| `NOTIF` | Bildirim | `VET-NOTIF-0001` |
-| `PORTAL` | Portal özel | `VET-PORTAL-0001` |
-| `INTEGRATION` | Entegrasyon (dış API) | `VET-INTEGRATION-0001` |
-| `JOB` | Background job (BullMQ) | `VET-JOB-0001` |
-| `WORKER` | Worker process | `VET-WORKER-0001` |
-| `PRICING` | Fiyat listeleri ve hizmet ücretleri | `VET-PRICING-0001` |
+| Modül         | Açıklama                            | Örnek kod              |
+| ------------- | ----------------------------------- | ---------------------- |
+| `COMMON`      | Genel sunucu/istem hataları         | `VET-COMMON-0001`      |
+| `VALIDATION`  | Form/alan doğrulama                 | `VET-VALIDATION-0001`  |
+| `AUTH`        | Kimlik doğrulama, oturum, davet     | `VET-AUTH-0001`        |
+| `AUTHZ`       | Yetkilendirme (RBAC, tenant)        | `VET-AUTHZ-0001`       |
+| `TENANT`      | Tenant yönetimi                     | `VET-TENANT-0001`      |
+| `BRANCH`      | Şube yönetimi                       | `VET-BRANCH-0001`      |
+| `USER`        | Kullanıcı yönetimi                  | `VET-USER-0001`        |
+| `ROLE`        | Rol yönetimi                        | `VET-ROLE-0001`        |
+| `COUNTRY`     | Ülke adaptörü                       | `VET-COUNTRY-0001`     |
+| `CLINIC`      | Klinik genel (owner, patient)       | `VET-CLINIC-0001`      |
+| `APPT`        | Randevu                             | `VET-APPT-0001`        |
+| `EXAM`        | Muayene                             | `VET-EXAM-0001`        |
+| `SOAP`        | SOAP notu                           | `VET-SOAP-0001`        |
+| `VACC`        | Aşı                                 | `VET-VACC-0001`        |
+| `PRESC`       | Reçete                              | `VET-PRESC-0001`       |
+| `SURG`        | Ameliyat                            | `VET-SURG-0001`        |
+| `ANESTH`      | Anestezi                            | `VET-ANESTH-0001`      |
+| `HOSP`        | Yatış                               | `VET-HOSP-0001`        |
+| `LAB`         | Laboratuvar                         | `VET-LAB-0001`         |
+| `IMAG`        | Görüntüleme                         | `VET-IMAG-0001`        |
+| `STOCK`       | Stok (klinik)                       | `VET-STOCK-0001`       |
+| `PETSHOP`     | Petshop genel                       | `VET-PETSHOP-0001`     |
+| `PRODUCT`     | Ürün kataloğu                       | `VET-PRODUCT-0001`     |
+| `SALE`        | Satış (POS)                         | `VET-SALE-0001`        |
+| `PAYMENT`     | Tahsilat                            | `VET-PAYMENT-0001`     |
+| `CASH`        | Kasa                                | `VET-CASH-0001`        |
+| `CONSENT`     | Onam                                | `VET-CONSENT-0001`     |
+| `KVKK`        | KVKK silme talepleri                | `VET-KVKK-0001`        |
+| `REPORT`      | Raporlar                            | `VET-REPORT-0001`      |
+| `AUDIT`       | Audit log                           | `VET-AUDIT-0001`       |
+| `FILE`        | Dosya servisi                       | `VET-FILE-0001`        |
+| `NOTIF`       | Bildirim                            | `VET-NOTIF-0001`       |
+| `PORTAL`      | Portal özel                         | `VET-PORTAL-0001`      |
+| `INTEGRATION` | Entegrasyon (dış API)               | `VET-INTEGRATION-0001` |
+| `JOB`         | Background job (BullMQ)             | `VET-JOB-0001`         |
+| `WORKER`      | Worker process                      | `VET-WORKER-0001`      |
+| `PRICING`     | Fiyat listeleri ve hizmet ücretleri | `VET-PRICING-0001`     |
 
 ## 3. Severity Seviyesi
 
 Her hata kodu için severity seviyesi:
 
-| Seviye | HTTP | Anlam | Örnek |
-| --- | --- | --- | --- |
-| `info` | 200 | Bilgilendirme (nadiren hata) | `VET-AUTHZ-0002` (cross-tenant deneme, info) |
-| `warning` | 200/400 | Uyarı (beklenen hata) | `VET-VALIDATION-0001` |
-| `error` | 4xx/5xx | Kullanıcı hatası | `VET-CLINIC-0001` (404) |
-| `critical` | 5xx | Sistem hatası (acil müdahale) | `VET-COMMON-0001` (500) |
+| Seviye     | HTTP    | Anlam                         | Örnek                                        |
+| ---------- | ------- | ----------------------------- | -------------------------------------------- |
+| `info`     | 200     | Bilgilendirme (nadiren hata)  | `VET-AUTHZ-0002` (cross-tenant deneme, info) |
+| `warning`  | 200/400 | Uyarı (beklenen hata)         | `VET-VALIDATION-0001`                        |
+| `error`    | 4xx/5xx | Kullanıcı hatası              | `VET-CLINIC-0001` (404)                      |
+| `critical` | 5xx     | Sistem hatası (acil müdahale) | `VET-COMMON-0001` (500)                      |
 
 ## 4. HTTP Eşlemesi
 
 Hata kodu HTTP status code ile eşleşir:
 
-| HTTP | Kategori | Anlam | Örnek kod |
-| --- | --- | --- | --- |
-| 400 | `VALIDATION` | Geçersiz istek | `VET-VALIDATION-0001` |
-| 401 | `AUTH` | Kimlik doğrulama gerekli | `VET-AUTH-0001` |
-| 403 | `AUTHZ` | Yetki reddedildi | `VET-AUTHZ-0001` |
-| 404 | `*` (modüle göre) | Bulunamadı (bilgi sızdırmaz) | `VET-CLINIC-0001` |
-| 409 | `*` (modüle göre) | Çakışma | `VET-CLINIC-0002` (sahip zaten kayıtlı) |
-| 422 | `VALIDATION` | Doğrulama hatası | `VET-VALIDATION-0003` |
-| 429 | `COMMON` | Rate limit | `VET-COMMON-0006` |
-| 500 | `COMMON` | Sunucu hatası | `VET-COMMON-0001` |
-| 502 | `INTEGRATION` | Dış servis yanıt vermedi | `VET-INTEGRATION-0001` |
-| 503 | `COMMON` | Bakım modu | `VET-COMMON-0005` |
-| 504 | `COMMON` | Zaman aşımı | `VET-COMMON-0004` |
+| HTTP | Kategori          | Anlam                        | Örnek kod                               |
+| ---- | ----------------- | ---------------------------- | --------------------------------------- |
+| 400  | `VALIDATION`      | Geçersiz istek               | `VET-VALIDATION-0001`                   |
+| 401  | `AUTH`            | Kimlik doğrulama gerekli     | `VET-AUTH-0001`                         |
+| 403  | `AUTHZ`           | Yetki reddedildi             | `VET-AUTHZ-0001`                        |
+| 404  | `*` (modüle göre) | Bulunamadı (bilgi sızdırmaz) | `VET-CLINIC-0001`                       |
+| 409  | `*` (modüle göre) | Çakışma                      | `VET-CLINIC-0002` (sahip zaten kayıtlı) |
+| 422  | `VALIDATION`      | Doğrulama hatası             | `VET-VALIDATION-0003`                   |
+| 429  | `COMMON`          | Rate limit                   | `VET-COMMON-0006`                       |
+| 500  | `COMMON`          | Sunucu hatası                | `VET-COMMON-0001`                       |
+| 502  | `INTEGRATION`     | Dış servis yanıt vermedi     | `VET-INTEGRATION-0001`                  |
+| 503  | `COMMON`          | Bakım modu                   | `VET-COMMON-0005`                       |
+| 504  | `COMMON`          | Zaman aşımı                  | `VET-COMMON-0004`                       |
 
 ## 5. Yapısal Sözleşme
 
@@ -188,28 +200,28 @@ anahtar parity'sini kontrol eder.
 
 **Geçiş planı:**
 
-| Eski kod | Yeni kod |
-| --- | --- |
-| `TR_COMMON_0001` | `VET-COMMON-0001` |
-| `TR_COMMON_0002` | `VET-AUTHZ-0002` (erişim reddedildi → AUTHZ) |
-| `TR_COMMON_0003` | `VET-AUTHZ-0001` (yetki yok) |
-| `TR_COMMON_0004` | `VET-COMMON-0004` (zaman aşımı) |
-| `TR_COMMON_0005` | `VET-COMMON-0005` (bakım modu) |
-| `TR_VALIDATION_0001` | `VET-VALIDATION-0001` |
-| `TR_VALIDATION_0002` | `VET-VALIDATION-0002` (zorunlu alan) |
-| `TR_VALIDATION_0003` | `VET-VALIDATION-0003` (geçersiz format) |
-| `TR_AUTH_0001` | `VET-AUTH-0001` |
-| `TR_AUTH_0002` | `VET-AUTH-0002` (davet kodu) |
-| `TR_AUTH_0003` | `VET-TENANT-0003` (tenant bağlamı) |
-| `TR_CLINIC_0001` | `VET-CLINIC-0001` |
-| `TR_CLINIC_0002` | `VET-CLINIC-0002` (sahip çakışma) |
-| `TR_CLINIC_0003` | `VET-CLINIC-0003` (mikroçip) |
-| `TR_CLINIC_0004` | `VET-CLINIC-0004` (tür) |
-| `TR_CLINIC_0042` | `VET-CLINIC-0099` (genel) |
-| `EN_CLINIC_0001` | `VET-CLINIC-0001` (ülke çeviride) |
-| `TR_VACC_0001` | `VET-VACC-0001` |
-| `TR_VACC_0002` | `VET-VACC-0002` (lot) |
-| `TR_VACC_0003` | `VET-VACC-0003` (stok) |
+| Eski kod             | Yeni kod                                     |
+| -------------------- | -------------------------------------------- |
+| `TR_COMMON_0001`     | `VET-COMMON-0001`                            |
+| `TR_COMMON_0002`     | `VET-AUTHZ-0002` (erişim reddedildi → AUTHZ) |
+| `TR_COMMON_0003`     | `VET-AUTHZ-0001` (yetki yok)                 |
+| `TR_COMMON_0004`     | `VET-COMMON-0004` (zaman aşımı)              |
+| `TR_COMMON_0005`     | `VET-COMMON-0005` (bakım modu)               |
+| `TR_VALIDATION_0001` | `VET-VALIDATION-0001`                        |
+| `TR_VALIDATION_0002` | `VET-VALIDATION-0002` (zorunlu alan)         |
+| `TR_VALIDATION_0003` | `VET-VALIDATION-0003` (geçersiz format)      |
+| `TR_AUTH_0001`       | `VET-AUTH-0001`                              |
+| `TR_AUTH_0002`       | `VET-AUTH-0002` (davet kodu)                 |
+| `TR_AUTH_0003`       | `VET-TENANT-0003` (tenant bağlamı)           |
+| `TR_CLINIC_0001`     | `VET-CLINIC-0001`                            |
+| `TR_CLINIC_0002`     | `VET-CLINIC-0002` (sahip çakışma)            |
+| `TR_CLINIC_0003`     | `VET-CLINIC-0003` (mikroçip)                 |
+| `TR_CLINIC_0004`     | `VET-CLINIC-0004` (tür)                      |
+| `TR_CLINIC_0042`     | `VET-CLINIC-0099` (genel)                    |
+| `EN_CLINIC_0001`     | `VET-CLINIC-0001` (ülke çeviride)            |
+| `TR_VACC_0001`       | `VET-VACC-0001`                              |
+| `TR_VACC_0002`       | `VET-VACC-0002` (lot)                        |
+| `TR_VACC_0003`       | `VET-VACC-0003` (stok)                       |
 
 **Yeni kodlar (GOAL-001/002/003 referansları):**
 

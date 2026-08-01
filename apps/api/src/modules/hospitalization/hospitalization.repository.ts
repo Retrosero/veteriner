@@ -24,10 +24,7 @@ import type {
   CageRecord,
   HospitalizationRecord,
 } from "../../common/hospitalization/hospitalization.types.js";
-import type {
-  CageKind,
-  HospitalizationStatus,
-} from "@vetniva/contracts";
+import type { CageKind, HospitalizationStatus } from "@vetniva/contracts";
 
 /* --------------------------------------------------------------------------
  * Patch tipleri
@@ -116,10 +113,7 @@ export class HospitalizationRepository {
     return rec;
   }
 
-  public findCageByCode(
-    tenantId: string,
-    code: string,
-  ): CageRecord | null {
+  public findCageByCode(tenantId: string, code: string): CageRecord | null {
     const id = this.cageByCode.get(`${tenantId}::${code}`);
     if (!id) return null;
     return this.findCageById(tenantId, id);
@@ -181,10 +175,7 @@ export class HospitalizationRepository {
       rec.status === "admitted" ||
       rec.status === "active"
     ) {
-      this.activeByPatient.set(
-        `${rec.tenantId}::${rec.patientId}`,
-        rec.id,
-      );
+      this.activeByPatient.set(`${rec.tenantId}::${rec.patientId}`, rec.id);
     }
     return rec;
   }
@@ -262,10 +253,7 @@ export class HospitalizationRepository {
       return sort === "desc" ? -cmp : cmp;
     });
     const total = all.length;
-    const items = all.slice(
-      filters.offset,
-      filters.offset + filters.limit,
-    );
+    const items = all.slice(filters.offset, filters.offset + filters.limit);
     return { items, total };
   }
 
@@ -275,9 +263,7 @@ export class HospitalizationRepository {
 
   private readonly cageAssignments = new Map<string, CageAssignmentRecord>();
 
-  public insertCageAssignment(
-    rec: CageAssignmentRecord,
-  ): CageAssignmentRecord {
+  public insertCageAssignment(rec: CageAssignmentRecord): CageAssignmentRecord {
     this.cageAssignments.set(rec.id, rec);
     return rec;
   }

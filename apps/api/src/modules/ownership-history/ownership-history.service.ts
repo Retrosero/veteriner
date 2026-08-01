@@ -29,22 +29,23 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { AuditService } from "../../common/audit/audit.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import type {
-  Ownership,
-  OwnershipFilters,
-} from "../../common/ownership/ownership.types.js";
-import {
-  PatientsRepository,
-  type PatientRecord,
-} from "../patients/patients.repository.js";
-import { OwnersService } from "../owners/owners.service.js";
 import {
   OwnershipHistoryRepository,
   type OwnershipRecord,
 } from "./ownership-history.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { OwnersService } from "../owners/owners.service.js";
+import {
+  PatientsRepository,
+  type PatientRecord,
+} from "../patients/patients.repository.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type {
+  Ownership,
+  OwnershipFilters,
+} from "../../common/ownership/ownership.types.js";
 
 @Injectable()
 export class OwnershipHistoryService {
@@ -231,8 +232,7 @@ export class OwnershipHistoryService {
       });
     }
 
-    const newStart =
-      input.startDate ?? new Date().toISOString();
+    const newStart = input.startDate ?? new Date().toISOString();
     if (current.startDate > newStart) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0010",
@@ -248,11 +248,7 @@ export class OwnershipHistoryService {
     }
 
     // 1) Eski aktif kaydı kapat.
-    const closedRecord = this.repo.closeActive(
-      tenantId,
-      patientId,
-      newStart,
-    );
+    const closedRecord = this.repo.closeActive(tenantId, patientId, newStart);
 
     // 2) Yeni kayıt aç.
     const newId = this.repo.nextId(tenantId);

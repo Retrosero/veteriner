@@ -16,9 +16,9 @@
 
 ## Path parametreleri
 
-| Parametre | Tip   | Zorunlu | Açıklama                            |
-| --------- | ----- | ------- | ----------------------------------- |
-| `id`      | UUID  | evet    | Dosya ID. `ParseUUIDPipe` ile valide. |
+| Parametre | Tip  | Zorunlu | Açıklama                              |
+| --------- | ---- | ------- | ------------------------------------- |
+| `id`      | UUID | evet    | Dosya ID. `ParseUUIDPipe` ile valide. |
 
 ## Response 200
 
@@ -54,13 +54,13 @@ eder (`audit:file.download`).
 
 ## Hata kodları
 
-| Kod                 | HTTP | Açıklama                                                  |
-| ------------------- | ---- | --------------------------------------------------------- |
-| `VET-AUTH-0001`     | 401  | Oturum geçersiz veya süresi dolmuş.                       |
-| `VET-AUTHZ-0001`    | 403  | Permission yok (`file:file:read`).                        |
-| `VET-AUTHZ-0006`    | 403  | Aktif tenant bağlamı yok.                                 |
-| `VET-FILE-0003`     | 404  | Dosya bulunamadı **veya** farklı tenant'a ait (sızıntı yok). |
-| `VET-VALIDATION-0001` | 422 | `id` UUID formatında değil.                               |
+| Kod                   | HTTP | Açıklama                                                     |
+| --------------------- | ---- | ------------------------------------------------------------ |
+| `VET-AUTH-0001`       | 401  | Oturum geçersiz veya süresi dolmuş.                          |
+| `VET-AUTHZ-0001`      | 403  | Permission yok (`file:file:read`).                           |
+| `VET-AUTHZ-0006`      | 403  | Aktif tenant bağlamı yok.                                    |
+| `VET-FILE-0003`       | 404  | Dosya bulunamadı **veya** farklı tenant'a ait (sızıntı yok). |
+| `VET-VALIDATION-0001` | 422  | `id` UUID formatında değil.                                  |
 
 ## Örnek
 

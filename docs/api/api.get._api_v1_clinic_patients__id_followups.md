@@ -52,8 +52,8 @@ olarak sorgulanır, ardından in-memory `type` filtresi uygulanır.
 **İş kuralları:**
 
 - `AppointmentsService.list(tenantId,
-  { patientId, status:'scheduled', from: now, limit:200, offset:0 },
-  actor)` çağrılır; tenant kapsamı enforce edilir.
+{ patientId, status:'scheduled', from: now, limit:200, offset:0 },
+actor)` çağrılır; tenant kapsamı enforce edilir.
 - Response sonradan `a.type === 'follow_up'` filtresi ile
   daraltılır. Tamamlanmış (`completed`), iptal (`cancelled`) veya
   gelmiş (`no_show`) randevular dahil edilmez.

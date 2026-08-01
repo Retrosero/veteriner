@@ -1,12 +1,13 @@
 # POST /api/v1/clinic/orders/{id}/complete
 
 `status='in_progress'` olan order'ı `'completed'` yapar; `completedAt`
-+ `completedBy` set edilir. State machine kuralı: yalnızca in_progress
-order tamamlanabilir; aksi → 409 `VET-ORDER-0001`.
 
-- **Modül:** orders
-- **Yetki:** `clinic:examination:create` (STAFF / VETERINARIAN)
-- **Audit:** `audit:order.update` (severity: info) — action:
+- `completedBy` set edilir. State machine kuralı: yalnızca in_progress
+  order tamamlanabilir; aksi → 409 `VET-ORDER-0001`.
+
+* **Modül:** orders
+* **Yetki:** `clinic:examination:create` (STAFF / VETERINARIAN)
+* **Audit:** `audit:order.update` (severity: info) — action:
   "complete", before/after status + completedAt.
 
 **Path params:**

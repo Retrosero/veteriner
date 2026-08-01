@@ -27,14 +27,7 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
-import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import {
   esmmDocumentCreateInputSchema,
   esmmDocumentFiltersSchema,
@@ -47,14 +40,19 @@ import {
 } from "@vetniva/contracts";
 
 import { EsmmDocumentsService } from "./esmm.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("esmm/documents")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/esmm/documents")
 export class EsmmDocumentsController {
-  public constructor(
-    private readonly service: EsmmDocumentsService,
-  ) {}
+  public constructor(private readonly service: EsmmDocumentsService) {}
 
   @Post()
   @RequirePermissions("audit:log:read")
@@ -81,8 +79,7 @@ export class EsmmDocumentsController {
     operationId: "esmmDocumentList",
     summary: "e-SMM belge arama",
     description:
-      "Tenant-scoped arama. type/status/sourceType/sourceId " +
-      "filtreleri.",
+      "Tenant-scoped arama. type/status/sourceType/sourceId " + "filtreleri.",
   })
   public async list(
     @Query(new ZodValidationPipe(esmmDocumentFiltersSchema))

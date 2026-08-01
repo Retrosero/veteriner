@@ -30,20 +30,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
-import type {
-  Vaccination,
-  VaccinationCancelInput,
-  VaccinationCreateInput,
-  VaccinationFilters,
-  VaccinationListResponse,
-} from "@vetniva/contracts";
 import {
   vaccinationCancelInputSchema,
   vaccinationCreateInputSchema,
@@ -51,14 +37,26 @@ import {
 } from "@vetniva/contracts";
 
 import { VaccinationsService } from "./vaccinations.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type {
+  Vaccination,
+  VaccinationCancelInput,
+  VaccinationCreateInput,
+  VaccinationFilters,
+  VaccinationListResponse,
+} from "@vetniva/contracts";
 
 @ApiTags("vaccinations")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/clinic")
 export class VaccinationsController {
-  public constructor(
-    private readonly service: VaccinationsService,
-  ) {}
+  public constructor(private readonly service: VaccinationsService) {}
 
   // -------------------------------------------------------------------------
   // Collection

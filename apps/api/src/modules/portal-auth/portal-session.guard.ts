@@ -44,11 +44,11 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import type { Request } from "express";
-
 import { PORTAL_SESSION_COOKIE_NAME } from "@vetniva/contracts";
 
 import { PortalAuthService } from "./portal-auth.service.js";
+
+import type { Request } from "express";
 
 /** Public portal endpoint işaretleyicisi. Bu guard atlanır. */
 export const IS_PORTAL_PUBLIC_KEY = "portal:isPublic";
@@ -132,9 +132,17 @@ export class PortalSessionGuard implements CanActivate {
   }
 
   private extractToken(request: Request): string | null {
-    const cookieToken = (request as Request & { cookies?: Record<string, string> })
-      .cookies?.[PORTAL_SESSION_COOKIE_NAME];
-    if (cookieToken) return cookieToken;
+    const cookieBag: unknown = Reflect.get(
+      request as object,
+      "cookies",
+    ) as unknown;
+    const cookieToken: unknown =
+      typeof cookieBag === "object" && cookieBag !== null
+        ? (Reflect.get(cookieBag, PORTAL_SESSION_COOKIE_NAME) as unknown)
+        : null;
+    if (typeof cookieToken === "string" && cookieToken.length > 0) {
+      return cookieToken;
+    }
     const auth = request.header("authorization");
     if (auth?.toLowerCase().startsWith("bearer ")) {
       return auth.substring(7).trim();

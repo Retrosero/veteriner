@@ -29,14 +29,14 @@
 
 import { Injectable } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
-import type { Appointment } from "@vetniva/contracts";
-
 import { AppointmentsService } from "../appointments/appointments.service.js";
 import { ExaminationsService } from "../examinations/examinations.service.js";
 import { PrescriptionsService } from "../prescriptions/prescriptions.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { Appointment } from "@vetniva/contracts";
 
 /** Varsayılan kontrol randevusu süresi (dakika). */
 const DEFAULT_FOLLOWUP_DURATION_MIN = 30;
@@ -286,7 +286,7 @@ export class FollowupsService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

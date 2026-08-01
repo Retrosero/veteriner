@@ -1,7 +1,6 @@
 /**
  * @file Server-safe `cn` re-export.
  * @module @vetniva/ui/cn
- *
  * @description `packages/ui/src/lib/cn.ts` modülünü doğrudan dışa
  * aktaran kök dosya. `@vetniva/ui` paketinin kök modülü
  * (`@vetniva/ui`) "use client" ile işaretli olduğundan, server

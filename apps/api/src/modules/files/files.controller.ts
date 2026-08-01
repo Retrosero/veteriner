@@ -37,11 +37,9 @@ import {
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import type { Response } from "express";
 
+import { FilesService } from "./files.service.js";
 import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
 import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
 import {
   type FileCategory,
@@ -49,8 +47,10 @@ import {
   type FileMimeType,
   FILE_LIMITS,
 } from "../../common/files/file.types.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
 
-import { FilesService } from "./files.service.js";
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { Response } from "express";
 
 /**
  * Multer File interface'inin backend tarafında kullanılan minimum
@@ -88,7 +88,10 @@ export class FilesController {
       "Multipart upload. MIME whitelist + boyut + antivirus kontrolleri uygulanır.",
   })
   @ApiResponse({ status: 201, description: "Dosya yüklendi." })
-  @ApiResponse({ status: 415, description: "MIME reddedildi veya boyut aşıldı." })
+  @ApiResponse({
+    status: 415,
+    description: "MIME reddedildi veya boyut aşıldı.",
+  })
   @ApiResponse({ status: 422, description: "Zararlı içerik tespit edildi." })
   public async upload(
     @UploadedFile() file: UploadedFileLike | undefined,

@@ -70,8 +70,7 @@ export type TimeFormatOptions = {
 /**
  * Tarih+saat formatlama seçenekleri.
  */
-export type DateTimeFormatOptions = DateFormatOptions &
-  TimeFormatOptions;
+export type DateTimeFormatOptions = DateFormatOptions & TimeFormatOptions;
 
 /**
  * Para formatlama seçenekleri.
@@ -279,10 +278,7 @@ export interface CountryAdapter {
    * @param taxId Doğrulanacak numara
    * @param type "company" (şirket) veya "personal" (kişi)
    */
-  validateTaxId(
-    taxId: string,
-    type: "company" | "personal",
-  ): ValidationResult;
+  validateTaxId(taxId: string, type: "company" | "personal"): ValidationResult;
 
   /**
    * IBAN formatı.

@@ -1,7 +1,6 @@
 /**
  * @file Consent service.
  * @module apps/api/modules/consents/consents.service
- *
  * @description GOAL-081 (FAZ-8) onam formu iş kuralları.
  *
  * İş kuralları:
@@ -15,7 +14,6 @@
  * - `revokeConsent` (signed → revoked): imzalı form geri
  *   çekilebilir; revoked tekrar revoke edilemez 409
  *   VET-CONSENT-0003. Audit `audit:consent.revoke`.
- *
  * @security Tenant bilgisi yalnızca actor.tenantId'den alınır.
  *   Onam formu üzerinde fiziksel silme YOKTUR.
  *
@@ -24,13 +22,15 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
+import { ConsentsRepository } from "./consents.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import {
   toConsent,
   type ConsentRecord,
 } from "../../common/consents/consent.types.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   Consent,
   ConsentCreateInput,
@@ -39,8 +39,6 @@ import type {
   ConsentRevokeInput,
   ConsentSignInput,
 } from "@vetniva/contracts";
-
-import { ConsentsRepository } from "./consents.repository.js";
 
 @Injectable()
 export class ConsentsService {
@@ -312,7 +310,7 @@ export class ConsentsService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

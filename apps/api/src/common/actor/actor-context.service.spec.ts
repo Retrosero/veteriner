@@ -1,10 +1,8 @@
 /**
  * @file ActorContextService unit testleri.
  * @module apps/api/common/actor/actor-context.service.spec
- *
  * @description Header extraction, default placeholder ve SYSTEM
  * actor üretimi testleri.
- *
  * @since GOAL-010 (FAZ-1) tenant ve şube altyapısı
  */
 
@@ -20,6 +18,10 @@ describe("ActorContextService", () => {
     service = new ActorContextService();
   });
 
+  /**
+   *
+   * @param headers
+   */
   function makeReq(headers: Record<string, string | undefined>) {
     return {
       header: (name: string): string | undefined => {

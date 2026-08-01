@@ -70,8 +70,8 @@
 10. **`packages/i18n/src/locales/tr-TR.json`** genişletildi.
     Yeni anahtarlar: `auth.*` (login, logout, forgot password),
     `role.*` (5 rol adı), `permission.*` (60+ permission adı),
-    `error.*` (TR_AUTHZ_*, TR_TENANT_*, TR_VALIDATION_*,
-    TR_COUNTRY_*, TR_VALIDATION_PHONE_INVALID vb.), `country.*`,
+    `error.*` (TR_AUTHZ__, TR_TENANT__, TR_VALIDATION__,
+    TR_COUNTRY__, TR_VALIDATION_PHONE_INVALID vb.), `country.*`,
     `currency.*`, `a11y.*`. `common.*` genişletildi (view_all,
     show_more, details, total). Toplam çeviri dosyası 1KB → 8KB.
 
@@ -224,7 +224,7 @@ kodu yazıldı, sonraki goal'da çalıştırılacak.
 - Adapter hata kodları (`TR_COUNTRY_0001`, `TR_VALIDATION_*`)
   `ERROR_CATALOG.md`'ye eklenecek.
 - Yeni hata kodu yapısı: `<kategori>_<niteleyici>_<NNN>`.
-  Mevcut TR_AUTHZ_*, TR_TENANT_*, TR_COUNTRY_* kodları
+  Mevcut TR_AUTHZ__, TR_TENANT__, TR_COUNTRY_* kodları
   bu yapıya uygun.
 - Audit event yapısı: `audit:<entity>:<action>` (ör.
   `audit:adapter.format_currency`, `audit:owner.erase`).
@@ -256,12 +256,14 @@ kodu yazıldı, sonraki goal'da çalıştırılacak.
 GOAL-003 (FAZ-0) **kod + doküman** birlikte tamamlandı.
 
 **Üretilen:**
+
 - 2 ana sözleşme dokümanı (I18N_CONTRACT, COUNTRY_ADAPTER_CONTRACT)
 - 6 adapter kodu dosyası (interface, TR tam, GB iskelet, registry, index, spec)
 - Genişletilmiş çeviri dosyaları (1KB → 8KB her biri)
 - 22+ adapter unit testi
 
 **Toplam istatistikler:**
+
 - 200+ i18n çeviri anahtarı (her dil)
 - 5 rol, 4 para birimi, 2 ülke çevirisi
 - TR adapter: 30+ metod, KDV/VKN/TCKN/IBAN/telefon/pos kodu

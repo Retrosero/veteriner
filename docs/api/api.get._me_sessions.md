@@ -40,5 +40,6 @@ oturum için `true` döner.
 ile uzaktan kapatılabilir.
 
 **İlgili dokümanlar:**
+
 - API sözleşmesi: `packages/contracts/src/auth.ts` (`sessionListItemSchema`)
 - Alan sözlüğü: `docs/fields/FIELD_GLOSSARY.md` (UserSession)

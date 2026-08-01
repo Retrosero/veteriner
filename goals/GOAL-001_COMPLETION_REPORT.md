@@ -200,7 +200,7 @@ açısından gözden geçirildi.
 - DOMAIN_GLOSSARY.md'deki her varlık için Prisma modelleri ve
   RLS policy'leri yazılmalı.
 - CLINICAL_FLOWS.md'deki her akış için service + controller
-  + test yazılmalı.
+  - test yazılmalı.
 - Append-only / amendment kuralları `prisma-extension-soft-delete`
   veya benzer yapılarla enforce edilmeli.
 

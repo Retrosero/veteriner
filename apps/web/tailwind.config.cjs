@@ -29,9 +29,7 @@ module.exports = {
     // @vetniva/ui primitive'lerindeki kullanımları yakala
     path.join(repoRoot, "packages/ui/src/**/*.{ts,tsx,mdx}"),
   ],
-  presets: [
-    require(path.join(repoRoot, "packages/ui/tailwind.preset.cjs")),
-  ],
+  presets: [require(path.join(repoRoot, "packages/ui/tailwind.preset.cjs"))],
   theme: {
     extend: {
       colors: {

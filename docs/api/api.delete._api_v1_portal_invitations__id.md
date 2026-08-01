@@ -12,9 +12,9 @@ kayıt döner). Tenant-scoped: cross-tenant → 404 `VET-PORTAL-0001`.
 
 **Path parametreleri:**
 
-| Ad | Tip | Zorunlu | Açıklama |
-| --- | --- | --- | --- |
-| `id` | string | evet | Davet ID. UUID formatı. |
+| Ad   | Tip    | Zorunlu | Açıklama                |
+| ---- | ------ | ------- | ----------------------- |
+| `id` | string | evet    | Davet ID. UUID formatı. |
 
 **Response 200 (`PortalInvitation`):**
 
@@ -30,9 +30,7 @@ kayıt döner). Tenant-scoped: cross-tenant → 404 `VET-PORTAL-0001`.
   "acceptedAt": null,
   "revokedAt": "2026-07-30T13:00:00.000Z",
   "invitationToken": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
-  "patientIds": [
-    "33333333-3333-3333-3333-333333333333"
-  ],
+  "patientIds": ["33333333-3333-3333-3333-333333333333"],
   "locale": "tr-TR",
   "invitedBy": "usr-staff-uuid"
 }

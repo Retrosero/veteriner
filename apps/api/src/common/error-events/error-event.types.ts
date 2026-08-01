@@ -35,12 +35,12 @@ import type {
   ErrorEventStatus,
   ErrorEventStatusTransition,
   ErrorEventSupportLink,
+  ErrorCode,
+  ErrorSeverity,
 } from "@vetniva/contracts";
-import type { ErrorCode, ErrorSeverity } from "@vetniva/contracts";
 
 /** Yerel not görünürlüğü tipi (contracts'tan türetilir). */
-export type ErrorEventNoteVisibility =
-  ErrorEventNote["visibility"];
+export type ErrorEventNoteVisibility = ErrorEventNote["visibility"];
 
 /** Yerel destek sistemi tipi (contracts'tan türetilir). */
 export type ErrorEventSupportSystem = NonNullable<

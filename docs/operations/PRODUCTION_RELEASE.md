@@ -1,15 +1,18 @@
 # Production Release ve Rollback Prosedürü (GOAL-127)
 
 ## Faz
+
 FAZ-12 (Pilot, güvenlik, üretime hazırlık)
 
 ## Genel Bakış
+
 VetNiva production release'i için CI/CD, migration, feature
 flag, monitoring ve rollback prosedürü.
 
 ## Release Akışı
 
 ### 1. Pre-release Checklist
+
 - [ ] Tüm `pnpm test` yeşil (unit + integration).
 - [ ] `pnpm type-check` yeşil.
 - [ ] `pnpm docs:check` FAZ-12+ özgü temiz.
@@ -29,6 +32,7 @@ flag, monitoring ve rollback prosedürü.
   production'a deploy tetiklenir.
 
 ### 3. Migration Deployment
+
 - `pnpm db:generate` → Prisma client üret.
 - `pnpm db:migrate` → migration'ları uygula.
 - **Backward-compatible:** Her migration geri
@@ -37,6 +41,7 @@ flag, monitoring ve rollback prosedürü.
   populate; 2. eski kolonu kaldır).
 
 ### 4. Feature Flag Stratejisi
+
 - Yeni modüller `feature_flag:module:<name>` ile
   kapatılır.
 - Aşamalı açılış: %1 → %10 → %50 → %100 (24 saat aralıkla).
@@ -44,6 +49,7 @@ flag, monitoring ve rollback prosedürü.
   tenant bazında override edilebilir.
 
 ### 5. Health Check
+
 - `GET /api/v1/health` (liveness): süreç durumu.
 - `GET /api/v1/ready` (readiness): DB + cache + queue
   bağlantıları.
@@ -51,8 +57,9 @@ flag, monitoring ve rollback prosedürü.
   kontrol eder; 3 başarısız → restart.
 
 ### 6. Monitoring
+
 - **Loglar:** structured JSON, stdout'a yazılır; CloudWatch
-  + Datadog toplar.
+  - Datadog toplar.
 - **Metrics:** Prometheus + Grafana:
   - `http_requests_total{method, route, status}`
   - `http_request_duration_seconds{method, route}`
@@ -66,6 +73,7 @@ flag, monitoring ve rollback prosedürü.
   - Queue depth > 1000.
 
 ### 7. Smoke Tests (post-release)
+
 - Production deploy sonrası `pnpm e2e:smoke` otomatik
   çalışır (Playwright):
   - Login akışı.
@@ -78,6 +86,7 @@ flag, monitoring ve rollback prosedürü.
 ## Rollback Prosedürü
 
 ### Tetikleyici koşullar
+
 - Error rate > %5 (5 dakika).
 - P95 latency > 2x baseline.
 - Smoke test fail.
@@ -87,6 +96,7 @@ flag, monitoring ve rollback prosedürü.
 ### Adımlar
 
 1. **Hemen:**
+
    ```bash
    # Tag'i bir önceki versiyona geri al
    git tag -d v0.x.y
@@ -94,6 +104,7 @@ flag, monitoring ve rollback prosedürü.
    ```
 
 2. **Deployment rollback:**
+
    ```bash
    # k8s:
    kubectl rollout undo deployment/vetniva-api
@@ -103,6 +114,7 @@ flag, monitoring ve rollback prosedürü.
    ```
 
 3. **DB rollback (eğer migration uygulandıysa):**
+
    ```bash
    pnpm db:migrate --rollback
    # NOT: yalnızca forward-compatible migration'lar
@@ -132,6 +144,7 @@ Pre-1.0 (0.x.y): MINOR breaking change olabilir; pilot
 kapsamda kabul edilebilir.
 
 ## İlgili dokümanlar
+
 - `docs/operations/INCIDENT_RESPONSE.md` (FAZ-12+)
 - `docs/operations/RUNBOOK.md` (FAZ-12+)
 - `docs/operations/BACKUP_RESTORE.md` (GOAL-124)
@@ -139,4 +152,5 @@ kapsamda kabul edilebilir.
 - `docs/security/KVKK_DATA_LIFECYCLE.md` (GOAL-126)
 
 ## Commit
+
 - Docs: (bu commit) — `docs(operations): GOAL-127 production release + rollback prosedürü`

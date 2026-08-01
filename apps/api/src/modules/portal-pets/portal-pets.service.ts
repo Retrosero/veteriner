@@ -33,14 +33,14 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
-import type { PortalPetDetail, PortalPetSummary } from "@vetniva/contracts";
-
 import { AlertsService } from "../alerts/alerts.service.js";
 import { AppointmentsService } from "../appointments/appointments.service.js";
 import { PatientsService } from "../patients/patients.service.js";
 import { PortalAuthService } from "../portal-auth/portal-auth.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { PortalPetDetail, PortalPetSummary } from "@vetniva/contracts";
 
 @Injectable()
 export class PortalPetsService {

@@ -33,13 +33,16 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { LabOrdersRepository } from "./lab-orders.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import {
   toLabOrder,
   type LabOrderRecord,
 } from "../../common/lab-orders/lab-order.types.js";
+import { LabTestsService } from "../lab-tests/lab-tests.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   LabOrder,
   LabOrderCancelInput,
@@ -51,9 +54,6 @@ import type {
   LabOrderStartProcessingInput,
   LabOrderStatus,
 } from "@vetniva/contracts";
-
-import { LabOrdersRepository } from "./lab-orders.repository.js";
-import { LabTestsService } from "../lab-tests/lab-tests.service.js";
 
 @Injectable()
 export class LabOrdersService {
@@ -205,9 +205,7 @@ export class LabOrdersService {
   ): Promise<LabOrder> {
     this.requireTenantScope(actor, tenantId);
     const existing = this.requireOrder(tenantId, id);
-    this.requireStateTransition(existing.status, "collected", [
-      "ordered",
-    ]);
+    this.requireStateTransition(existing.status, "collected", ["ordered"]);
 
     const nowIso = new Date().toISOString();
     this.repo.update(tenantId, id, {
@@ -248,9 +246,7 @@ export class LabOrdersService {
   ): Promise<LabOrder> {
     this.requireTenantScope(actor, tenantId);
     const existing = this.requireOrder(tenantId, id);
-    this.requireStateTransition(existing.status, "processing", [
-      "collected",
-    ]);
+    this.requireStateTransition(existing.status, "processing", ["collected"]);
 
     const nowIso = new Date().toISOString();
     const sentAt = input.sentAt ?? nowIso;
@@ -289,9 +285,7 @@ export class LabOrdersService {
   ): Promise<LabOrder> {
     this.requireTenantScope(actor, tenantId);
     const existing = this.requireOrder(tenantId, id);
-    this.requireStateTransition(existing.status, "completed", [
-      "processing",
-    ]);
+    this.requireStateTransition(existing.status, "completed", ["processing"]);
 
     const nowIso = new Date().toISOString();
     this.repo.update(tenantId, id, {
@@ -427,7 +421,7 @@ export class LabOrdersService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

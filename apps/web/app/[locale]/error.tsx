@@ -3,7 +3,6 @@
 /**
  * @file [locale] route segment error boundary.
  * @module @vetniva/web/app/[locale]/error
- *
  * @description GOAL-101 (FAZ-10) frontend hata yakalama — Next.js
  * App Router `error.tsx` convention. Bu sınır, aynı segment
  * altındaki server component'lerde yakalanmamış hataları ele alır
@@ -15,23 +14,28 @@
  * - Kullanıcıya correlation ID + "tekrar dene" butonu sunulur.
  * - Layout ve global hata sınırı sağlam kaldığı için sayfa geri
  *   kalan UI bozulmaz.
- *
  * @security Hata mesajı kullanıcıya gösterilirken PII içermez;
  *   yalnızca generic bir metin + correlation ID paylaşılır.
- *
  * @since GOAL-101 (FAZ-10) frontend hata yakalama core
  */
 
 import { useEffect } from "react";
-import type { ReactElement } from "react";
 
 import { errorReporter } from "@/lib/error-reporter";
+
+import type { ReactElement } from "react";
 
 type ErrorBoundaryProps = {
   error: Error & { digest?: string };
   reset: () => void;
 };
 
+/**
+ *
+ * @param root0
+ * @param root0.error
+ * @param root0.reset
+ */
 export default function LocaleErrorBoundary({
   error,
   reset,
@@ -56,8 +60,8 @@ export default function LocaleErrorBoundary({
         Beklenmeyen bir hata oluştu
       </h1>
       <p className="text-sm text-gray-600">
-        İsteğinizi şu an karşılayamıyoruz. Lütfen tekrar deneyin; sorun
-        devam ederse destek ekibiyle iletişime geçin.
+        İsteğinizi şu an karşılayamıyoruz. Lütfen tekrar deneyin; sorun devam
+        ederse destek ekibiyle iletişime geçin.
       </p>
       {error.digest ? (
         <p

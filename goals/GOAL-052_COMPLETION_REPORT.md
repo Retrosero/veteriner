@@ -1,9 +1,11 @@
 # GOAL-052 — Aşı Kartı (Completion Report)
 
 ## Faz
+
 FAZ-5 (Aşı + stok)
 
 ## Özet
+
 Aşı kartı görünümü personel paneli ve hasta sahibi portalı için
 tek hesaplama kaynağı olarak tamamlandı. Hasta + tür uyumlu
 protokoller için aşı geçmişi, sonraki tarih, durum, uygulayan
@@ -13,6 +15,7 @@ toplandı. Portal görünürlüğü tenant ayarına bağlandı.
 ## Çıktılar
 
 ### Core (GOAL-052 core commit `2b7cc84`)
+
 - `apps/api/src/modules/vaccines/vaccine-cards.controller.ts` —
   personel + portal olmak üzere iki controller:
   - `VaccineCardsController` (4 endpoint) personel kökü.
@@ -31,14 +34,15 @@ toplandı. Portal görünürlüğü tenant ayarına bağlandı.
 
 ### Endpoint'ler (5)
 
-| # | Method | Path | Kök | Yetki |
-|---|--------|------|-----|-------|
-| 1 | GET | `/api/v1/clinic/vaccines/cards/patient/{patientId}` | personel | `clinic:vaccination:read` |
-| 2 | GET | `/api/v1/clinic/vaccines/cards/portal-setting` | personel | `clinic:vaccination:read` |
-| 3 | PUT | `/api/v1/clinic/vaccines/cards/portal-setting` | personel | `clinic:vaccination:read` |
-| 4 | GET | `/api/v1/portal/vaccines/cards/patient/{patientId}` | portal | portal session |
+| #   | Method | Path                                                | Kök      | Yetki                     |
+| --- | ------ | --------------------------------------------------- | -------- | ------------------------- |
+| 1   | GET    | `/api/v1/clinic/vaccines/cards/patient/{patientId}` | personel | `clinic:vaccination:read` |
+| 2   | GET    | `/api/v1/clinic/vaccines/cards/portal-setting`      | personel | `clinic:vaccination:read` |
+| 3   | PUT    | `/api/v1/clinic/vaccines/cards/portal-setting`      | personel | `clinic:vaccination:read` |
+| 4   | GET    | `/api/v1/portal/vaccines/cards/patient/{patientId}` | portal   | portal session            |
 
 ### Döküman (bu commit)
+
 - `docs/api/api.get._api_v1_clinic_vaccines_cards_patient__patientId_.md`
 - `docs/api/api.get._api_v1_clinic_vaccines_cards_portal-setting.md`
 - `docs/api/api.put._api_v1_clinic_vaccines_cards_portal-setting.md`
@@ -48,6 +52,7 @@ toplandı. Portal görünürlüğü tenant ayarına bağlandı.
   ayarını ve DB göç planını (materialized view) özetler.
 
 ## İş Kuralları
+
 - **Species filter:** `Patient.species` ile eşleşen VEYA
   `species='all'` olan protokol uygulanabilir. `species='other'`
   ise tüm protokoller (kural: tür bilinmiyor → tüm takvimler).
@@ -64,11 +69,13 @@ toplandı. Portal görünürlüğü tenant ayarına bağlandı.
   `VET-AUTHZ-0002`.
 
 ## Audit
+
 - `audit:vaccine.card.portal_setting.update` (info) — ayar PUT
   edildiğinde (önceki/yeni değer payload'da).
 - Salt okunur kart GET'lerinde audit YOK (read noise önleme).
 
 ## Tenant İzolasyonu
+
 - `actor.tenantId` zorunlu; service `requireTenantScope` ile
   tenant doğrular.
 - Patient `PatientsService.findById` ile sorgulanır → cross-tenant
@@ -78,12 +85,14 @@ toplandı. Portal görünürlüğü tenant ayarına bağlandı.
 - SUPERADMIN bypass'lı (tüm tenant'larda okur/yazar).
 
 ## Güvenlik / KVKK
+
 - Bu endpoint'ler PII **taşımaz** (yapısal veri).
 - Portal kökü `PortalSessionGuard` ile korunur; hasta sahibi
   yalnız kendi pet'ine bağlı kartı görebilir (servis içi actor
   bağlamı).
 
 ## Migration Notu
+
 - Şu an `VaccineCard` hesaplanmış (derived) veri; ayrı tablo
   YOK. In-memory hesaplama kullanılıyor.
 - DB göçünde iki seçenek:
@@ -92,16 +101,19 @@ toplandı. Portal görünürlüğü tenant ayarına bağlandı.
 - Migration ertelenir; migration sırasında karar verilecek.
 
 ## Testler
+
 - `vaccine-cards.service.spec.ts` → 13+ test (core commit'te).
 - `vaccinations.service.spec.ts` → 15 test (GOAL-051 core; bu
   döküman commit'ine dahil değil).
 
 ## Döküman Uyum
+
 - `pnpm docs:check` → 79 hata (pre-existing FAZ-6
   supplier/sale/return + GOAL-053/054 vaccine code'ları).
   **GOAL-052 özgü hata yok.**
 
 ## Yapılmayanlar / Bilinçli Atlamalar
+
 - **DB migration / materialized view** → DB göçü sonraya.
 - **PDF/çıktı (personel paneli)** → GOAL-047'deki klinik kayıt
   PDF helper'ı kullanılarak FAZ-5 kapanışında eklenebilir; şu an
@@ -117,11 +129,13 @@ toplandı. Portal görünürlüğü tenant ayarına bağlandı.
   kontrol edilir).
 
 ## Sonraki Adımlar
+
 - GOAL-053 (aşı hatırlatma job'u) docs/i18n.
 - GOAL-054 (aşı amendment) docs/i18n.
 - FAZ-5 kapanış: tüm dökümanlar + tenant ayar UI.
 
 ## Commit
+
 - Core: `2b7cc84` — `GOAL-052: aşı kartı core (FAZ-5)`
 - Docs/i18n: (bu commit) — `docs(vaccines): GOAL-052 doküman ve
-  i18n tamamla`
+i18n tamamla`

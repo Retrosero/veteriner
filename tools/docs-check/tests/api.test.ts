@@ -84,26 +84,18 @@ describe("scanApiRoutes", () => {
 
   it("sub-path'ler için docKey tireli format üretir", async () => {
     const routes = await scanApiRoutes(path.join(root, "apps/api"));
-    const ready = routes.find(
-      (r) => r.path === "Get /api/v1/health/ready",
-    );
+    const ready = routes.find((r) => r.path === "Get /api/v1/health/ready");
     expect(ready?.docKey).toBe("api.get._api_v1_health_ready");
-    const check = routes.find(
-      (r) => r.path === "Post /api/v1/health/check",
-    );
+    const check = routes.find((r) => r.path === "Post /api/v1/health/check");
     expect(check?.docKey).toBe("api.post._api_v1_health_check");
     expect(check?.method).toBe("Post");
   });
 
   it("dinamik parametreleri (:id) docKey'e çevirir", async () => {
     const routes = await scanApiRoutes(path.join(root, "apps/api"));
-    const getById = routes.find(
-      (r) => r.path === "Get /api/v1/owners/:id",
-    );
+    const getById = routes.find((r) => r.path === "Get /api/v1/owners/:id");
     expect(getById?.docKey).toBe("api.get._api_v1_owners__id");
-    const patchById = routes.find(
-      (r) => r.path === "Patch /api/v1/owners/:id",
-    );
+    const patchById = routes.find((r) => r.path === "Patch /api/v1/owners/:id");
     expect(patchById?.method).toBe("Patch");
   });
 
@@ -116,9 +108,7 @@ describe("scanApiRoutes", () => {
 
   it("tüm HTTP methodlarını (Get/Post/Put/Patch/Delete) destekler", async () => {
     const routes = await scanApiRoutes(path.join(root, "apps/api"));
-    const methods = new Set(
-      routes.map((r) => r.method as string | undefined),
-    );
+    const methods = new Set(routes.map((r) => r.method as string | undefined));
     expect(methods.has("Get")).toBe(true);
     expect(methods.has("Post")).toBe(true);
     expect(methods.has("Put")).toBe(true);

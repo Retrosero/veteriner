@@ -43,14 +43,10 @@ import {
   Res,
   UseGuards,
 } from "@nestjs/common";
-import type { Request, Response } from "express";
-
-import { Public } from "../../common/decorators/public.decorator.js";
 import {
   PORTAL_SESSION_COOKIE_NAME,
   PORTAL_SESSION_TTL_SECONDS,
 } from "@vetniva/contracts";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   portalForgotPasswordRequestSchema,
   portalLoginRequestSchema,
@@ -71,7 +67,12 @@ import {
 import { PortalAuthService } from "./portal-auth.service.js";
 import { PortalSessionGuard } from "./portal-session.guard.js";
 import { attemptMetaFromRequest } from "../../common/auth/dto.js";
+import { Public } from "../../common/decorators/public.decorator.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 
+import type { Request, Response } from "express";
+
+@Public()
 @Controller("api/v1/portal-auth")
 export class PortalAuthController {
   public constructor(private readonly service: PortalAuthService) {}
@@ -98,7 +99,9 @@ export class PortalAuthController {
         password: body.password,
         ownerId: body.ownerId,
         consentKvkk: body.consentKvkk,
-        ...(body.displayName !== undefined ? { displayName: body.displayName } : {}),
+        ...(body.displayName !== undefined
+          ? { displayName: body.displayName }
+          : {}),
         ...(body.locale !== undefined ? { locale: body.locale } : {}),
       },
       ctx,
@@ -131,12 +134,17 @@ export class PortalAuthController {
       {
         email: body.email,
         consentKvkk: body.consentKvkk,
-        ...(body.displayName !== undefined ? { displayName: body.displayName } : {}),
+        ...(body.displayName !== undefined
+          ? { displayName: body.displayName }
+          : {}),
         ...(body.locale !== undefined ? { locale: body.locale } : {}),
       },
       ctx,
     );
-    return { user: result.user, emailVerificationToken: result.emailVerificationToken };
+    return {
+      user: result.user,
+      emailVerificationToken: result.emailVerificationToken,
+    };
   }
 
   /**
@@ -170,9 +178,8 @@ export class PortalAuthController {
     @Res({ passthrough: true }) response: Response,
   ): Promise<PortalSessionResponse> {
     const tenantId = this.resolveTenant(request) ?? "tenant-default";
-    const ipRaw =
-      request.header("x-forwarded-for") ?? request.ip ?? null;
-    const ip = ipRaw ? String(ipRaw).split(",")[0]?.trim() ?? null : null;
+    const ipRaw = request.header("x-forwarded-for") ?? request.ip ?? null;
+    const ip = ipRaw ? (String(ipRaw).split(",")[0]?.trim() ?? null) : null;
     const ua = request.header("user-agent") ?? null;
 
     const loginInput = {
@@ -181,7 +188,11 @@ export class PortalAuthController {
       ...(body.tenantSlug !== undefined ? { tenantSlug: body.tenantSlug } : {}),
     };
     const result = await this.service.login(tenantId, loginInput, ip, ua);
-    this.setSessionCookie(response, result.session.token, result.session.expiresAt);
+    this.setSessionCookie(
+      response,
+      result.session.token,
+      result.session.expiresAt,
+    );
     return {
       sessionToken: result.session.token,
       expiresAt: result.session.expiresAt,
@@ -211,17 +222,22 @@ export class PortalAuthController {
   @Post("logout")
   @HttpCode(HttpStatus.OK)
   public async logout(
-    @Req()
-    request: Request & {
-      cookies?: Record<string, string>;
-    },
+    @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ): Promise<PortalMessageResponse> {
-    const token =
-      request.cookies?.[PORTAL_SESSION_COOKIE_NAME] ??
-      (request.header("authorization")?.startsWith("Bearer ")
-        ? (request.header("authorization") as string).substring(7).trim()
-        : null);
+    const cookieBag: unknown = Reflect.get(
+      request as object,
+      "cookies",
+    ) as unknown;
+    const cookieToken: unknown =
+      typeof cookieBag === "object" && cookieBag !== null
+        ? (Reflect.get(cookieBag, PORTAL_SESSION_COOKIE_NAME) as unknown)
+        : null;
+    const authorization = request.header("authorization");
+    const bearerToken = authorization?.startsWith("Bearer ")
+      ? authorization.substring(7).trim()
+      : null;
+    const token = typeof cookieToken === "string" ? cookieToken : bearerToken;
     if (token) {
       const ctx = attemptMetaFromRequest(request);
       await this.service.logout(token, ctx);

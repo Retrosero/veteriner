@@ -10,7 +10,7 @@ Tenant-scoped tahsilat ters kayıt arama. `reasonCode`/
 **Query parametreleri (`PaymentReversalFilters`):**
 
 - `reasonCode` (enum: `refund|customer_request|error|duplicate|
-  other`) opsiyonel.
+other`) opsiyonel.
 - `sourceType` (enum: `clinic_sale|petshop_sale`) opsiyonel.
 - `sourceId` (string) opsiyonel.
 - `cashRegisterEffect` (enum: `in|out`) opsiyonel.

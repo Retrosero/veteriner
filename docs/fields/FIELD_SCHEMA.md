@@ -1,15 +1,27 @@
 # @file Alan Sözlüğü Şeması.
+
 # @module docs/fields/FIELD_SCHEMA
+
 #
+
 # @description VetNiva'daki tüm alanların (veritabanı
+
 # kolonları + form alanları) ortak sözlük şeması.
+
 # Alan adı, tip, kısıt, PII etiketi, validation, locale
+
 # açıklaması.
+
 #
+
 # @author GOAL-005 (FAZ-0) dokümantasyon ve AI bilgi havuzu
+
 # @since 2026-07-30
+
 # @security `pii: true` alanlar mask'lenir (PII_MASKING.md).
-#   Plain text PII asla loglanmaz.
+
+# Plain text PII asla loglanmaz.
+
 # =============================================================================
 
 # Alan Sözlüğü Şeması
@@ -42,48 +54,48 @@ Her alanın `field_id` (qualified name) vardır:
 
 `FIELD_GLOSSARY.md` tablosu için zorunlu kolonlar:
 
-| Kolon      | Açıklama |
-| ---------- | -------- |
-| `field_id` | Qualified alan adı. |
-| `entity`   | Varlık tipi (patient, owner, ...). |
-| `name`     | Alan adı. |
-| `type`     | Veri tipi (aşağıdaki enum). |
-| `required` | Zorunlu mu? |
-| `pii`      | PII alanı mı? |
-| `unique`   | Unique constraint var mı? |
-| `description_tr` | Türkçe açıklama. |
-| `description_en` | İngilizce açıklama. |
-| `validation` | Kısıt (regex, min/max, enum). |
-| `related_chunk` | `field-<field_id>` chunk_id. |
-| `version`  | Semver. |
+| Kolon            | Açıklama                           |
+| ---------------- | ---------------------------------- |
+| `field_id`       | Qualified alan adı.                |
+| `entity`         | Varlık tipi (patient, owner, ...). |
+| `name`           | Alan adı.                          |
+| `type`           | Veri tipi (aşağıdaki enum).        |
+| `required`       | Zorunlu mu?                        |
+| `pii`            | PII alanı mı?                      |
+| `unique`         | Unique constraint var mı?          |
+| `description_tr` | Türkçe açıklama.                   |
+| `description_en` | İngilizce açıklama.                |
+| `validation`     | Kısıt (regex, min/max, enum).      |
+| `related_chunk`  | `field-<field_id>` chunk_id.       |
+| `version`        | Semver.                            |
 
 ## 3. Veri Tipleri (Type Enum)
 
-| Tip         | Prisma / DB karşılığı              | Örnek |
-| ----------- | ---------------------------------- | ----- |
-| `string`    | `text` / `varchar(n)`              | `first_name` |
-| `number`    | `integer`                          | `age_years` |
-| `decimal`   | `numeric(p,s)` / `Decimal`         | `amount` |
-| `boolean`   | `boolean`                          | `is_active` |
-| `date`      | `date`                             | `birth_date` |
-| `datetime`  | `timestamptz`                      | `created_at` |
-| `time`      | `time`                             | `start_time` |
-| `enum`      | `enum` (DB) / `string` (TS)        | `species` |
-| `uuid`      | `uuid`                             | `id` |
-| `json`      | `jsonb`                            | `metadata` |
-| `array`     | `text[]` / `jsonb`                 | `tags` |
-| `currency`  | `numeric(p,s)` + ISO 4217 code     | `price` |
+| Tip        | Prisma / DB karşılığı          | Örnek        |
+| ---------- | ------------------------------ | ------------ |
+| `string`   | `text` / `varchar(n)`          | `first_name` |
+| `number`   | `integer`                      | `age_years`  |
+| `decimal`  | `numeric(p,s)` / `Decimal`     | `amount`     |
+| `boolean`  | `boolean`                      | `is_active`  |
+| `date`     | `date`                         | `birth_date` |
+| `datetime` | `timestamptz`                  | `created_at` |
+| `time`     | `time`                         | `start_time` |
+| `enum`     | `enum` (DB) / `string` (TS)    | `species`    |
+| `uuid`     | `uuid`                         | `id`         |
+| `json`     | `jsonb`                        | `metadata`   |
+| `array`    | `text[]` / `jsonb`             | `tags`       |
+| `currency` | `numeric(p,s)` + ISO 4217 code | `price`      |
 
 ## 4. PII Etiketi
 
 Aşağıdaki alanlar `pii: true` olarak işaretlenir:
 
-| Alan kategorisi      | Örnekler |
-| -------------------- | -------- |
+| Alan kategorisi      | Örnekler                                                                                   |
+| -------------------- | ------------------------------------------------------------------------------------------ |
 | Doğrudan tanımlayıcı | `first_name`, `last_name`, `email`, `phone`, `tax_id`, `iban`, `passport_no`, `id_card_no` |
-| Adres                | `address` (il/ilçe) |
-| Klinik bağlam        | `birth_date` (yıl), `vet_license_no` |
-| Dolaylı tanımlayıcı  | `ip_address`, `user_agent`, `device_id` |
+| Adres                | `address` (il/ilçe)                                                                        |
+| Klinik bağlam        | `birth_date` (yıl), `vet_license_no`                                                       |
+| Dolaylı tanımlayıcı  | `ip_address`, `user_agent`, `device_id`                                                    |
 
 Detay: [`../errors/PII_MASKING.md`](../errors/PII_MASKING.md).
 
@@ -91,15 +103,15 @@ Detay: [`../errors/PII_MASKING.md`](../errors/PII_MASKING.md).
 
 `validation` kolonu kısıtları tanımlar:
 
-| Kısıt        | Format | Örnek |
-| ------------ | ------ | ----- |
-| `min_length` | int | `min_length: 1` |
-| `max_length` | int | `max_length: 100` |
-| `pattern`    | regex | `pattern: "^[0-9]{10}$"` |
-| `min`        | number | `min: 0` |
-| `max`        | number | `max: 999999.99` |
-| `enum_values`| list | `enum_values: [TR, GB]` |
-| `format`     | enum | `format: email` / `format: e.164` / `format: iso8601` |
+| Kısıt         | Format | Örnek                                                 |
+| ------------- | ------ | ----------------------------------------------------- |
+| `min_length`  | int    | `min_length: 1`                                       |
+| `max_length`  | int    | `max_length: 100`                                     |
+| `pattern`     | regex  | `pattern: "^[0-9]{10}$"`                              |
+| `min`         | number | `min: 0`                                              |
+| `max`         | number | `max: 999999.99`                                      |
+| `enum_values` | list   | `enum_values: [TR, GB]`                               |
+| `format`      | enum   | `format: email` / `format: e.164` / `format: iso8601` |
 
 ## 6. Örnek Alan Tanımı
 
@@ -140,10 +152,10 @@ Detay: [`../errors/PII_MASKING.md`](../errors/PII_MASKING.md).
 `FIELD_GLOSSARY.md` insan okunabilir tablo olarak da tutulur:
 
 ```markdown
-| field_id | entity | name | type | required | pii | unique | description_tr | description_en | validation |
-| --- | --- | --- | --- | :-: | :-: | :-: | --- | --- | --- |
-| `patient.microchip` | patient | microchip | string | ✓ | – | ✓ | ISO 11784/11785 | ISO 11784/11785 | `^[0-9]{15}$` |
-| `owner.tax_id` | owner | tax_id | string | – | ✓ | ✓ | TCKN/VKN | TCKN/VKN | `^([0-9]{10}|[0-9]{11})$` |
+| field_id            | entity  | name      | type   | required | pii | unique | description_tr  | description_en  | validation    |
+| ------------------- | ------- | --------- | ------ | :------: | :-: | :----: | --------------- | --------------- | ------------- |
+| `patient.microchip` | patient | microchip | string |    ✓     |  –  |   ✓    | ISO 11784/11785 | ISO 11784/11785 | `^[0-9]{15}$` |
+| `owner.tax_id`      | owner   | tax_id    | string |    –     |  ✓  |   ✓    | TCKN/VKN        | TCKN/VKN        | `^([0-9]{10}  | [0-9]{11})$` |
 ```
 
 ## 8. CI Doğrulama

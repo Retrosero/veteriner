@@ -216,7 +216,9 @@ export class PilotSeedService {
     // OwnerRepository.upsert() implementasyonu FAZ-12+ ile bağlanır.
   }
 
-  private async upsertPatient(_p: PilotSeed["patients"][number]): Promise<void> {
+  private async upsertPatient(
+    _p: PilotSeed["patients"][number],
+  ): Promise<void> {
     // PatientRepository.upsert() implementasyonu FAZ-12+ ile bağlanır.
   }
 }

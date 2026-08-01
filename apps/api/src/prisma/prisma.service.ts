@@ -1,14 +1,11 @@
 /**
  * @file PrismaService.
  * @module apps/api/prisma
- *
  * @description Prisma Client lifecycle yönetimi. NestJS module
  * lifecycle'ına bağlanır; bağlantı `onModuleInit`'te, kapatma
- * `onModuleDestroy`'da yapılır.
- *
- * @security Tenant izolasyonu (PostgreSQL RLS) GOAL-001'de uygulanacak.
- * Şu an uygulama katmanı kontrolü bulunmuyor; veritabanına doğrudan
- * sorgu yapan testlerde dikkatli olunmalıdır.
+ * `onModuleDestroy`'da yapılır. Güvenlik: Tenant izolasyonu PostgreSQL
+ * RLS ile sağlanır; doğrudan veritabanı sorgusu yapan testlerde tenant
+ * bağlamı açıkça kurulmalıdır.
  */
 
 import {

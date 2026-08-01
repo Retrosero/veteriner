@@ -1,7 +1,6 @@
 /**
  * @file Clinical records controller.
  * @module apps/api/modules/clinical-records/clinical-records.controller
- *
  * @description GOAL-047 klinik kayıt PDF ve paylaşım REST API. Tenant
  * ID URL'de taşınmaz; actor.tenantId'den alınır (cross-tenant IDOR
  * koruması).
@@ -10,8 +9,7 @@
  * - `GET  /api/v1/clinic/examinations/:id/pdf`    — PDF render
  * - `POST /api/v1/clinic/examinations/:id/share`  — Hasta ile paylaş
  * - `GET  /api/v1/clinic/examinations/:id/shares` — Paylaşım listesi
- * - `DELETE /api/v1/clinic/shares/:shareId`       — Paylaşım iptal
- *
+ * - `DELETE /api/v1/clinic/shares/:shareId`       — Paylaşım iptal.
  * @since GOAL-047 (FAZ-4) klinik kayıt PDF ve paylaşım core
  */
 
@@ -29,22 +27,21 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import type { Response } from "express";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
-import type {
-  ClinicalRecordShare,
-  ClinicalRecordShareList,
-  ClinicalRecordShareRequest,
-} from "@vetniva/contracts";
 import { clinicalRecordShareRequestSchema } from "@vetniva/contracts";
 
 import { ClinicalRecordsService } from "./clinical-records.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type {
+  ClinicalRecordShareList,
+  ClinicalRecordShareRequest,
+} from "@vetniva/contracts";
+import type { Response } from "express";
 
 @ApiTags("clinical-records")
 @UseGuards(PermissionsGuard)
@@ -56,6 +53,9 @@ export class ClinicalRecordsController {
    * Klinik kayıt PDF render. Tenant-scoped; cross-tenant → 404.
    * Yanıt binary `text/plain` buffer olarak döner (FAZ-0 stub;
    * production'da `application/pdf`).
+   * @param examinationId
+   * @param actor
+   * @param res
    */
   @Get("examinations/:id/pdf")
   @RequirePermissions("clinic:examination:read")
@@ -93,6 +93,9 @@ export class ClinicalRecordsController {
    * Klinik kayıt paylaşımı. PDF oluşturulur, dosya servisine yüklenir,
    * kanallar (e-posta/SMS/portal) üzerinden gönderilir ve 7 gün geçerli
    * share kaydı oluşturulur.
+   * @param examinationId
+   * @param body
+   * @param actor
    */
   @Post("examinations/:id/share")
   @RequirePermissions("clinic:report:export")
@@ -128,6 +131,8 @@ export class ClinicalRecordsController {
 
   /**
    * Bir muayeneye ait paylaşım kayıtları (createdAt desc).
+   * @param examinationId
+   * @param actor
    */
   @Get("examinations/:id/shares")
   @RequirePermissions("clinic:examination:read")
@@ -141,16 +146,14 @@ export class ClinicalRecordsController {
     @CurrentActor() actor: ActorContext,
   ): Promise<ClinicalRecordShareList> {
     const tenantId = this.requireTenant(actor);
-    const items = await this.service.listShares(
-      tenantId,
-      examinationId,
-      actor,
-    );
+    const items = await this.service.listShares(tenantId, examinationId, actor);
     return { items };
   }
 
   /**
    * Share kaydını soft-delete yapar (`revokedAt` set). İdempotent.
+   * @param shareId
+   * @param actor
    */
   @Delete("shares/:shareId")
   @RequirePermissions("clinic:report:export")

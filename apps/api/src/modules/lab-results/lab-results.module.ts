@@ -10,10 +10,10 @@
 
 import { Module } from "@nestjs/common";
 
-import { LabOrdersModule } from "../lab-orders/lab-orders.module.js";
 import { LabResultsController } from "./lab-results.controller.js";
 import { LabResultsRepository } from "./lab-results.repository.js";
 import { LabResultsService } from "./lab-results.service.js";
+import { LabOrdersModule } from "../lab-orders/lab-orders.module.js";
 
 @Module({
   imports: [LabOrdersModule],

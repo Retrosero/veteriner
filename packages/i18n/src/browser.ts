@@ -1,7 +1,6 @@
 /**
- * @file i18next + react-i18next tarayıcı fabrikası.
+ * @file I18next + react-i18next tarayıcı fabrikası.
  * @module @vetniva/i18n/browser
- *
  * @description Yalnızca tarayıcı (client component) ortamında
  * çağrılması gereken i18n fabrikası. `initReactI18next` plugin'i
  * bu modülde eklenir; server bundle'a sızmasını engellemek için
@@ -12,24 +11,27 @@
  * `"use client"` direktifi bulunmalıdır. Aksi halde server bundle'a
  * `react-i18next` sızar ve `TypeError: createContext is not a function`
  * hatası oluşur.
- *
  * @security react-i18next yalnızca client bundle'da değerlendirilir;
  * server tarafında bu modül import edilmemelidir.
  */
 
 "use client";
 
-import i18next, { type i18n as I18nInstance, type Resource } from "i18next";
-import { initReactI18next } from "react-i18next";
-
 import {
   DEFAULT_LOCALE,
   SUPPORTED_LOCALES,
   type Locale,
 } from "@vetniva/contracts";
+import {
+  createInstance,
+  type i18n as I18nInstance,
+  type Resource,
+} from "i18next";
+import { initReactI18next } from "react-i18next";
 
-import trTR from "./locales/tr-TR.json" with { type: "json" };
 import enGB from "./locales/en-GB.json" with { type: "json" };
+import trTR from "./locales/tr-TR.json" with { type: "json" };
+
 import type { I18nConfig } from "./types.js";
 
 const DEFAULT_RESOURCES = {
@@ -41,7 +43,8 @@ const DEFAULT_RESOURCES = {
  * Tarayıcı tarafında (client component) `useTranslation` hook'u
  * ile birlikte kullanılacak i18n örneği üretir. React context
  * API'si yalnızca bu modülde etkindir.
- *
+ * @param {Partial<I18nConfig> | undefined} config Tenant ve kaynak override'ları.
+ * @returns {I18nInstance} Başlatılması tetiklenmiş i18n örneği.
  * @example
  * ```tsx
  * "use client";
@@ -52,21 +55,18 @@ const DEFAULT_RESOURCES = {
  * <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
  * ```
  */
-export function createBrowserI18n(
-  config?: Partial<I18nConfig>,
-): I18nInstance {
+export function createBrowserI18n(config?: Partial<I18nConfig>): I18nInstance {
   const defaultLocale: Locale =
     config?.tenantLocale ?? config?.defaultLocale ?? DEFAULT_LOCALE;
   const fallbackLocale: Locale = config?.fallbackLocale ?? DEFAULT_LOCALE;
   const supportedLocales = config?.supportedLocales ?? SUPPORTED_LOCALES;
   const resources =
-    (config?.resources as unknown as Resource | undefined) ??
-    DEFAULT_RESOURCES;
+    (config?.resources as unknown as Resource | undefined) ?? DEFAULT_RESOURCES;
 
-  const instance = i18next.createInstance();
+  const instance = createInstance();
   instance.use(initReactI18next);
 
-  instance.init({
+  void instance.init({
     lng: defaultLocale,
     fallbackLng: fallbackLocale,
     supportedLngs: [...supportedLocales],

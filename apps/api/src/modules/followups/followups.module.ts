@@ -13,12 +13,11 @@
 
 import { Module } from "@nestjs/common";
 
+import { FollowupsController } from "./followups.controller.js";
+import { FollowupsService } from "./followups.service.js";
 import { AppointmentsModule } from "../appointments/appointments.module.js";
 import { ExaminationsModule } from "../examinations/examinations.module.js";
 import { PrescriptionsModule } from "../prescriptions/prescriptions.module.js";
-
-import { FollowupsController } from "./followups.controller.js";
-import { FollowupsService } from "./followups.service.js";
 
 @Module({
   imports: [AppointmentsModule, ExaminationsModule, PrescriptionsModule],

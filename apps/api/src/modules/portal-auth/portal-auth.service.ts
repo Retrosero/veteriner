@@ -38,9 +38,9 @@
  * @since GOAL-033 (FAZ-3) hasta sahibi portal hesap kayıt ve giriş
  */
 
-import { Injectable, Logger } from "@nestjs/common";
 import { createHash, randomUUID } from "node:crypto";
 
+import { Injectable, Logger } from "@nestjs/common";
 import {
   ACCOUNT_LOCK_SECONDS,
   BCRYPT_COST,
@@ -50,14 +50,12 @@ import {
   PORTAL_SESSION_TTL_SECONDS,
 } from "@vetniva/contracts";
 
+import { PortalAuthRepository } from "./portal-auth.repository.js";
 import { AuditService } from "../../common/audit/audit.service.js";
 import { hashPassword, verifyPassword } from "../../common/auth/password.js";
 import { DomainError } from "../../common/errors/domain-error.js";
-import type { PortalInvitation } from "../../common/portal/portal.types.js";
-
 import { PortalService } from "../portal/portal.service.js";
 
-import { PortalAuthRepository } from "./portal-auth.repository.js";
 import type {
   PortalAttemptContext,
   PortalEmailVerificationRecord,
@@ -67,6 +65,7 @@ import type {
   PortalSession,
   PortalUser,
 } from "./portal-auth.types.js";
+import type { PortalInvitation } from "../../common/portal/portal.types.js";
 
 @Injectable()
 export class PortalAuthService {
@@ -148,7 +147,10 @@ export class PortalAuthService {
     });
 
     // 5) Email doğrulama token'ı üret.
-    const emailVerificationToken = this.issueEmailVerification(record.id, tenantId);
+    const emailVerificationToken = this.issueEmailVerification(
+      record.id,
+      tenantId,
+    );
 
     // 6) Audit.
     await this.audit.record({
@@ -220,7 +222,7 @@ export class PortalAuthService {
         tenantId,
         portalUserId: null,
       });
-      throw failGeneric();
+      return failGeneric();
     }
 
     // 2) Hesap kilitli mi?
@@ -235,7 +237,8 @@ export class PortalAuthService {
       });
       throw new DomainError({
         errorCode: "VET-AUTH-0005",
-        message: "Hesap geçici olarak kilitli; lütfen daha sonra tekrar deneyin",
+        message:
+          "Hesap geçici olarak kilitli; lütfen daha sonra tekrar deneyin",
         httpStatus: 423,
         severity: "warning",
         i18nKey: "error.VET-AUTH-0005",
@@ -276,7 +279,7 @@ export class PortalAuthService {
         tenantId,
         portalUserId: user.id,
       });
-      throw failGeneric();
+      return failGeneric();
     }
 
     // 5) Parola doğrula.
@@ -312,7 +315,7 @@ export class PortalAuthService {
           details: { remainingSeconds: ACCOUNT_LOCK_SECONDS },
         });
       }
-      throw failGeneric();
+      return failGeneric();
     }
 
     // 6) Başarılı: sayacı sıfırla + lastLoginAt.
@@ -386,9 +389,11 @@ export class PortalAuthService {
    * Session meta'sını döner. Guard tarafından session token'ın
    * expiresAt'ını okumak için kullanılır. Süresi geçmişse null.
    */
-  public async getSessionMeta(
-    token: string,
-  ): Promise<{ expiresAt: string; tenantId: string; portalUserId: string } | null> {
+  public async getSessionMeta(token: string): Promise<{
+    expiresAt: string;
+    tenantId: string;
+    portalUserId: string;
+  } | null> {
     const rec = this.repo.findSession(token);
     if (!rec) return null;
     if (rec.expiresAt <= Date.now()) {
@@ -406,10 +411,7 @@ export class PortalAuthService {
   // LOGOUT
   // ===========================================================================
 
-  public async logout(
-    token: string,
-    ctx: PortalAttemptContext,
-  ): Promise<void> {
+  public async logout(token: string, ctx: PortalAttemptContext): Promise<void> {
     const rec = this.repo.findSession(token);
     if (!rec) {
       // Idempotent: session yoksa yine OK.
@@ -463,14 +465,17 @@ export class PortalAuthService {
     };
     this.repo.insertResetToken(record);
 
-    await this.auditPortalAuthEvent("audit:portal.auth.password.reset_request", {
-      ctx,
-      email: normalized,
-      reason: null,
-      severity: "info",
-      tenantId,
-      portalUserId: user.id,
-    });
+    await this.auditPortalAuthEvent(
+      "audit:portal.auth.password.reset_request",
+      {
+        ctx,
+        email: normalized,
+        reason: null,
+        severity: "info",
+        tenantId,
+        portalUserId: user.id,
+      },
+    );
 
     // FAZ-0: debug için token response'a ekleniyor; FAZ-3+'da email
     // ile gönderilecek (notification GOAL-015 entegrasyonu).
@@ -522,14 +527,17 @@ export class PortalAuthService {
     });
     this.repo.consumeResetToken(tokenHash);
 
-    await this.auditPortalAuthEvent("audit:portal.auth.password.reset_success", {
-      ctx,
-      email: user.email,
-      reason: null,
-      severity: "info",
-      tenantId: rec.tenantId,
-      portalUserId: user.id,
-    });
+    await this.auditPortalAuthEvent(
+      "audit:portal.auth.password.reset_success",
+      {
+        ctx,
+        email: user.email,
+        reason: null,
+        severity: "info",
+        tenantId: rec.tenantId,
+        portalUserId: user.id,
+      },
+    );
 
     return { message: "Parola güncellendi" };
   }
@@ -741,7 +749,10 @@ export class PortalAuthService {
       severity: "info",
       ipAddress: ctx.ipAddress,
       userAgentHash: ctx.userAgentHash,
-      after: { email: user.email, expiresInSeconds: EMAIL_VERIFICATION_TTL_SECONDS },
+      after: {
+        email: user.email,
+        expiresInSeconds: EMAIL_VERIFICATION_TTL_SECONDS,
+      },
       metadata: { source: "portal_email_verification" },
     });
 
@@ -932,11 +943,12 @@ export class PortalAuthService {
       actorType: "portal_user",
       targetType: "portal_session",
       targetId: payload.portalUserId ?? "anonymous",
-      action: eventName.endsWith("success") || eventName.endsWith("register")
-        ? "create"
-        : eventName.endsWith("logout") || eventName.endsWith("reset_success")
-          ? "complete"
-          : "read",
+      action:
+        eventName.endsWith("success") || eventName.endsWith("register")
+          ? "create"
+          : eventName.endsWith("logout") || eventName.endsWith("reset_success")
+            ? "complete"
+            : "read",
       correlationId: payload.ctx.correlationId,
       country: "TR",
       severity: payload.severity,

@@ -1,7 +1,6 @@
 /**
  * @file PetshopSaleReturnsService unit testleri.
  * @module apps/api/modules/petshop-sale-returns/petshop-sale-returns.service.spec
- *
  * @description GOAL-065 petshop satış iadesi service testleri.
  *   - createReturn: completed sale → draft return (audit).
  *   - createReturn: satış bulunamadı / completed değil / orijinal
@@ -12,30 +11,26 @@
  *     + audit.
  *   - cancelReturn: draft → cancelled; cancelled/completed → 409.
  *   - Cross-tenant IDOR → null; cross-tenant create 403.
- *
  * @since GOAL-065 (FAZ-6) petshop satış iadesi core
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { PetshopSaleReturnsRepository } from "./petshop-sale-returns.repository.js";
+import { PetshopSaleReturnsService } from "./petshop-sale-returns.service.js";
+import { InventoryRepository } from "../inventory/inventory.repository.js";
+import { InventoryService } from "../inventory/inventory.service.js";
+import { PetshopSalesRepository } from "../petshop-sales/petshop-sales.repository.js";
+import { PetshopSalesService } from "../petshop-sales/petshop-sales.service.js";
+import { ProductsRepository } from "../products/products.repository.js";
+import { ProductsService } from "../products/products.service.js";
+import { StockMovementsRepository } from "../stock-movements/stock-movements.repository.js";
+import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-
-import { PetshopSaleReturnsService } from "./petshop-sale-returns.service.js";
-import { PetshopSaleReturnsRepository } from "./petshop-sale-returns.repository.js";
-import { PetshopSalesService } from "../petshop-sales/petshop-sales.service.js";
-import { PetshopSalesRepository } from "../petshop-sales/petshop-sales.repository.js";
-import { ProductsService } from "../products/products.service.js";
-import { ProductsRepository } from "../products/products.repository.js";
-import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
-import { StockMovementsRepository } from "../stock-movements/stock-movements.repository.js";
-import { InventoryService } from "../inventory/inventory.service.js";
-import { InventoryRepository } from "../inventory/inventory.repository.js";
 import type {
-  PetshopSaleCompleteInput,
   PetshopSaleCreateInput,
-  PetshopSaleReturnCancelInput,
-  PetshopSaleReturnCreateInput,
   ProductCreateInput,
   StockLotCreateInput,
 } from "@vetniva/contracts";
@@ -69,24 +64,28 @@ const STAFF_B: ActorContext = {
   source: "header",
 };
 
+/** Audit davranışını doğrulamak için minimal servis taklidi üretir. */
 function makeAudit(): AuditService {
   return {
     record: vi.fn().mockResolvedValue({ eventId: "ev-1" }),
     recordSimple: vi
       .fn()
       .mockImplementation(
-        async (
+        (
           _eventName: string,
           _targetType: string,
           _targetId: string,
           _action: string,
           _actor: unknown,
           _severity: string,
-        ) => ({ eventId: "ev-1" }),
+        ) => Promise.resolve({ eventId: "ev-1" }),
       ),
   } as unknown as AuditService;
 }
 
+/** Test ürünü için geçerli varsayılan girdi üretir.
+ * @param overrides
+ */
 function makeProductInput(
   overrides: Partial<ProductCreateInput> = {},
 ): ProductCreateInput {
@@ -108,6 +107,10 @@ function makeProductInput(
   };
 }
 
+/** Tamamlanabilir satış için geçerli varsayılan girdi üretir.
+ * @param productId
+ * @param overrides
+ */
 function makeSaleInput(
   productId: string,
   overrides: Partial<PetshopSaleCreateInput> = {},
@@ -145,10 +148,7 @@ describe("PetshopSaleReturnsService", () => {
     salesRepo = new PetshopSalesRepository();
     const productRepo = new ProductsRepository();
     productsService = new ProductsService(productRepo, audit);
-    inventoryService = new InventoryService(
-      new InventoryRepository(),
-      audit,
-    );
+    inventoryService = new InventoryService(new InventoryRepository(), audit);
     const stockRepo = new StockMovementsRepository();
     stockService = new StockMovementsService(
       stockRepo,
@@ -172,6 +172,12 @@ describe("PetshopSaleReturnsService", () => {
     );
   });
 
+  /** Ürün servisine test ürünü ekler ve kimliğini döner.
+   * @param code
+   * @param name
+   * @param salePrice
+   * @param overrides
+   */
   async function seedProduct(
     code: string,
     name: string,
@@ -189,6 +195,9 @@ describe("PetshopSaleReturnsService", () => {
     return p.id;
   }
 
+  /** Ürüne bağlı tamamlanmış satış ve satır kimliğini hazırlar.
+   * @param productId
+   */
   async function seedCompletedSale(
     productId: string,
   ): Promise<{ saleId: string; lineId: string }> {
@@ -200,13 +209,16 @@ describe("PetshopSaleReturnsService", () => {
     const completed = await salesService.completeSale(
       TENANT_A,
       created.sale.id,
-      {} as PetshopSaleCompleteInput,
+      {},
       STAFF_A,
     );
     const lineId = created.lines[0]!.id;
     return { saleId: completed.sale.id, lineId };
   }
 
+  /** İade işlemi için süresi geçmemiş stok lotu oluşturur.
+   * @param productId
+   */
   async function seedLot(productId: string): Promise<string> {
     // Gelecek bir tarih (SKT geçerli).
     const expiry = new Date(
@@ -219,11 +231,7 @@ describe("PetshopSaleReturnsService", () => {
       receivedAt: new Date().toISOString(),
       quantity: "10",
     };
-    const lot = await inventoryService.createLot(
-      TENANT_A,
-      lotInput,
-      STAFF_A,
-    );
+    const lot = await inventoryService.createLot(TENANT_A, lotInput, STAFF_A);
     return lot.id;
   }
 
@@ -252,12 +260,14 @@ describe("PetshopSaleReturnsService", () => {
               discountPercent: 0,
             },
           ],
-        } as PetshopSaleReturnCreateInput,
+        },
         STAFF_A,
       );
       expect(out.return.status).toBe("draft");
       expect(out.return.refundAmount).toBe("50");
       expect(out.lines.length).toBe(1);
+      // Mock spy doğrudan doğrulanır; gerçek servis metodu `this` kullanmaz.
+
       expect(audit.recordSimple).toHaveBeenCalledWith(
         "audit:petshop_sale_return.create",
         "petshop_sale_return",
@@ -288,7 +298,7 @@ describe("PetshopSaleReturnsService", () => {
                 unitPrice: "50",
               },
             ],
-          } as PetshopSaleReturnCreateInput,
+          },
           STAFF_A,
         ),
       ).rejects.toMatchObject({
@@ -321,7 +331,7 @@ describe("PetshopSaleReturnsService", () => {
                 unitPrice: "50",
               },
             ],
-          } as PetshopSaleReturnCreateInput,
+          },
           STAFF_A,
         ),
       ).rejects.toMatchObject({
@@ -350,7 +360,7 @@ describe("PetshopSaleReturnsService", () => {
                 unitPrice: "50",
               },
             ],
-          } as PetshopSaleReturnCreateInput,
+          },
           STAFF_A,
         ),
       ).rejects.toMatchObject({
@@ -379,7 +389,7 @@ describe("PetshopSaleReturnsService", () => {
                 unitPrice: "50",
               },
             ],
-          } as PetshopSaleReturnCreateInput,
+          },
           STAFF_A,
         ),
       ).rejects.toMatchObject({
@@ -409,7 +419,7 @@ describe("PetshopSaleReturnsService", () => {
                 unitPrice: "50",
               },
             ],
-          } as PetshopSaleReturnCreateInput,
+          },
           STAFF_A,
         ),
       ).rejects.toMatchObject({
@@ -439,7 +449,7 @@ describe("PetshopSaleReturnsService", () => {
                 unitPrice: "50",
               },
             ],
-          } as PetshopSaleReturnCreateInput,
+          },
           STAFF_A,
         ),
       ).rejects.toMatchObject({
@@ -476,7 +486,7 @@ describe("PetshopSaleReturnsService", () => {
                 unitPrice: "50",
               },
             ],
-          } as PetshopSaleReturnCreateInput,
+          },
           STAFF_A,
         ),
       ).rejects.toMatchObject({
@@ -508,7 +518,7 @@ describe("PetshopSaleReturnsService", () => {
                 unitPrice: "50",
               },
             ],
-          } as PetshopSaleReturnCreateInput,
+          },
           STAFF_A,
         ),
       ).rejects.toMatchObject({
@@ -536,7 +546,7 @@ describe("PetshopSaleReturnsService", () => {
               unitPrice: "100",
             },
           ],
-        } as PetshopSaleReturnCreateInput,
+        },
         STAFF_A,
       );
       expect(out.return.totalAmount).toBe("100");
@@ -568,7 +578,7 @@ describe("PetshopSaleReturnsService", () => {
               unitPrice: "50",
             },
           ],
-        } as PetshopSaleReturnCreateInput,
+        },
         STAFF_A,
       );
       const out = await returnsService.listReturns(
@@ -605,7 +615,7 @@ describe("PetshopSaleReturnsService", () => {
               unitPrice: "50",
             },
           ],
-        } as PetshopSaleReturnCreateInput,
+        },
         STAFF_A,
       );
       const detail = await returnsService.getReturnDetail(
@@ -641,7 +651,7 @@ describe("PetshopSaleReturnsService", () => {
               unitPrice: "50",
             },
           ],
-        } as PetshopSaleReturnCreateInput,
+        },
         STAFF_A,
       );
       const completed = await returnsService.completeReturn(
@@ -653,21 +663,16 @@ describe("PetshopSaleReturnsService", () => {
       expect(completed.return.status).toBe("completed");
       expect(completed.return.completedAt).not.toBeNull();
       // Sale -2 + return +1 = -1 net
-      const balances = await stockService.listBalances(
-        TENANT_A,
-        STAFF_A,
-        { productId: pid },
-      );
+      const balances = stockService.listBalances(TENANT_A, STAFF_A, {
+        productId: pid,
+      });
       expect(balances.items[0]?.netQuantity).toBe("-1");
     });
 
     it("purchaseTracked olmayan üründe stok hareketi oluşturmaz", async () => {
-      const pid = await seedProduct(
-        "SKU-PT0",
-        "Ürün PT0",
-        "50",
-        { purchaseTracked: false },
-      );
+      const pid = await seedProduct("SKU-PT0", "Ürün PT0", "50", {
+        purchaseTracked: false,
+      });
       const { saleId, lineId: origLine } = await seedCompletedSale(pid);
       const created = await returnsService.createReturn(
         TENANT_A,
@@ -685,12 +690,12 @@ describe("PetshopSaleReturnsService", () => {
               unitPrice: "50",
             },
           ],
-        } as PetshopSaleReturnCreateInput,
+        },
         STAFF_A,
       );
       const before = await stockService.listMovements(
         TENANT_A,
-        { limit: 50, offset: 0 } as never,
+        { limit: 50, offset: 0 },
         STAFF_A,
       );
       const beforeCount = before.total;
@@ -702,7 +707,7 @@ describe("PetshopSaleReturnsService", () => {
       );
       const after = await stockService.listMovements(
         TENANT_A,
-        { limit: 50, offset: 0 } as never,
+        { limit: 50, offset: 0 },
         STAFF_A,
       );
       // Sadece tamamlama sırasında +0 hareket (satışta da yok).
@@ -728,7 +733,7 @@ describe("PetshopSaleReturnsService", () => {
               unitPrice: "50",
             },
           ],
-        } as PetshopSaleReturnCreateInput,
+        },
         STAFF_A,
       );
       await returnsService.completeReturn(
@@ -775,13 +780,13 @@ describe("PetshopSaleReturnsService", () => {
               unitPrice: "50",
             },
           ],
-        } as PetshopSaleReturnCreateInput,
+        },
         STAFF_A,
       );
       const cancelled = await returnsService.cancelReturn(
         TENANT_A,
         created.return.id,
-        { reason: "yanlışlık" } as PetshopSaleReturnCancelInput,
+        { reason: "yanlışlık" },
         STAFF_A,
       );
       expect(cancelled.return.status).toBe("cancelled");
@@ -807,20 +812,20 @@ describe("PetshopSaleReturnsService", () => {
               unitPrice: "50",
             },
           ],
-        } as PetshopSaleReturnCreateInput,
+        },
         STAFF_A,
       );
       await returnsService.cancelReturn(
         TENANT_A,
         created.return.id,
-        { reason: "ilk" } as PetshopSaleReturnCancelInput,
+        { reason: "ilk" },
         STAFF_A,
       );
       await expect(
         returnsService.cancelReturn(
           TENANT_A,
           created.return.id,
-          { reason: "ikinci" } as PetshopSaleReturnCancelInput,
+          { reason: "ikinci" },
           STAFF_A,
         ),
       ).rejects.toMatchObject({
@@ -848,7 +853,7 @@ describe("PetshopSaleReturnsService", () => {
               unitPrice: "50",
             },
           ],
-        } as PetshopSaleReturnCreateInput,
+        },
         STAFF_A,
       );
       await returnsService.completeReturn(
@@ -861,7 +866,7 @@ describe("PetshopSaleReturnsService", () => {
         returnsService.cancelReturn(
           TENANT_A,
           created.return.id,
-          { reason: "iptal" } as PetshopSaleReturnCancelInput,
+          { reason: "iptal" },
           STAFF_A,
         ),
       ).rejects.toMatchObject({
@@ -896,7 +901,7 @@ describe("PetshopSaleReturnsService", () => {
               unitPrice: "50",
             },
           ],
-        } as PetshopSaleReturnCreateInput,
+        },
         STAFF_A,
       );
       // İlk iadeyi tamamla (draft → completed; yeni iade açılabilir).
@@ -923,7 +928,7 @@ describe("PetshopSaleReturnsService", () => {
               unitPrice: "50",
             },
           ],
-        } as PetshopSaleReturnCreateInput,
+        },
         STAFF_A,
       );
       expect(r2.return.status).toBe("draft");
@@ -945,7 +950,7 @@ describe("PetshopSaleReturnsService", () => {
                 unitPrice: "50",
               },
             ],
-          } as PetshopSaleReturnCreateInput,
+          },
           STAFF_A,
         ),
       ).rejects.toMatchObject({
@@ -980,7 +985,7 @@ describe("PetshopSaleReturnsService", () => {
                 unitPrice: "50",
               },
             ],
-          } as PetshopSaleReturnCreateInput,
+          },
           STAFF_A,
         ),
       ).rejects.toMatchObject({

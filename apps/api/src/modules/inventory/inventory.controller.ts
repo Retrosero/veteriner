@@ -47,13 +47,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   shelfArchiveInputSchema,
   shelfCreateInputSchema,
@@ -88,6 +81,13 @@ import {
 } from "@vetniva/contracts";
 
 import { InventoryService } from "./inventory.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 /**
  * Base controller — tek controller'da üç kaynak yönetilir
@@ -291,8 +291,7 @@ export class InventoryController {
   @ApiOperation({
     operationId: "shelfArchive",
     summary: "Raf arşivleme",
-    description:
-      "Soft delete. Aktif lot varsa 409 VET-INV-0003.",
+    description: "Soft delete. Aktif lot varsa 409 VET-INV-0003.",
   })
   public async archiveShelf(
     @Param("id", new ParseUUIDPipe()) id: string,

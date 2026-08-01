@@ -54,10 +54,7 @@ export class OrdersRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): OrderRecord | null {
+  public findById(tenantId: string, id: string): OrderRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;

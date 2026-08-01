@@ -24,7 +24,7 @@ POST /api/v1/clinic/hospitalizations/hosp-uuid/discharge
 ```
 
 - `dischargeCondition` (enum: `recovered|improved|
-  unchanged|transferred|deceased`) zorunlu.
+unchanged|transferred|deceased`) zorunlu.
 - `dischargeInstructions` (string) opsiyonel.
 - `followUpDate` (ISO datetime) opsiyonel.
 

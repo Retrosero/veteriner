@@ -23,20 +23,18 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import { LogRetentionRepository } from "./log-retention.repository.js";
+import { LogRetentionService } from "./log-retention.service.js";
 import { ErrorEventsRepository } from "../error-events/error-events.repository.js";
 import { JobRunsRepository } from "../job-runs/job-runs.repository.js";
 import { SecurityEventsRepository } from "../security-events/security-events.repository.js";
-import { LogRetentionService } from "./log-retention.service.js";
-import { LogRetentionRepository } from "./log-retention.repository.js";
 import { ErrorEventRetentionTarget } from "./targets/error-event.target.js";
 import { JobRunRetentionTarget } from "./targets/job-run.target.js";
 import { SecurityEventRetentionTarget } from "./targets/security-event.target.js";
-import type {
-  ErrorSeverity,
-  SecurityEventSeverity,
-} from "@vetniva/contracts";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { JobRunRecord } from "../../common/job-runs/job-run.types.js";
+import type { ErrorSeverity, SecurityEventSeverity } from "@vetniva/contracts";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -548,10 +546,7 @@ describe("LogRetentionService", () => {
       });
     }
 
-    function seedJobRun(
-      occurredAt: string,
-      tenantId: string | null,
-    ): void {
+    function seedJobRun(occurredAt: string, tenantId: string | null): void {
       // JobRunsRepository.insert JobRunRecord bekliyor; id dışında
       // tüm alanları doldururuz.
       const rec: JobRunRecord = {

@@ -16,7 +16,6 @@
 import { Injectable } from "@nestjs/common";
 
 import type {
-  WaitlistEntry,
   WaitlistFilters,
   WaitlistPriority,
   WaitlistStatus,
@@ -57,10 +56,7 @@ export class WaitlistRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): WaitlistEntryRecord | null {
+  public findById(tenantId: string, id: string): WaitlistEntryRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;

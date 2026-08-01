@@ -34,27 +34,27 @@
  * @since GOAL-035 (FAZ-3) online randevu talebi core
  */
 
-import { Injectable, Logger } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import type {
-  Appointment,
-  AppointmentRequest,
-  AppointmentRequestCreateInput,
-} from "@vetniva/contracts";
+import { Injectable, Logger } from "@nestjs/common";
 
-import type { AppointmentsService } from "../appointments/appointments.service.js";
-import type { NotificationsService } from "../notifications/notifications.service.js";
-import type { PatientsService } from "../patients/patients.service.js";
+import { AuditService } from "../../common/audit/audit.service.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { AppointmentsService } from "../appointments/appointments.service.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
+import { PatientsService } from "../patients/patients.service.js";
 import { PortalAuthService } from "../portal-auth/portal-auth.service.js";
 
 import type {
   AppointmentRequestApproveResult,
   AppointmentRequestRecord,
 } from "./portal-appointments.types.js";
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type {
+  Appointment,
+  AppointmentRequest,
+  AppointmentRequestCreateInput,
+} from "@vetniva/contracts";
 
 /** Approve edilen talep için default randevu süresi (dakika). */
 const APPROVE_DEFAULT_DURATION_MIN = 30;
@@ -247,10 +247,7 @@ export class PortalAppointmentsService {
     if (existing.status === "cancelled") {
       return; // idempotent
     }
-    if (
-      existing.status === "approved" ||
-      existing.status === "rejected"
-    ) {
+    if (existing.status === "approved" || existing.status === "rejected") {
       throw new DomainError({
         errorCode: "VET-PORTAL-0006",
         message: "Onaylanmış veya reddedilmiş talep iptal edilemez",
@@ -262,7 +259,11 @@ export class PortalAppointmentsService {
     }
 
     const now = new Date().toISOString();
-    this.byId.set(requestId, { ...existing, status: "cancelled", decidedAt: now });
+    this.byId.set(requestId, {
+      ...existing,
+      status: "cancelled",
+      decidedAt: now,
+    });
 
     await this.audit.recordSimple(
       "audit:portal.appointment.cancel",
@@ -556,7 +557,7 @@ export class PortalAppointmentsService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system" | "portal_user",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,
@@ -611,12 +612,21 @@ export class PortalAppointmentsService {
     tenantId: string;
     userId: string;
     channel: "sms" | "email" | "in_app" | "whatsapp";
-    category: "appointment_reminder" | "vaccination_due" | "lab_result_ready" | "invoice" | "portal_invite" | "custom";
+    category:
+      | "appointment_reminder"
+      | "vaccination_due"
+      | "lab_result_ready"
+      | "invoice"
+      | "portal_invite"
+      | "custom";
     templateKey: string;
     locale: "tr-TR" | "en-GB";
     data: Record<string, unknown>;
   }): Promise<void> {
     try {
+      const requestId = args.data["requestId"];
+      const requestKeyPart = typeof requestId === "string" ? requestId : "";
+
       await this.notifications.send({
         tenantId: args.tenantId,
         userId: args.userId,
@@ -625,7 +635,7 @@ export class PortalAppointmentsService {
         templateKey: args.templateKey,
         locale: args.locale,
         data: args.data,
-        idempotencyKey: `portal-appt-req:${args.templateKey}:${args.userId}:${args.data["requestId"] ?? ""}`,
+        idempotencyKey: `portal-appt-req:${args.templateKey}:${args.userId}:${requestKeyPart}`,
       });
     } catch (err) {
       this.logger.warn(

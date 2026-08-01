@@ -12,13 +12,13 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { FilesService } from "./files.service.js";
+import { FILE_LIMITS, type FileUpload } from "../../common/files/file.types.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
 import type { AntivirusDriver } from "../../common/files/antivirus.interface.js";
-import { FILE_LIMITS, type FileUpload } from "../../common/files/file.types.js";
 import type { StorageDriver } from "../../common/files/storage.interface.js";
-
-import { FilesService } from "./files.service.js";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -243,12 +243,7 @@ describe("FilesService", () => {
   describe("getSignedUrl", () => {
     it("yetkili kullanıcı URL alır", async () => {
       const meta = await service.upload(TENANT_A, jpegUpload(), STAFF_A);
-      const url = await service.getSignedUrl(
-        TENANT_A,
-        meta.id,
-        STAFF_A,
-        300,
-      );
+      const url = await service.getSignedUrl(TENANT_A, meta.id, STAFF_A, 300);
       expect(typeof url).toBe("string");
       expect(url.length).toBeGreaterThan(0);
     });

@@ -25,10 +25,8 @@ import { z } from "zod";
 
 /** ISO 8601 datetime regex (Z veya ±HH:MM). */
 const ISO_DATETIME_REGEX =
+  // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, tüm tekrarlar sabit/üst sınırlı ISO-8601 doğrulamasıdır.
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/;
-
-/** ISO `YYYY-MM-DD` formatı. */
-const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * Aşı uygulama kaydı durumu.

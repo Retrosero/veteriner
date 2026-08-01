@@ -55,11 +55,11 @@ Modül listesi hassas bilgi taşımaz (PII etiketi: false).
 
 ## Hata kodları
 
-| Kod               | HTTP | Açıklama                                       |
-| ----------------- | ---- | ---------------------------------------------- |
-| `VET-AUTH-0001`   | 401  | Oturum geçersiz veya süresi dolmuş.            |
-| `VET-AUTHZ-0001`  | 403  | Permission yok (`tenant:tenant:read`).         |
-| `VET-AUTHZ-0006`  | 403  | Aktif tenant bağlamı yok.                      |
+| Kod              | HTTP | Açıklama                               |
+| ---------------- | ---- | -------------------------------------- |
+| `VET-AUTH-0001`  | 401  | Oturum geçersiz veya süresi dolmuş.    |
+| `VET-AUTHZ-0001` | 403  | Permission yok (`tenant:tenant:read`). |
+| `VET-AUTHZ-0006` | 403  | Aktif tenant bağlamı yok.              |
 
 ## Örnek
 

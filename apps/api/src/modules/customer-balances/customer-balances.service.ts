@@ -1,7 +1,6 @@
 /**
  * @file CustomerBalances (müşteri borç/alacak görünümü) service.
  * @module apps/api/modules/customer-balances/customer-balances.service
- *
  * @description GOAL-075 (FAZ-7) müşteri borç/alacak görünümü iş
  * kuralları. Owner (sahip) bazında:
  * - Toplam satış tutarı, toplam tahsilat, toplam ters kayıt,
@@ -11,14 +10,13 @@
  * Cross-module read-only:
  * - ClinicSalesService (clinic_sale)
  * - PetshopSalesService (petshop_sale)
- * - PaymentsService (payment)
+ * - PaymentsService (payment).
  *
  * İş kuralları:
  * - `getSummary`: tüm satış + tahsilatları topla; net =
  *   totalPaid - totalReversed (reversed etkin tutarı 0).
  *   openAmount = totalNetAmount - totalPaidAmount.
  * - `listTransactions`: tarih sıralı birleşik liste.
- *
  * @security Tenant bilgisi yalnızca actor.tenantId'den alınır.
  *
  * @since GOAL-075 (FAZ-7) müşteri borç/alacak görünümü core
@@ -26,18 +24,18 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
+import { ClinicSalesService } from "../clinic-sales/clinic-sales.service.js";
+import { PaymentsService } from "../payments/payments.service.js";
+import { PetshopSalesService } from "../petshop-sales/petshop-sales.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   CustomerBalanceSummary,
   CustomerTransaction,
   CustomerTransactionsFilters,
   CustomerTransactionsResponse,
 } from "@vetniva/contracts";
-
-import { ClinicSalesService } from "../clinic-sales/clinic-sales.service.js";
-import { PetshopSalesService } from "../petshop-sales/petshop-sales.service.js";
-import { PaymentsService } from "../payments/payments.service.js";
 
 @Injectable()
 export class CustomerBalancesService {
@@ -79,11 +77,7 @@ export class CustomerBalancesService {
         },
         actor,
       ),
-      this.payments.listPayments(
-        tenantId,
-        { limit: 10000, offset: 0 },
-        actor,
-      ),
+      this.payments.listPayments(tenantId, { limit: 10000, offset: 0 }, actor),
     ]);
 
     let totalSaleAmount = "0";
@@ -124,10 +118,7 @@ export class CustomerBalancesService {
       // effectiveAmount=0 olduğu için hiç katkı sağlamaz.
       if (p.status === "completed" || p.status === "partially_reversed") {
         totalPaidAmount = addDecimal(totalPaidAmount, p.effectiveAmount);
-        totalReversedAmount = addDecimal(
-          totalReversedAmount,
-          p.reversedAmount,
-        );
+        totalReversedAmount = addDecimal(totalReversedAmount, p.reversedAmount);
       }
     }
 
@@ -178,11 +169,7 @@ export class CustomerBalancesService {
         },
         actor,
       ),
-      this.payments.listPayments(
-        tenantId,
-        { limit: 10000, offset: 0 },
-        actor,
-      ),
+      this.payments.listPayments(tenantId, { limit: 10000, offset: 0 }, actor),
     ]);
 
     const saleIdSet = new Set<string>([
@@ -246,7 +233,10 @@ export class CustomerBalancesService {
       filtered = filtered.filter((it) => it.type === filters.type);
     }
     const total = filtered.length;
-    const paged = filtered.slice(filters.offset, filters.offset + filters.limit);
+    const paged = filtered.slice(
+      filters.offset,
+      filters.offset + filters.limit,
+    );
     return {
       ownerId,
       totalCount: total,
@@ -275,18 +265,32 @@ export class CustomerBalancesService {
  * Dahili decimal yardımcıları
  * -------------------------------------------------------------------------- */
 
+/**
+ * Iki ondalik bakiyeyi sabit nokta aritmetigiyle toplar.
+ * @param a
+ * @param b
+ */
 function addDecimal(a: string, b: string): string {
   const A = toBigInt(a);
   const B = toBigInt(b);
   return fromBigInt(A + B);
 }
 
+/**
+ * Iki ondalik bakiyeyi sabit nokta aritmetigiyle cikarir.
+ * @param a
+ * @param b
+ */
 function subDecimal(a: string, b: string): string {
   const A = toBigInt(a);
   const B = toBigInt(b);
   return fromBigInt(A - B);
 }
 
+/**
+ * Ondalik metni dort haneli sabit nokta bigint degerine cevirir.
+ * @param v
+ */
 function toBigInt(v: string): bigint {
   const parts = v.split(".");
   const intPart = parts[0] ?? "0";
@@ -294,6 +298,10 @@ function toBigInt(v: string): bigint {
   return BigInt(intPart) * BigInt(10000) + BigInt(fracPart);
 }
 
+/**
+ * Sabit nokta bigint degerini ondalik metne cevirir.
+ * @param scaled
+ */
 function fromBigInt(scaled: bigint): string {
   const negative = scaled < BigInt(0);
   const abs = negative ? -scaled : scaled;
@@ -305,6 +313,11 @@ function fromBigInt(scaled: bigint): string {
   return negative && body !== "0" ? `-${body}` : body;
 }
 
+/**
+ * Iki ISO zaman damgasindan en guncelini, null degerlerini koruyarak secer.
+ * @param a
+ * @param b
+ */
 function maxIso(a: string | null, b: string | null): string | null {
   if (!a) return b;
   if (!b) return a;

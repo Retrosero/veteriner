@@ -13,12 +13,8 @@
 
 import { Injectable } from "@nestjs/common";
 
-import type {
-  SurgeryPlanRecord,
-} from "../../common/surgery-plans/surgery-plan.types.js";
-import type {
-  SurgeryPlanStatus,
-} from "@vetniva/contracts";
+import type { SurgeryPlanRecord } from "../../common/surgery-plans/surgery-plan.types.js";
+import type { SurgeryPlanStatus } from "@vetniva/contracts";
 
 /** Patch tipi. */
 export interface SurgeryPlanPatch {
@@ -67,10 +63,7 @@ export class SurgeryPlansRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): SurgeryPlanRecord | null {
+  public findById(tenantId: string, id: string): SurgeryPlanRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -100,8 +93,7 @@ export class SurgeryPlansRepository {
     for (const rec of this.byId.values()) {
       if (rec.tenantId !== tenantId) continue;
       if (filters.status && rec.status !== filters.status) continue;
-      if (filters.patientId && rec.patientId !== filters.patientId)
-        continue;
+      if (filters.patientId && rec.patientId !== filters.patientId) continue;
       if (
         filters.leadSurgeonUserId &&
         rec.leadSurgeonUserId !== filters.leadSurgeonUserId

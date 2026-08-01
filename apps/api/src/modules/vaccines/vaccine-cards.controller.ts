@@ -32,23 +32,23 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import type { Request } from "express";
+import { tenantVaccineCardPortalSettingInputSchema } from "@vetniva/contracts";
 
+import { VaccineCardsService } from "./vaccine-cards.service.js";
 import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
 import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
 import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
 import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+import { PortalSessionGuard } from "../portal-auth/portal-session.guard.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   TenantVaccineCardPortalSetting,
   TenantVaccineCardPortalSettingInput,
   VaccineCard,
 } from "@vetniva/contracts";
-import { tenantVaccineCardPortalSettingInputSchema } from "@vetniva/contracts";
-
-import { PortalSessionGuard } from "../portal-auth/portal-session.guard.js";
-import { VaccineCardsService } from "./vaccine-cards.service.js";
+import type { Request } from "express";
 
 /** Portal session guard sonrası set edilen request augmentation. */
 interface PortalSessionRequest {
@@ -180,9 +180,10 @@ export class PortalVaccineCardsController {
     return this.service.getPortalVaccineCard(tenantId, patientId, actor);
   }
 
-  private requireSession(
-    request: Request & PortalSessionRequest,
-  ): { portalUserId: string; tenantId: string } {
+  private requireSession(request: Request & PortalSessionRequest): {
+    portalUserId: string;
+    tenantId: string;
+  } {
     const session = request.portalSession;
     if (!session) {
       throw new Error("Portal session context missing");
@@ -193,12 +194,8 @@ export class PortalVaccineCardsController {
     };
   }
 
-  private actorFor(
-    request: Request,
-    tenantId: string,
-  ): ActorContext {
-    const ip =
-      (request.header("x-forwarded-for") as string | undefined) ?? null;
+  private actorFor(request: Request, tenantId: string): ActorContext {
+    const ip = request.header("x-forwarded-for") ?? null;
     const ua = request.header("user-agent") ?? null;
     return {
       actorId: null,
@@ -208,7 +205,7 @@ export class PortalVaccineCardsController {
       branchId: null,
       isSuperadmin: false,
       correlationId: `req-portal-${Date.now()}`,
-      ipAddress: ip ? ip.split(",")[0]?.trim() ?? null : null,
+      ipAddress: ip ? (ip.split(",")[0]?.trim() ?? null) : null,
       userAgentHash: ua ? this.hashUa(ua) : null,
       source: "portal_session",
     };

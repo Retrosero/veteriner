@@ -145,10 +145,7 @@ const DECIMAL_RE = /^\d+(\.\d{1,4})?$/;
  * Decimal string çarpma. 4 ondalık basamağa kadar.
  * Geçersiz girdi → null.
  */
-export function multiplyDecimalString(
-  a: string,
-  b: string,
-): string | null {
+export function multiplyDecimalString(a: string, b: string): string | null {
   if (!DECIMAL_RE.test(a)) return null;
   if (!DECIMAL_RE.test(b)) return null;
   const split = (v: string): { int: bigint; scale: number } => {
@@ -175,9 +172,7 @@ export function multiplyDecimalString(
     fracPartStr = s.slice(s.length - totalScale);
   }
   fracPartStr = fracPartStr.replace(/0+$/, "");
-  return fracPartStr.length > 0
-    ? `${intPartStr}.${fracPartStr}`
-    : intPartStr;
+  return fracPartStr.length > 0 ? `${intPartStr}.${fracPartStr}` : intPartStr;
 }
 
 /**
@@ -209,7 +204,5 @@ export function addDecimalString(a: string, b: string): string | null {
     fracPartStr = s.slice(s.length - totalScale);
   }
   fracPartStr = fracPartStr.replace(/0+$/, "");
-  return fracPartStr.length > 0
-    ? `${intPartStr}.${fracPartStr}`
-    : intPartStr;
+  return fracPartStr.length > 0 ? `${intPartStr}.${fracPartStr}` : intPartStr;
 }

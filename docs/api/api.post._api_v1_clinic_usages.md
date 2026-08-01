@@ -27,7 +27,7 @@ POST /api/v1/clinic/usages
 - `lotId` (string) opsiyonel; lot-scoped tüketim için.
 - `quantity` (Decimal, >0) zorunlu.
 - `sourceType` (enum: `examination|vaccine_application|
-  surgery|hospitalization`) zorunlu.
+surgery|hospitalization`) zorunlu.
 - `sourceId` (string) zorunlu — ilgili muayene/aşı/ameliyat/
   yatış kaydı id.
 - `notes` (string) opsiyonel.

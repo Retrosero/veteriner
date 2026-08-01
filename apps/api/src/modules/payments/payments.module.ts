@@ -14,13 +14,12 @@
 
 import { Module } from "@nestjs/common";
 
-import { AuditModule } from "../../common/audit/audit.module.js";
-
 import { KasaRepository } from "./kasa.repository.js";
 import { PaymentReversalsRepository } from "./payment-reversals.repository.js";
 import { PaymentsController } from "./payments.controller.js";
 import { PaymentsRepository } from "./payments.repository.js";
 import { PaymentsService } from "./payments.service.js";
+import { AuditModule } from "../../common/audit/audit.module.js";
 
 @Module({
   imports: [AuditModule],

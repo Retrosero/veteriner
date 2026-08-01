@@ -14,16 +14,15 @@
 
 import { Module } from "@nestjs/common";
 
-import { AppointmentsModule } from "../appointments/appointments.module.js";
-import { NotificationsModule } from "../notifications/notifications.module.js";
-import { PatientsModule } from "../patients/patients.module.js";
-import { PortalAuthModule } from "../portal-auth/portal-auth.module.js";
-
 import {
   PortalAppointmentsClinicController,
   PortalAppointmentsPortalController,
 } from "./portal-appointments.controller.js";
 import { PortalAppointmentsService } from "./portal-appointments.service.js";
+import { AppointmentsModule } from "../appointments/appointments.module.js";
+import { NotificationsModule } from "../notifications/notifications.module.js";
+import { PatientsModule } from "../patients/patients.module.js";
+import { PortalAuthModule } from "../portal-auth/portal-auth.module.js";
 
 @Module({
   imports: [

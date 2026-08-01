@@ -1,9 +1,11 @@
 # SMS Sağlayıcı Entegrasyonu (GOAL-131)
 
 ## Faz
+
 FAZ-13 (Türkiye uyumluluk ve entegrasyonlar)
 
 ## Amaç
+
 Mevcut in-memory notification queue yerine gerçek SMS
 sağlayıcısı entegrasyonu. Türkiye'de en yaygın
 sağlayıcılar: NetGSM, İleti Merkezi. Uluslararası
@@ -24,13 +26,13 @@ interface SmsAdapter {
 
 ## Sağlayıcı Seçimi
 
-| Sağlayıcı | TR | Maliyet | Güvenilirlik | Entegrasyon |
-|-----------|----|---------|--------------|-------------|
-| **NetGSM** | ✓ | düşük | yüksek | 1 hafta |
-| **İleti Merkezi** | ✓ | düşük | yüksek | 1 hafta |
-| Twilio | global | orta | çok yüksek | 3 gün |
-| MessageBird | global | orta | yüksek | 3 gün |
-| NoOp (dev/test) | - | ücretsiz | - | - |
+| Sağlayıcı         | TR     | Maliyet  | Güvenilirlik | Entegrasyon |
+| ----------------- | ------ | -------- | ------------ | ----------- |
+| **NetGSM**        | ✓      | düşük    | yüksek       | 1 hafta     |
+| **İleti Merkezi** | ✓      | düşük    | yüksek       | 1 hafta     |
+| Twilio            | global | orta     | çok yüksek   | 3 gün       |
+| MessageBird       | global | orta     | yüksek       | 3 gün       |
+| NoOp (dev/test)   | -      | ücretsiz | -            | -           |
 
 Pilot için: **NetGSM** (TR odaklı, ucuz, iyi deliverability).
 
@@ -56,6 +58,7 @@ SMS_NETGSM_SENDER_ID=VETNIVA
    dead_letter'a düşer.
 
 ## Türkiye Regülasyonu
+
 - **BTK izni:** Toplu SMS gönderimi için Bilgi Teknolojileri
   ve İletişim Kurumu izni + ETBYS (Elektronik Tebligat
   Bildirim Yönetim Sistemi) kaydı zorunlu.
@@ -65,11 +68,13 @@ SMS_NETGSM_SENDER_ID=VETNIVA
   (BTK yönetmeliği).
 
 ## Testler
+
 - **NoOp adapter:** development + test.
 - **Sandbox adapter (NetGSM test hesabı):** staging.
 - **Production:** pilot onayından sonra.
 
 ## Yapılmayanlar / Bilinçli Atlamalar
+
 - **OTP / 2FA SMS** → Faz 14+ (auth akışı).
 - **WhatsApp + SMS failover** → Faz 13+ (FAZ-132 WhatsApp
   ile).
@@ -77,5 +82,6 @@ SMS_NETGSM_SENDER_ID=VETNIVA
   rotation).
 
 ## Commit
+
 - Core: (bu commit) — `apps/api/src/common/integrations/sms/sms.adapter.ts`
 - Real: Faz 14+ (sağlayıcı implementasyonu).

@@ -169,7 +169,9 @@ export const forgotPasswordResponseSchema = z.object({
   /** Kabul edilse de kabul edilmese de bu mesaj döner. */
   message: z.string(),
 });
-export type ForgotPasswordResponse = z.infer<typeof forgotPasswordResponseSchema>;
+export type ForgotPasswordResponse = z.infer<
+  typeof forgotPasswordResponseSchema
+>;
 
 /**
  * Parola sıfırlama (token + yeni parola). Token tek kullanımlıktır.
@@ -233,10 +235,14 @@ export const acceptInvitationRequestSchema = z.object({
   password: passwordPolicySchema,
   locale: z.enum(["tr-TR", "en-GB"]).default("tr-TR"),
 });
-export type AcceptInvitationRequest = z.infer<typeof acceptInvitationRequestSchema>;
+export type AcceptInvitationRequest = z.infer<
+  typeof acceptInvitationRequestSchema
+>;
 
 export const acceptInvitationResponseSchema = loginResponseSchema;
-export type AcceptInvitationResponse = z.infer<typeof acceptInvitationResponseSchema>;
+export type AcceptInvitationResponse = z.infer<
+  typeof acceptInvitationResponseSchema
+>;
 
 /**
  * /me endpoint response. Aktif oturum + kullanıcı + tenant + üyelikler.

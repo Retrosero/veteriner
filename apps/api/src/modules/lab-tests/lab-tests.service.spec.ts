@@ -17,11 +17,11 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { LabTestsRepository } from "./lab-tests.repository.js";
+import { LabTestsService } from "./lab-tests.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-
-import { LabTestsService } from "./lab-tests.service.js";
-import { LabTestsRepository } from "./lab-tests.repository.js";
 import type {
   LabTestCreateInput,
   LabTestUpdateInput,
@@ -305,11 +305,7 @@ describe("LabTestsService", () => {
         makeCreateInput(),
         STAFF_A,
       );
-      const got = await service.getLabTestDetail(
-        TENANT_A,
-        created.id,
-        STAFF_A,
-      );
+      const got = await service.getLabTestDetail(TENANT_A, created.id, STAFF_A);
       expect(got?.id).toBe(created.id);
     });
 
@@ -319,11 +315,7 @@ describe("LabTestsService", () => {
         makeCreateInput(),
         STAFF_A,
       );
-      const got = await service.getLabTestDetail(
-        TENANT_B,
-        created.id,
-        STAFF_B,
-      );
+      const got = await service.getLabTestDetail(TENANT_B, created.id, STAFF_B);
       expect(got).toBeNull();
     });
   });
@@ -423,11 +415,7 @@ describe("LabTestsService", () => {
 
     it("cross-tenant list 403 VET-AUTHZ-0001", async () => {
       await expect(
-        service.listLabTests(
-          TENANT_B,
-          { limit: 50, offset: 0 },
-          STAFF_A,
-        ),
+        service.listLabTests(TENANT_B, { limit: 50, offset: 0 }, STAFF_A),
       ).rejects.toMatchObject({
         errorCode: "VET-AUTHZ-0001",
         httpStatus: 403,

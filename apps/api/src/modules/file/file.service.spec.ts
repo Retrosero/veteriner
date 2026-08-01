@@ -11,14 +11,14 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
-import type { ScanAdapter } from "../../common/adapters/scan.adapter.js";
-import type { StorageAdapter } from "../../common/adapters/storage.adapter.js";
+import { FileService } from "./file.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 
 import type { FileRepository } from "./file.repository.js";
-import { FileService } from "./file.service.js";
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { ScanAdapter } from "../../common/adapters/scan.adapter.js";
+import type { StorageAdapter } from "../../common/adapters/storage.adapter.js";
+import type { AuditService } from "../../common/audit/audit.service.js";
 
 const TENANT_A = "11111111-1111-1111-1111-111111111111";
 const BRANCH_A = "22222222-2222-2222-2222-222222222222";
@@ -76,7 +76,8 @@ function makeRepo(): FileRepository {
     buildStorageKey: vi
       .fn()
       .mockImplementation(
-        (tenantId: string, fileId: string) => `tenants/${tenantId}/files/${fileId}`,
+        (tenantId: string, fileId: string) =>
+          `tenants/${tenantId}/files/${fileId}`,
       ),
   } as unknown as FileRepository;
 }
@@ -84,13 +85,15 @@ function makeRepo(): FileRepository {
 function makeStorage(): StorageAdapter {
   return {
     name: "test",
-    put: vi.fn().mockImplementation(async (input: { key: string; body: Buffer }) => ({
-      key: input.key,
-      size: input.body.byteLength,
-      contentType: "application/pdf",
-      lastModified: new Date(),
-      checksumSha256: "deadbeef".repeat(8),
-    })),
+    put: vi
+      .fn()
+      .mockImplementation(async (input: { key: string; body: Buffer }) => ({
+        key: input.key,
+        size: input.body.byteLength,
+        contentType: "application/pdf",
+        lastModified: new Date(),
+        checksumSha256: "deadbeef".repeat(8),
+      })),
     get: vi.fn().mockResolvedValue(null),
     getStream: vi.fn().mockResolvedValue(null),
     getSignedUrl: vi
@@ -101,7 +104,9 @@ function makeStorage(): StorageAdapter {
   } as unknown as StorageAdapter;
 }
 
-function makeScan(outcome: "clean" | "skipped" | "infected" | "error" = "clean"): ScanAdapter {
+function makeScan(
+  outcome: "clean" | "skipped" | "infected" | "error" = "clean",
+): ScanAdapter {
   return {
     name: "test-scan",
     scan: vi.fn().mockResolvedValue({
@@ -142,13 +147,11 @@ function makeFileRecord(
     tenantId: overrides.tenantId ?? TENANT_A,
     branchId: overrides.branchId ?? BRANCH_A,
     uploaderId: overrides.uploaderId ?? USER_A,
-    storageKey:
-      overrides.storageKey ?? `tenants/${TENANT_A}/files/${FILE_ID}`,
+    storageKey: overrides.storageKey ?? `tenants/${TENANT_A}/files/${FILE_ID}`,
     originalName: overrides.originalName ?? "rapor.pdf",
     mimeType: overrides.mimeType ?? "application/pdf",
     sizeBytes: overrides.sizeBytes ?? BigInt(2048),
-    checksumSha256:
-      overrides.checksumSha256 ?? "deadbeef".repeat(8),
+    checksumSha256: overrides.checksumSha256 ?? "deadbeef".repeat(8),
     scanStatus: overrides.scanStatus ?? "clean",
     scanResult: null,
     scannedAt: new Date(),
@@ -382,27 +385,27 @@ describe("FileService", () => {
 
     it("tenant mismatch → VET-FILE-0001 (404, bilgi sızdırmaz)", async () => {
       (repo.findById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-      await expect(
-        service.findById(FILE_ID, VET_OWNER),
-      ).rejects.toMatchObject({ errorCode: "VET-FILE-0001" });
+      await expect(service.findById(FILE_ID, VET_OWNER)).rejects.toMatchObject({
+        errorCode: "VET-FILE-0001",
+      });
     });
 
     it("infected → VET-FILE-0003 (karantina)", async () => {
       (repo.findById as ReturnType<typeof vi.fn>).mockResolvedValue(
         makeFileRecord({ scanStatus: "infected" }),
       );
-      await expect(
-        service.findById(FILE_ID, VET_OWNER),
-      ).rejects.toMatchObject({ errorCode: "VET-FILE-0003" });
+      await expect(service.findById(FILE_ID, VET_OWNER)).rejects.toMatchObject({
+        errorCode: "VET-FILE-0003",
+      });
     });
 
     it("archived → VET-FILE-0004", async () => {
       (repo.findById as ReturnType<typeof vi.fn>).mockResolvedValue(
         makeFileRecord({ archivedAt: new Date() }),
       );
-      await expect(
-        service.findById(FILE_ID, VET_OWNER),
-      ).rejects.toMatchObject({ errorCode: "VET-FILE-0004" });
+      await expect(service.findById(FILE_ID, VET_OWNER)).rejects.toMatchObject({
+        errorCode: "VET-FILE-0004",
+      });
     });
 
     it("branch visibility: farklı branch user → 404", async () => {
@@ -425,9 +428,9 @@ describe("FileService", () => {
         ...VET_OWNER,
         actorId: "different-user",
       };
-      await expect(
-        service.findById(FILE_ID, otherUser),
-      ).rejects.toMatchObject({ errorCode: "VET-FILE-0001" });
+      await expect(service.findById(FILE_ID, otherUser)).rejects.toMatchObject({
+        errorCode: "VET-FILE-0001",
+      });
     });
 
     it("SUPERADMIN her dosyayı görebilir (bypass)", async () => {
@@ -522,6 +525,16 @@ describe("FileService", () => {
       await expect(
         service.getSignedUrl(FILE_ID, { expiresInSec: 300 }, VET_OWNER),
       ).rejects.toMatchObject({ errorCode: "VET-FILE-0006" });
+    });
+
+    it("scan error → VET-FILE-0006 (fail closed)", async () => {
+      (repo.findById as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeFileRecord({ scanStatus: "error" }),
+      );
+      await expect(
+        service.getSignedUrl(FILE_ID, { expiresInSec: 300 }, VET_OWNER),
+      ).rejects.toMatchObject({ errorCode: "VET-FILE-0006" });
+      expect(storage.getSignedUrl).not.toHaveBeenCalled();
     });
   });
 

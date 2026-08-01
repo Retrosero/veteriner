@@ -21,10 +21,11 @@
 
 import { Injectable } from "@nestjs/common";
 
+import { type KasaEntryRecord } from "../../common/payments/kasa.types.js";
 import {
-  type KasaEntryRecord,
-} from "../../common/payments/kasa.types.js";
-import { reversalAmountToScaled, scaledBigIntToReversalAmount } from "../../common/payments/payment-reversal.types.js";
+  reversalAmountToScaled,
+  scaledBigIntToReversalAmount,
+} from "../../common/payments/payment-reversal.types.js";
 
 @Injectable()
 export class KasaRepository {

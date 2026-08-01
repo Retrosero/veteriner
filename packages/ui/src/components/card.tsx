@@ -1,7 +1,6 @@
 /**
  * @file Card bileşeni.
  * @module @vetniva/ui/components/card
- *
  * @description Klinik listeleri ve form konteynerleri için standart kart.
  * Bölümler: Header, Title, Description, Body, Footer. Tüm bölümler
  * opsiyoneldir; minimal kullanım yalnızca `<Card>{...}</Card>`.

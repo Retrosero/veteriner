@@ -20,25 +20,24 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { PricingRepository } from "./pricing.repository.js";
+import { PricingService } from "./pricing.service.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { ProductsRepository } from "../products/products.repository.js";
+import { ProductsService } from "../products/products.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
 import type {
   PriceListCreateInput,
   PriceListItemCreateInput,
   ProductCreateInput,
 } from "@vetniva/contracts";
 
-import { ProductsService } from "../products/products.service.js";
-import { ProductsRepository } from "../products/products.repository.js";
-
-import { PricingRepository } from "./pricing.repository.js";
-import { PricingService } from "./pricing.service.js";
-
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
 const CUSTOMER_1 = "c0c0c0c0-c0c0-c0c0-c0c0-c0c0c0c0c0c0";
-const CUSTOMER_2 = "c1c1c1c1-c1c1-c1c1-c1c1-c1c1c1c1c1c1";
+const _CUSTOMER_2 = "c1c1c1c1-c1c1-c1c1-c1c1-c1c1c1c1c1c1";
 
 const OWNER_A: ActorContext = {
   actorId: "usr-owner-a",
@@ -53,7 +52,7 @@ const OWNER_A: ActorContext = {
   source: "header",
 };
 
-const VET_A: ActorContext = {
+const _VET_A: ActorContext = {
   actorId: "usr-vet-a",
   actorType: "user",
   role: "VETERINARIAN",
@@ -173,11 +172,7 @@ describe("PricingService", () => {
         type: "standard",
         currency: "TRY",
       };
-      const list = await ctx.service.createPriceList(
-        TENANT_A,
-        input,
-        OWNER_A,
-      );
+      const list = await ctx.service.createPriceList(TENANT_A, input, OWNER_A);
       expect(list.id).toMatch(/^prl-/);
       expect(list.status).toBe("draft");
       expect(list.type).toBe("standard");
@@ -291,12 +286,7 @@ describe("PricingService", () => {
       await ctx.service.activatePriceList(TENANT_A, list.id, OWNER_A);
       // Şimdi güncelleme dene.
       await expect(
-        ctx.service.updatePriceList(
-          TENANT_A,
-          list.id,
-          { name: "X" },
-          OWNER_A,
-        ),
+        ctx.service.updatePriceList(TENANT_A, list.id, { name: "X" }, OWNER_A),
       ).rejects.toThrow(DomainError);
     });
 
@@ -313,12 +303,7 @@ describe("PricingService", () => {
         OWNER_A,
       );
       await expect(
-        ctx.service.updatePriceList(
-          TENANT_A,
-          list.id,
-          { name: "X" },
-          OWNER_A,
-        ),
+        ctx.service.updatePriceList(TENANT_A, list.id, { name: "X" }, OWNER_A),
       ).rejects.toThrow(DomainError);
     });
 
@@ -808,9 +793,7 @@ describe("PricingService", () => {
         OWNER_A,
       );
       expect(resolved.candidates.length).toBe(3);
-      expect(resolved.candidates[0]?.priceListType).toBe(
-        "customer_specific",
-      );
+      expect(resolved.candidates[0]?.priceListType).toBe("customer_specific");
       expect(resolved.candidates[1]?.priceListType).toBe("promotional");
       expect(resolved.candidates[2]?.priceListType).toBe("standard");
     });
@@ -839,12 +822,7 @@ describe("PricingService", () => {
         OWNER_A,
       );
       await ctx.service.activatePriceList(TENANT_A, list.id, OWNER_A);
-      await ctx.service.cancelItem(
-        TENANT_A,
-        list.id,
-        item.id,
-        OWNER_A,
-      );
+      await ctx.service.cancelItem(TENANT_A, list.id, item.id, OWNER_A);
       await expect(
         ctx.service.resolveProductPrice(
           TENANT_A,
@@ -877,11 +855,7 @@ describe("PricingService", () => {
         { name: "Liste", type: "standard", currency: "TRY" },
         OWNER_A,
       );
-      const got = await ctx.service.getPriceList(
-        TENANT_A,
-        list.id,
-        SUPERADMIN,
-      );
+      const got = await ctx.service.getPriceList(TENANT_A, list.id, SUPERADMIN);
       expect(got?.id).toBe(list.id);
     });
   });
@@ -922,9 +896,7 @@ describe("PricingService", () => {
         { type: "promotional", limit: 10, offset: 0 },
         OWNER_A,
       );
-      expect(promos.items.every((i) => i.type === "promotional")).toBe(
-        true,
-      );
+      expect(promos.items.every((i) => i.type === "promotional")).toBe(true);
     });
 
     it("arşivliler default görünmez", async () => {

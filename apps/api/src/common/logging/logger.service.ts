@@ -68,16 +68,12 @@ export class LoggerService {
   /**
    * Verilen payload'ı mask'leyip yapısal log yazar.
    */
-  public log(
-    payload: Record<string, unknown> & { message?: string },
-  ): void {
+  public log(payload: Record<string, unknown> & { message?: string }): void {
     const masked = this.masker.mask(payload) as Record<string, unknown>;
     this.pino.info(masked);
   }
 
-  public warn(
-    payload: Record<string, unknown> & { message?: string },
-  ): void {
+  public warn(payload: Record<string, unknown> & { message?: string }): void {
     const masked = this.masker.mask(payload) as Record<string, unknown>;
     this.pino.warn(masked);
   }
@@ -89,9 +85,7 @@ export class LoggerService {
     this.pino.error(masked);
   }
 
-  public debug(
-    payload: Record<string, unknown> & { message?: string },
-  ): void {
+  public debug(payload: Record<string, unknown> & { message?: string }): void {
     const masked = this.masker.mask(payload) as Record<string, unknown>;
     this.pino.debug(masked);
   }

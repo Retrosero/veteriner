@@ -56,9 +56,7 @@ export type ExaminationCreateInput = z.infer<
 export const examinationAmendInputSchema = z.object({
   reason: z.string().min(1).max(2000),
 });
-export type ExaminationAmendInput = z.infer<
-  typeof examinationAmendInputSchema
->;
+export type ExaminationAmendInput = z.infer<typeof examinationAmendInputSchema>;
 
 /** API response şeması. */
 export const examinationSchema = z.object({

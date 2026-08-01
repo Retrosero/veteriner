@@ -109,8 +109,14 @@ export const surgeryPlanFiltersSchema = z.object({
   patientId: z.string().uuid().optional(),
   leadSurgeonUserId: z.string().optional(),
   /** Tarih aralığı (ISO date, YYYY-MM-DD). */
-  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  from: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  to: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
   sort: z.enum(["asc", "desc"]).optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).max(10000).default(0),

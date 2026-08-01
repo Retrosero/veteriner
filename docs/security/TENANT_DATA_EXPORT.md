@@ -1,9 +1,11 @@
 # Tenant Veri Dışa Aktarma (GOAL-125)
 
 ## Faz
+
 FAZ-12 (Pilot, güvenlik, üretime hazırlık)
 
 ## Amaç
+
 Yetkili tenant yöneticisinin müşteri, hayvan, klinik
 kayıt, finans ve dosya verilerini güvenli dışa
 aktarabilmesi. Asenkron çalışır + süreli indirme
@@ -11,19 +13,20 @@ bağlantısı sunar + audit üretir.
 
 ## Endpoint'ler (planlanan)
 
-| # | Method | Path | Yetki |
-|---|--------|------|-------|
-| 1 | POST | `/api/v1/tenant/{tenantId}/exports` | `tenant:export:create` |
-| 2 | GET | `/api/v1/tenant/exports` | `tenant:export:read` |
-| 3 | GET | `/api/v1/tenant/exports/{id}` | `tenant:export:read` |
-| 4 | GET | `/api/v1/tenant/exports/{id}/download` | `tenant:export:read` |
-| 5 | DELETE | `/api/v1/tenant/exports/{id}` | `tenant:export:delete` |
+| #   | Method | Path                                   | Yetki                  |
+| --- | ------ | -------------------------------------- | ---------------------- |
+| 1   | POST   | `/api/v1/tenant/{tenantId}/exports`    | `tenant:export:create` |
+| 2   | GET    | `/api/v1/tenant/exports`               | `tenant:export:read`   |
+| 3   | GET    | `/api/v1/tenant/exports/{id}`          | `tenant:export:read`   |
+| 4   | GET    | `/api/v1/tenant/exports/{id}/download` | `tenant:export:read`   |
+| 5   | DELETE | `/api/v1/tenant/exports/{id}`          | `tenant:export:delete` |
 
 ## İş Kuralları
 
 ### Export Oluşturma
+
 1. **Yetki kontrolü:** `tenant:export:create` permission'ı
-   + aktör `actor.tenantId` ile aynı tenant.
+   - aktör `actor.tenantId` ile aynı tenant.
 2. **Asenkron job:** BullMQ queue'ya eklenir; status
    `pending → running → completed | failed`.
 3. **Veri setleri:** owners, patients, examinations,
@@ -37,12 +40,14 @@ bağlantısı sunar + audit üretir.
 7. **Audit:** `audit:tenant.export.created` (info).
 
 ### Job Lifecycle
+
 ```
 pending → running → completed (download URL)
               ↘ failed (retry 3x → dead_letter)
 ```
 
 ### Download URL
+
 - **Signed URL:** 24 saat geçerli.
 - **S3 pre-signed URL** veya internal JWT token.
 - **One-time:** indirildikten sonra audit event'i
@@ -50,6 +55,7 @@ pending → running → completed (download URL)
 - **Audit:** `audit:tenant.export.downloaded` (warning).
 
 ### Retention
+
 - Export dosyası 30 gün saklanır; sonra otomatik silinir
   (KVKK minimum retention).
 - Export metadata (id, tenantId, createdAt, status)
@@ -124,6 +130,7 @@ pending → running → completed (download URL)
 5. "İndir" → signed URL ile S3'ten dosya indir.
 
 ## Yapılmayanlar / Bilinçli Atlamalar
+
 - **CSV / Excel export** → Faz 13+ (FAZ-12 yalnızca JSON).
 - **Scheduled exports (haftalık otomatik)** → Faz 13+.
 - **S3 Glacier long-term storage** → Faz 13+ (KVKK
@@ -134,4 +141,5 @@ pending → running → completed (download URL)
   API + key management).
 
 ## Commit
+
 - Docs: (bu commit) — `docs(security): GOAL-125 tenant veri dışa aktarma dokümanı`

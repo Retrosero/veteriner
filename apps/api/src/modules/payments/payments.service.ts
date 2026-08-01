@@ -46,23 +46,27 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { KasaRepository } from "./kasa.repository.js";
+import { PaymentReversalsRepository } from "./payment-reversals.repository.js";
+import { PaymentsRepository } from "./payments.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import {
   type KasaEntryRecord,
   paymentMethodToKasaAccount,
 } from "../../common/payments/kasa.types.js";
 import {
-  normalizePaymentDecimal,
-  toPayment,
-  type PaymentRecord,
-} from "../../common/payments/payment.types.js";
-import {
   toPaymentReversal,
   validateReversalAmount,
   type PaymentReversalRecord,
 } from "../../common/payments/payment-reversal.types.js";
+import {
+  normalizePaymentDecimal,
+  toPayment,
+  type PaymentRecord,
+} from "../../common/payments/payment.types.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   Payment,
   PaymentCreateInput,
@@ -73,10 +77,6 @@ import type {
   PaymentReversalListResponse,
   PaymentReversalSummary,
 } from "@vetniva/contracts";
-
-import { KasaRepository } from "./kasa.repository.js";
-import { PaymentReversalsRepository } from "./payment-reversals.repository.js";
-import { PaymentsRepository } from "./payments.repository.js";
 
 /** OWNER zorunlu kılan ters kayıt eşiği (Decimal string). */
 const HIGH_AMOUNT_OWNER_THRESHOLD = "1000";
@@ -141,8 +141,7 @@ export class PaymentsService {
         if (!sameBody) {
           throw new DomainError({
             errorCode: "VET-PAYMENT-0005",
-            message:
-              "Bu idempotency key farklı bir tahsilat için kullanılmış",
+            message: "Bu idempotency key farklı bir tahsilat için kullanılmış",
             httpStatus: 409,
             severity: "warning",
             i18nKey: "error.VET-PAYMENT-0005",
@@ -300,10 +299,7 @@ export class PaymentsService {
     }
 
     // 2) Tutar hesapla (kalan tutar = amount - reversedAmount).
-    const currentReversed = this.reversals.sumReversedForPayment(
-      tenantId,
-      id,
-    );
+    const currentReversed = this.reversals.sumReversedForPayment(tenantId, id);
     const remaining = this.subtractAmounts(existing.amount, currentReversed);
     const reverseAmount = input.amount ?? remaining;
 
@@ -362,8 +358,14 @@ export class PaymentsService {
     this.reversals.insert(reversal);
 
     // 6) Payment'ı güncelle.
-    const newReversedTotal = this.addAmounts(currentReversed, amountCheck.value);
-    const newEffective = this.subtractAmounts(existing.amount, newReversedTotal);
+    const newReversedTotal = this.addAmounts(
+      currentReversed,
+      amountCheck.value,
+    );
+    const newEffective = this.subtractAmounts(
+      existing.amount,
+      newReversedTotal,
+    );
     const newStatus: PaymentRecord["status"] =
       newEffective === "0" ? "reversed" : "partially_reversed";
 
@@ -486,14 +488,12 @@ export class PaymentsService {
       paymentId,
     );
     const remaining = this.subtractAmounts(payment.amount, totalReversed);
-    const items = this.reversals
-      .search(tenantId, {
-        paymentId,
-        limit: 1000,
-        offset: 0,
-        sort: "desc",
-      })
-      .items;
+    const items = this.reversals.search(tenantId, {
+      paymentId,
+      limit: 1000,
+      offset: 0,
+      sort: "desc",
+    }).items;
     const lastReversalAt = items[0]?.reversedAt ?? null;
     return {
       paymentId,
@@ -547,9 +547,7 @@ export class PaymentsService {
    * Serbest metin `reason`'ı enum neden koduna çevirir. Tam
    * eşleşme yoksa `other` döner (note zorunlu olur).
    */
-  private parseReasonCode(
-    reason: string,
-  ): PaymentReversalRecord["reason"] {
+  private parseReasonCode(reason: string): PaymentReversalRecord["reason"] {
     const known: PaymentReversalRecord["reason"][] = [
       "customer_request",
       "chargeback",
@@ -653,7 +651,7 @@ export class PaymentsService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

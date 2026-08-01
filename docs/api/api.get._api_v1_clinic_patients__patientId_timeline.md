@@ -29,8 +29,8 @@ timestamp için `id` artan).
 - `types` (virgülle ayrılmış string, opsiyonel) — yalnızca
   belirtilen tiplerdeki event'ler. Geçerli değerler:
   `appointment, examination, vaccination, prescription,
-  surgery, hospitalization, lab, imaging, sale, file, alert,
-  transfer`. Geçersiz tip sessizce atlanır.
+surgery, hospitalization, lab, imaging, sale, file, alert,
+transfer`. Geçersiz tip sessizce atlanır.
 - `limit` (int 1-200, default 20).
 - `offset` (int 0-10000, default 0).
 
@@ -74,20 +74,20 @@ uygulanır.
 
 ## Event tipleri
 
-| Tip               | Kaynak modül                | Durum                |
-| ----------------- | --------------------------- | -------------------- |
-| `alert`           | GOAL-023 AlertsService      | Aktif                |
-| `transfer`        | GOAL-022 OwnershipHistory   | Aktif                |
-| `file`            | GOAL-014 FilesService       | Aktif                |
-| `appointment`     | GOAL-031                    | FAZ-3+ (placeholder) |
-| `examination`     | GOAL-041                    | FAZ-3+ (placeholder) |
-| `vaccination`     | GOAL-051                    | FAZ-3+ (placeholder) |
-| `prescription`    | GOAL-045                    | FAZ-3+ (placeholder) |
-| `surgery`         | GOAL-080                    | FAZ-3+ (placeholder) |
-| `hospitalization` | GOAL-084                    | FAZ-3+ (placeholder) |
-| `lab`             | GOAL-090                    | FAZ-3+ (placeholder) |
-| `imaging`         | GOAL-093                    | FAZ-3+ (placeholder) |
-| `sale`            | GOAL-064                    | FAZ-3+ (placeholder) |
+| Tip               | Kaynak modül              | Durum                |
+| ----------------- | ------------------------- | -------------------- |
+| `alert`           | GOAL-023 AlertsService    | Aktif                |
+| `transfer`        | GOAL-022 OwnershipHistory | Aktif                |
+| `file`            | GOAL-014 FilesService     | Aktif                |
+| `appointment`     | GOAL-031                  | FAZ-3+ (placeholder) |
+| `examination`     | GOAL-041                  | FAZ-3+ (placeholder) |
+| `vaccination`     | GOAL-051                  | FAZ-3+ (placeholder) |
+| `prescription`    | GOAL-045                  | FAZ-3+ (placeholder) |
+| `surgery`         | GOAL-080                  | FAZ-3+ (placeholder) |
+| `hospitalization` | GOAL-084                  | FAZ-3+ (placeholder) |
+| `lab`             | GOAL-090                  | FAZ-3+ (placeholder) |
+| `imaging`         | GOAL-093                  | FAZ-3+ (placeholder) |
+| `sale`            | GOAL-064                  | FAZ-3+ (placeholder) |
 
 Yeni modüller `provide: TIMELINE_EVENT_SOURCES, useClass:
 XTimelineSource, multi: true` ile eklenir; core değişmez.

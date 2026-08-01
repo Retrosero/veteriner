@@ -21,16 +21,13 @@
 
 import { Injectable } from "@nestjs/common";
 
+import type { JobRunRecord } from "../../common/job-runs/job-run.types.js";
 import type {
   ErrorEventCountry,
-} from "@vetniva/contracts";
-import type {
   JobRunSource,
   JobRunStatus,
   JobRunTriggeredBy,
 } from "@vetniva/contracts";
-
-import type { JobRunRecord } from "../../common/job-runs/job-run.types.js";
 
 /** Arama filtreleri. */
 export interface JobRunSearchFilters {
@@ -124,9 +121,10 @@ export class JobRunsRepository {
    * Filtreli arama + pagination. `search` queueName + jobName +
    * jobKey alanlarında case-insensitive substring arar.
    */
-  public search(
-    filters: JobRunSearchFilters,
-  ): { items: JobRunRecord[]; total: number } {
+  public search(filters: JobRunSearchFilters): {
+    items: JobRunRecord[];
+    total: number;
+  } {
     const all: JobRunRecord[] = [];
     for (const r of this.byId.values()) {
       if (filters.queueName && r.queueName !== filters.queueName) continue;
@@ -136,10 +134,7 @@ export class JobRunsRepository {
       if (filters.source && r.source !== filters.source) continue;
       if (filters.tenantId && r.tenantId !== filters.tenantId) continue;
       if (filters.branchId && r.branchId !== filters.branchId) continue;
-      if (
-        filters.correlationId &&
-        r.correlationId !== filters.correlationId
-      ) {
+      if (filters.correlationId && r.correlationId !== filters.correlationId) {
         continue;
       }
       if (filters.country && r.country !== filters.country) continue;
@@ -154,8 +149,7 @@ export class JobRunsRepository {
         const inQueue = r.queueName.toLowerCase().includes(needle);
         const inJob = r.jobName.toLowerCase().includes(needle);
         const inKey = r.jobKey.toLowerCase().includes(needle);
-        const inError =
-          r.errorMessage?.toLowerCase().includes(needle) ?? false;
+        const inError = r.errorMessage?.toLowerCase().includes(needle) ?? false;
         if (!inQueue && !inJob && !inKey && !inError) continue;
       }
       all.push(r);
@@ -175,9 +169,10 @@ export class JobRunsRepository {
    * tenant/queue/jobName filtresi ile döner. Son `finishedAt`'a
    * göre azalan sıralı.
    */
-  public listDeadLetter(
-    filters: JobRunDeadLetterFilters,
-  ): { items: JobRunRecord[]; total: number } {
+  public listDeadLetter(filters: JobRunDeadLetterFilters): {
+    items: JobRunRecord[];
+    total: number;
+  } {
     const all: JobRunRecord[] = [];
     for (const r of this.byId.values()) {
       if (r.status !== "dead_letter") continue;

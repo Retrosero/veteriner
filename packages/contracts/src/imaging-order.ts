@@ -62,14 +62,8 @@ export const imagingOrderStatusSchema = z.enum([
 export type ImagingOrderStatus = z.infer<typeof imagingOrderStatusSchema>;
 
 /** Öncelik seviyesi. */
-export const imagingOrderPrioritySchema = z.enum([
-  "routine",
-  "urgent",
-  "stat",
-]);
-export type ImagingOrderPriority = z.infer<
-  typeof imagingOrderPrioritySchema
->;
+export const imagingOrderPrioritySchema = z.enum(["routine", "urgent", "stat"]);
+export type ImagingOrderPriority = z.infer<typeof imagingOrderPrioritySchema>;
 
 /** İsteğin nereden açıldığı. */
 export const imagingOrderSourceTypeSchema = z.enum([
@@ -274,9 +268,7 @@ export const imagingOrderFiltersSchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).max(10000).default(0),
 });
-export type ImagingOrderFilters = z.infer<
-  typeof imagingOrderFiltersSchema
->;
+export type ImagingOrderFilters = z.infer<typeof imagingOrderFiltersSchema>;
 
 export const imagingOrderListResponseSchema = z.object({
   items: z.array(imagingOrderSchema),

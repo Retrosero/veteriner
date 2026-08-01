@@ -20,14 +20,16 @@
 
 import { Injectable } from "@nestjs/common";
 
-import type {
-  PaymentReversalRecord,
+import {
+  reversalAmountToScaled,
+  scaledBigIntToReversalAmount,
 } from "../../common/payments/payment-reversal.types.js";
+
+import type { PaymentReversalRecord } from "../../common/payments/payment-reversal.types.js";
 import type {
   PaymentReverseReason,
   PaymentSourceType,
 } from "@vetniva/contracts";
-import { reversalAmountToScaled, scaledBigIntToReversalAmount } from "../../common/payments/payment-reversal.types.js";
 
 /** Arama filtreleri. */
 export interface PaymentReversalSearchFilters {
@@ -82,10 +84,7 @@ export class PaymentReversalsRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): PaymentReversalRecord | null {
+  public findById(tenantId: string, id: string): PaymentReversalRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -95,10 +94,7 @@ export class PaymentReversalsRepository {
    * Bir payment için tüm ters kayıtların kümülatif toplamını
    * döner (Decimal string, 4 ondalık). 0 → "0".
    */
-  public sumReversedForPayment(
-    tenantId: string,
-    paymentId: string,
-  ): string {
+  public sumReversedForPayment(tenantId: string, paymentId: string): string {
     const key = this.byPaymentMapKey(tenantId, paymentId);
     const set = this.byPayment.get(key);
     if (!set || set.size === 0) return "0";

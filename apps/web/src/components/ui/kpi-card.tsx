@@ -1,7 +1,6 @@
 /**
  * @file KPI kartı.
  * @module @vetniva/web/components/ui/kpi-card
- *
  * @description Dashboard ve rapor sayfalarında kullanılan metrik
  * kartı. Büyük değer, etiket, önceki dönemle karşılaştırma (delta) ve
  * ikon içerir.
@@ -9,8 +8,7 @@
  * Erişilebilirlik:
  * - `role="article"` + `aria-label` ile screen reader uyumu
  * - Delta yönü `aria-label` ile açıkça belirtilir ("+2 artış", "-1
- *   azalış")
- *
+ *   azalış").
  * @security Hassas metrikler (örn. tam gelir) PII içermemelidir;
  * bu bileşen aggregation sonrası sayıları kabul eder.
  */
@@ -41,6 +39,11 @@ export type KpiCardProps = {
   className?: string;
 };
 
+/**
+ *
+ * @param delta
+ * @param format
+ */
 function formatDelta(delta: number, format: "absolute" | "percent"): string {
   const sign = delta > 0 ? "+" : "";
   if (format === "percent") {
@@ -49,12 +52,27 @@ function formatDelta(delta: number, format: "absolute" | "percent"): string {
   return `${sign}${delta}`;
 }
 
+/**
+ *
+ * @param delta
+ */
 function deltaTone(delta: number): "success" | "danger" | "neutral" {
   if (delta > 0) return "success";
   if (delta < 0) return "danger";
   return "neutral";
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.label
+ * @param root0.value
+ * @param root0.delta
+ * @param root0.deltaFormat
+ * @param root0.icon
+ * @param root0.hint
+ * @param root0.className
+ */
 export function KpiCard({
   label,
   value,

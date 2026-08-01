@@ -76,9 +76,7 @@ export interface RetentionSweepRecord {
  * --------------------------------------------------------------------------
  */
 
-export function toRetentionPolicy(
-  rec: RetentionPolicyRecord,
-): RetentionPolicy {
+export function toRetentionPolicy(rec: RetentionPolicyRecord): RetentionPolicy {
   return {
     id: rec.id,
     tenantId: rec.tenantId,

@@ -45,7 +45,7 @@ POST /api/v1/clinic/vaccines/protocols
 - `name` (string, 1-200) zorunlu.
 - `species` (enum) zorunlu: `dog | cat | bird | all`.
 - `category` (enum) zorunlu: `core | non_core | lifestyle |
-  not_recommended`.
+not_recommended`.
 - `manufacturer` (string, ≤200) opsiyonel.
 - `defaultDose` (`{amount, unit}`) opsiyonel — `unit`:
   `ml | dose | mg | drop`; `amount` 0-1000.
@@ -75,7 +75,7 @@ POST /api/v1/clinic/vaccines/protocols
   "category": "core",
   "manufacturer": "Nobivac",
   "defaultDose": { "amount": 1, "unit": "ml" },
-  "steps": [ /* ... steps as above ... */ ],
+  "steps": [/* ... steps as above ... */],
   "totalDurationMonths": 3,
   "isCore": true,
   "createdAt": "2026-07-30T12:00:00.000Z",

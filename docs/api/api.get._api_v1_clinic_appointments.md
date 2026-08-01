@@ -25,7 +25,7 @@ GET /api/v1/clinic/appointments
 - `patientId` (UUID, opsiyonel) — hasta bazlı liste.
 - `veterinarianId` (string, opsiyonel) — veteriner bazlı liste.
 - `status` (enum, opsiyonel) — `scheduled | confirmed | arrived |
-  in_progress | completed | cancelled | no_show`.
+in_progress | completed | cancelled | no_show`.
 - `from` / `to` (ISO 8601, opsiyonel) — `start` aralığı.
 - `limit` (1-200, default 50), `offset` (≥0, default 0).
 

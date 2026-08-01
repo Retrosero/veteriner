@@ -1,7 +1,6 @@
 /**
  * @file ClinicalConsumptionService unit testleri.
  * @module apps/api/modules/clinical-consumption/clinical-consumption.service.spec
- *
  * @description GOAL-066 (FAZ-6) klinik tüketimden otomatik stok
  * düşümü service testleri.
  *   - Manuel tüketim oluşturma (stok düşümü + audit).
@@ -13,23 +12,22 @@
  *   - Miktar validasyonu (sıfır/negatif).
  *   - Stok bakiyesi güncellemesi (negatif).
  *   - Filtreleme (context, contextRefId, status, occurredFrom/To).
- *
  * @since GOAL-066 (FAZ-6) klinik tüketimden otomatik stok düşümü core
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ClinicalConsumptionRepository } from "./clinical-consumption.repository.js";
+import { ClinicalConsumptionService } from "./clinical-consumption.service.js";
+import { InventoryRepository } from "../inventory/inventory.repository.js";
+import { InventoryService } from "../inventory/inventory.service.js";
+import { ProductsRepository } from "../products/products.repository.js";
+import { ProductsService } from "../products/products.service.js";
+import { StockMovementsRepository } from "../stock-movements/stock-movements.repository.js";
+import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-
-import { ClinicalConsumptionService } from "./clinical-consumption.service.js";
-import { ClinicalConsumptionRepository } from "./clinical-consumption.repository.js";
-import { ProductsService } from "../products/products.service.js";
-import { ProductsRepository } from "../products/products.repository.js";
-import { InventoryService } from "../inventory/inventory.service.js";
-import { InventoryRepository } from "../inventory/inventory.repository.js";
-import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
-import { StockMovementsRepository } from "../stock-movements/stock-movements.repository.js";
 import type {
   ClinicalConsumptionCreateInput,
   ProductCreateInput,
@@ -64,6 +62,9 @@ const VET_B: ActorContext = {
   source: "header",
 };
 
+/**
+ *
+ */
 function makeAudit(): AuditService {
   return {
     record: vi.fn().mockResolvedValue({ eventId: "ev-1" }),
@@ -82,6 +83,10 @@ function makeAudit(): AuditService {
   } as unknown as AuditService;
 }
 
+/**
+ *
+ * @param overrides
+ */
 function makeProductInput(
   overrides: Partial<ProductCreateInput> = {},
 ): ProductCreateInput {
@@ -117,10 +122,7 @@ describe("ClinicalConsumptionService", () => {
     const productRepo = new ProductsRepository();
     productsService = new ProductsService(productRepo, audit);
     const stockRepo = new StockMovementsRepository();
-    inventoryService = new InventoryService(
-      new InventoryRepository(),
-      audit,
-    );
+    inventoryService = new InventoryService(new InventoryRepository(), audit);
     stockService = new StockMovementsService(
       stockRepo,
       productsService,
@@ -136,6 +138,12 @@ describe("ClinicalConsumptionService", () => {
     );
   });
 
+  /**
+   *
+   * @param sku
+   * @param name
+   * @param overrides
+   */
   async function seedProduct(
     sku: string,
     name: string,
@@ -149,6 +157,13 @@ describe("ClinicalConsumptionService", () => {
     return p.id;
   }
 
+  /**
+   *
+   * @param tenantId
+   * @param sku
+   * @param name
+   * @param actor
+   */
   async function seedProductForTenant(
     tenantId: string,
     sku: string,
@@ -513,12 +528,7 @@ describe("ClinicalConsumptionService", () => {
         VET_A,
       );
       await expect(
-        service.cancel(
-          TENANT_A,
-          created.id,
-          { cancelReason: "" },
-          VET_A,
-        ),
+        service.cancel(TENANT_A, created.id, { cancelReason: "" }, VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-CLINICAL_CONSUMPTION-0005",
       });
@@ -555,12 +565,7 @@ describe("ClinicalConsumptionService", () => {
 
     it("kayıt bulunamadı → 404 VET-CLINICAL_CONSUMPTION-0001", async () => {
       await expect(
-        service.cancel(
-          TENANT_A,
-          "clco-yok",
-          { cancelReason: "test" },
-          VET_A,
-        ),
+        service.cancel(TENANT_A, "clco-yok", { cancelReason: "test" }, VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-CLINICAL_CONSUMPTION-0001",
       });
@@ -681,12 +686,7 @@ describe("ClinicalConsumptionService", () => {
         },
         VET_A,
       );
-      await service.cancel(
-        TENANT_A,
-        c1.id,
-        { cancelReason: "iptal" },
-        VET_A,
-      );
+      await service.cancel(TENANT_A, c1.id, { cancelReason: "iptal" }, VET_A);
       const cancelled = await service.list(
         TENANT_A,
         { status: "cancelled", limit: 50, offset: 0 },

@@ -1,12 +1,10 @@
 /**
  * @file Next.js kök layout.
  * @module @vetniva/web/app/layout
- *
  * @description Tüm route'lar için kök HTML iskeleti. `html` etiketinin
  * `lang` ve `dir` özellikleri burada ayarlanır; gerçek locale bilgisi
  * `[locale]` segmentli layout'ta çözümlenir. Burada yalnızca global
  * CSS ve metadata tanımlanır.
- *
  * @security `html lang` ekran okuyucular için doğru biçimde ayarlanır;
  * yön (dir) İngilizce/Türkçe için soldan sağa sabittir.
  */
@@ -41,6 +39,11 @@ export const viewport: Viewport = {
   themeColor: "#0359a1",
 };
 
+/**
+ *
+ * @param root0
+ * @param root0.children
+ */
 export default function RootLayout({
   children,
 }: {

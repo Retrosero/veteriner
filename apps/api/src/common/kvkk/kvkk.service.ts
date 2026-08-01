@@ -1,7 +1,6 @@
 /**
  * @file KVKK + veri yaşam döngüsü servisi.
  * @module apps/api/common/kvkk/kvkk.service
- *
  * @description GOAL-126 (FAZ-12) KVKK uyumlu veri yaşam
  * döngüsü. Tenant verisinin:
  * 1. **Erişim** (audit) — tüm okuma + yazma aksiyonları
@@ -13,18 +12,20 @@
  * 4. **Silme** (erasure) — sahip talep ettiğinde PII
  *    alanları anonimleştirilir; tıbbi kayıtlar yasal
  *    saklama süresince tutulur.
- *
  * @security Tüm aksiyonlar `audit:kvkk.*` event'i üretir.
  *   Tıbbi kayıtlar (muayene, aşı, reçete, lab) yasal
  *   saklama süresince (varsayılan 7 yıl) tutulur.
- *
  * @since GOAL-126 (FAZ-12) KVKK ve veri yaşam döngüsü
  */
 
-import { Injectable, Logger } from "@nestjs/common";
-
 import { createHash } from "node:crypto";
 
+import { Injectable, Logger } from "@nestjs/common";
+
+/**
+ * Bir kullanicinin tenant verisine erisim yetkisini temsil eder.
+ * @param userId
+ */
 function hashUserId(userId: string): string {
   return createHash("sha256").update(userId).digest("hex").slice(0, 8);
 }
@@ -85,6 +86,11 @@ export class KvkkService {
   /**
    * KVKK silme talebi oluşturur. PII alanları anonimleştirilir;
    * tıbbi kayıtlar yasal saklama süresince tutulur.
+   * @param args
+   * @param args.tenantId
+   * @param args.ownerId
+   * @param args.requestedBy
+   * @param args.reason
    */
   public async createErasureRequest(args: {
     tenantId: string;
@@ -114,6 +120,7 @@ export class KvkkService {
    * Erasure talebini uygular. PII alanları (firstName,
    * lastName, email, phone, taxId, address) hash'lenir;
    * tıbbi kayıtlar yasal saklama süresince tutulur.
+   * @param request
    */
   public async applyErasure(
     request: KvkkErasureRequest,
@@ -140,6 +147,7 @@ export class KvkkService {
   /**
    * Tenant verisinin tamamını JSON olarak dışa aktarır
    * (KVKK Madde 11 + UK GDPR Madde 15).
+   * @param tenantId
    */
   public async exportTenantData(tenantId: string): Promise<TenantDataExport> {
     this.logger.warn(

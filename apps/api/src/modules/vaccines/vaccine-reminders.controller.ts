@@ -34,28 +34,25 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
-import type {
-  VaccineReminderChannel,
-  VaccineReminderListQuery,
-} from "@vetniva/contracts";
 import {
   vaccineReminderChannelSchema,
   vaccineReminderListQuerySchema,
 } from "@vetniva/contracts";
 import { z } from "zod";
 
+import { VaccineRemindersService } from "./vaccine-reminders.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   VaccineReminder,
   VaccineReminderConfig,
 } from "../../common/vaccines/vaccine-reminder.types.js";
-import { VaccineRemindersService } from "./vaccine-reminders.service.js";
+import type { VaccineReminderListQuery } from "@vetniva/contracts";
 
 /** Tenant config update body şeması. */
 const configInputSchema = z.object({
@@ -68,9 +65,7 @@ export type VaccineReminderConfigInput = z.infer<typeof configInputSchema>;
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/clinic")
 export class VaccineRemindersController {
-  public constructor(
-    private readonly service: VaccineRemindersService,
-  ) {}
+  public constructor(private readonly service: VaccineRemindersService) {}
 
   // -------------------------------------------------------------------------
   // list (hastaya göre)
@@ -135,7 +130,7 @@ export class VaccineRemindersController {
       tenantId,
       {
         daysBeforeDue: body.daysBeforeDue,
-        channels: body.channels as VaccineReminderChannel[],
+        channels: body.channels,
       },
       actor,
     );

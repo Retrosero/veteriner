@@ -1,7 +1,6 @@
 /**
  * @file Clinical records service.
  * @module apps/api/modules/clinical-records/clinical-records.service
- *
  * @description GOAL-047 klinik kayıt PDF ve paylaşım iş kuralları.
  * Examination + SOAP + Vitals + Diagnoses + Prescriptions + Orders +
  * Followups birleşik PDF render edilir; paylaşım kanalları (e-posta,
@@ -25,29 +24,27 @@
  *
  * Permission: `clinic:examination:read` (generate/list),
  * `clinic:report:export` (share/revoke).
- *
  * @security Tenant bilgisi yalnızca actor.tenantId'den alınır;
  *   request body/query'den güvenilmez. Cross-tenant paylaşım denemesi
  *   404 (bilgi sızdırmaz). Signed URL gerçek mekanizması FAZ-10+'da
  *   devreye girer; FAZ-0'da 7 günlük geçerlilik `expiresAt` alanı
  *   ile UI'da gösterilir.
- *
  * @since GOAL-047 (FAZ-4) klinik kayıt PDF ve paylaşım core
  */
 
-import { Injectable, Logger } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import type {
-  ClinicalRecordShare,
-  NotificationChannel,
-  ShareChannel,
-} from "@vetniva/contracts";
+import { Injectable, Logger } from "@nestjs/common";
 
+import {
+  type ClinicalRecordShareRecord,
+  ClinicalRecordSharesRepository,
+  toClinicalRecordShare,
+} from "./clinical-records.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
+import { DomainError } from "../../common/errors/domain-error.js";
 import { DiagnosesService } from "../diagnoses/diagnoses.service.js";
+import { ExaminationsService } from "../examinations/examinations.service.js";
 import { FileService } from "../file/file.service.js";
 import { FollowupsService } from "../followups/followups.service.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
@@ -55,13 +52,13 @@ import { OrdersService } from "../orders/orders.service.js";
 import { PrescriptionsService } from "../prescriptions/prescriptions.service.js";
 import { SoapService } from "../soap/soap.service.js";
 import { VitalsService } from "../vitals/vitals.service.js";
-import { ExaminationsService } from "../examinations/examinations.service.js";
 
-import {
-  type ClinicalRecordShareRecord,
-  ClinicalRecordSharesRepository,
-  toClinicalRecordShare,
-} from "./clinical-records.repository.js";
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type {
+  ClinicalRecordShare,
+  NotificationChannel,
+  ShareChannel,
+} from "@vetniva/contracts";
 
 /** Paylaşım linki geçerlilik süresi (7 gün, saniye). */
 const SHARE_LINK_TTL_SECONDS = 7 * 24 * 60 * 60;
@@ -69,6 +66,7 @@ const SHARE_LINK_TTL_SECONDS = 7 * 24 * 60 * 60;
 /**
  * Share kanalını bildirim kanalına eşler. `portal` kanalı in-app
  * bildirim olarak iletilir; e-posta/SMS ise kendi kanalları üzerinden.
+ * @param ch
  */
 function toNotificationChannel(ch: ShareChannel): NotificationChannel {
   switch (ch) {
@@ -112,6 +110,9 @@ export class ClinicalRecordsService {
   /**
    * Klinik kayıt PDF render. Tüm alt kayıtları birleştirir, basit
    * text/html buffer üretir (FAZ-0 stub). Cross-tenant → 404.
+   * @param tenantId
+   * @param examinationId
+   * @param actor
    */
   public async generatePdf(
     tenantId: string,
@@ -258,6 +259,10 @@ export class ClinicalRecordsService {
    * Klinik kayıt PDF'ini oluşturur, dosya servisine yükler, kanallar
    * üzerinden gönderir ve 7 gün geçerli share kaydı oluşturur.
    * Audit `audit:clinical-record.share` (info).
+   * @param tenantId
+   * @param examinationId
+   * @param channels
+   * @param actor
    */
   public async shareWithPatient(
     tenantId: string,
@@ -418,6 +423,9 @@ export class ClinicalRecordsService {
   /**
    * Bir muayeneye ait tüm paylaşım kayıtlarını `createdAt` desc
    * sırayla döner. Examination aynı tenant'ta mı doğrulanır.
+   * @param tenantId
+   * @param examinationId
+   * @param actor
    */
   public async listShares(
     tenantId: string,
@@ -448,6 +456,9 @@ export class ClinicalRecordsService {
   /**
    * Share kaydını soft-delete yapar (`revokedAt` set). Idempotent.
    * Audit `audit:clinical-record.revoke` (warning).
+   * @param tenantId
+   * @param shareId
+   * @param actor
    */
   public async revokeShare(
     tenantId: string,
@@ -514,7 +525,7 @@ export class ClinicalRecordsService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

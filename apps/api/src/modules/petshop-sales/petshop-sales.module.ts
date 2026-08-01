@@ -11,11 +11,11 @@
 
 import { Module } from "@nestjs/common";
 
-import { ProductsModule } from "../products/products.module.js";
-import { StockMovementsModule } from "../stock-movements/stock-movements.module.js";
 import { PetshopSalesController } from "./petshop-sales.controller.js";
 import { PetshopSalesRepository } from "./petshop-sales.repository.js";
 import { PetshopSalesService } from "./petshop-sales.service.js";
+import { ProductsModule } from "../products/products.module.js";
+import { StockMovementsModule } from "../stock-movements/stock-movements.module.js";
 
 @Module({
   imports: [ProductsModule, StockMovementsModule],

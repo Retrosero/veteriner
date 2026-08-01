@@ -44,5 +44,6 @@ Aktif kullanıcı + session + üyelikler.
 **Audit:** Aktif session kullanımı (lastUsedAt güncellenir).
 
 **İlgili dokümanlar:**
+
 - API sözleşmesi: `packages/contracts/src/auth.ts` (`meResponseSchema`)
 - Alan sözlüğü: `docs/fields/FIELD_GLOSSARY.md` (User, UserSession)

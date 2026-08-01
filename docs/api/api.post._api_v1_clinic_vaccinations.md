@@ -43,9 +43,9 @@ POST /api/v1/clinic/vaccinations
 
 - `nextDueAt`:
   - 2+ step → `administeredAt + (steps[1].ageWeeks −
-    steps[0].ageWeeks) × 7 gün`.
+steps[0].ageWeeks) × 7 gün`.
   - Tek step + `boosterIntervalDays` → `administeredAt +
-    boosterIntervalDays`.
+boosterIntervalDays`.
   - Aksi hâlde → `null`.
 - `status` her zaman `administered` (oluşturma anında).
 - `veterinarianId` → `actor.actorId` (veya "system").

@@ -78,9 +78,7 @@ export class DischargeSummariesRepository {
 
   private readonly observations = new Map<string, ObservationRecord>();
 
-  public insertObservation(
-    rec: ObservationRecord,
-  ): ObservationRecord {
+  public insertObservation(rec: ObservationRecord): ObservationRecord {
     this.observations.set(rec.id, rec);
     return rec;
   }
@@ -130,14 +128,9 @@ export class DischargeSummariesRepository {
   /** hospitalizationId → en son draft/finalized summary id (uniq). */
   private readonly activeByHosp = new Map<string, string>();
 
-  public insertSummary(
-    rec: DischargeSummaryRecord,
-  ): DischargeSummaryRecord {
+  public insertSummary(rec: DischargeSummaryRecord): DischargeSummaryRecord {
     this.summaries.set(rec.id, rec);
-    this.activeByHosp.set(
-      `${rec.tenantId}::${rec.hospitalizationId}`,
-      rec.id,
-    );
+    this.activeByHosp.set(`${rec.tenantId}::${rec.hospitalizationId}`, rec.id);
     return rec;
   }
 

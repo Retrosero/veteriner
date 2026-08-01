@@ -101,7 +101,11 @@ export class ActorContextService {
     const role = req.header(ACTOR_ROLE_HEADER) as ActorRole | undefined;
     const tenantId = req.header(ACTOR_TENANT_HEADER);
     const branchId = req.header(ACTOR_BRANCH_HEADER);
-    const ip = req.header(ACTOR_IP_HEADER) ?? req.ip ?? req.socket?.remoteAddress ?? null;
+    const ip =
+      req.header(ACTOR_IP_HEADER) ??
+      req.ip ??
+      req.socket?.remoteAddress ??
+      null;
     const ua = req.header(ACTOR_UA_HEADER);
 
     const hasHeader = actorId || role || tenantId;

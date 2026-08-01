@@ -1,7 +1,6 @@
 /**
  * @file Audit service (Prisma genişletmesi).
  * @module apps/api/common/audit/audit.service
- *
  * @description Audit event'leri toplar, PII maskeler, log + DB'ye yazar.
  * GOAL-010 ile birlikte Prisma `AuditEvent` tablosuna da yazım eklenmiştir
  * (append-only). DB yazımı best-effort: hata durumunda log'a düşer,
@@ -12,21 +11,21 @@
  * - Pino logger üzerinden yapısal log (her zaman).
  * - Prisma AuditEvent.create (best-effort, await edilir).
  * - Critical event'ler için console.error (gerçek üretimde PagerDuty).
- *
  * @security PII maskeleme zorunlu. before/after alanları
  *   PiiMasker üzerinden geçmeden yazılmaz. DB trigger'ı UPDATE/DELETE'i
  *   engeller (append-only).
- *
  * @since GOAL-004 (FAZ-0) audit + log + hata standardı
  * @updated GOAL-010 (FAZ-1) Prisma AuditEvent yazımı eklendi
  */
 
-import { Injectable, Logger } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
+
+import { Injectable, Logger } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 
 import { PrismaService } from "../../prisma/prisma.service.js";
 import { PiiMasker } from "../logging/pii-masker.js";
+
 import type {
   AuditEvent,
   AuditEventInput,
@@ -47,6 +46,7 @@ export class AuditService {
   /**
    * Event'i log + DB'ye yazar. DB yazımı başarısız olursa log'a
    * hata düşer; çağırıcı engellenmez.
+   * @param input
    */
   public async record(input: AuditEventInput): Promise<AuditEvent> {
     const event: AuditEvent = {
@@ -94,27 +94,34 @@ export class AuditService {
 
     // Best-effort DB yazımı. Hata durumunda log'a düşer.
     try {
-      await this.prisma.auditEvent.create({
-        data: {
-          id: event.eventId,
-          eventName: event.eventName,
-          tenantId: event.tenantId ?? null,
-          branchId: event.branchId ?? null,
-          actorId: event.actorId ?? null,
-          actorType: event.actorType,
-          targetType: event.targetType,
-          targetId: event.targetId,
-          action: event.action,
-          before: (before as Prisma.InputJsonValue | null) ?? Prisma.JsonNull,
-          after: (after as Prisma.InputJsonValue | null) ?? Prisma.JsonNull,
-          diff: (diff as Prisma.InputJsonValue | null) ?? Prisma.JsonNull,
-          correlationId: event.correlationId,
-          ipAddress: event.ipAddress ?? null,
-          userAgentHash: event.userAgentHash ?? null,
-          country: event.country,
-          severity: event.severity,
-          metadata: (metadata as Prisma.InputJsonValue | null) ?? Prisma.JsonNull,
-        },
+      await this.prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'false', true)`;
+        if (event.tenantId) {
+          await tx.$executeRaw`SELECT set_config('app.tenant_id', ${event.tenantId}, true)`;
+        }
+        await tx.auditEvent.create({
+          data: {
+            id: event.eventId,
+            eventName: event.eventName,
+            tenantId: event.tenantId ?? null,
+            branchId: event.branchId ?? null,
+            actorId: event.actorId ?? null,
+            actorType: event.actorType,
+            targetType: event.targetType,
+            targetId: event.targetId,
+            action: event.action,
+            before: (before as Prisma.InputJsonValue | null) ?? Prisma.JsonNull,
+            after: (after as Prisma.InputJsonValue | null) ?? Prisma.JsonNull,
+            diff: (diff as Prisma.InputJsonValue | null) ?? Prisma.JsonNull,
+            correlationId: event.correlationId,
+            ipAddress: event.ipAddress ?? null,
+            userAgentHash: event.userAgentHash ?? null,
+            country: event.country,
+            severity: event.severity,
+            metadata:
+              (metadata as Prisma.InputJsonValue | null) ?? Prisma.JsonNull,
+          },
+        });
       });
     } catch (err) {
       this.logger.error(
@@ -129,6 +136,8 @@ export class AuditService {
 
   /**
    * Severity'ye göre uygun log metodunu çağırır.
+   * @param severity
+   * @param payload
    */
   private logBySeverity(
     severity: AuditSeverity,
@@ -152,17 +161,33 @@ export class AuditService {
 
   /**
    * PII payload'ı mask'ler. Null/undefined korunur.
+   * @param payload
    */
   private maskPayload(
     payload: Record<string, unknown> | null | undefined,
   ): Record<string, unknown> | null {
     if (payload === null || payload === undefined) return null;
-    return this.masker.mask(payload) as Record<string, unknown>;
+    return this.masker.mask(payload);
   }
 
   /**
    * Basit helper: sadece event ismi ve target bilgisi ile
    * event oluşturur. Actor bilgisi dışarıdan verilir.
+   * @param eventName
+   * @param targetType
+   * @param targetId
+   * @param action
+   * @param actor
+   * @param actor.actorId
+   * @param actor.actorType
+   * @param actor.tenantId
+   * @param actor.branchId
+   * @param actor.correlationId
+   * @param actor.country
+   * @param actor.ipAddress
+   * @param actor.userAgentHash
+   * @param severity
+   * @param metadata
    */
   public async recordSimple(
     eventName: string,

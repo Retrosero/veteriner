@@ -33,6 +33,7 @@ info); dönen değer expire edilen kayıt sayısı.
 
 **WaitlistController** — 5 endpoint
 (`apps/api/src/modules/waitlist/waitlist.controller.ts`):
+
 - `POST /api/v1/clinic/waitlist` —
   `clinic:appointment:create`, 201.
 - `GET  /api/v1/clinic/waitlist` —
@@ -43,10 +44,10 @@ info); dönen değer expire edilen kayıt sayısı.
   `clinic:appointment:create`, 200.
 - `POST /api/v1/clinic/waitlist/:id/cancel` —
   `clinic:appointment:cancel`, 200.
-Swagger `operationId: waitlistAdd | waitlistList | waitlistNotify |
+  Swagger `operationId: waitlistAdd | waitlistList | waitlistNotify |
 waitlistSchedule | waitlistCancel`. `ZodValidationPipe` ile input
-doğrulama; `requireTenant()` tenant bağlamı zorunlu
-(`VET-TENANT-0001`).
+  doğrulama; `requireTenant()` tenant bağlamı zorunlu
+  (`VET-TENANT-0001`).
 
 **Sözleşme** (`packages/contracts/src/waitlist.ts`) — Zod şemaları:
 `waitlistStatusSchema` (waiting|notified|scheduled|cancelled|expired),
@@ -82,7 +83,7 @@ reason, (12) cancel idempotent, (13) expire overdue + audit.system,
   SUPERADMIN bypass, diğer actor'ler için `actor.tenantId===tenantId`.
 - **In-memory storage:** Map üzerinde `waitlistByTenant`; production'a
   geçişte Prisma `WaitlistEntry` tablosu + `tenantId/patientId/
-  status` index.
+status` index.
 - **VET-CLINIC-0006 paylaşımı:** Kod hem ownership-history (409 aktif
   sahiplik çakışması) hem waitlist (422 state geçişi) tarafından
   kullanılır. Katalog güncellendi (ERROR_CATALOG.md).
@@ -111,8 +112,8 @@ Yok. In-memory `waitlistByTenant` Map. Production'a geçişte
 
 ## API
 
-| Method | Path | Yetki | Kod |
-| ------ | ---- | ----- | --- |
+| Method | Path                                 | Yetki                     | Kod |
+| ------ | ------------------------------------ | ------------------------- | --- |
 | POST   | /api/v1/clinic/waitlist              | clinic:appointment:create | 201 |
 | GET    | /api/v1/clinic/waitlist              | clinic:appointment:read   | 200 |
 | POST   | /api/v1/clinic/waitlist/:id/notify   | clinic:appointment:update | 200 |

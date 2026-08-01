@@ -1,13 +1,11 @@
 /**
  * @file Bildirim template servisi.
  * @module apps/api/common/notifications/template.service
- *
  * @description `{{variable}}` sözdizimi ile basit template render.
  * FAZ-0'da in-memory registry kullanır; template'ler
  * `apps/api/src/common/notifications/templates/` altında modül
  * seviyesinde tutulur. Faz 11+ ile DB'ye (NotificationTemplate
  * tablosu) taşınır.
- *
  * @since GOAL-015 (FAZ-2) bildirim altyapısı temeli
  * @updated Faz 11+ DB tabanlı template registry
  */
@@ -110,13 +108,20 @@ export class TemplateService {
   /**
    * Verilen anahtar + locale için template'i render eder.
    * Bilinmeyen anahtar için boş body döner (loglanır).
+   * @param templateKey
+   * @param locale
+   * @param data
    */
   public render(
     templateKey: string,
     locale: NotificationLocale,
     data: Record<string, unknown>,
   ): RenderedTemplate {
-    const entry = TEMPLATES[templateKey]?.[locale];
+    const localeTemplates = Reflect.get(TEMPLATES, templateKey) as
+      LocaleTemplates | undefined;
+    const entry = localeTemplates
+      ? (Reflect.get(localeTemplates, locale) as TemplateEntry | undefined)
+      : undefined;
     if (!entry) {
       return { body: "" };
     }
@@ -129,6 +134,10 @@ export class TemplateService {
   /**
    * Bilinmeyen template için fallback: kategoriden tahmin et.
    * Yine de bulunamazsa generic mesaj.
+   * @param templateKey
+   * @param category
+   * @param locale
+   * @param data
    */
   public renderOrFallback(
     templateKey: string,
@@ -139,7 +148,11 @@ export class TemplateService {
     const direct = this.render(templateKey, locale, data);
     if (direct.body) return direct;
     // Fallback: aynı kategoriden bir template dene.
-    const fallback = TEMPLATES[category as keyof typeof TEMPLATES]?.[locale];
+    const fallbackLocales = Reflect.get(TEMPLATES, category) as
+      LocaleTemplates | undefined;
+    const fallback = fallbackLocales
+      ? (Reflect.get(fallbackLocales, locale) as TemplateEntry | undefined)
+      : undefined;
     if (fallback) {
       return {
         subject: this.substitute(fallback.subject, data),
@@ -157,8 +170,12 @@ export class TemplateService {
   private substitute(input: string, data: Record<string, unknown>): string {
     return input.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_match, path: string) => {
       const value = this.resolvePath(data, path);
-      if (value === null || value === undefined) return "";
-      return String(value);
+      if (typeof value === "string" || typeof value === "number") {
+        return String(value);
+      }
+      if (typeof value === "boolean") return value ? "true" : "false";
+      if (value instanceof Date) return value.toISOString();
+      return "";
     });
   }
 
@@ -167,7 +184,10 @@ export class TemplateService {
     let current: unknown = data;
     for (const part of parts) {
       if (current === null || typeof current !== "object") return undefined;
-      current = (current as Record<string, unknown>)[part];
+      if (!Object.prototype.hasOwnProperty.call(current, part)) {
+        return undefined;
+      }
+      current = Reflect.get(current, part) as unknown;
     }
     return current;
   }

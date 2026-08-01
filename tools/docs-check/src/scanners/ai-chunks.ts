@@ -1,17 +1,16 @@
 /**
  * @file AI chunk tarayıcısı.
  * @module @vetniva/docs-check/scanners/ai-chunks
- *
  * @description `docs/ai/AI_CHUNKS.yaml` dosyasını okur,
  * chunk şemasına uygunluğunu doğrular, tutarsızlıkları
  * raporlar. Yeni format GOAL-005 ile birlikte.
  */
 
-import fg from "fast-glob";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-import yaml from "js-yaml";
+import fg from "fast-glob";
+import { load as parseYaml } from "js-yaml";
 
 import type { Issue } from "../types.js";
 
@@ -40,6 +39,7 @@ const SEMVER_RE = /^\d+\.\d+\.\d+$/;
 /**
  * AI_CHUNKS.yaml dosyasını okuyup her chunk için doğrulama yapar.
  * Tutarsızlıklar `Issue[]` olarak döner.
+ * @param root
  */
 export async function scanAiChunks(root: string): Promise<{
   chunks: number;
@@ -62,6 +62,7 @@ export async function scanAiChunks(root: string): Promise<{
   }
 
   const yamlPath = path.join(aiDir, files[0]!);
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- Yol repo içindeki kontrollü docs/ai taramasından gelir.
   const text = await readFile(yamlPath, "utf8");
   // AI_CHUNKS.yaml mixed formatta yazılmış: üst düzey metadata
   // (version, generated_by, vb.) + chunks listesi. Bu formatta
@@ -76,7 +77,7 @@ export async function scanAiChunks(root: string): Promise<{
     const lines = text.split(/\r?\n/);
     let chunksStart: number | undefined;
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i] ?? "";
+      const line = lines.at(i) ?? "";
       // Yorum satırlarını ve boş satırları atla; "chunks:" ile
       // başlayan (girintisiz) ilk satırı bul.
       if (/^chunks:\s*$/.test(line)) {
@@ -87,12 +88,11 @@ export async function scanAiChunks(root: string): Promise<{
     if (chunksStart === undefined) {
       // "chunks:" yoksa tüm belgeyi liste olarak parse et
       // (mevcut chunks'lar - ile başlıyor).
-      const listItems = text.split(/\n(?=-\s+chunk_id:)/);
-      // ... veya doğrudan yaml.load deneyebiliriz.
+      // Fallback aşağıda metadata ile liste başlangıcını ayırır.
     }
     if (chunksStart !== undefined) {
       const chunksText = lines.slice(chunksStart).join("\n");
-      chunks = yaml.load(chunksText) as unknown[] | undefined;
+      chunks = parseYaml(chunksText) as unknown[] | undefined;
     } else {
       // Mixed format fallback: dosyayı parçalara ayır, ilk parça
       // metadata, sonraki parça chunks listesi. "---" separator
@@ -104,7 +104,7 @@ export async function scanAiChunks(root: string): Promise<{
       const idx = withoutComments.indexOf(listMarker);
       if (idx > 0) {
         const listText = withoutComments.slice(idx + 1);
-        chunks = yaml.load(listText) as unknown[] | undefined;
+        chunks = parseYaml(listText) as unknown[] | undefined;
       }
     }
   } catch (err) {
@@ -139,7 +139,11 @@ export async function scanAiChunks(root: string): Promise<{
 
     const id = chunk.chunk_id;
     if (typeof id !== "string" || id.length === 0) {
-      issues.push({ severity: "error", path: ref, message: "`chunk_id` zorunlu." });
+      issues.push({
+        severity: "error",
+        path: ref,
+        message: "`chunk_id` zorunlu.",
+      });
     } else {
       if (seenIds.has(id)) {
         issues.push({
@@ -159,10 +163,7 @@ export async function scanAiChunks(root: string): Promise<{
       });
     }
 
-    if (
-      typeof chunk.locale !== "string" ||
-      !VALID_LOCALES.has(chunk.locale)
-    ) {
+    if (typeof chunk.locale !== "string" || !VALID_LOCALES.has(chunk.locale)) {
       issues.push({
         severity: "error",
         path: ref,
@@ -213,7 +214,7 @@ export async function scanAiChunks(root: string): Promise<{
       issues.push({
         severity: "warning",
         path: ref,
-        message: `Geçersiz \`confidence\`: ${String(chunk.confidence)}`,
+        message: "Geçersiz `confidence` değeri.",
       });
     }
 

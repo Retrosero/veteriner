@@ -17,21 +17,19 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { PurchaseOrdersRepository } from "./purchase-orders.repository.js";
+import { PurchaseOrdersService } from "./purchase-orders.service.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { SuppliersRepository } from "../suppliers/suppliers.repository.js";
+import { SuppliersService } from "../suppliers/suppliers.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-
-import { PurchaseOrdersService } from "./purchase-orders.service.js";
-import { PurchaseOrdersRepository } from "./purchase-orders.repository.js";
-import { SuppliersService } from "../suppliers/suppliers.service.js";
-import { SuppliersRepository } from "../suppliers/suppliers.repository.js";
 import type {
   PurchaseOrderCancelInput,
   PurchaseOrderCreateInput,
   PurchaseOrderReceiveInput,
   PurchaseOrderUpdateInput,
-} from "@vetniva/contracts";
-import type {
   SupplierCreateInput,
 } from "@vetniva/contracts";
 
@@ -163,8 +161,18 @@ describe("PurchaseOrdersService", () => {
         TENANT_A,
         makePoInput(supplierId, {
           lines: [
-            { productId: "p1", unit: "unit", orderedQuantity: "10", unitPrice: "25.50" },
-            { productId: "p2", unit: "unit", orderedQuantity: "5", unitPrice: "100" },
+            {
+              productId: "p1",
+              unit: "unit",
+              orderedQuantity: "10",
+              unitPrice: "25.50",
+            },
+            {
+              productId: "p2",
+              unit: "unit",
+              orderedQuantity: "5",
+              unitPrice: "100",
+            },
           ],
         }),
         STAFF_A,
@@ -193,11 +201,7 @@ describe("PurchaseOrdersService", () => {
         STAFF_A,
       );
       await expect(
-        service.createPurchaseOrder(
-          TENANT_A,
-          makePoInput(supplierId),
-          STAFF_A,
-        ),
+        service.createPurchaseOrder(TENANT_A, makePoInput(supplierId), STAFF_A),
       ).rejects.toMatchObject({
         errorCode: "VET-PURCHASE_ORDER-0005",
         httpStatus: 422,
@@ -227,21 +231,15 @@ describe("PurchaseOrdersService", () => {
       const supA = await seedSupplier("SUP-A-X", "Sup A");
       const supB = await seedSupplier(); // tenant B'de değil; aynı tenant'ta farklı kod
       const codeB = "SUP-B-001";
-      const supBTenantB = (await suppliers.createSupplier(
-        TENANT_B,
-        makeCreateInput({ code: codeB, name: "Sup B" }),
-        STAFF_B,
-      )).id;
-      await service.createPurchaseOrder(
-        TENANT_A,
-        makePoInput(supA),
-        STAFF_A,
-      );
-      await service.createPurchaseOrder(
-        TENANT_A,
-        makePoInput(supB),
-        STAFF_A,
-      );
+      const supBTenantB = (
+        await suppliers.createSupplier(
+          TENANT_B,
+          makeCreateInput({ code: codeB, name: "Sup B" }),
+          STAFF_B,
+        )
+      ).id;
+      await service.createPurchaseOrder(TENANT_A, makePoInput(supA), STAFF_A);
+      await service.createPurchaseOrder(TENANT_A, makePoInput(supB), STAFF_A);
       await service.createPurchaseOrder(
         TENANT_B,
         makePoInput(supBTenantB),
@@ -268,7 +266,12 @@ describe("PurchaseOrdersService", () => {
         makePoInput(sup, {
           supplierId: sup,
           lines: [
-            { productId: "px", unit: "unit", orderedQuantity: "3", unitPrice: "10" },
+            {
+              productId: "px",
+              unit: "unit",
+              orderedQuantity: "3",
+              unitPrice: "10",
+            },
           ],
         }),
         STAFF_A,
@@ -348,11 +351,7 @@ describe("PurchaseOrdersService", () => {
         makePoInput(sup),
         STAFF_A,
       );
-      await service.approvePurchaseOrder(
-        TENANT_A,
-        created.order.id,
-        STAFF_A,
-      );
+      await service.approvePurchaseOrder(TENANT_A, created.order.id, STAFF_A);
       await expect(
         service.updatePurchaseOrder(
           TENANT_A,
@@ -396,17 +395,9 @@ describe("PurchaseOrdersService", () => {
         makePoInput(sup),
         STAFF_A,
       );
-      await service.approvePurchaseOrder(
-        TENANT_A,
-        created.order.id,
-        STAFF_A,
-      );
+      await service.approvePurchaseOrder(TENANT_A, created.order.id, STAFF_A);
       await expect(
-        service.approvePurchaseOrder(
-          TENANT_A,
-          created.order.id,
-          STAFF_A,
-        ),
+        service.approvePurchaseOrder(TENANT_A, created.order.id, STAFF_A),
       ).rejects.toMatchObject({
         errorCode: "VET-PURCHASE_ORDER-0002",
         httpStatus: 409,
@@ -435,11 +426,7 @@ describe("PurchaseOrdersService", () => {
         }),
         STAFF_A,
       );
-      await service.approvePurchaseOrder(
-        TENANT_A,
-        created.order.id,
-        STAFF_A,
-      );
+      await service.approvePurchaseOrder(TENANT_A, created.order.id, STAFF_A);
       const lineId = created.lines[0]!.id;
       const received = await service.receivePurchaseOrder(
         TENANT_A,
@@ -477,19 +464,13 @@ describe("PurchaseOrdersService", () => {
         }),
         STAFF_A,
       );
-      await service.approvePurchaseOrder(
-        TENANT_A,
-        created.order.id,
-        STAFF_A,
-      );
+      await service.approvePurchaseOrder(TENANT_A, created.order.id, STAFF_A);
       const lineId = created.lines[0]!.id;
       const received = await service.receivePurchaseOrder(
         TENANT_A,
         created.order.id,
         {
-          lines: [
-            { lineId, receivedQuantity: "5", unitCost: "20" },
-          ],
+          lines: [{ lineId, receivedQuantity: "5", unitCost: "20" }],
         } as PurchaseOrderReceiveInput,
         STAFF_A,
       );
@@ -512,20 +493,14 @@ describe("PurchaseOrdersService", () => {
         }),
         STAFF_A,
       );
-      await service.approvePurchaseOrder(
-        TENANT_A,
-        created.order.id,
-        STAFF_A,
-      );
+      await service.approvePurchaseOrder(TENANT_A, created.order.id, STAFF_A);
       const lineId = created.lines[0]!.id;
       await expect(
         service.receivePurchaseOrder(
           TENANT_A,
           created.order.id,
           {
-            lines: [
-              { lineId, receivedQuantity: "15", unitCost: "20" },
-            ],
+            lines: [{ lineId, receivedQuantity: "15", unitCost: "20" }],
           } as PurchaseOrderReceiveInput,
           STAFF_A,
         ),
@@ -592,16 +567,17 @@ describe("PurchaseOrdersService", () => {
         TENANT_A,
         makePoInput(sup, {
           lines: [
-            { productId: "p", unit: "unit", orderedQuantity: "1", unitPrice: "10" },
+            {
+              productId: "p",
+              unit: "unit",
+              orderedQuantity: "1",
+              unitPrice: "10",
+            },
           ],
         }),
         STAFF_A,
       );
-      await service.approvePurchaseOrder(
-        TENANT_A,
-        created.order.id,
-        STAFF_A,
-      );
+      await service.approvePurchaseOrder(TENANT_A, created.order.id, STAFF_A);
       await service.receivePurchaseOrder(
         TENANT_A,
         created.order.id,
@@ -638,11 +614,7 @@ describe("PurchaseOrdersService", () => {
     it("cross-tenant create 403 VET-AUTHZ-0001", async () => {
       const sup = await seedSupplier();
       await expect(
-        service.createPurchaseOrder(
-          TENANT_B,
-          makePoInput(sup),
-          STAFF_A,
-        ),
+        service.createPurchaseOrder(TENANT_B, makePoInput(sup), STAFF_A),
       ).rejects.toMatchObject({
         errorCode: "VET-AUTHZ-0001",
         httpStatus: 403,
@@ -660,7 +632,6 @@ describe("PurchaseOrdersService", () => {
     });
 
     it("DomainError tipinde hata fırlatır", async () => {
-      const sup = await seedSupplier();
       await expect(
         service.createPurchaseOrder(
           TENANT_A,

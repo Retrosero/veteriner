@@ -23,13 +23,13 @@
 
 import { Global, Module } from "@nestjs/common";
 
-import { ErrorEventsModule } from "../error-events/error-events.module.js";
-import { JobRunsModule } from "../job-runs/job-runs.module.js";
-import { SecurityEventsModule } from "../security-events/security-events.module.js";
 import { LogRetentionController } from "./log-retention.controller.js";
 import { LogRetentionRepository } from "./log-retention.repository.js";
 import { LogRetentionService } from "./log-retention.service.js";
 import { LOG_RETENTION_TARGETS } from "./log-retention.targets.js";
+import { ErrorEventsModule } from "../error-events/error-events.module.js";
+import { JobRunsModule } from "../job-runs/job-runs.module.js";
+import { SecurityEventsModule } from "../security-events/security-events.module.js";
 import { ErrorEventRetentionTarget } from "./targets/error-event.target.js";
 import { JobRunRetentionTarget } from "./targets/job-run.target.js";
 import { SecurityEventRetentionTarget } from "./targets/security-event.target.js";
@@ -52,7 +52,9 @@ import { SecurityEventRetentionTarget } from "./targets/security-event.target.js
         b: SecurityEventRetentionTarget,
         c: JobRunRetentionTarget,
       ): Array<
-        ErrorEventRetentionTarget | SecurityEventRetentionTarget | JobRunRetentionTarget
+        | ErrorEventRetentionTarget
+        | SecurityEventRetentionTarget
+        | JobRunRetentionTarget
       > => [a, b, c],
       inject: [
         ErrorEventRetentionTarget,

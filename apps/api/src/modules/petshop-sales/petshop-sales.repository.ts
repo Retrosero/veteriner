@@ -89,9 +89,7 @@ export class PetshopSalesRepository {
     return record;
   }
 
-  public insertLine(
-    record: PetshopSaleLineRecord,
-  ): PetshopSaleLineRecord {
+  public insertLine(record: PetshopSaleLineRecord): PetshopSaleLineRecord {
     this.lineById.set(record.id, record);
     const list = this.linesBySale.get(record.saleId) ?? [];
     list.push(record.id);
@@ -99,10 +97,7 @@ export class PetshopSalesRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): PetshopSaleRecord | null {
+  public findById(tenantId: string, id: string): PetshopSaleRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -182,10 +177,7 @@ export class PetshopSalesRepository {
         rec.customerPatientId !== filters.customerPatientId
       )
         continue;
-      if (
-        filters.paymentMethod &&
-        rec.paymentMethod !== filters.paymentMethod
-      )
+      if (filters.paymentMethod && rec.paymentMethod !== filters.paymentMethod)
         continue;
       if (needle) {
         const hay = [rec.id, rec.notes ?? ""].join(" ").toLowerCase();

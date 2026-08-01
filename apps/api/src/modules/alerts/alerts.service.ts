@@ -1,7 +1,6 @@
 /**
  * @file Alerts service.
  * @module apps/api/modules/alerts/alerts.service
- *
  * @description GOAL-023 alerji, kronik durum, ilaç etkileşimi ve
  * davranış uyarıları iş kuralları. Tenant-scoped, append-only
  * mantıkta; arşivleme soft delete. In-memory Map'te tutulur.
@@ -19,23 +18,24 @@
  * - checkMedicationConflict: allergy veya chronic_condition
  *   uyarısının başlık/açıklamasında ilaç adı geçiyorsa eşleşen
  *   uyarıları döner (case-insensitive substring).
- *
  * @security Tenant bilgisi yalnızca actor.tenantId'den alınır.
- *
  * @since GOAL-023 (FAZ-2) alerji/kronik uyarılar core
  */
 
-import { Injectable, Logger } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import { Injectable, Logger } from "@nestjs/common";
+
 import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
-import {
-  PatientsRepository,
-  type PatientRecord,
-} from "../patients/patients.repository.js";
-import type { AlertRecord, AlertInput, AlertFilters } from "../../common/alerts/alert.types.js";
+import { PatientsRepository } from "../patients/patients.repository.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type {
+  AlertRecord,
+  AlertInput,
+  AlertFilters,
+} from "../../common/alerts/alert.types.js";
 
 /** Severity sıralaması için weight (büyük = daha acil). */
 const SEVERITY_WEIGHT: Readonly<Record<string, number>> = {
@@ -47,7 +47,7 @@ const SEVERITY_WEIGHT: Readonly<Record<string, number>> = {
 @Injectable()
 export class AlertsService {
   private readonly logger = new Logger(AlertsService.name);
-  /** key: alertId → AlertRecord. */
+  /** Key: alertId → AlertRecord. */
   private readonly byId = new Map<string, AlertRecord>();
 
   public constructor(
@@ -60,6 +60,10 @@ export class AlertsService {
    * Severity `critical` ise audit (info) yayınlanır; diğer
    * severity'lerde audit yayınlanmaz (klinik akışta gürültüyü
    * azaltmak için).
+   * @param tenantId
+   * @param patientId
+   * @param input
+   * @param actor
    */
   public async add(
     tenantId: string,
@@ -130,6 +134,10 @@ export class AlertsService {
   /**
    * Tenant-scoped liste. `activeOnly=true` ise `archivedAt=null`
    * VE (`expiresAt=null` VEYA `expiresAt>now`).
+   * @param tenantId
+   * @param patientId
+   * @param actor
+   * @param filters
    */
   public listForPatient(
     tenantId: string,
@@ -156,6 +164,9 @@ export class AlertsService {
    * Aktif uyarılar (archivedAt=null, expiresAt>now veya null),
    * severity'ye göre azalan (critical > warning > info).
    * Muayene/reçete oluşturma sırasında UI için yardımcı.
+   * @param tenantId
+   * @param patientId
+   * @param actor
    */
   public getActiveAlertsForPatient(
     tenantId: string,
@@ -163,14 +174,12 @@ export class AlertsService {
     actor: ActorContext,
   ): AlertRecord[] {
     this.requireTenantScope(actor, tenantId);
-    const active = this.listForPatient(
-      tenantId,
-      patientId,
-      actor,
-      { activeOnly: true },
-    );
+    const active = this.listForPatient(tenantId, patientId, actor, {
+      activeOnly: true,
+    });
     return active.sort((a, b) => {
-      const w = (SEVERITY_WEIGHT[b.severity] ?? 0) - (SEVERITY_WEIGHT[a.severity] ?? 0);
+      const w =
+        (SEVERITY_WEIGHT[b.severity] ?? 0) - (SEVERITY_WEIGHT[a.severity] ?? 0);
       if (w !== 0) return w;
       return b.createdAt.localeCompare(a.createdAt);
     });
@@ -180,6 +189,10 @@ export class AlertsService {
    * Reçete oluştururken ilaç adıyla bilinen alerji/kronik
    * durum uyarılarını döner. Case-insensitive substring match
    * yapar (title + description üzerinde).
+   * @param tenantId
+   * @param patientId
+   * @param medicationName
+   * @param actor
    */
   public checkMedicationConflict(
     tenantId: string,
@@ -203,6 +216,9 @@ export class AlertsService {
   /**
    * Soft delete: archivedAt set. İdempotent (zaten arşivliyse
    * no-op). Audit `audit:alert.archive` (info) yayınlanır.
+   * @param tenantId
+   * @param alertId
+   * @param actor
    */
   public async archive(
     tenantId: string,

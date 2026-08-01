@@ -16,9 +16,7 @@ UUID v4 (URL-safe); `expiresAt = now + expiresInDays gün`.
 {
   "ownerId": "11111111-1111-1111-1111-111111111111",
   "email": "ayse@example.com",
-  "patientIds": [
-    "33333333-3333-3333-3333-333333333333"
-  ],
+  "patientIds": ["33333333-3333-3333-3333-333333333333"],
   "expiresInDays": 7,
   "locale": "tr-TR"
 }
@@ -48,9 +46,7 @@ UUID v4 (URL-safe); `expiresAt = now + expiresInDays gün`.
   "acceptedAt": null,
   "revokedAt": null,
   "invitationToken": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
-  "patientIds": [
-    "33333333-3333-3333-3333-333333333333"
-  ],
+  "patientIds": ["33333333-3333-3333-3333-333333333333"],
   "locale": "tr-TR",
   "invitedBy": "usr-staff-uuid"
 }

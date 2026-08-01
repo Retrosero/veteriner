@@ -1,27 +1,24 @@
 /**
  * @file Sistem sagligi sayfasi.
  * @module @vetniva/web/app/[locale]/health/page
- *
  * @description API'nin `/api/v1/ready` endpoint'inden alinan
  * `ReadinessResponse`'i gorsellestirir. Sistem bilesenlerinin (DB,
  * queue, storage) canli durumunu ve build bilgisini gosterir. Gozlem
  * ve smoke test amacli kullanilir.
- *
  * @security Tenant filtresi uygulanmaz; health public bir endpoint
  * uzerinden calisir. Hassas build meta verisi GOAL-000'da yok
  * (yalnizca sha + version). Faz 10 ile birlikte build meta genisler.
  */
 
+import { SUPPORTED_LOCALES, type Locale } from "@vetniva/contracts";
+import { Badge, type BadgeProps } from "@vetniva/ui";
 import { notFound } from "next/navigation";
 
-import { SUPPORTED_LOCALES, type Locale } from "@vetniva/contracts";
-
-import { AppShell } from "@/components/layouts/app-shell";
-import { Badge, type BadgeProps } from "@vetniva/ui";
-import { PageHeader } from "@/components/ui/page-header";
-import { getLabels } from "@/lib/labels";
-import { apiClient } from "@/lib/api-client";
 import { HealthCard } from "@/components/health-card";
+import { AppShell } from "@/components/layouts/app-shell";
+import { PageHeader } from "@/components/ui/page-header";
+import { apiClient } from "@/lib/api-client";
+import { getLabels } from "@/lib/labels";
 
 type PageParams = { locale: string };
 
@@ -84,6 +81,10 @@ type ReadinessView = {
   };
 };
 
+/**
+ *
+ * @param status
+ */
 function statusToBadge(status: "ok" | "degraded" | "down"): {
   tone: NonNullable<BadgeProps["tone"]>;
   text: string;
@@ -95,6 +96,11 @@ function statusToBadge(status: "ok" | "degraded" | "down"): {
   return { tone: "danger", text: tr.statusDown };
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.params
+ */
 export default async function HealthPage({
   params,
 }: {

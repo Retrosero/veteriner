@@ -23,10 +23,7 @@ beforeAll(async () => {
 
   // Kök sayfa.
   await mkdir(path.join(root, "apps/web/app"), { recursive: true });
-  await writeFile(
-    path.join(root, "apps/web/app/page.tsx"),
-    SIMPLE_PAGE,
-  );
+  await writeFile(path.join(root, "apps/web/app/page.tsx"), SIMPLE_PAGE);
 
   // /[locale] altında dashboard.
   await mkdir(path.join(root, "apps/web/app/[locale]/dashboard"), {
@@ -38,10 +35,9 @@ beforeAll(async () => {
   );
 
   // /[locale]/owners/[ownerId] — iç içe dinamik segment.
-  await mkdir(
-    path.join(root, "apps/web/app/[locale]/owners/[ownerId]"),
-    { recursive: true },
-  );
+  await mkdir(path.join(root, "apps/web/app/[locale]/owners/[ownerId]"), {
+    recursive: true,
+  });
   await writeFile(
     path.join(root, "apps/web/app/[locale]/owners/[ownerId]/page.tsx"),
     SIMPLE_PAGE,
@@ -71,9 +67,7 @@ describe("scanWebRoutes", () => {
 
   it("[locale] segmentini :locale placeholder'ına çevirir", async () => {
     const routes = await scanWebRoutes(path.join(root, "apps/web"));
-    const dash = routes.find(
-      (r) => r.path === "/app/:locale/dashboard",
-    );
+    const dash = routes.find((r) => r.path === "/app/:locale/dashboard");
     expect(dash).toBeDefined();
     expect(dash?.docKey).toBe("pages/web.app.locale.dashboard");
   });
@@ -87,16 +81,12 @@ describe("scanWebRoutes", () => {
     // docKey: [locale] → "locale"; [ownerId] korunur (yalnızca [locale]
     // otomatik dönüştürülür; diğer dinamik segmentler olduğu gibi
     // bırakılır — path bilgisi burada amaçlanan şekilde kalır).
-    expect(nested?.docKey).toBe(
-      "pages/web.app.locale.owners.[ownerId]",
-    );
+    expect(nested?.docKey).toBe("pages/web.app.locale.owners.[ownerId]");
   });
 
   it(".ts uzantılı sayfaları da kabul eder", async () => {
     const routes = await scanWebRoutes(path.join(root, "apps/web"));
-    const legacy = routes.find(
-      (r) => r.path === "/app/:locale/legacy",
-    );
+    const legacy = routes.find((r) => r.path === "/app/:locale/legacy");
     expect(legacy).toBeDefined();
     expect(legacy?.docKey).toBe("pages/web.app.locale.legacy");
   });
@@ -108,9 +98,7 @@ describe("scanWebRoutes", () => {
     for (const r of routes) {
       expect(r.docKey).toMatch(/^pages\/web\./);
       expect(r.docKey).not.toContain("/page");
-      expect(r.docKey.endsWith(".tsx") || r.docKey.endsWith(".ts")).toBe(
-        false,
-      );
+      expect(r.docKey.endsWith(".tsx") || r.docKey.endsWith(".ts")).toBe(false);
     }
   });
 
@@ -122,9 +110,7 @@ describe("scanWebRoutes", () => {
   });
 
   it("hiç page.tsx olmayan dizin için boş liste döner", async () => {
-    const emptyDir = await mkdtemp(
-      path.join(tmpdir(), "web-scanner-empty-"),
-    );
+    const emptyDir = await mkdtemp(path.join(tmpdir(), "web-scanner-empty-"));
     await mkdir(path.join(emptyDir, "apps/web/app"), { recursive: true });
     const routes = await scanWebRoutes(path.join(emptyDir, "apps/web"));
     expect(routes).toEqual([]);

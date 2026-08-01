@@ -49,7 +49,7 @@ randevu oluşturulur.
   veteriner isteği. Yoksa FAZ-0'da `PLACEHOLDER_VETERINARIAN_ID`
   kullanılır (round-robin/skill-match FAZ-3+'da).
 - `type` (enum, zorunlu) — `consultation | vaccination | surgery |
-  follow_up | lab_visit | grooming`.
+follow_up | lab_visit | grooming`.
 - `reason` (string, 1-2000, zorunlu) — serbest metin.
 - `contactPreference` (enum, zorunlu) — `phone | email | sms`.
 

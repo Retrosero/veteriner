@@ -1,7 +1,6 @@
 /**
  * @file Auth controller.
  * @module apps/api/common/auth/auth.controller
- *
  * @description Personel paneli kimlik doğrulama endpoint'leri.
  * Tüm endpoint'ler JSON döner; session token httpOnly cookie olarak
  * da set edilir. Public endpoint'ler (login, forgot, reset, accept)
@@ -16,12 +15,10 @@
  * - POST /auth/change-password        — oturum açıkken parola değişimi
  * - POST /auth/invitations            — tenant admin davet oluşturur
  * - POST /auth/invitations/accept     — davet kabul
- * - POST /api/v1/auth/switch-tenant   — aktif tenant değişimi
- *
+ * - POST /api/v1/auth/switch-tenant   — aktif tenant değişimi.
  * @security Login response her zaman genel mesaj döner; email
  * enumeration'a karşı koruma. Cookie httpOnly + secure (prod) +
  * SameSite=Lax. CSRF: aynı-origin + SameSite cookie ile.
- *
  * @since GOAL-011 (FAZ-1) kimlik doğrulama
  */
 
@@ -37,11 +34,16 @@ import {
   Res,
   UseGuards,
 } from "@nestjs/common";
-import type { Request, Response } from "express";
-import { z } from "zod";
 import {
   SESSION_COOKIE_NAME,
   SESSION_TTL_SECONDS,
+  acceptInvitationRequestSchema,
+  changePasswordRequestSchema,
+  forgotPasswordRequestSchema,
+  inviteUserRequestSchema,
+  loginRequestSchema,
+  resetPasswordRequestSchema,
+  switchTenantRequestSchema,
   type AcceptInvitationRequest,
   type ChangePasswordRequest,
   type ForgotPasswordRequest,
@@ -51,23 +53,29 @@ import {
   type SwitchTenantRequest,
 } from "@vetniva/contracts";
 
-import type { ActorContext } from "../actor/actor-context.service.js";
-
-import { AuthGuard } from "./auth.guard.js";
-import { Public } from "./auth.guard.js";
+import { AuthGuard, Public } from "./auth.guard.js";
 import { AuthService } from "./auth.service.js";
 import { attemptMetaFromRequest } from "./dto.js";
+import { ZodValidationPipe } from "../pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../actor/actor-context.service.js";
+import type { Request, Response } from "express";
 
 @Controller("auth")
 export class AuthController {
   public constructor(private readonly auth: AuthService) {}
 
-  /** POST /auth/login — public. */
+  /**
+   * POST /auth/login — public.
+   * @param body
+   * @param request
+   * @param response
+   */
   @Public()
   @Post("login")
   @HttpCode(HttpStatus.OK)
   public async login(
-    @Body() body: LoginRequest,
+    @Body(new ZodValidationPipe(loginRequestSchema)) body: LoginRequest,
     @Req() request: Request & { requestId?: string },
     @Res({ passthrough: true }) response: Response,
   ): Promise<unknown> {
@@ -77,7 +85,11 @@ export class AuthController {
     return result;
   }
 
-  /** POST /auth/logout — auth gerekli. */
+  /**
+   * POST /auth/logout — auth gerekli.
+   * @param request
+   * @param response
+   */
   @UseGuards(AuthGuard)
   @Post("logout")
   @HttpCode(HttpStatus.OK)
@@ -102,7 +114,11 @@ export class AuthController {
     return result;
   }
 
-  /** POST /auth/refresh — auth gerekli. */
+  /**
+   * POST /auth/refresh — auth gerekli.
+   * @param request
+   * @param response
+   */
   @UseGuards(AuthGuard)
   @Post("refresh")
   @HttpCode(HttpStatus.OK)
@@ -126,24 +142,35 @@ export class AuthController {
     return result;
   }
 
-  /** POST /auth/forgot — public. */
+  /**
+   * POST /auth/forgot — public.
+   * @param body
+   * @param request
+   */
   @Public()
   @Post("forgot")
   @HttpCode(HttpStatus.OK)
   public async forgot(
-    @Body() body: ForgotPasswordRequest,
+    @Body(new ZodValidationPipe(forgotPasswordRequestSchema))
+    body: ForgotPasswordRequest,
     @Req() request: Request & { requestId?: string },
   ): Promise<{ message: string }> {
     const meta = attemptMetaFromRequest(request);
     return this.auth.forgotPassword(body, meta);
   }
 
-  /** POST /auth/reset — public. */
+  /**
+   * POST /auth/reset — public.
+   * @param body
+   * @param request
+   * @param response
+   */
   @Public()
   @Post("reset")
   @HttpCode(HttpStatus.OK)
   public async reset(
-    @Body() body: ResetPasswordRequest,
+    @Body(new ZodValidationPipe(resetPasswordRequestSchema))
+    body: ResetPasswordRequest,
     @Req() request: Request & { requestId?: string },
     @Res({ passthrough: true }) response: Response,
   ): Promise<unknown> {
@@ -155,12 +182,17 @@ export class AuthController {
     return result;
   }
 
-  /** POST /auth/change-password — auth gerekli. */
+  /**
+   * POST /auth/change-password — auth gerekli.
+   * @param body
+   * @param request
+   */
   @UseGuards(AuthGuard)
   @Post("change-password")
   @HttpCode(HttpStatus.OK)
   public async changePassword(
-    @Body() body: ChangePasswordRequest,
+    @Body(new ZodValidationPipe(changePasswordRequestSchema))
+    body: ChangePasswordRequest,
     @Req() request: Request & { actor?: ActorContext },
   ): Promise<{ message: string }> {
     const userId = request.actor?.actorId;
@@ -173,12 +205,17 @@ export class AuthController {
     return this.auth.changePassword(userId, body, meta);
   }
 
-  /** POST /auth/invitations — auth gerekli (tenant admin). */
+  /**
+   * POST /auth/invitations — auth gerekli (tenant admin).
+   * @param body
+   * @param request
+   */
   @UseGuards(AuthGuard)
   @Post("invitations")
   @HttpCode(HttpStatus.CREATED)
   public async invite(
-    @Body() body: InviteUserRequest,
+    @Body(new ZodValidationPipe(inviteUserRequestSchema))
+    body: InviteUserRequest,
     @Req() request: Request & { actor?: ActorContext },
   ): Promise<unknown> {
     const actor = request.actor;
@@ -189,15 +226,26 @@ export class AuthController {
     const meta = attemptMetaFromRequest(
       request as Request & { requestId?: string },
     );
-    return this.auth.inviteUser(actor.tenantId, body, actor.actorId ?? "system", meta);
+    return this.auth.inviteUser(
+      actor.tenantId,
+      body,
+      actor.actorId ?? "system",
+      meta,
+    );
   }
 
-  /** POST /auth/invitations/accept — public. */
+  /**
+   * POST /auth/invitations/accept — public.
+   * @param body
+   * @param request
+   * @param response
+   */
   @Public()
   @Post("invitations/accept")
   @HttpCode(HttpStatus.OK)
   public async accept(
-    @Body() body: AcceptInvitationRequest,
+    @Body(new ZodValidationPipe(acceptInvitationRequestSchema))
+    body: AcceptInvitationRequest,
     @Req() request: Request & { requestId?: string },
     @Res({ passthrough: true }) response: Response,
   ): Promise<unknown> {
@@ -207,12 +255,17 @@ export class AuthController {
     return result;
   }
 
-  /** POST /auth/switch-tenant — auth gerekli. */
+  /**
+   * POST /auth/switch-tenant — auth gerekli.
+   * @param body
+   * @param request
+   */
   @UseGuards(AuthGuard)
   @Post("switch-tenant")
   @HttpCode(HttpStatus.OK)
   public async switchTenant(
-    @Body() body: SwitchTenantRequest,
+    @Body(new ZodValidationPipe(switchTenantRequestSchema))
+    body: SwitchTenantRequest,
     @Req() request: Request & { actor?: ActorContext },
   ): Promise<{ tenantId: string; role: string }> {
     const userId = request.actor?.actorId;
@@ -225,13 +278,16 @@ export class AuthController {
    * (multi-branch tenant). GOAL-012 RBAC. Kullanıcı yalnızca kendi
    * tenant'ının branch'larına geçebilir; SUPERADMIN herhangi bir
    * tenant'ın branch'ına geçebilir.
+   * @param branchId
+   * @param request
    */
   @UseGuards(AuthGuard)
   @Post("switch-branch/:branchId")
   @HttpCode(HttpStatus.OK)
   public async switchBranch(
     @Param("branchId", new ParseUUIDPipe()) branchId: string,
-    @Req() request: Request & {
+    @Req()
+    request: Request & {
       actor?: ActorContext & { isSuperadmin?: boolean };
       authSession?: { sessionId: string; userId: string };
     },

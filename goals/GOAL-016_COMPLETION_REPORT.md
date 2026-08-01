@@ -116,7 +116,8 @@ Yok. FAZ-1 kapsamında yeni tablo/view yok; sadece mevcut
 `AuditEvent` tablolarına okuma sorguları.
 
 İleride (FAZ-3+): `tenant_overview` materialized view (5 dk refresh)
-+ `tenant_storage_daily` daily aggregate tablosu planlanıyor.
+
+- `tenant_storage_daily` daily aggregate tablosu planlanıyor.
 
 ## API değişiklikleri
 

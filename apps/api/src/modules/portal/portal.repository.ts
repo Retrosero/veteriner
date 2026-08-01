@@ -77,7 +77,7 @@ export class PortalRepository {
   public listForOwner(
     tenantId: string,
     ownerId: string,
-    statusFilter?: PortalInvitation["status"] | undefined,
+    statusFilter?: PortalInvitation["status"],
   ): PortalInvitation[] {
     const all: PortalInvitation[] = [];
     for (const rec of this.byId.values()) {

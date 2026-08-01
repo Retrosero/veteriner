@@ -32,9 +32,16 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import {
+  type OrderRecord,
+  OrdersRepository,
+  toOrder,
+} from "./orders.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
+import { ExaminationsService } from "../examinations/examinations.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   Order,
   OrderCancelInput,
@@ -43,14 +50,6 @@ import type {
   OrderListResponse,
   OrderTreatmentPlan,
 } from "@vetniva/contracts";
-
-import { ExaminationsService } from "../examinations/examinations.service.js";
-
-import {
-  type OrderRecord,
-  OrdersRepository,
-  toOrder,
-} from "./orders.repository.js";
 
 @Injectable()
 export class OrdersService {
@@ -188,7 +187,6 @@ export class OrdersService {
       });
     }
 
-    const now = new Date().toISOString();
     const updated = this.repo.update(tenantId, id, {
       status: "in_progress",
     });
@@ -408,7 +406,7 @@ export class OrdersService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

@@ -26,19 +26,18 @@
  * @since GOAL-102 (FAZ-10) background job ve entegrasyon logları core
  */
 
-import { beforeEach, describe, expect, it } from "vitest";
-
 import {
   deadLetterQuerySchema,
   jobRunFinishInputSchema,
   jobRunStartInputSchema,
   jobRunSummaryQuerySchema,
 } from "@vetniva/contracts";
+import { beforeEach, describe, expect, it } from "vitest";
+
+import { JobRunsRepository } from "./job-runs.repository.js";
+import { JobRunsService } from "./job-runs.service.js";
 
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
-
-import { JobRunsService } from "./job-runs.service.js";
-import { JobRunsRepository } from "./job-runs.repository.js";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 
@@ -134,18 +133,18 @@ describe("JobRunsService", () => {
 
     it("correlationId verilmediyse otomatik üretilir", () => {
       const out = service.startRun(
-        makeStartInput(
-          { correlationId: undefined } as unknown as Partial<
-            Parameters<JobRunsService["startRun"]>[0]
-          >,
-        ),
+        makeStartInput({ correlationId: undefined } as unknown as Partial<
+          Parameters<JobRunsService["startRun"]>[0]
+        >),
       );
       expect(out.correlationId).toMatch(/^jobrun-/);
     });
 
     it("default maxAttempts=3, attempt=1", () => {
       const out = service.startRun(
-        makeStartInput({} as Partial<Parameters<JobRunsService["startRun"]>[0]>),
+        makeStartInput(
+          {} as Partial<Parameters<JobRunsService["startRun"]>[0]>,
+        ),
       );
       expect(out.maxAttempts).toBe(3);
       expect(out.attempt).toBe(1);
@@ -318,9 +317,7 @@ describe("JobRunsService", () => {
     });
 
     it("override input kullanılır", () => {
-      const run = service.startRun(
-        makeStartInput({ input: { foo: "bar" } }),
-      );
+      const run = service.startRun(makeStartInput({ input: { foo: "bar" } }));
       service.finishRun(run.id, {
         status: "failed",
         errorCode: "VET-TEST-0001",
@@ -349,9 +346,7 @@ describe("JobRunsService", () => {
       const r1 = service.startRun(
         makeStartInput({ queueName: "q-a", jobKey: "k-1" }),
       );
-      service.startRun(
-        makeStartInput({ queueName: "q-b", jobKey: "k-2" }),
-      );
+      service.startRun(makeStartInput({ queueName: "q-b", jobKey: "k-2" }));
       service.finishRun(r1.id, {
         status: "succeeded",
         output: { ok: true },
@@ -364,12 +359,8 @@ describe("JobRunsService", () => {
     });
 
     it("search queueName/jobName/jobKey içinde arar", () => {
-      service.startRun(
-        makeStartInput({ queueName: "billing" }),
-      );
-      service.startRun(
-        makeStartInput({ queueName: "appointment-reminders" }),
-      );
+      service.startRun(makeStartInput({ queueName: "billing" }));
+      service.startRun(makeStartInput({ queueName: "appointment-reminders" }));
       const out = service.listJobRuns(
         { search: "appointment", limit: 50, offset: 0 },
         SUPERADMIN,
@@ -441,9 +432,7 @@ describe("JobRunsService", () => {
 
     it("non-SUPERADMIN → 403", () => {
       service.startRun(makeStartInput());
-      expect(() =>
-        service.listAttemptsByJobKey("k-x", STAFF_A),
-      ).toThrow();
+      expect(() => service.listAttemptsByJobKey("k-x", STAFF_A)).toThrow();
     });
   });
 
@@ -468,10 +457,7 @@ describe("JobRunsService", () => {
         status: "succeeded",
         output: { ok: true },
       });
-      const out = service.listDeadLetter(
-        { limit: 50, offset: 0 },
-        SUPERADMIN,
-      );
+      const out = service.listDeadLetter({ limit: 50, offset: 0 }, SUPERADMIN);
       expect(out.total).toBe(1);
       expect(out.items[0]!.status).toBe("dead_letter");
     });
@@ -525,9 +511,7 @@ describe("JobRunsService", () => {
         errorMessage: "x",
       });
       // Şu an: 1 running
-      service.startRun(
-        makeStartInput({ queueName: "q-b", jobKey: "k-3" }),
-      );
+      service.startRun(makeStartInput({ queueName: "q-b", jobKey: "k-3" }));
 
       const out = service.getJobRunSummary({}, SUPERADMIN);
       expect(out.total).toBe(3);
@@ -546,9 +530,7 @@ describe("JobRunsService", () => {
     });
 
     it("non-SUPERADMIN → 403", () => {
-      expect(() =>
-        service.getJobRunSummary({}, STAFF_A),
-      ).toThrow();
+      expect(() => service.getJobRunSummary({}, STAFF_A)).toThrow();
     });
   });
 
@@ -571,9 +553,7 @@ describe("JobRunsService", () => {
 
     it("non-SUPERADMIN → 403", () => {
       const run = service.startRun(makeStartInput());
-      expect(() =>
-        service.getJobRunDetail(run.id, STAFF_A),
-      ).toThrow();
+      expect(() => service.getJobRunDetail(run.id, STAFF_A)).toThrow();
     });
   });
 });

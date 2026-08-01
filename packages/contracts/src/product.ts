@@ -109,8 +109,16 @@ export const productCreateInputSchema = z
     category: z.string().max(100).optional(),
     unit: productUnitSchema,
     taxProfile: productTaxProfileSchema,
-    purchasePrice: z.string().regex(/^\d+(\.\d{1,4})?$/).optional(),
-    salePrice: z.string().regex(/^\d+(\.\d{1,4})?$/).optional(),
+    purchasePrice: z
+      .string()
+      // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden fiyat doğrulamasıdır.
+      .regex(/^\d+(\.\d{1,4})?$/)
+      .optional(),
+    salePrice: z
+      .string()
+      // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden fiyat doğrulamasıdır.
+      .regex(/^\d+(\.\d{1,4})?$/)
+      .optional(),
     currency: productCurrencySchema.optional().default("TRY"),
     clinicUsage: z.boolean().optional().default(true),
     petshopUsage: z.boolean().optional().default(false),
@@ -121,13 +129,15 @@ export const productCreateInputSchema = z
     controlledDrug: z.boolean().optional().default(false),
     lowStockThreshold: z
       .string()
+      // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden miktar doğrulamasıdır.
       .regex(/^\d+(\.\d{1,4})?$/)
       .optional(),
     notes: z.string().max(2000).optional(),
   })
   .refine(
     (v) =>
-      v.kind !== "vaccine" || v.vaccineProtocolId === undefined ||
+      v.kind !== "vaccine" ||
+      v.vaccineProtocolId === undefined ||
       v.vaccineProtocolId.length > 0,
     {
       message:
@@ -152,11 +162,13 @@ export const productUpdateInputSchema = z
     taxProfile: productTaxProfileSchema.optional(),
     purchasePrice: z
       .string()
+      // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden fiyat doğrulamasıdır.
       .regex(/^\d+(\.\d{1,4})?$/)
       .nullable()
       .optional(),
     salePrice: z
       .string()
+      // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden fiyat doğrulamasıdır.
       .regex(/^\d+(\.\d{1,4})?$/)
       .nullable()
       .optional(),
@@ -169,15 +181,15 @@ export const productUpdateInputSchema = z
     controlledDrug: z.boolean().optional(),
     lowStockThreshold: z
       .string()
+      // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden miktar doğrulamasıdır.
       .regex(/^\d+(\.\d{1,4})?$/)
       .nullable()
       .optional(),
     notes: z.string().max(2000).nullable().optional(),
   })
-  .refine(
-    (v) => Object.keys(v).length > 0,
-    { message: "En az bir alan gönderilmelidir" },
-  );
+  .refine((v) => Object.keys(v).length > 0, {
+    message: "En az bir alan gönderilmelidir",
+  });
 export type ProductUpdateInput = z.infer<typeof productUpdateInputSchema>;
 
 /** API response şeması. */
@@ -217,9 +229,7 @@ export type Product = z.infer<typeof productSchema>;
 export const productFiltersSchema = z.object({
   kind: productKindSchema.optional(),
   /** Tür listesi (OR). */
-  kinds: z
-    .array(productKindSchema)
-    .optional(),
+  kinds: z.array(productKindSchema).optional(),
   clinicUsage: z.coerce.boolean().optional(),
   petshopUsage: z.coerce.boolean().optional(),
   /** Serbest metin araması (sku/barcode/name/category). */
@@ -242,6 +252,4 @@ export type ProductListResponse = z.infer<typeof productListResponseSchema>;
 export const productArchiveInputSchema = z.object({
   reason: z.string().min(1).max(2000),
 });
-export type ProductArchiveInput = z.infer<
-  typeof productArchiveInputSchema
->;
+export type ProductArchiveInput = z.infer<typeof productArchiveInputSchema>;

@@ -32,16 +32,6 @@
  */
 
 import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
-
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PiiMasker } from "../../common/logging/pii-masker.js";
-import {
-  toRetentionPolicy,
-  toRetentionSweepResult,
-  type RetentionPolicyRecord,
-  type RetentionSweepRecord,
-} from "../../common/logging/log-retention.types.js";
 import {
   type LogRetentionSeverity,
   type LogType,
@@ -64,6 +54,15 @@ import {
   LOG_RETENTION_TARGETS,
   type LogRetentionTarget,
 } from "./log-retention.targets.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import {
+  toRetentionPolicy,
+  toRetentionSweepResult,
+  type RetentionSweepRecord,
+} from "../../common/logging/log-retention.types.js";
+import { PiiMasker } from "../../common/logging/pii-masker.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 /** Uygulama sürümü (release tag). */
 const APP_RELEASE = process.env["APP_VERSION"] ?? "0.0.0-dev";
@@ -437,10 +436,7 @@ export class LogRetentionService {
     };
   }
 
-  public getSweepDetail(
-    id: string,
-    actor: ActorContext,
-  ): RetentionSweepResult {
+  public getSweepDetail(id: string, actor: ActorContext): RetentionSweepResult {
     this.requireSuperadmin(actor);
     const rec = this.repo.findSweepById(id);
     if (!rec) {

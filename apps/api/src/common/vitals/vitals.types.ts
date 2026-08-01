@@ -21,11 +21,7 @@ export type TemperatureMethod = "rectal" | "ear" | "axillary";
 
 /** Mukoza rengi. */
 export type MucousMembraneColor =
-  | "pink"
-  | "pale"
-  | "cyanotic"
-  | "icteric"
-  | "congested";
+  "pink" | "pale" | "cyanotic" | "icteric" | "congested";
 
 /**
  * Ölçülen vital bulgular seti. Tüm alanlar opsiyoneldir;

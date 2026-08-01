@@ -20,11 +20,11 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ProductsRepository } from "./products.repository.js";
+import { ProductsService } from "./products.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-
-import { ProductsService } from "./products.service.js";
-import { ProductsRepository } from "./products.repository.js";
 import type {
   ProductCreateInput,
   ProductUpdateInput,
@@ -386,11 +386,7 @@ describe("ProductsService", () => {
         makeCreateInput({ name: "X" }),
         STAFF_A,
       );
-      const found = await service.getProduct(
-        TENANT_A,
-        created.id,
-        STAFF_A,
-      );
+      const found = await service.getProduct(TENANT_A, created.id, STAFF_A);
       expect(found?.id).toBe(created.id);
     });
 
@@ -400,11 +396,7 @@ describe("ProductsService", () => {
         makeCreateInput({ name: "X" }),
         STAFF_A,
       );
-      const found = await service.getProduct(
-        TENANT_B,
-        created.id,
-        STAFF_B,
-      );
+      const found = await service.getProduct(TENANT_B, created.id, STAFF_B);
       expect(found).toBeNull();
     });
   });

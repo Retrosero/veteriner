@@ -26,28 +26,26 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   ownershipTransferInputSchema,
   type OwnershipTransferInput,
 } from "@vetniva/contracts";
-import type { Ownership } from "../../common/ownership/ownership.types.js";
 
 import { OwnershipHistoryService } from "./ownership-history.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { Ownership } from "../../common/ownership/ownership.types.js";
 
 @ApiTags("ownership")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/clinic/patients/:patientId/ownership")
 export class OwnershipHistoryController {
-  public constructor(
-    private readonly service: OwnershipHistoryService,
-  ) {}
+  public constructor(private readonly service: OwnershipHistoryService) {}
 
   @Get()
   @RequirePermissions("clinic:patient:read")
@@ -69,11 +67,7 @@ export class OwnershipHistoryController {
       200,
     );
     const offset = Math.max(parseInt(_offset ?? "0", 10) || 0, 0);
-    return this.service.list(
-      tenantId,
-      { patientId, limit, offset },
-      actor,
-    );
+    return this.service.list(tenantId, { patientId, limit, offset }, actor);
   }
 
   @Get("active")
@@ -117,9 +111,15 @@ export class OwnershipHistoryController {
       "Aktif sahiplik kaydı kapatılır + yeni aktif kayıt açılır. Patient.ownerId yeni sahibe güncellenir. Audit eventi + portal yenileme sinyali üretir.",
   })
   @ApiResponse({ status: 200, description: "Devir tamamlandı." })
-  @ApiResponse({ status: 404, description: "Hasta veya yeni sahip bulunamadı." })
+  @ApiResponse({
+    status: 404,
+    description: "Hasta veya yeni sahip bulunamadı.",
+  })
   @ApiResponse({ status: 409, description: "Aktif kayıt çakışması." })
-  @ApiResponse({ status: 422, description: "Validation hatası / arşivli hasta." })
+  @ApiResponse({
+    status: 422,
+    description: "Validation hatası / arşivli hasta.",
+  })
   public async transfer(
     @Param("patientId", new ParseUUIDPipe()) patientId: string,
     @Body(new ZodValidationPipe(ownershipTransferInputSchema))

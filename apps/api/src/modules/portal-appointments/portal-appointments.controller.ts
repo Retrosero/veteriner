@@ -34,14 +34,21 @@ import {
   Req,
   UseGuards,
 } from "@nestjs/common";
-import type { Request } from "express";
+import {
+  appointmentRequestCreateInputSchema,
+  appointmentRequestRejectInputSchema,
+} from "@vetniva/contracts";
 
+import { PortalAppointmentsService } from "./portal-appointments.service.js";
 import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
+import { Public } from "../../common/decorators/public.decorator.js";
 import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
 import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
 import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+import { PortalSessionGuard } from "../portal-auth/portal-session.guard.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   Appointment,
   AppointmentRequest,
@@ -49,14 +56,7 @@ import type {
   AppointmentRequestListResponse,
   AppointmentRequestRejectInput,
 } from "@vetniva/contracts";
-import {
-  appointmentRequestCreateInputSchema,
-  appointmentRequestRejectInputSchema,
-} from "@vetniva/contracts";
-
-import { PortalSessionGuard } from "../portal-auth/portal-session.guard.js";
-
-import { PortalAppointmentsService } from "./portal-appointments.service.js";
+import type { Request } from "express";
 
 /** Portal session guard sonrası set edilen request augmentation. */
 interface PortalSessionRequest {
@@ -68,6 +68,7 @@ interface PortalSessionRequest {
   };
 }
 
+@Public()
 @Controller("api/v1/portal-appointments")
 @UseGuards(PortalSessionGuard)
 export class PortalAppointmentsPortalController {
@@ -128,9 +129,10 @@ export class PortalAppointmentsPortalController {
   // Helpers
   // -------------------------------------------------------------------------
 
-  private requireSession(
-    request: Request & PortalSessionRequest,
-  ): { portalUserId: string; tenantId: string } {
+  private requireSession(request: Request & PortalSessionRequest): {
+    portalUserId: string;
+    tenantId: string;
+  } {
     const session = request.portalSession;
     if (!session) {
       throw new Error("Portal session context missing");
@@ -141,12 +143,8 @@ export class PortalAppointmentsPortalController {
     };
   }
 
-  private portalActorFor(
-    request: Request,
-    tenantId: string,
-  ): ActorContext {
-    const ip =
-      (request.header("x-forwarded-for") as string | undefined) ?? null;
+  private portalActorFor(request: Request, tenantId: string): ActorContext {
+    const ip = request.header("x-forwarded-for") ?? null;
     const ua = request.header("user-agent") ?? null;
     return {
       actorId: null,
@@ -156,7 +154,7 @@ export class PortalAppointmentsPortalController {
       branchId: null,
       isSuperadmin: false,
       correlationId: `req-portal-${Date.now()}`,
-      ipAddress: ip ? ip.split(",")[0]?.trim() ?? null : null,
+      ipAddress: ip ? (ip.split(",")[0]?.trim() ?? null) : null,
       userAgentHash: ua ? this.hashUa(ua) : null,
       source: "portal_session",
     };

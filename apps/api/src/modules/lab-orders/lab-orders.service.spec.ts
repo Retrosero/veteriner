@@ -15,14 +15,14 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { LabOrdersRepository } from "./lab-orders.repository.js";
+import { LabOrdersService } from "./lab-orders.service.js";
+import { type LabTestsService } from "../lab-tests/lab-tests.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-
-import { LabOrdersService } from "./lab-orders.service.js";
-import { LabOrdersRepository } from "./lab-orders.repository.js";
-import { LabTestsService } from "../lab-tests/lab-tests.service.js";
-import type { LabTest } from "@vetniva/contracts";
 import type {
+  LabTest,
   LabOrderCancelInput,
   LabOrderCollectSampleInput,
   LabOrderCompleteInput,
@@ -625,11 +625,7 @@ describe("LabOrdersService", () => {
         makeCreateInput(),
         STAFF_A,
       );
-      await service.createLabOrder(
-        TENANT_A,
-        makeCreateInput(),
-        STAFF_A,
-      );
+      await service.createLabOrder(TENANT_A, makeCreateInput(), STAFF_A);
       await service.collectSample(
         TENANT_A,
         a.id,

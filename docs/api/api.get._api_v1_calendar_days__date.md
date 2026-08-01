@@ -12,15 +12,15 @@ durumu `available | booked | blocked` olabilir.
 
 **Path parametreleri:**
 
-| Ad | Tip | Zorunlu | Açıklama |
-| --- | --- | --- | --- |
-| `date` | string | evet | `YYYY-MM-DD` formatında tarih. Geçersiz → 422 `VET-APPT-0004`. |
+| Ad     | Tip    | Zorunlu | Açıklama                                                       |
+| ------ | ------ | ------- | -------------------------------------------------------------- |
+| `date` | string | evet    | `YYYY-MM-DD` formatında tarih. Geçersiz → 422 `VET-APPT-0004`. |
 
 **Query parametreleri:**
 
-| Ad | Tip | Zorunlu | Açıklama |
-| --- | --- | --- | --- |
-| `veterinarianId` | string | hayır | Belirtilirse yalnızca o veteriner için üretilmiş slot'lar. Atlanırsa tenant default (`vet-default`) kullanılır. |
+| Ad               | Tip    | Zorunlu | Açıklama                                                                                                        |
+| ---------------- | ------ | ------- | --------------------------------------------------------------------------------------------------------------- |
+| `veterinarianId` | string | hayır   | Belirtilirse yalnızca o veteriner için üretilmiş slot'lar. Atlanırsa tenant default (`vet-default`) kullanılır. |
 
 **Response 200 (`CalendarDay`):**
 

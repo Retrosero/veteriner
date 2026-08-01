@@ -1,7 +1,6 @@
 /**
  * @file Landing sayfası (server component).
  * @module @vetniva/web/app/[locale]/page
- *
  * @description Gözlemci ve potansiyel klinik yöneticileri için landing
  * sayfası. Giriş yapmamış ziyaretçilere uygulamanın değerini özetler
  * ve "Giriş Yap" / "Demo İzle" aksiyonları sunar. Auth sonrası
@@ -11,15 +10,20 @@
  * Erişilebilirlik:
  * - Skip-link "İçeriğe geç"
  * - Semantic `<header>` / `<main>` / `<footer>`
- * - Tek H1 + açıklayıcı metin
- *
+ * - Tek H1 + açıklayıcı metin.
  * @security Sayfa public'tir ve PII taşımaz. CTA linkleri sadece
  * tenant içi yönlendirmeler yapar.
  */
 
+import {
+  Button,
+  Card,
+  CardBody,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@vetniva/ui";
 import Link from "next/link";
-
-import { Button, Card, CardBody, CardDescription, CardHeader, CardTitle } from "@vetniva/ui";
 
 import { getLabels } from "@/lib/labels";
 
@@ -105,6 +109,11 @@ const FEATURES = [
   },
 ] as const;
 
+/**
+ *
+ * @param root0
+ * @param root0.params
+ */
 export default async function HomePage({
   params,
 }: {
@@ -114,10 +123,7 @@ export default async function HomePage({
   const labels = getLabels(locale);
   const isEn = locale === "en-GB";
 
-  const featureCopy: Record<
-    string,
-    { title: string; desc: string }
-  > = {
+  const featureCopy: Record<string, { title: string; desc: string }> = {
     "feature.appointments.title": {
       title: isEn ? "Smart scheduling" : "Akıllı randevu yönetimi",
       desc: isEn
@@ -182,7 +188,10 @@ export default async function HomePage({
               {labels.brand.name}
             </span>
           </Link>
-          <nav aria-label={isEn ? "Primary" : "Birincil"} className="flex items-center gap-2">
+          <nav
+            aria-label={isEn ? "Primary" : "Birincil"}
+            className="flex items-center gap-2"
+          >
             <Link
               href={`/${locale}/login`}
               className="hidden text-sm font-medium text-gray-700 hover:text-clinic-700 sm:inline-block"
@@ -199,10 +208,7 @@ export default async function HomePage({
       {/* Main */}
       <main id="main-content" aria-label={isEn ? "Main content" : "Ana içerik"}>
         {/* Hero */}
-        <section
-          aria-labelledby="hero-title"
-          className="bg-white"
-        >
+        <section aria-labelledby="hero-title" className="bg-white">
           <div className="mx-auto max-w-7xl px-4 pb-16 pt-12 sm:px-6 sm:pt-16 lg:px-8 lg:pt-20">
             <div className="mx-auto max-w-3xl text-center">
               <span className="inline-flex items-center gap-2 rounded-full border border-clinic-200 bg-clinic-50 px-3 py-1 text-xs font-medium text-clinic-700">

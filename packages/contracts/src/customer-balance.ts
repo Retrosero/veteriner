@@ -60,9 +60,7 @@ export const customerTransactionSchema = z.object({
   occurredAt: z.string().datetime(),
   status: z.string(),
 });
-export type CustomerTransaction = z.infer<
-  typeof customerTransactionSchema
->;
+export type CustomerTransaction = z.infer<typeof customerTransactionSchema>;
 
 export const customerTransactionsResponseSchema = z.object({
   ownerId: z.string().uuid(),

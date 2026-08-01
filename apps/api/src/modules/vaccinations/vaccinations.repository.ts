@@ -15,7 +15,10 @@
 
 import { Injectable } from "@nestjs/common";
 
-import type { VaccinationFilters, VaccinationRecord, VaccinationStatus } from "../../common/vaccinations/vaccination.types.js";
+import type {
+  VaccinationRecord,
+  VaccinationStatus,
+} from "../../common/vaccinations/vaccination.types.js";
 
 /** Patch tipi: kısmi güncelleme için izin verilen alanlar. */
 export interface VaccinationPatch {
@@ -42,10 +45,7 @@ export class VaccinationsRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): VaccinationRecord | null {
+  public findById(tenantId: string, id: string): VaccinationRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -88,8 +88,7 @@ export class VaccinationsRepository {
     for (const rec of this.byId.values()) {
       if (rec.tenantId !== tenantId) continue;
       if (filters.patientId && rec.patientId !== filters.patientId) continue;
-      if (filters.protocolId && rec.protocolId !== filters.protocolId)
-        continue;
+      if (filters.protocolId && rec.protocolId !== filters.protocolId) continue;
       if (filters.status && rec.status !== filters.status) continue;
       if (filters.from && rec.administeredAt < filters.from) continue;
       if (filters.to && rec.administeredAt > filters.to) continue;

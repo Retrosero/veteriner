@@ -1,7 +1,6 @@
 /**
  * @file Genel veri tablosu.
  * @module @vetniva/web/components/ui/data-table
- *
  * @description Sıralı, satır hover'lı, boş durumu destekleyen tablo.
  * Sayfa bazlı veri (server-side pagination) için tasarlanmıştır;
  * client-side sıralama ileride eklenebilir.
@@ -11,16 +10,14 @@
  * - `<th scope="col">` zorunlu
  * - Satırlar `role="row"` (varsayılan), hücreler `role="cell"`
  * - Yükleme durumu `aria-busy="true"`
- * - Boş durum `role="status"` ile duyurulur
- *
+ * - Boş durum `role="status"` ile duyurulur.
  * @security Tablodaki veri PII içerebilir; maskeleme üst katmanda
  * yapılır. Bu bileşen salt render — veri şekillendirme çağırana ait.
  */
 
-import { type ReactNode } from "react";
-
 import { Badge } from "@vetniva/ui";
 import { cn } from "@vetniva/ui/cn";
+import { type ReactNode } from "react";
 
 export type DataTableColumn<T> = {
   key: string;
@@ -56,6 +53,17 @@ export type DataTableProps<T> = {
   className?: string;
 };
 
+/**
+ *
+ * @param root0
+ * @param root0.columns
+ * @param root0.rows
+ * @param root0.empty
+ * @param root0.getRowKey
+ * @param root0.loading
+ * @param root0.caption
+ * @param root0.className
+ */
 export function DataTable<T>({
   columns,
   rows,

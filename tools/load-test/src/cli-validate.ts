@@ -58,7 +58,10 @@ async function main(): Promise<void> {
   const files = await listJsFiles(outDir);
 
   // Basit sanity: her senaryo + shared.js yazildi mi?
-  const expected = new Set<string>([...SCENARIOS.map((s) => `${s.key}.js`), "shared.js"]);
+  const expected = new Set<string>([
+    ...SCENARIOS.map((s) => `${s.key}.js`),
+    "shared.js",
+  ]);
   const actual = new Set<string>(files);
   const missing: string[] = [];
   for (const e of expected) {

@@ -1,9 +1,11 @@
 # WhatsApp Business API (GOAL-132)
 
 ## Faz
+
 FAZ-13 (Türkiye uyumluluk ve entegrasyonlar)
 
 ## Amaç
+
 Müşteri iletişiminde WhatsApp kanalı. Hatırlatma, randevu
 onayı, aşı hatırlatması, tahsilat bildirimi, vb.
 
@@ -32,12 +34,12 @@ document mesajlarını destekler.
 
 ## Template Örnekleri
 
-| Template | Kategori | Parametreler |
-|----------|----------|--------------|
-| `appointment_reminder_tr` | utility | `[tarih, saat, veteriner]` |
-| `vaccine_due_tr` | utility | `[hayvan_adı, aşı_adı, tarih]` |
-| `payment_received_tr` | utility | `[tutar, makbuz_no]` |
-| `lab_result_ready_tr` | utility | `[hayvan_adı, test_sayısı]` |
+| Template                  | Kategori | Parametreler                   |
+| ------------------------- | -------- | ------------------------------ |
+| `appointment_reminder_tr` | utility  | `[tarih, saat, veteriner]`     |
+| `vaccine_due_tr`          | utility  | `[hayvan_adı, aşı_adı, tarih]` |
+| `payment_received_tr`     | utility  | `[tutar, makbuz_no]`           |
+| `lab_result_ready_tr`     | utility  | `[hayvan_adı, test_sayısı]`    |
 
 ## Provider Konfigürasyonu
 
@@ -50,6 +52,7 @@ WHATSAPP_WEBHOOK_VERIFY_TOKEN=xxx
 ```
 
 ## Türkiye Regülasyonu
+
 - **KVKK:** WhatsApp üzerinden paylaşılan tıbbi veriler için
   açık rıza + ekstra güvenlik (FAZ-12 KVKK kapsamı).
 - **BTK:** Pazarlama mesajları için önceden onay.
@@ -58,6 +61,7 @@ WHATSAPP_WEBHOOK_VERIFY_TOKEN=xxx
   kullanılabilir).
 
 ## Güvenlik
+
 - **PII:** Telefon + tıbbi veri birleşimi hassas;
   WhatsApp Business API encryption at-rest + in-transit.
 - **Opt-in/opt-out:** Kullanıcı "dur" yazarsa
@@ -67,11 +71,13 @@ WHATSAPP_WEBHOOK_VERIFY_TOKEN=xxx
   tenant bazında 100/saniye soft cap.
 
 ## Yapılmayanlar / Bilinçli Atlamalar
+
 - **WhatsApp Business API partner entegrasyonu** (örn.
   Twilio Conversations) → Faz 14+.
 - **Inbox yönetimi (canlı sohbet)** → Faz 14+.
 - **Click-to-WhatsApp reklamları** → Faz 14+.
 
 ## Commit
+
 - Core: (bu commit) — `apps/api/src/common/integrations/whatsapp/whatsapp.adapter.ts`
 - Real: Faz 14+ (Meta Cloud API implementasyonu).

@@ -1,7 +1,6 @@
 /**
  * @file Klinik içi cihaz mock adapter'ı.
  * @module apps/api/common/lab-adapters/mock-lab-device-adapter
- *
  * @description GOAL-094 (FAZ-9) in_clinic_device mock
  *   implementasyonu. Gerçek cihaz (Idexx ProCyte/Heska HT5/...)
  *   entegrasyonu Faz 13+ kapsamında.
@@ -18,31 +17,29 @@
  *
  *   Operatör ayrıca `importResult` ile dışarıdan gelen sonucu
  *   (ör. manuel girilmiş) de sisteme alabilir.
- *
  * @since GOAL-094 (FAZ-9) cihaz ve dış laboratuvar adapter altyapısı core
  */
 
 import { Injectable } from "@nestjs/common";
 
+import type { LabAdapter } from "./lab-adapter.types.js";
 import type {
   LabAdapterExportRequest,
   LabAdapterExportResponse,
   LabAdapterImportResult,
 } from "@vetniva/contracts";
 
-import type { LabAdapter } from "./lab-adapter.types.js";
-
 @Injectable()
 export class MockLabDeviceAdapter implements LabAdapter {
   public readonly adapterType = "in_clinic_device" as const;
   public readonly providerName = "mock-device";
 
-  /** idempotencyKey → önceki export yanıtı. */
+  /** IdempotencyKey → önceki export yanıtı. */
   private readonly exportResponses = new Map<
     string,
     LabAdapterExportResponse
   >();
-  /** providerReference → simulated raw payload. */
+  /** ProviderReference → simulated raw payload. */
   private readonly simulatedResults = new Map<string, LabAdapterImportResult>();
 
   public async exportOrder(
@@ -108,6 +105,7 @@ export class MockLabDeviceAdapter implements LabAdapter {
   /**
    * Test yardımcısı: importResult çağrılmadan önce bir sonucu
    * "gelmiş gibi" hazırlar (deterministik test).
+   * @param result
    */
   public seedResult(result: LabAdapterImportResult): void {
     this.simulatedResults.set(result.providerReference, result);
@@ -119,12 +117,15 @@ export class MockLabDeviceAdapter implements LabAdapter {
     this.simulatedResults.clear();
   }
 
-  /** Mock için deterministik sonuç payload'ı üretir. */
+  /**
+   * Mock için deterministik sonuç payload'ı üretir.
+   * @param request
+   */
   private synthesizeResultPayload(
     request: LabAdapterExportRequest,
   ): Record<string, unknown> {
     // payload içinde test kodu varsa (snapshot'tan) değer üret.
-    const code = String(request.payload["labTestCode"] ?? "GEN");
+    const code = toPrimitiveString(request.payload["labTestCode"], "GEN");
     const base: Record<string, unknown> = {
       deviceSerial: "MOCK-DEV-001",
       labOrderId: request.labOrderId,
@@ -150,4 +151,17 @@ export class MockLabDeviceAdapter implements LabAdapter {
     const v = (h % 1000) / 10;
     return v.toFixed(2);
   }
+}
+
+/** Adapter payloadundaki primitive degeri guvenli metne donusturur. */
+function toPrimitiveString(value: unknown, fallback: string): string {
+  if (typeof value === "string") return value;
+  if (
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    typeof value === "bigint"
+  ) {
+    return String(value);
+  }
+  return fallback;
 }

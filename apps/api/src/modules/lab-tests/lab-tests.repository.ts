@@ -18,9 +18,7 @@
 
 import { Injectable } from "@nestjs/common";
 
-import type {
-  LabTestRecord,
-} from "../../common/lab-tests/lab-test.types.js";
+import type { LabTestRecord } from "../../common/lab-tests/lab-test.types.js";
 import type { LabSampleType } from "@vetniva/contracts";
 
 /** Patch tipi. */
@@ -64,10 +62,7 @@ export class LabTestsRepository {
     return `${tenantId}::${code.trim().toLowerCase()}`;
   }
 
-  public findByCode(
-    tenantId: string,
-    code: string,
-  ): LabTestRecord | null {
+  public findByCode(tenantId: string, code: string): LabTestRecord | null {
     const id = this.byCode.get(this.codeKey(tenantId, code));
     if (!id) return null;
     return this.byId.get(id) ?? null;
@@ -79,10 +74,7 @@ export class LabTestsRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): LabTestRecord | null {
+  public findById(tenantId: string, id: string): LabTestRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -112,12 +104,8 @@ export class LabTestsRepository {
     const all: LabTestRecord[] = [];
     for (const rec of this.byId.values()) {
       if (rec.tenantId !== tenantId) continue;
-      if (filters.sampleType && rec.sampleType !== filters.sampleType)
-        continue;
-      if (
-        filters.active !== undefined &&
-        rec.active !== filters.active
-      )
+      if (filters.sampleType && rec.sampleType !== filters.sampleType) continue;
+      if (filters.active !== undefined && rec.active !== filters.active)
         continue;
       if (searchTerm) {
         const codeMatch = rec.code.toLowerCase().includes(searchTerm);

@@ -18,7 +18,7 @@ tenant'ta olmalıdır; aksi durumda 404 (bilgi sızdırmaz).
 - **Idempotency:** Önerilir (`Idempotency-Key` header, FAZ-3+ ile
   zorunlu olacak).
 - **Yan etki:** In-memory `transferAudit` map'e `txf-<tenant8>-
-  <uuid8>` anahtarla kayıt; ileride admin görünümü ve DB
+<uuid8>` anahtarla kayıt; ileride admin görünümü ve DB
   persistence için temel.
 
 ## Request

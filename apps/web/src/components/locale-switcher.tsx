@@ -1,7 +1,6 @@
 /**
  * @file Locale değiştirici (client component).
  * @module @vetniva/web/components/locale-switcher
- *
  * @description Aktif locale'i değiştirmek için kullanılan açılır menü.
  * Yalnızca client tarafında çalışır çünkü `usePathname` ve
  * `useRouter` App Router hook'larına bağımlıdır. Aktif locale
@@ -11,8 +10,7 @@
  * Erişilebilirlik:
  * - `<label>` + görsel `sr-only` metin
  * - Native `<select>` (klavye + ekran okuyucu dostu)
- * - Pending durumda `disabled`
- *
+ * - Pending durumda `disabled`.
  * @security Yalnızca desteklenen locale'ler listelenir; kullanıcı
  * keyfi bir URL enjekte edemez. Next.js yönlendirmesi kullanıldığı
  * için güvenli navigasyon sağlanır.
@@ -20,10 +18,9 @@
 
 "use client";
 
+import { SUPPORTED_LOCALES, type Locale } from "@vetniva/contracts";
 import { usePathname, useRouter } from "next/navigation";
 import { useTransition } from "react";
-
-import { SUPPORTED_LOCALES, type Locale } from "@vetniva/contracts";
 
 import { cn } from "@/lib/cn";
 
@@ -35,6 +32,7 @@ const LOCALE_LABELS: Record<Locale, string> = {
 /**
  * Aktif locale'i pathname'den çıkarır. `/tr-TR/health` → `tr-TR`.
  * Desteklenmeyen segment için null döner.
+ * @param pathname
  */
 function detectLocaleFromPath(pathname: string): Locale | null {
   const segment = pathname.split("/").filter(Boolean)[0] ?? "";
@@ -48,6 +46,11 @@ export type LocaleSwitcherProps = {
   className?: string;
 };
 
+/**
+ *
+ * @param root0
+ * @param root0.className
+ */
 export function LocaleSwitcher({
   className,
 }: LocaleSwitcherProps): JSX.Element {
@@ -57,6 +60,10 @@ export function LocaleSwitcher({
 
   const activeLocale = detectLocaleFromPath(pathname);
 
+  /**
+   *
+   * @param event
+   */
   function handleChange(event: React.ChangeEvent<HTMLSelectElement>): void {
     const nextLocale = event.target.value as Locale;
     if (nextLocale === activeLocale) return;
@@ -95,7 +102,9 @@ export function LocaleSwitcher({
       >
         {SUPPORTED_LOCALES.map((locale) => (
           <option key={locale} value={locale}>
-            {LOCALE_LABELS[locale]}
+            {locale === "tr-TR"
+              ? LOCALE_LABELS["tr-TR"]
+              : LOCALE_LABELS["en-GB"]}
           </option>
         ))}
       </select>

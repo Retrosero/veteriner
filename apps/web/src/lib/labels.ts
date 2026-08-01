@@ -1,8 +1,7 @@
 /**
  * @file Tüm UI etiketleri tek dosyada.
  * @module @vetniva/web/lib/labels
- *
- * @description Layout, header, sidebar, dashboard, login, vb. tüm
+ * @description Layout, header, sidebar, dashboard, login, vb. Tüm
  * kullanıcıya görünen metinler burada toplanır. Çok dilli (tr-TR,
  * en-GB) desteklenir; eksik anahtarlar `tr-TR` fallback'ine düşer.
  *
@@ -357,6 +356,7 @@ const dictionaries: Record<Locale, Labels> = {
 /**
  * Aktif locale için etiket setini döner. Bilinmeyen bir değer gelirse
  * varsayılan olarak `tr-TR` kullanılır.
+ * @param locale
  */
 export function getLabels(locale: string | null | undefined): Labels {
   if (locale === "en-GB") return dictionaries["en-GB"];
@@ -366,10 +366,14 @@ export function getLabels(locale: string | null | undefined): Labels {
 /**
  * Belirli bir anahtar yolunu (`nav.dashboard` gibi) döner. Sunucu
  * tarafında doğrudan erişim için tip güvenli yardımcı.
+ * @param labels
+ * @param key
  */
 export function label<L extends Labels, K extends keyof L>(
   labels: L,
   key: K,
 ): L[K] {
+  // Anahtar generic `keyof L` ile derleme zamanında sınırlandırılmıştır.
+  // eslint-disable-next-line security/detect-object-injection
   return labels[key];
 }

@@ -1,24 +1,31 @@
 /**
  * @file PermissionsGuard unit testleri.
  * @module apps/api/common/rbac/permissions.guard.spec
- *
  * @since GOAL-012 (FAZ-1) RBAC ve izin motoru
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Reflector } from "@nestjs/core";
-import type { ExecutionContext } from "@nestjs/common";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AuditService } from "../audit/audit.service.js";
-import { PermissionsGuard } from "./permissions.guard.js";
-import { PERMISSIONS_KEY } from "./require-permission.decorator.js";
-import { RbacService } from "./rbac.service.js";
-import { RbacRepository } from "./rbac.repository.js";
 import {
   resetPermissionCatalogCache,
   loadPermissionCatalog,
 } from "./permission-catalog.loader.js";
+import { PermissionsGuard } from "./permissions.guard.js";
+import { type RbacRepository } from "./rbac.repository.js";
+import { RbacService } from "./rbac.service.js";
+import { PERMISSIONS_KEY } from "./require-permission.decorator.js";
+import { type AuditService } from "../audit/audit.service.js";
 
+import type { ExecutionContext } from "@nestjs/common";
+
+/**
+ *
+ * @param args
+ * @param args.handlerMetadata
+ * @param args.classMetadata
+ * @param args.actor
+ */
 function makeContext(args: {
   handlerMetadata?: unknown;
   classMetadata?: unknown;
@@ -26,11 +33,13 @@ function makeContext(args: {
 }): ExecutionContext {
   return {
     getHandler: () =>
-      (() => undefined) as unknown as ExecutionContext["getHandler"] extends () => infer H
+      (() =>
+        undefined) as unknown as ExecutionContext["getHandler"] extends () => infer H
         ? H
         : never,
     getClass: () =>
-      (() => undefined) as unknown as ExecutionContext["getClass"] extends () => infer C
+      (() =>
+        undefined) as unknown as ExecutionContext["getClass"] extends () => infer C
         ? C
         : never,
     switchToHttp: () => ({
@@ -42,6 +51,11 @@ function makeContext(args: {
   } as unknown as ExecutionContext;
 }
 
+/**
+ *
+ * @param handlerMetadata
+ * @param classMetadata
+ */
 function makeReflector(
   handlerMetadata: unknown,
   classMetadata: unknown,

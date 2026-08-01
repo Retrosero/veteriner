@@ -47,7 +47,7 @@ Kullanıcının rolüne göre onboarding senaryolarını listeler.
 ## Davranış
 
 - **Role filtreleme:** Aktörün rolü (`OWNER | VETERINARIAN |
-  STAFF | PET_OWNER_PORTAL`) ne ise yalnızca o role
+STAFF | PET_OWNER_PORTAL`) ne ise yalnızca o role
   uygun senaryolar döner. SUPERADMIN tüm senaryoları görür.
 - **Modül filtreleme:** Belirtilen modüllere sahip
   senaryolar filtrelenir. Geçersiz modül adları yok sayılır.

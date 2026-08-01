@@ -5,11 +5,13 @@
  * @since GOAL-012 (FAZ-1) RBAC ve izin motoru
  */
 
-import { INestApplication, ValidationPipe } from "@nestjs/common";
-import { Test } from "@nestjs/testing";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import request from "supertest";
 import { randomUUID } from "node:crypto";
+import { Server } from "node:http";
+
+import { type INestApplication, ValidationPipe } from "@nestjs/common";
+import { Test } from "@nestjs/testing";
+import request from "supertest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { AppModule } from "../../app.module.js";
 import { AllExceptionsFilter } from "../../common/filters/all-exceptions.filter.js";
@@ -31,7 +33,7 @@ const describeE2E =
 
 describeE2E("RBAC rol-bazlı API testleri (5 rol)", () => {
   let app: INestApplication;
-  let server: ReturnType<INestApplication["getHttpServer"]>;
+  let server: Parameters<typeof request>[0];
 
   beforeAll(async () => {
     process.env["APP_VERSION"] = "0.0.0-test";
@@ -51,7 +53,11 @@ describeE2E("RBAC rol-bazlı API testleri (5 rol)", () => {
     );
     app.useGlobalFilters(new AllExceptionsFilter());
     await app.init();
-    server = app.getHttpServer();
+    const httpServer: unknown = app.getHttpServer();
+    if (!(httpServer instanceof Server)) {
+      throw new Error("Nest HTTP server başlatılamadı");
+    }
+    server = httpServer;
   });
 
   afterAll(async () => {

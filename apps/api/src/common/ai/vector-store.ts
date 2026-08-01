@@ -12,6 +12,9 @@
 
 import type { ChunkMetadata, RetrievedChunk } from "./chunk.types.js";
 
+/** NestJS DI token'ı; TypeScript interface'i runtime'da mevcut değildir. */
+export const VECTOR_STORE = Symbol("VECTOR_STORE");
+
 /**
  * Vector store sözleşmesi. Tüm implementasyonlar (Qdrant,
  * pgvector, in-memory) bu interface'i uygular.

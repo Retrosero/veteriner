@@ -1,7 +1,6 @@
 /**
  * @file ClinicalConsumption (klinik tüketim) service.
  * @module apps/api/modules/clinical-consumption/clinical-consumption.service
- *
  * @description GOAL-066 (FAZ-6) klinik tüketimden otomatik stok düşümü
  * iş kuralları. Muayene/aşı/ameliyat/yatış/reçete sırasında kullanılan
  * ürünlerin klinik tüketim kaydı olarak tutulmasını ve stoktan
@@ -25,23 +24,19 @@
  * - `ProductsService.getProduct` — ürün varlık/arşiv kontrolü.
  * - `InventoryService.getLot` — lot varlık/arşiv kontrolü (vaccination
  *   için zorunlu; diğer context'ler için önerilir).
- *
  * @security Tenant bilgisi yalnızca actor.tenantId'den alınır.
  *   Tüketim kayıtları üzerinde fiziksel silme YOKTUR; iptal yalnızca
  *   ters kayıt ile.
- *
  * @since GOAL-066 (FAZ-6) klinik tüketimden otomatik stok düşümü core
  */
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
 import {
-  negateSignedDecimal,
-  normalizeSignedDecimal,
-} from "../../common/stock-movements/stock-movement.types.js";
+  type ClinicalConsumptionSearchFilters,
+  ClinicalConsumptionRepository,
+} from "./clinical-consumption.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import {
   isLotRequiredForContext,
   normalizeConsumptionQuantity,
@@ -49,6 +44,16 @@ import {
   validateLineForContext,
   type ClinicalConsumptionRecord,
 } from "../../common/clinical-consumption/clinical-consumption.types.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import {
+  negateSignedDecimal,
+  normalizeSignedDecimal,
+} from "../../common/stock-movements/stock-movement.types.js";
+import { InventoryService } from "../inventory/inventory.service.js";
+import { ProductsService } from "../products/products.service.js";
+import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   ClinicalConsumption,
   ClinicalConsumptionCancelInput,
@@ -58,15 +63,6 @@ import type {
   ClinicalConsumptionLine,
   ClinicalConsumptionListResponse,
 } from "@vetniva/contracts";
-
-import { ProductsService } from "../products/products.service.js";
-import { InventoryService } from "../inventory/inventory.service.js";
-import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
-
-import {
-  type ClinicalConsumptionSearchFilters,
-  ClinicalConsumptionRepository,
-} from "./clinical-consumption.repository.js";
 
 /* --------------------------------------------------------------------------
  * Public service
@@ -92,6 +88,9 @@ export class ClinicalConsumptionService {
    * Manuel klinik tüketim kaydı oluşturur. Stok düşümü
    * `StockMovementsService.createSystemMovement` üzerinden yapılır;
    * her satır için bir hareket oluşturulur.
+   * @param tenantId
+   * @param input
+   * @param actor
    */
   public async create(
     tenantId: string,
@@ -115,6 +114,11 @@ export class ClinicalConsumptionService {
    * `prescriptionId` bağlamı `contextRefId` olarak kullanılır; bir reçete
    * için en fazla 1 aktif tüketim kaydı olabilir (idempotent — varsa
    * mevcut döner, yenisi oluşturulmaz).
+   * @param tenantId
+   * @param prescriptionId
+   * @param patientId
+   * @param lines
+   * @param actor
    */
   public async recordForPrescription(
     tenantId: string,
@@ -156,6 +160,10 @@ export class ClinicalConsumptionService {
    * `cancelReason` zorunlu (422 VET-CLINICAL_CONSUMPTION-0005).
    * Zaten iptal edilmiş kayıt tekrar iptal edilemez
    * (409 VET-CLINICAL_CONSUMPTION-0006).
+   * @param tenantId
+   * @param id
+   * @param input
+   * @param actor
    */
   public async cancel(
     tenantId: string,
@@ -201,7 +209,9 @@ export class ClinicalConsumptionService {
         await this.stockMovements.reverseMovement(
           tenantId,
           movementId,
-          { reason: `clinical_consumption_cancel:${rec.id}:${input.cancelReason}` },
+          {
+            reason: `clinical_consumption_cancel:${rec.id}:${input.cancelReason}`,
+          },
           actor,
         );
       } catch (err) {
@@ -223,9 +233,11 @@ export class ClinicalConsumptionService {
       cancelReason: input.cancelReason,
     };
     // Replace record in repo.
-    (this.repo as unknown as {
-      byId: Map<string, ClinicalConsumptionRecord>;
-    }).byId.set(rec.id, cancelled);
+    (
+      this.repo as unknown as {
+        byId: Map<string, ClinicalConsumptionRecord>;
+      }
+    ).byId.set(rec.id, cancelled);
 
     await this.audit.recordSimple(
       "audit:clinical_consumption.cancel",
@@ -306,8 +318,7 @@ export class ClinicalConsumptionService {
         if (!validateLineForContext(context, line)) {
           throw new DomainError({
             errorCode: "VET-CLINICAL_CONSUMPTION-0003",
-            message:
-              "Aşı uygulaması için her satırda lot bilgisi zorunludur",
+            message: "Aşı uygulaması için her satırda lot bilgisi zorunludur",
             httpStatus: 422,
             severity: "warning",
             i18nKey: "error.VET-CLINICAL_CONSUMPTION-0003",
@@ -353,8 +364,7 @@ export class ClinicalConsumptionService {
       if (product.archivedAt !== null) {
         throw new DomainError({
           errorCode: "VET-CLINICAL_CONSUMPTION-0007",
-          message:
-            "Arşivlenmiş ürün için klinik tüketim kaydı oluşturulamaz",
+          message: "Arşivlenmiş ürün için klinik tüketim kaydı oluşturulamaz",
           httpStatus: 409,
           severity: "warning",
           i18nKey: "error.VET-CLINICAL_CONSUMPTION-0007",
@@ -389,8 +399,7 @@ export class ClinicalConsumptionService {
         if (lot.archivedAt !== null) {
           throw new DomainError({
             errorCode: "VET-CLINICAL_CONSUMPTION-0007",
-            message:
-              "Arşivlenmiş lot için klinik tüketim kaydı oluşturulamaz",
+            message: "Arşivlenmiş lot için klinik tüketim kaydı oluşturulamaz",
             httpStatus: 409,
             severity: "warning",
             i18nKey: "error.VET-CLINICAL_CONSUMPTION-0007",
@@ -514,7 +523,7 @@ export class ClinicalConsumptionService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

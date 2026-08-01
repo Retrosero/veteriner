@@ -17,10 +17,7 @@
  * @since GOAL-080 (FAZ-8) ameliyat planlama core
  */
 
-import type {
-  SurgeryPlan,
-  SurgeryPlanStatus,
-} from "@vetniva/contracts";
+import type { SurgeryPlan, SurgeryPlanStatus } from "@vetniva/contracts";
 
 /** Persist edilmiş plan record. */
 export interface SurgeryPlanRecord {

@@ -1,7 +1,6 @@
 /**
  * @file Frontend merkezi hata yakalama (error reporter).
  * @module @vetniva/web/lib/error-reporter
- *
  * @description GOAL-101 (FAZ-10) frontend hata yakalama altyapısının
  * çekirdeği. Next.js runtime, API ve kullanıcı arayüzü hatalarını
  * merkezi sisteme gönderir.
@@ -26,17 +25,15 @@
  *   await something();
  * } catch (err) {
  *   errorReporter.captureError(err, { component: "PatientList" });
- * }
+ * }.
  *
  * // Mesaj tabanlı raporlama
  * errorReporter.captureMessage("Network offline", "warning");
  * ```
- *
  * @security Hassas form verileri `sanitizeContext` ile her zaman
  *   mask'lenir; client tarafında hiçbir plain-text PII
  *   loglanmaz/gönderilmez. Backend ek bir PII masker'ından geçirir
  *   (savunma derinliği).
- *
  * @since GOAL-101 (FAZ-10) frontend hata yakalama core
  */
 
@@ -53,7 +50,7 @@ export type ErrorSeverity = "info" | "warning" | "error" | "critical";
 /** Hata kaynağı. Backend tarafı `moduleFromRoute` ile modül türetir. */
 export type ErrorSource = "runtime" | "api" | "ui" | "manual";
 
-/** captureError için opsiyonel context. */
+/** CaptureError için opsiyonel context. */
 export type ErrorContext = Record<string, unknown> | undefined;
 
 /** Reporter konfigürasyonu. */
@@ -133,6 +130,9 @@ const TCKN_RE = /\b[1-9]\d{10}\b/g;
 /** Telefon (0 ile başlayan 10-11 hane). İlk 2 + son 2 hane korunur. */
 const PHONE_RE = /\b0\d{9,10}\b/g;
 /** Kredi kartı (13-19 hane grupları). */
+// Sınırları sabit olan bu ifade doğrusal taranır; security eklentisi
+// iç içe tekrar nedeniyle yanlış pozitif üretebildiğinden istisna yereldir.
+// eslint-disable-next-line security/detect-unsafe-regex
 const CC_RE = /\b(?:\d[ -]?){13,19}\b/g;
 
 /**
@@ -140,6 +140,7 @@ const CC_RE = /\b(?:\d[ -]?){13,19}\b/g;
  * TC kimlik, telefon ve kredi kartı için basit regex tabanlı
  * yaklaşım kullanılır; bu fonksiyon UI form içeriklerinin log'a
  * sızmasını önler.
+ * @param input
  */
 export function maskString(input: string): string {
   if (typeof input !== "string") return input;
@@ -159,41 +160,43 @@ export function maskString(input: string): string {
  * Context payload'ını PII açısından temizler. Hem anahtarlar
  * (`PII_KEYS`) hem de string değerler (regex) taranır. Dönerken
  * orijinal referansı mutate etmez; derin kopya üretir.
+ * @param ctx
  */
 export function sanitizeContext(
   ctx: ErrorContext | null | undefined,
 ): Record<string, unknown> {
   if (ctx === undefined || ctx === null) return {};
   if (typeof ctx !== "object") return {};
-  const out: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(ctx)) {
-    if (PII_KEYS.has(key.toLowerCase())) {
-      if (typeof value === "string" && value.length > 0) {
-        out[key] = `[redacted:${key}]`;
-      } else {
-        out[key] = "[redacted]";
+  return Object.fromEntries(
+    Object.entries(ctx).map(([key, value]) => {
+      if (PII_KEYS.has(key.toLowerCase())) {
+        return [
+          key,
+          typeof value === "string" && value.length > 0
+            ? `[redacted:${key}]`
+            : "[redacted]",
+        ];
       }
-      continue;
-    }
-    out[key] = sanitizeValue(value);
-  }
-  return out;
+      return [key, sanitizeValue(value)];
+    }),
+  );
 }
 
+/**
+ *
+ * @param value
+ */
 function sanitizeValue(value: unknown): unknown {
   if (value === null || value === undefined) return value;
   if (typeof value === "string") return maskString(value);
   if (Array.isArray(value)) return value.map((v) => sanitizeValue(v));
   if (typeof value === "object") {
-    const out: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-      if (PII_KEYS.has(k.toLowerCase())) {
-        out[k] = "[redacted]";
-      } else {
-        out[k] = sanitizeValue(v);
-      }
-    }
-    return out;
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, item]) => [
+        key,
+        PII_KEYS.has(key.toLowerCase()) ? "[redacted]" : sanitizeValue(item),
+      ]),
+    );
   }
   return value;
 }
@@ -203,7 +206,10 @@ function sanitizeValue(value: unknown): unknown {
  * --------------------------------------------------------------------------
  */
 
-/** Error benzeri bir nesneden message + stack çıkarır. */
+/**
+ * Error benzeri bir nesneden message + stack çıkarır.
+ * @param err
+ */
 export function extractErrorInfo(err: unknown): {
   message: string;
   stack: string | undefined;
@@ -238,12 +244,16 @@ const DEFAULT_ENDPOINT = "/api/v1/system/error-events";
 /** Build-time app version. `NEXT_PUBLIC_APP_VERSION` ile ezilebilir. */
 const DEFAULT_RELEASE =
   (typeof process !== "undefined" &&
-    (process.env["NEXT_PUBLIC_APP_VERSION"] ??
-      process.env["APP_VERSION"])) ||
+    (process.env["NEXT_PUBLIC_APP_VERSION"] ?? process.env["APP_VERSION"])) ||
   "0.0.0-dev";
 
-/** Default config üretir. Test'lerde override edilir. */
-function defaultConfig(overrides: Partial<ErrorReporterConfig> = {}): ErrorReporterConfig {
+/**
+ * Default config üretir. Test'lerde override edilir.
+ * @param overrides
+ */
+function defaultConfig(
+  overrides: Partial<ErrorReporterConfig> = {},
+): ErrorReporterConfig {
   return {
     baseUrl:
       (typeof process !== "undefined" && process.env["API_BASE_URL"]) ||
@@ -254,9 +264,12 @@ function defaultConfig(overrides: Partial<ErrorReporterConfig> = {}): ErrorRepor
     dedupWindowMs: 1_000,
     flushIntervalMs: 2_000,
     requestTimeoutMs: 3_000,
-    fetchImpl: typeof fetch === "function" ? fetch : (() => {
-      throw new Error("fetch API not available");
-    }) as typeof fetch,
+    fetchImpl:
+      typeof fetch === "function"
+        ? fetch
+        : () => {
+            throw new Error("fetch API not available");
+          },
     enabled: true,
     ...overrides,
   };
@@ -290,12 +303,13 @@ export class ErrorReporter {
   public constructor(config?: Partial<ErrorReporterConfig>) {
     this.config = defaultConfig(config);
     if (this.config.enabled && typeof setInterval === "function") {
-      this.flushTimer = setInterval(
-        () => this.flush().catch(() => undefined),
-        this.config.flushIntervalMs,
-      );
+      this.flushTimer = setInterval(() => {
+        void this.flush().catch(() => undefined);
+      }, this.config.flushIntervalMs);
       // Node.js'te process exit'inde temizleme
-      const g = globalThis as { process?: { on?: (...args: unknown[]) => void } };
+      const g = globalThis as {
+        process?: { on?: (...args: unknown[]) => void };
+      };
       if (g.process?.on) {
         g.process.on("beforeunload", () => this.flushSync());
       }
@@ -305,6 +319,9 @@ export class ErrorReporter {
   /**
    * Yakalanan bir Error'ı raporlar. Context opsiyonel olarak
    * eklenebilir; tüm context PII-sanitize edilir.
+   * @param err
+   * @param context
+   * @param severity
    */
   public captureError(
     err: unknown,
@@ -324,8 +341,11 @@ export class ErrorReporter {
   }
 
   /**
-   * Error olmayan bir durumu raporlar (ör. network offline warning,
+   * Error olmayan bir durumu raporlar (ör. Network offline warning,
    * ya da kullanıcı bildirimi). Severity info/warning önerilir.
+   * @param message
+   * @param severity
+   * @param context
    */
   public captureMessage(
     message: string,
@@ -391,7 +411,10 @@ export class ErrorReporter {
             release: item.input.release ?? this.config.release,
           });
           // sendBeacon POST yapar; sync sonuç dönmez.
-          navigator.sendBeacon(url, new Blob([body], { type: "application/json" }));
+          navigator.sendBeacon(
+            url,
+            new Blob([body], { type: "application/json" }),
+          );
         } catch {
           // sessiz
         }
@@ -414,6 +437,7 @@ export class ErrorReporter {
   /**
    * Kuyruğa alma. Aynı `message+route` imzası `dedupWindowMs`
    * içinde ikinci kez gelirse yutulur.
+   * @param input
    */
   private enqueue(input: ClientErrorReportInput): void {
     const sig = `${input.message}|${input.route}`;
@@ -439,8 +463,13 @@ export class ErrorReporter {
     this.queue.push({ input, enqueuedAt: now });
   }
 
-  /** Tek bir hatayı backend'e gönderir. Hata olursa fırlatır. */
-  private async sendOne(input: ClientErrorReportInput): Promise<ClientErrorReportResponse | null> {
+  /**
+   * Tek bir hatayı backend'e gönderir. Hata olursa fırlatır.
+   * @param input
+   */
+  private async sendOne(
+    input: ClientErrorReportInput,
+  ): Promise<ClientErrorReportResponse | null> {
     const url = `${this.config.baseUrl}${this.config.endpoint}`;
     const controller = new AbortController();
     const handle = setTimeout(
@@ -466,9 +495,9 @@ export class ErrorReporter {
       if (!res.ok) {
         return null;
       }
-      const json = (await res.json().catch(() => null)) as
-        | ClientErrorReportResponse
-        | null;
+      const json = (await res
+        .json()
+        .catch(() => null)) as ClientErrorReportResponse | null;
       return json;
     } finally {
       clearTimeout(handle);

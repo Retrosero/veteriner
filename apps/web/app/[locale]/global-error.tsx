@@ -3,7 +3,6 @@
 /**
  * @file Global error boundary (root layout'un hata sınırı).
  * @module @vetniva/web/app/[locale]/global-error
- *
  * @description GOAL-101 (FAZ-10) frontend hata yakalama — Next.js
  * App Router `global-error.tsx` convention. Root layout dahil
  * TÜM segmentlerde yakalanmamış hatalar buraya düşer. Bu dosya
@@ -16,23 +15,28 @@
  *   butonu sunulur (Next.js `reset` bu seviyede çalışmaz; reload
  *   önerilir).
  * - Tüm CSS sıfırlanır (Tailwind sınıfları inline verilir).
- *
  * @security Hata detayı kullanıcıya gösterilmez; yalnızca generic
  *   mesaj + correlation ID paylaşılır.
- *
  * @since GOAL-101 (FAZ-10) frontend hata yakalama core
  */
 
 import { useEffect } from "react";
-import type { ReactElement } from "react";
 
 import { errorReporter } from "@/lib/error-reporter";
+
+import type { ReactElement } from "react";
 
 type GlobalErrorProps = {
   error: Error & { digest?: string };
   reset: () => void;
 };
 
+/**
+ *
+ * @param root0
+ * @param root0.error
+ * @param root0.reset
+ */
 export default function GlobalError({
   error,
   reset,
@@ -51,8 +55,7 @@ export default function GlobalError({
     <html lang="tr" dir="ltr">
       <body
         style={{
-          fontFamily:
-            "system-ui, -apple-system, 'Segoe UI', sans-serif",
+          fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
           margin: 0,
           minHeight: "100vh",
           background: "#f9fafb",
@@ -90,8 +93,8 @@ export default function GlobalError({
               margin: 0,
             }}
           >
-            VetNiva şu an yanıt veremiyor. Sayfayı yenilemek sorunu
-            çözebilir; devam ederse destek ekibine bildirin.
+            VetNiva şu an yanıt veremiyor. Sayfayı yenilemek sorunu çözebilir;
+            devam ederse destek ekibine bildirin.
           </p>
           {error.digest ? (
             <p

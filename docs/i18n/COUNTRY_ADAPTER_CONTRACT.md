@@ -1,23 +1,43 @@
 # @file Ülke Adaptörü Sözleşmesi.
+
 # @module docs/i18n/COUNTRY_ADAPTER_CONTRACT
+
 #
+
 # @description VetNiva'nın ülke bazlı iş kuralları için
+
 # adapter sözleşmesi. TR ve GB ülkeleri için adaptör
+
 # arayüzleri; tarih, saat, para, sayı, adres, telefon,
+
 # vergi, belge, reçete ve bildirim kuralları.
+
 #
+
 # Bu sözleşme, kod içine dağınık `if country === 'TR'`
+
 # kontrollerini engeller. Her ülke için ayrı adapter
+
 # implementasyonu, runtime'da tenant.country'ye göre
+
 # seçilir.
+
 #
+
 # @author GOAL-003 (FAZ-0 devamı) ülke adaptörü sözleşmesi
+
 # @since 2026-07-30
+
 # @security Tenant.country alanı tenant oluşturulurken
-#   SUPERADMIN tarafından seçilir ve sonradan
-#   değiştirilemez. Adapter seçimi bu alana göre
-#   yapılır; kullanıcı UI dili (locale) farklı olabilir
-#   (ör. `en-GB` UI + `TR` country).
+
+# SUPERADMIN tarafından seçilir ve sonradan
+
+# değiştirilemez. Adapter seçimi bu alana göre
+
+# yapılır; kullanıcı UI dili (locale) farklı olabilir
+
+# (ör. `en-GB` UI + `TR` country).
+
 # =============================================================================
 
 # Ülke Adaptörü Sözleşmesi
@@ -253,12 +273,12 @@ export type NotificationRules = {
 
 ### 4.1. Para ve Sayı
 
-| Alan | Format | Örnek |
-| --- | --- | --- |
-| Para | `₺1.234,56` (binlik `.`, ondalık `,`, sıralı `₺`) | `₺1.234,56` |
-| Para (negatif) | `-₺1.234,56` (parantez kullanılmaz) | `-₺1.234,56` |
-| Sayı | `1.234,56` | `1.234,56` |
-| Yüzde | `%12,5` | `%12,5` |
+| Alan           | Format                                            | Örnek        |
+| -------------- | ------------------------------------------------- | ------------ |
+| Para           | `₺1.234,56` (binlik `.`, ondalık `,`, sıralı `₺`) | `₺1.234,56`  |
+| Para (negatif) | `-₺1.234,56` (parantez kullanılmaz)               | `-₺1.234,56` |
+| Sayı           | `1.234,56`                                        | `1.234,56`   |
+| Yüzde          | `%12,5`                                           | `%12,5`      |
 
 **Uygulama:**
 
@@ -276,22 +296,22 @@ formatCurrency(amount: number | Decimal, options?: { showSymbol?: boolean }): st
 
 ### 4.2. Tarih ve Saat
 
-| Alan | Format | Örnek |
-| --- | --- | --- |
-| Tarih (kısa) | `dd.MM.yyyy` | `31.07.2026` |
-| Tarih (orta) | `d MMMM yyyy` | `31 Temmuz 2026` |
+| Alan         | Format              | Örnek                 |
+| ------------ | ------------------- | --------------------- |
+| Tarih (kısa) | `dd.MM.yyyy`        | `31.07.2026`          |
+| Tarih (orta) | `d MMMM yyyy`       | `31 Temmuz 2026`      |
 | Tarih (uzun) | `d MMMM yyyy, EEEE` | `31 Temmuz 2026 Cuma` |
-| Saat | `HH:mm` (24-saat) | `14:30` |
-| Tarih+Saat | `dd.MM.yyyy HH:mm` | `31.07.2026 14:30` |
+| Saat         | `HH:mm` (24-saat)   | `14:30`               |
+| Tarih+Saat   | `dd.MM.yyyy HH:mm`  | `31.07.2026 14:30`    |
 
 **Saat dilimi:** `Europe/Istanbul` (UTC+3, yaz saati yok).
 
 ### 4.3. Telefon
 
-| Alan | Format | Örnek |
-| --- | --- | --- |
-| Cep telefonu | `+90 5XX XXX XX XX` | `+90 532 123 45 67` |
-| Sabit hat | `+90 (XXX) XXX XX XX` | `+90 (212) 555 12 34` |
+| Alan           | Format                      | Örnek                      |
+| -------------- | --------------------------- | -------------------------- |
+| Cep telefonu   | `+90 5XX XXX XX XX`         | `+90 532 123 45 67`        |
+| Sabit hat      | `+90 (XXX) XXX XX XX`       | `+90 (212) 555 12 34`      |
 | E.164 depolama | `+905321234567` (boşluksuz) | DB'de bu formatta saklanır |
 
 **Doğrulama:** Türkiye telefon numarası `+90` ile başlar,
@@ -314,12 +334,12 @@ validatePhone(phone: string): ValidationResult {
 
 ### 4.4. Vergi Numaraları
 
-| Tür | Ad | Format | Doğrulama |
-| --- | --- | --- | --- |
-| VKN | Vergi Kimlik No (şirket) | 10 hane | Algoritma: son hane, ilk 9 hanenin mod 10'una göre hesaplanır |
-| TCKN | T.C. Kimlik No (kişi) | 11 hane | Algoritma: son 2 hane, ilk 9 hanenin mod 10 ve mod 11'ine göre |
-| İBAN | TR IBAN | `TR` + 2 hane kontrol + 22 hane (toplam 26) | ISO 13616 mod 97-10 |
-| e-Fatura mükellefi | GİB kayıt no | 16 hane | GİB doğrulama (Faz 7+) |
+| Tür                | Ad                       | Format                                      | Doğrulama                                                      |
+| ------------------ | ------------------------ | ------------------------------------------- | -------------------------------------------------------------- |
+| VKN                | Vergi Kimlik No (şirket) | 10 hane                                     | Algoritma: son hane, ilk 9 hanenin mod 10'una göre hesaplanır  |
+| TCKN               | T.C. Kimlik No (kişi)    | 11 hane                                     | Algoritma: son 2 hane, ilk 9 hanenin mod 10 ve mod 11'ine göre |
+| İBAN               | TR IBAN                  | `TR` + 2 hane kontrol + 22 hane (toplam 26) | ISO 13616 mod 97-10                                            |
+| e-Fatura mükellefi | GİB kayıt no             | 16 hane                                     | GİB doğrulama (Faz 7+)                                         |
 
 **VKN doğrulama (Türk algoritması):**
 
@@ -331,20 +351,20 @@ function validateVKN(vkn: string): boolean {
     const mod = (d * Math.pow(2, 9 - i)) % 10;
     return acc + mod;
   }, 0);
-  const checkDigit = (sum % 10 === 0 ? 0 : 10 - (sum % 10));
+  const checkDigit = sum % 10 === 0 ? 0 : 10 - (sum % 10);
   return checkDigit === digits[9];
 }
 ```
 
 ### 4.5. Adres
 
-| Alan | Örnek |
-| --- | --- |
+| Alan           | Örnek                          |
+| -------------- | ------------------------------ |
 | Adres satırı 1 | `Atatürk Mah. Cumhuriyet Cad.` |
-| Adres satırı 2 | `No: 25 Daire: 7` |
-| İlçe/İl | `Kadıköy / İstanbul` |
-| Posta kodu | `34710` (5 hane) |
-| Ülke | `Türkiye` |
+| Adres satırı 2 | `No: 25 Daire: 7`              |
+| İlçe/İl        | `Kadıköy / İstanbul`           |
+| Posta kodu     | `34710` (5 hane)               |
+| Ülke           | `Türkiye`                      |
 
 **Format:**
 
@@ -367,16 +387,16 @@ formatAddress(address: Address): string {
 
 ### 4.6. KDV Oranları (TR, 2026 itibarıyla)
 
-| Kategori | Oran |
-| --- | --- |
-| İlaç (beşeri) | %8 |
-| Veteriner ilaç | %8 veya %10 (ürüne göre) |
-| Aşı | %8 |
-| Pet food (mama) | %10 |
-| Pet accessory | %20 |
-| Klinik hizmeti (muayene, ameliyat) | %20 |
-| Tıbbi malzeme | %20 |
-| Diğer | %20 |
+| Kategori                           | Oran                     |
+| ---------------------------------- | ------------------------ |
+| İlaç (beşeri)                      | %8                       |
+| Veteriner ilaç                     | %8 veya %10 (ürüne göre) |
+| Aşı                                | %8                       |
+| Pet food (mama)                    | %10                      |
+| Pet accessory                      | %20                      |
+| Klinik hizmeti (muayene, ameliyat) | %20                      |
+| Tıbbi malzeme                      | %20                      |
+| Diğer                              | %20                      |
 
 `getVatRateFor(category, date)` metodu ürün tipine göre güncel
 KDV oranını döner. Resmi Gazete değişiklikleri için
@@ -427,11 +447,11 @@ implementasyonu Faz 14'te (en-GB pazarı).
 
 ### 5.1. Para ve Sayı (Placeholder)
 
-| Alan | Format | Örnek |
-| --- | --- | --- |
-| Para | `£1,234.56` (binlik `,`, ondalık `.`) | `£1,234.56` |
-| Sayı | `1,234.56` | `1,234.56` |
-| Yüzde | `12.5%` | `12.5%` |
+| Alan  | Format                                | Örnek       |
+| ----- | ------------------------------------- | ----------- |
+| Para  | `£1,234.56` (binlik `,`, ondalık `.`) | `£1,234.56` |
+| Sayı  | `1,234.56`                            | `1,234.56`  |
+| Yüzde | `12.5%`                               | `12.5%`     |
 
 **Uygulama (placeholder):**
 
@@ -449,33 +469,33 @@ formatCurrency(amount: number | Decimal): string {
 
 ### 5.2. Tarih ve Saat
 
-| Alan | Format | Örnek |
-| --- | --- | --- |
-| Tarih | `dd/MM/yyyy` | `31/07/2026` |
-| Saat | `HH:mm` (24-saat) | `14:30` |
-| Saat (12-saat) | `h:mm a` | `2:30 pm` |
-| Tarih+Saat | `dd/MM/yyyy HH:mm` | `31/07/2026 14:30` |
+| Alan           | Format             | Örnek              |
+| -------------- | ------------------ | ------------------ |
+| Tarih          | `dd/MM/yyyy`       | `31/07/2026`       |
+| Saat           | `HH:mm` (24-saat)  | `14:30`            |
+| Saat (12-saat) | `h:mm a`           | `2:30 pm`          |
+| Tarih+Saat     | `dd/MM/yyyy HH:mm` | `31/07/2026 14:30` |
 
 **Saat dilimi:** `Europe/London` (UTC+0 / UTC+1 yaz saati).
 
 ### 5.3. Telefon (Placeholder)
 
-| Alan | Format | Örnek |
-| --- | --- | --- |
-| Cep telefonu | `+44 7XXX XXXXXX` | `+44 7700 900123` |
-| Sabit hat | `+44 20 XXXX XXXX` | `+44 20 7946 0958` |
+| Alan         | Format             | Örnek              |
+| ------------ | ------------------ | ------------------ |
+| Cep telefonu | `+44 7XXX XXXXXX`  | `+44 7700 900123`  |
+| Sabit hat    | `+44 20 XXXX XXXX` | `+44 20 7946 0958` |
 
 **Not:** Faz 14'te Ofcom telefon numarası planına göre
 detaylandırılacak.
 
 ### 5.4. Vergi (Placeholder)
 
-| Tür | Ad | Format |
-| --- | --- | --- |
-| UTR | Unique Taxpayer Reference | 10 hane |
-| VRN | VAT Registration Number | `GB` + 9 hane |
-| NHS | National Health Service | 10 hane |
-| IBAN | GB IBAN | `GB` + 2 kontrol + 18 hane (toplam 22) |
+| Tür  | Ad                        | Format                                 |
+| ---- | ------------------------- | -------------------------------------- |
+| UTR  | Unique Taxpayer Reference | 10 hane                                |
+| VRN  | VAT Registration Number   | `GB` + 9 hane                          |
+| NHS  | National Health Service   | 10 hane                                |
+| IBAN | GB IBAN                   | `GB` + 2 kontrol + 18 hane (toplam 22) |
 
 ### 5.5. KDV (Placeholder)
 
@@ -516,10 +536,7 @@ const adapters = new Map<CountryCode, CountryAdapter>([
 export function getCountryAdapter(country: CountryCode): CountryAdapter {
   const adapter = adapters.get(country);
   if (!adapter) {
-    throw new DomainError(
-      "TR_COUNTRY_0001",
-      `Desteklenmeyen ülke: ${country}`,
-    );
+    throw new DomainError("TR_COUNTRY_0001", `Desteklenmeyen ülke: ${country}`);
   }
   return adapter;
 }
@@ -535,9 +552,9 @@ export function registerCountryAdapter(
 **Tenant bazlı override (Faz 14+):**
 
 ```ts
-export function getCountryAdapterForTenant(
-  tenant: { country: CountryCode },
-): CountryAdapter {
+export function getCountryAdapterForTenant(tenant: {
+  country: CountryCode;
+}): CountryAdapter {
   // Tenant özel override varsa kullan, yoksa global adapter
   return tenantAdapters.get(tenant.id) ?? getCountryAdapter(tenant.country);
 }
@@ -642,12 +659,12 @@ ile birlikte eklenecek.
 
 ## 12. Genişleme Planı
 
-| Faz | Yeni ülke | Planlanan |
-| --- | --- | --- |
-| 0 | TR (pilot) | Tam implementasyon |
-| 14 | GB (en-GB pazarı) | Tam mevzuat implementasyonu (RCVS, VMD, HMRC) |
-| 15+ | DE, FR, IT | Adapter iskeleti, ülke mevzuatına göre detaylandırma |
-| 16+ | US, CA, AU | Adapter iskeleti, AAB/KVH kuralları |
+| Faz | Yeni ülke         | Planlanan                                            |
+| --- | ----------------- | ---------------------------------------------------- |
+| 0   | TR (pilot)        | Tam implementasyon                                   |
+| 14  | GB (en-GB pazarı) | Tam mevzuat implementasyonu (RCVS, VMD, HMRC)        |
+| 15+ | DE, FR, IT        | Adapter iskeleti, ülke mevzuatına göre detaylandırma |
+| 16+ | US, CA, AU        | Adapter iskeleti, AAB/KVH kuralları                  |
 
 Yeni ülke eklemek için:
 

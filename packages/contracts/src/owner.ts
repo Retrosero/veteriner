@@ -37,7 +37,10 @@ export const ownerCreateInputSchema = z.object({
     .string()
     .min(7)
     .max(32)
-    .regex(/^[0-9+\s\-()]+$/, "Telefon yalnızca rakam, +, boşluk, - içerebilir"),
+    .regex(
+      /^[0-9+\s\-()]+$/,
+      "Telefon yalnızca rakam, +, boşluk, - içerebilir",
+    ),
   email: z.string().email().max(200).optional(),
   taxId: z
     .string()

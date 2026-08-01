@@ -19,15 +19,15 @@
 import { Global, Module } from "@nestjs/common";
 
 import {
-  SECURITY_ALERT_ADAPTER,
-  NoopSecurityAlertAdapter,
-} from "./security-events.service.js";
-import {
   SecurityEventsController,
   SystemSecurityEventsController,
 } from "./security-events.controller.js";
 import { SecurityEventsRepository } from "./security-events.repository.js";
-import { SecurityEventsService } from "./security-events.service.js";
+import {
+  SECURITY_ALERT_ADAPTER,
+  NoopSecurityAlertAdapter,
+  SecurityEventsService,
+} from "./security-events.service.js";
 
 @Global()
 @Module({

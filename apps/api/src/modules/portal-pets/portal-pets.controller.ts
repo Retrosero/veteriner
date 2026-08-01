@@ -28,17 +28,14 @@ import {
   Req,
   UseGuards,
 } from "@nestjs/common";
-import type { Request } from "express";
-
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type {
-  PortalPetDetail,
-  PortalPetSummary,
-} from "@vetniva/contracts";
-
-import { PortalSessionGuard } from "../portal-auth/portal-session.guard.js";
 
 import { PortalPetsService } from "./portal-pets.service.js";
+import { Public } from "../../common/decorators/public.decorator.js";
+import { PortalSessionGuard } from "../portal-auth/portal-session.guard.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { PortalPetDetail, PortalPetSummary } from "@vetniva/contracts";
+import type { Request } from "express";
 
 /** Portal session guard sonrası set edilen request augmentation. */
 interface PortalSessionRequest {
@@ -50,6 +47,7 @@ interface PortalSessionRequest {
   };
 }
 
+@Public()
 @Controller("api/v1/portal-pets")
 @UseGuards(PortalSessionGuard)
 export class PortalPetsController {
@@ -94,9 +92,10 @@ export class PortalPetsController {
   // Helpers
   // -------------------------------------------------------------------------
 
-  private requireSession(
-    request: Request & PortalSessionRequest,
-  ): { portalUserId: string; tenantId: string } {
+  private requireSession(request: Request & PortalSessionRequest): {
+    portalUserId: string;
+    tenantId: string;
+  } {
     const session = request.portalSession;
     if (!session) {
       // Guard 401 fırlatır; bu satıra ulaşılmaz.
@@ -113,12 +112,8 @@ export class PortalPetsController {
    * `ActorContextService` ile aynı şekil; `actorType: "portal_user"`
    * ve `source: "portal_session"` ile ayırt edilir.
    */
-  private actorFor(
-    request: Request,
-    tenantId: string,
-  ): ActorContext {
-    const ip =
-      (request.header("x-forwarded-for") as string | undefined) ?? null;
+  private actorFor(request: Request, tenantId: string): ActorContext {
+    const ip = request.header("x-forwarded-for") ?? null;
     const ua = request.header("user-agent") ?? null;
     return {
       actorId: null,
@@ -128,7 +123,7 @@ export class PortalPetsController {
       branchId: null,
       isSuperadmin: false,
       correlationId: `req-portal-${Date.now()}`,
-      ipAddress: ip ? ip.split(",")[0]?.trim() ?? null : null,
+      ipAddress: ip ? (ip.split(",")[0]?.trim() ?? null) : null,
       userAgentHash: ua ? this.hashUa(ua) : null,
       source: "portal_session",
     };

@@ -1,21 +1,19 @@
 /**
  * @file AlertsService unit testleri.
  * @module apps/api/modules/alerts/alerts.service.spec
- *
  * @description Tenant izolasyonu, severity filter, active filtering,
  * archive idempotency, medication conflict match, audit event
  * yayını.
- *
  * @since GOAL-023 (FAZ-2) alerji/kronik uyarılar core
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { AlertsService } from "./alerts.service.js";
 import { PatientsRepository } from "../patients/patients.repository.js";
 
-import { AlertsService } from "./alerts.service.js";
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { AuditService } from "../../common/audit/audit.service.js";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -49,7 +47,17 @@ const STAFF_B: ActorContext = {
 const PATIENT_ID_A = "pat-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const PATIENT_ID_B = "pat-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
 
-function seedPatient(repo: PatientsRepository, tenantId: string, id: string): void {
+/**
+ *
+ * @param repo
+ * @param tenantId
+ * @param id
+ */
+function seedPatient(
+  repo: PatientsRepository,
+  tenantId: string,
+  id: string,
+): void {
   repo.insert(
     repo.toRecord(id, tenantId, {
       ownerId: "11111111-1111-1111-1111-111111111111",
@@ -61,6 +69,9 @@ function seedPatient(repo: PatientsRepository, tenantId: string, id: string): vo
   );
 }
 
+/**
+ *
+ */
 function makeAudit(): AuditService {
   return {
     record: vi.fn().mockResolvedValue({ eventId: "ev-1" }),
@@ -90,7 +101,8 @@ describe("AlertsService", () => {
           category: "allergy",
           severity: "warning",
           title: "Penisilin alerjisi",
-          description: "Penisilin grubu antibiyotiklere karşı bilinen reaksiyon.",
+          description:
+            "Penisilin grubu antibiyotiklere karşı bilinen reaksiyon.",
         },
         STAFF_A,
       );
@@ -155,15 +167,17 @@ describe("AlertsService", () => {
       await service.add(
         TENANT_A,
         PATIENT_ID_A,
-        { category: "chronic_condition", severity: "critical", title: "B", description: "y" },
+        {
+          category: "chronic_condition",
+          severity: "critical",
+          title: "B",
+          description: "y",
+        },
         STAFF_A,
       );
-      const items = service.listForPatient(
-        TENANT_A,
-        PATIENT_ID_A,
-        STAFF_A,
-        { severity: "critical" },
-      );
+      const items = service.listForPatient(TENANT_A, PATIENT_ID_A, STAFF_A, {
+        severity: "critical",
+      });
       expect(items).toHaveLength(1);
       expect(items[0]?.title).toBe("B");
     });
@@ -185,15 +199,17 @@ describe("AlertsService", () => {
       await service.add(
         TENANT_A,
         PATIENT_ID_A,
-        { category: "allergy", severity: "warning", title: "Aktif", description: "x" },
+        {
+          category: "allergy",
+          severity: "warning",
+          title: "Aktif",
+          description: "x",
+        },
         STAFF_A,
       );
-      const items = service.listForPatient(
-        TENANT_A,
-        PATIENT_ID_A,
-        STAFF_A,
-        { activeOnly: true },
-      );
+      const items = service.listForPatient(TENANT_A, PATIENT_ID_A, STAFF_A, {
+        activeOnly: true,
+      });
       expect(items).toHaveLength(1);
       expect(items[0]?.title).toBe("Aktif");
     });
@@ -202,16 +218,18 @@ describe("AlertsService", () => {
       const a = await service.add(
         TENANT_A,
         PATIENT_ID_A,
-        { category: "behavior", severity: "info", title: "A", description: "x" },
+        {
+          category: "behavior",
+          severity: "info",
+          title: "A",
+          description: "x",
+        },
         STAFF_A,
       );
       await service.archive(TENANT_A, a.id, STAFF_A);
-      const items = service.listForPatient(
-        TENANT_A,
-        PATIENT_ID_A,
-        STAFF_A,
-        { activeOnly: true },
-      );
+      const items = service.listForPatient(TENANT_A, PATIENT_ID_A, STAFF_A, {
+        activeOnly: true,
+      });
       expect(items).toHaveLength(0);
     });
 
@@ -219,13 +237,23 @@ describe("AlertsService", () => {
       await service.add(
         TENANT_A,
         PATIENT_ID_A,
-        { category: "allergy", severity: "info", title: "A-tenant-A", description: "x" },
+        {
+          category: "allergy",
+          severity: "info",
+          title: "A-tenant-A",
+          description: "x",
+        },
         STAFF_A,
       );
       await service.add(
         TENANT_B,
         PATIENT_ID_B,
-        { category: "allergy", severity: "info", title: "B-tenant-B", description: "y" },
+        {
+          category: "allergy",
+          severity: "info",
+          title: "B-tenant-B",
+          description: "y",
+        },
         STAFF_B,
       );
       const items = service.listForPatient(TENANT_A, PATIENT_ID_A, STAFF_A);
@@ -239,22 +267,41 @@ describe("AlertsService", () => {
       await service.add(
         TENANT_A,
         PATIENT_ID_A,
-        { category: "allergy", severity: "info", title: "info", description: "x" },
+        {
+          category: "allergy",
+          severity: "info",
+          title: "info",
+          description: "x",
+        },
         STAFF_A,
       );
       await service.add(
         TENANT_A,
         PATIENT_ID_A,
-        { category: "allergy", severity: "critical", title: "critical", description: "y" },
+        {
+          category: "allergy",
+          severity: "critical",
+          title: "critical",
+          description: "y",
+        },
         STAFF_A,
       );
       await service.add(
         TENANT_A,
         PATIENT_ID_A,
-        { category: "allergy", severity: "warning", title: "warning", description: "z" },
+        {
+          category: "allergy",
+          severity: "warning",
+          title: "warning",
+          description: "z",
+        },
         STAFF_A,
       );
-      const items = service.getActiveAlertsForPatient(TENANT_A, PATIENT_ID_A, STAFF_A);
+      const items = service.getActiveAlertsForPatient(
+        TENANT_A,
+        PATIENT_ID_A,
+        STAFF_A,
+      );
       expect(items.map((a) => a.severity)).toEqual([
         "critical",
         "warning",
@@ -268,7 +315,12 @@ describe("AlertsService", () => {
       const a = await service.add(
         TENANT_A,
         PATIENT_ID_A,
-        { category: "allergy", severity: "warning", title: "A", description: "x" },
+        {
+          category: "allergy",
+          severity: "warning",
+          title: "A",
+          description: "x",
+        },
         STAFF_A,
       );
       (audit.record as ReturnType<typeof vi.fn>).mockClear();
@@ -290,7 +342,12 @@ describe("AlertsService", () => {
       const a = await service.add(
         TENANT_A,
         PATIENT_ID_A,
-        { category: "allergy", severity: "warning", title: "A", description: "x" },
+        {
+          category: "allergy",
+          severity: "warning",
+          title: "A",
+          description: "x",
+        },
         STAFF_A,
       );
       await service.archive(TENANT_A, a.id, STAFF_A);

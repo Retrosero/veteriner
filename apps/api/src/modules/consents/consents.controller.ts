@@ -1,7 +1,6 @@
 /**
  * @file Consent controller.
  * @module apps/api/modules/consents/consents.controller
- *
  * @description GOAL-081 (FAZ-8) onam formu REST API.
  *   Tenant ID URL'de taşınmaz; actor.tenantId'den alınır.
  *
@@ -10,8 +9,7 @@
  * - `GET    /api/v1/clinic/consents`              — Arama
  * - `GET    /api/v1/clinic/consents/:id`          — Detay
  * - `POST   /api/v1/clinic/consents/:id/sign`     — İmzala
- * - `POST   /api/v1/clinic/consents/:id/revoke`   — Geri çek
- *
+ * - `POST   /api/v1/clinic/consents/:id/revoke`   — Geri çek.
  * @since GOAL-081 (FAZ-8) onam formları core
  */
 
@@ -28,13 +26,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   consentCreateInputSchema,
   consentFiltersSchema,
@@ -49,14 +40,19 @@ import {
 } from "@vetniva/contracts";
 
 import { ConsentsService } from "./consents.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("clinic/consents")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/clinic/consents")
 export class ConsentsController {
-  public constructor(
-    private readonly service: ConsentsService,
-  ) {}
+  public constructor(private readonly service: ConsentsService) {}
 
   @Post()
   @RequirePermissions("clinic:consent:sign")

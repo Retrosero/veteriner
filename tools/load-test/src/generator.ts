@@ -13,10 +13,7 @@
 import { writeFile, mkdir, readdir } from "node:fs/promises";
 import { join, dirname } from "node:path";
 
-import {
-  K6_SHARED_TEMPLATE,
-  k6Options,
-} from "./k6-shared.js";
+import { K6_SHARED_TEMPLATE, k6Options } from "./k6-shared.js";
 import { PROFILE_SHAPES } from "./config.js";
 import type { LoadProfile, ScenarioConfig, ScenarioStep } from "./types.js";
 
@@ -115,9 +112,7 @@ export async function writeAllScripts(
 }
 
 /** Dizindeki .js dosyalarini listeler (test/dogrulama icin). */
-export async function listJsFiles(
-  dir: string,
-): Promise<ReadonlyArray<string>> {
+export async function listJsFiles(dir: string): Promise<ReadonlyArray<string>> {
   try {
     const entries = await readdir(dir);
     return entries.filter((e) => e.endsWith(".js")).sort();

@@ -33,13 +33,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   imagingOrderAmendReportInputSchema,
   imagingOrderApproveReportInputSchema,
@@ -64,14 +57,19 @@ import {
 } from "@vetniva/contracts";
 
 import { ImagingOrdersService } from "./imaging-orders.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("clinic/imaging-orders")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/clinic/imaging-orders")
 export class ImagingOrdersController {
-  public constructor(
-    private readonly service: ImagingOrdersService,
-  ) {}
+  public constructor(private readonly service: ImagingOrdersService) {}
 
   @Post()
   @RequirePermissions("clinic:imaging:order")

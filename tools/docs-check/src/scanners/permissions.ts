@@ -1,7 +1,6 @@
 /**
  * @file Permission referansı tarayıcısı.
  * @module @vetniva/docs-check/scanners/permissions
- *
  * @description Kodda geçen permission string'lerini bulur. Format
  * önerisi: `<domain>:<action>` (ör. `clinic:patient:read`,
  * `petshop:sale:create`). Yanlış pozitifleri azaltmak için
@@ -9,12 +8,13 @@
  * elenir.
  */
 
-import fg from "fast-glob";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
+import fg from "fast-glob";
+
 const PERMISSION_RE =
-  /['"`]([a-z][a-z0-9_-]+:[a-z][a-z0-9_-]+(?::[a-z][a-z0-9_-]+)?)['"`]/gi;
+  /['"`]([a-z][a-z0-9_-]+:[a-z][a-z0-9_-]+(?::[a-z][a-z0-9_-]+)?)['"`]/gi; // eslint-disable-line security/detect-unsafe-regex -- Sabit desen yalnızca kaynak envanteri için uygulanır.
 
 const NODE_BUILTINS = new Set([
   "node:fs",
@@ -59,16 +59,28 @@ const NODE_BUILTINS = new Set([
 
 const TAILWIND_BREAKPOINTS = new Set(["sm", "md", "lg", "xl", "2xl"]);
 
+/**
+ * Bir değerin Node.js yerleşik modül adı olup olmadığını belirler.
+ * @param perm
+ */
 function isNodeBuiltin(perm: string): boolean {
   return NODE_BUILTINS.has(perm);
 }
 
+/**
+ * Bir colon içeren değerin Tailwind breakpoint sınıfı olup olmadığını belirler.
+ * @param perm
+ */
 function looksLikeTailwindClass(perm: string): boolean {
   const parts = perm.split(":");
   if (parts.length < 2) return false;
   return TAILWIND_BREAKPOINTS.has(parts[0] ?? "");
 }
 
+/**
+ * API ve web kaynaklarından permission referanslarını toplar.
+ * @param root
+ */
 export async function scanPermissions(root: string): Promise<string[]> {
   const files = await fg(
     ["apps/api/src/**/*.ts", "apps/web/src/**/*.{ts,tsx}"],
@@ -82,6 +94,7 @@ export async function scanPermissions(root: string): Promise<string[]> {
   const seen = new Set<string>();
   for (const rel of files) {
     const abs = path.join(root, rel);
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- Yol repo kökü ve glob sonucu ile sınırlıdır.
     const text = await readFile(abs, "utf8");
     for (const m of text.matchAll(PERMISSION_RE)) {
       const perm = m[1];

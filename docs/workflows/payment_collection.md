@@ -6,16 +6,19 @@
 **Sayfa:** `/[locale]/clinic/sales/{saleId}/payments/new`
 
 ## Amaç
+
 Klinik veya petshop satışı için ödeme/tahsilat kaydetmek.
 Kısmi ödeme, birden fazla ödeme yöntemi ve tahsilat iptali
 desteklenir.
 
 ## Aktör
+
 - STAFF (resepsiyon/kasiyer)
 - VETERINARIAN
 - OWNER (kendi hayvanı için ödeme self-service — FAZ-12+)
 
 ## Tetikleyici
+
 - Satış tamamlandıktan sonra ödeme alınır.
 - Önceki borç için tahsilat yapılır.
 - Sahip `customerBalances` üzerinden bakiye öder.
@@ -57,8 +60,8 @@ desteklenir.
 8. **Response 201 + `Payment` döner.**
 
 9. **Kasa/gün sonu (GOAL-074) güncellenir.**
-    - `cashRegisterSession.movements[]` yeni ödeme eklenir.
-    - Audit: `audit:cash_register.movement` (info).
+   - `cashRegisterSession.movements[]` yeni ödeme eklenir.
+   - Audit: `audit:cash_register.movement` (info).
 
 10. **Fiş/makbuz (PDF).**
     - `GET /api/v1/payments/{id}/pdf`.
@@ -68,9 +71,11 @@ desteklenir.
     - Yeni `PaymentReversal` kaydı; nakit kasa düzeltilir.
 
 ## Tenant izolasyonu
+
 - Sale + customer balance aynı tenant'ta olmalı.
 
 ## Audit
+
 - `audit:payment.create` (info).
 - `audit:payment.reverse` (warning; iptal).
 - `audit:cash_register.movement` (info).
@@ -78,15 +83,16 @@ desteklenir.
 
 ## Hata senaryoları
 
-| Senaryo | HTTP | Hata kodu |
-|---------|------|-----------|
-| Sale iptal | 409 | `VET-PAYMENT-0001` |
-| Fazla ödeme | 409 | `VET-PAYMENT-0002` |
-| Geçersiz tutar | 422 | `VET-VALIDATION-0010` |
-| Cross-tenant | 404 | `VET-CLINIC-0001` |
-| Yetkisiz | 403 | `VET-AUTHZ-0001` |
+| Senaryo        | HTTP | Hata kodu             |
+| -------------- | ---- | --------------------- |
+| Sale iptal     | 409  | `VET-PAYMENT-0001`    |
+| Fazla ödeme    | 409  | `VET-PAYMENT-0002`    |
+| Geçersiz tutar | 422  | `VET-VALIDATION-0010` |
+| Cross-tenant   | 404  | `VET-CLINIC-0001`     |
+| Yetkisiz       | 403  | `VET-AUTHZ-0001`      |
 
 ## İlgili dokümanlar
+
 - `docs/api/api.post._api_v1_payments.md`
 - `goals/GOAL-072_COMPLETION_REPORT.md`
 - `goals/GOAL-073_COMPLETION_REPORT.md` (iptal)

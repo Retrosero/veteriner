@@ -15,13 +15,13 @@ kapsamında uygulanan RBAC altyapısı, 113+ permission anahtarını
 
 ## Roller ve temel farklar
 
-| Rol              | Tenant verisi         | Tipik kullanım yeri              |
-| ---------------- | --------------------- | -------------------------------- |
-| `SUPERADMIN`     | Tüm tenant'lar        | Platform yönetimi, onboarding    |
-| `OWNER`          | Yalnızca kendi tenant'ı | İşletme yönetimi, finans, KVK  |
-| `VETERINARIAN`   | Yalnızca kendi tenant'ı | Klinik kayıtlar, reçete, aşı    |
-| `STAFF`          | Yalnızca kendi tenant'ı | POS, kabul, hasta sahibi yönetimi |
-| `PET_OWNER_PORTAL` | Yalnızca kendi hayvanları | Portal randevu, aşı hatırlatma |
+| Rol                | Tenant verisi             | Tipik kullanım yeri               |
+| ------------------ | ------------------------- | --------------------------------- |
+| `SUPERADMIN`       | Tüm tenant'lar            | Platform yönetimi, onboarding     |
+| `OWNER`            | Yalnızca kendi tenant'ı   | İşletme yönetimi, finans, KVK     |
+| `VETERINARIAN`     | Yalnızca kendi tenant'ı   | Klinik kayıtlar, reçete, aşı      |
+| `STAFF`            | Yalnızca kendi tenant'ı   | POS, kabul, hasta sahibi yönetimi |
+| `PET_OWNER_PORTAL` | Yalnızca kendi hayvanları | Portal randevu, aşı hatırlatma    |
 
 ## Yetki nasıl çalışır?
 

@@ -1,7 +1,6 @@
 /**
  * @file RBAC servisi.
  * @module apps/api/common/rbac/rbac.service
- *
  * @description VetNiva RBAC motoru. Üç ana sorumluluk:
  *
  * 1. **Permission değerlendirme** — `evaluate()` ile katalogdaki
@@ -16,7 +15,6 @@
  * üretir. Reddedilen permission denemeleri `audit:rbac.permission_denied`
  * (warning), başarılı `audit` işaretli permission'lar ise
  * `audit:rbac.permission_granted` (info) olarak yazılır.
- *
  * @security
  * - SUPERADMIN tüm permission'ları bypass eder; ayrıca
  *   cross-tenant erişim sağlar.
@@ -25,17 +23,25 @@
  *   aitse yapılır.
  * - Tenant üyeliği iptali fiziksel silme DEĞİLDİR; status=revoked
  *   soft delete (audit trail korunur).
- *
  * @since GOAL-002 (FAZ-0) yetki matrisi
  * @updated GOAL-012 (FAZ-1) RBAC ve izin motoru
  */
 
-import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
 
-import type { ActorContext, ActorRole } from "../actor/actor-context.service.js";
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+
+import { loadPermissionCatalog } from "./permission-catalog.loader.js";
+import { RbacRepository, type MembershipWithUser } from "./rbac.repository.js";
 import { AuditService } from "../audit/audit.service.js";
 import { DomainError } from "../errors/domain-error.js";
+
+import type {
+  PermissionDecision,
+  PermissionDefinition,
+  PermissionEvaluationContext,
+} from "./permission.types.js";
+import type { ActorContext } from "../actor/actor-context.service.js";
 import type {
   AssignMembershipRequest,
   AssignMembershipResponse,
@@ -46,14 +52,6 @@ import type {
   MyPermissionsResponse,
   SwitchBranchResponse,
 } from "@vetniva/contracts";
-
-import { loadPermissionCatalog } from "./permission-catalog.loader.js";
-import type {
-  PermissionDecision,
-  PermissionDefinition,
-  PermissionEvaluationContext,
-} from "./permission.types.js";
-import { RbacRepository, type MembershipWithUser } from "./rbac.repository.js";
 
 /** Hata kodu sabitleri. */
 export const AUTHZ_FORBIDDEN = "VET-AUTHZ-0001";
@@ -186,7 +184,9 @@ export class RbacService {
     role: Parameters<RbacService["evaluate"]>[0]["actor"]["role"],
   ): ReadonlyArray<string> {
     const defs = this.all();
-    return defs.filter((d) => d.appliesToRoles.includes(role)).map((d) => d.key);
+    return defs
+      .filter((d) => d.appliesToRoles.includes(role))
+      .map((d) => d.key);
   }
 
   public describe(permission: string): PermissionDefinition | undefined {
@@ -195,7 +195,9 @@ export class RbacService {
 
   public all(): ReadonlyArray<PermissionDefinition> {
     this.ensureIndex();
-    return Array.from((this.index as Map<string, PermissionDefinition>).values());
+    return Array.from(
+      (this.index as Map<string, PermissionDefinition>).values(),
+    );
   }
 
   // ===========================================================================
@@ -205,8 +207,11 @@ export class RbacService {
   /**
    * Aktif actor'ün permission listesini döner. SUPERADMIN ise
    * `isSuperadmin=true` ve tüm permission'lar geçerli (bypass).
+   * @param actor
    */
-  public async getMyPermissions(actor: ActorContext): Promise<MyPermissionsResponse> {
+  public async getMyPermissions(
+    actor: ActorContext,
+  ): Promise<MyPermissionsResponse> {
     if (actor.isSuperadmin) {
       const all = this.all();
       return {
@@ -227,6 +232,7 @@ export class RbacService {
 
   /**
    * Aktif kullanıcının tüm aktif üyeliklerini listeler.
+   * @param actor
    */
   public async getMyMemberships(
     actor: ActorContext,
@@ -255,6 +261,8 @@ export class RbacService {
   /**
    * Bir tenant'ın aktif üyelerini listeler. Çağıran actor ya
    * SUPERADMIN ya da ilgili tenant'ın OWNER'ı olmalı.
+   * @param tenantId
+   * @param actor
    */
   public async listMemberships(
     tenantId: string,
@@ -285,6 +293,9 @@ export class RbacService {
    * - Tenant aktif olmalı.
    * - Hedef kullanıcı aktif olmalı.
    * - Kendi kendine rol atanamaz.
+   * @param tenantId
+   * @param input
+   * @param actor
    */
   public async assignMembership(
     tenantId: string,
@@ -355,7 +366,7 @@ export class RbacService {
       membershipId: membership.id,
       userId: membership.userId,
       role: membership.role as "OWNER" | "VETERINARIAN" | "STAFF",
-      status: membership.status as MembershipStatus,
+      status: membership.status,
       assignedAt: membership.assignedAt.toISOString(),
     };
   }
@@ -363,6 +374,9 @@ export class RbacService {
   /**
    * Bir kullanıcının tenant üyeliğini iptal eder (soft). Son OWNER
    * iptal edilemez; bu durumda hata fırlatılır.
+   * @param tenantId
+   * @param userId
+   * @param actor
    */
   public async revokeMembership(
     tenantId: string,
@@ -446,8 +460,11 @@ export class RbacService {
   // ===========================================================================
 
   /**
-   * Aktif session'ın `activeBranchId` alanını günceller. branchId
+   * Aktif session'ın `activeBranchId` alanını günceller. BranchId
    * null ise branch context temizlenir.
+   * @param sessionId
+   * @param branchId
+   * @param actor
    */
   public async switchBranch(
     sessionId: string,
@@ -468,7 +485,10 @@ export class RbacService {
     }
 
     if (branchId !== null && actor.tenantId) {
-      const ok = await this.repo.branchBelongsToTenant(branchId, actor.tenantId);
+      const ok = await this.repo.branchBelongsToTenant(
+        branchId,
+        actor.tenantId,
+      );
       if (!ok && !actor.isSuperadmin) {
         throw new DomainError({
           errorCode: RBAC_BRANCH_MISMATCH,

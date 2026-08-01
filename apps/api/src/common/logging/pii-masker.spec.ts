@@ -17,7 +17,9 @@ describe("PiiMasker", () => {
 
   describe("Direct identifiers", () => {
     it("first_name: ilk harf + ***", () => {
-      expect(masker.mask({ first_name: "Ali" })).toEqual({ first_name: "A***" });
+      expect(masker.mask({ first_name: "Ali" })).toEqual({
+        first_name: "A***",
+      });
     });
 
     it("last_name: ilk harf + ***", () => {

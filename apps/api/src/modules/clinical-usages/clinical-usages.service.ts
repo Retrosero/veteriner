@@ -1,7 +1,6 @@
 /**
  * @file ClinicalUsage (klinik tüketim) service.
  * @module apps/api/modules/clinical-usages/clinical-usages.service
- *
  * @description GOAL-066 (FAZ-6) klinik tüketimden otomatik stok
  * düşümü iş kuralları. Muayene, aşı, ameliyat, yatış gibi klinik
  * akışlar bu servisi çağırarak kullanılan ürün miktarını
@@ -23,7 +22,6 @@
  * - `listUsages` / `getUsageDetail`: tenant-scoped; cross-tenant
  *   → null.
  * - Append-only: tüketim kayıtları üzerinde update/delete yok.
- *
  * @security Tenant bilgisi yalnızca actor.tenantId'den alınır.
  *
  * @since GOAL-066 (FAZ-6) klinik tüketimden otomatik stok düşümü core
@@ -31,29 +29,30 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
+import { ClinicalUsagesRepository } from "./clinical-usages.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import {
   toClinicalUsage,
   toClinicalUsageLine,
   type ClinicalUsageLineRecord,
   type ClinicalUsageRecord,
 } from "../../common/clinical-usages/clinical-usage.types.js";
-import type {
-  ClinicalUsage,
-  ClinicalUsageCreateInput,
-  ClinicalUsageDetail,
-  ClinicalUsageFilters,
-  ClinicalUsageLine,
-  ClinicalUsageListResponse,
-} from "@vetniva/contracts";
-
-import { ClinicalUsagesRepository } from "./clinical-usages.repository.js";
+import { DomainError } from "../../common/errors/domain-error.js";
 import { ProductsService } from "../products/products.service.js";
 import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
 
-/** Decimal string'in negatif işaretli kopyası (çıkış). */
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type {
+  ClinicalUsageCreateInput,
+  ClinicalUsageDetail,
+  ClinicalUsageFilters,
+  ClinicalUsageListResponse,
+} from "@vetniva/contracts";
+
+/**
+ * Decimal string'in negatif işaretli kopyası (çıkış).
+ * @param value
+ */
 function toNegativeDecimal(value: string): string {
   return value === "0" || value === "0.00" ? "0" : `-${value}`;
 }
@@ -310,7 +309,7 @@ export class ClinicalUsagesService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

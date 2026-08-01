@@ -28,7 +28,6 @@
  */
 
 import { Injectable } from "@nestjs/common";
-
 import {
   DEFAULT_ARCHIVE_AFTER_DAYS,
   DEFAULT_ARCHIVE_STORAGE,
@@ -109,7 +108,11 @@ export class LogRetentionRepository {
     actorId: string;
     now: string;
   }): RetentionPolicyRecord {
-    const key = policyKey(args.input.tenantId, args.input.logType, args.input.severity);
+    const key = policyKey(
+      args.input.tenantId,
+      args.input.logType,
+      args.input.severity,
+    );
     const existing = this.byKey.get(key);
     if (existing) {
       existing.retentionDays = args.input.retentionDays;
@@ -157,9 +160,10 @@ export class LogRetentionRepository {
   }
 
   /** Filtreli arama. */
-  public listPolicies(
-    filters: RetentionPolicyRepoFilters,
-  ): { items: RetentionPolicyRecord[]; total: number } {
+  public listPolicies(filters: RetentionPolicyRepoFilters): {
+    items: RetentionPolicyRecord[];
+    total: number;
+  } {
     const all: RetentionPolicyRecord[] = [];
     for (const rec of this.byId.values()) {
       if (filters.tenantId !== undefined && rec.tenantId !== filters.tenantId) {
@@ -191,7 +195,9 @@ export class LogRetentionRepository {
     logType: LogType,
     severity: LogRetentionSeverity,
   ): EffectivePolicy {
-    const tenantOverride = this.byKey.get(policyKey(tenantId, logType, severity));
+    const tenantOverride = this.byKey.get(
+      policyKey(tenantId, logType, severity),
+    );
     if (tenantOverride) {
       return {
         retentionDays: tenantOverride.retentionDays,
@@ -202,9 +208,7 @@ export class LogRetentionRepository {
       };
     }
     if (tenantId !== null) {
-      const globalOverride = this.byKey.get(
-        policyKey(null, logType, severity),
-      );
+      const globalOverride = this.byKey.get(policyKey(null, logType, severity));
       if (globalOverride) {
         return {
           retentionDays: globalOverride.retentionDays,
@@ -228,9 +232,7 @@ export class LogRetentionRepository {
    * Bir tenantId'nin tüm (logType, severity) kombinasyonları
    * için effective policy'leri döner. Sweep sırasında çağrılır.
    */
-  public listEffectiveForTenant(
-    tenantId: string | null,
-  ): Array<{
+  public listEffectiveForTenant(tenantId: string | null): Array<{
     tenantId: string | null;
     logType: LogType;
     severity: LogRetentionSeverity;
@@ -301,9 +303,10 @@ export class LogRetentionRepository {
   }
 
   /** Filtreli sweep geçmişi. */
-  public listSweeps(
-    filters: RetentionSweepRepoFilters,
-  ): { items: RetentionSweepRecord[]; total: number } {
+  public listSweeps(filters: RetentionSweepRepoFilters): {
+    items: RetentionSweepRecord[];
+    total: number;
+  } {
     const all: RetentionSweepRecord[] = [];
     for (const rec of this.sweepById.values()) {
       if (filters.triggeredBy && rec.triggeredBy !== filters.triggeredBy) {

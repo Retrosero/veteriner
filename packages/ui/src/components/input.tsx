@@ -1,11 +1,9 @@
 /**
  * @file Input bileşeni.
  * @module @vetniva/ui/components/input
- *
  * @description Form alanları için standart input. Hata durumu için
  * `aria-invalid` ve görsel ipucu. Label ve hata metni kapsayıcı form
  * tarafından sağlanır; bu bileşen yalnızca alanın kendisini render eder.
- *
  * @security PII alanları (TC kimlik, telefon) bu bileşen kullanılarak
  * alınırken masked/log kurallarına dikkat edilmelidir. Input değeri
  * merkezi logger'a yazılmaz; backend yalnızca validation amacıyla görür.

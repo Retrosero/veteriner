@@ -28,13 +28,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   labTestCreateInputSchema,
   labTestFiltersSchema,
@@ -47,14 +40,19 @@ import {
 } from "@vetniva/contracts";
 
 import { LabTestsService } from "./lab-tests.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("clinic/lab-tests")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/clinic/lab-tests")
 export class LabTestsController {
-  public constructor(
-    private readonly service: LabTestsService,
-  ) {}
+  public constructor(private readonly service: LabTestsService) {}
 
   @Post()
   @RequirePermissions("clinic:lab:order")
@@ -62,8 +60,7 @@ export class LabTestsController {
   @ApiOperation({
     operationId: "labTestCreate",
     summary: "Yeni laboratuvar test kataloğu girdisi",
-    description:
-      "code tenant-scoped unique. Aynı kod 409 VET-LABTEST-0002.",
+    description: "code tenant-scoped unique. Aynı kod 409 VET-LABTEST-0002.",
   })
   @ApiResponse({ status: 201, description: "Oluşturuldu." })
   public async create(

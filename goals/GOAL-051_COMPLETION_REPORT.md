@@ -25,13 +25,13 @@
   `patientId` / `protocolId` / `status` / `from` / `to`
   filtreleri; en yeni kayıt üstte.
 - **`getNextDue(tenantId, patientId, actor)`** — `status=
-  administered` + `nextDueAt` gelecekte olanlar.
+administered` + `nextDueAt` gelecekte olanlar.
 - **`getOverdue(tenantId, patientId, actor)`** — `status=
-  administered` + `nextDueAt` geçmişte olanlar.
+administered` + `nextDueAt` geçmişte olanlar.
 - **`cancel(tenantId, id, reason, actor)`** — `status='cancelled'`
-  + `cancelledAt` + `cancellationReason`. Zaten iptal ise → 409
-  `VET-VACC-0008`. Audit `audit:vaccination.cancel` (warning).
-  Fiziksel silme YOK.
+  - `cancelledAt` + `cancellationReason`. Zaten iptal ise → 409
+    `VET-VACC-0008`. Audit `audit:vaccination.cancel` (warning).
+    Fiziksel silme YOK.
 
 **VaccinationsController** — 6 endpoint
 (`@Controller("api/v1/clinic")`, `PermissionsGuard`):

@@ -16,7 +16,7 @@ transaction). Sıralı tarih DESC. `direction`/`sourceType`/
 
 - `direction` (enum: `debit|credit`) opsiyonel.
 - `sourceType` (enum: `clinic_sale|petshop_sale|return_credit|
-  payment|payment_reversal|manual_adjustment`) opsiyonel.
+payment|payment_reversal|manual_adjustment`) opsiyonel.
 - `dateFrom`, `dateTo` (ISO datetime) opsiyonel.
 - `limit` (integer, 1-200, default 50).
 - `offset` (integer, 0-10000, default 0).

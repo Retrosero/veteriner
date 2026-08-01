@@ -52,9 +52,7 @@ export const operationNoteTeamRoleSchema = z.enum([
   "nurse",
   "other",
 ]);
-export type OperationNoteTeamRole = z.infer<
-  typeof operationNoteTeamRoleSchema
->;
+export type OperationNoteTeamRole = z.infer<typeof operationNoteTeamRoleSchema>;
 
 /* --------------------------------------------------------------------------
  * Yeni operasyon notu
@@ -140,6 +138,7 @@ export type OperationNoteTeamInput = z.infer<
  */
 export const operationNoteMaterialInputSchema = z.object({
   productId: z.string().min(1).max(100),
+  // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden miktar doğrulamasıdır.
   quantity: z.string().regex(/^\d+(\.\d{1,4})?$/, {
     message: "quantity pozitif decimal string olmalı (4 ondalık)",
   }),
@@ -230,9 +229,7 @@ export const operationNoteMaterialSchema = z.object({
   stockMovementId: z.string().nullable(),
   createdAt: z.string().datetime(),
 });
-export type OperationNoteMaterial = z.infer<
-  typeof operationNoteMaterialSchema
->;
+export type OperationNoteMaterial = z.infer<typeof operationNoteMaterialSchema>;
 
 /** Detay response — operation note + alt kayıtlar. */
 export const operationNoteDetailSchema = z.object({

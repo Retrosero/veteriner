@@ -11,11 +11,11 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { OwnersRepository } from "./owners.repository.js";
+import { OwnersService } from "./owners.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-
-import { OwnersService } from "./owners.service.js";
-import { OwnersRepository } from "./owners.repository.js";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";

@@ -1,14 +1,15 @@
 /**
- * @file Pilot kapsamı ve MVP dışı bırakılan konular.
- * @module docs/domain/PILOT_SCOPE
- *
- * @description GOAL-001 (FAZ-0) kapsamında pilot klinik için
- * hedeflenen özelliklerin ve bilinçli olarak MVP dışında
- * bırakılan konuların netleştirilmesi. Sonraki tüm goal'lar
- * (GOAL-002+) bu dokümanı referans alır.
- *
- * @author GOAL-001 (FAZ-0) pilot kapsamı
- */
+
+- @file Pilot kapsamı ve MVP dışı bırakılan konular.
+- @module docs/domain/PILOT_SCOPE
+-
+- @description GOAL-001 (FAZ-0) kapsamında pilot klinik için
+- hedeflenen özelliklerin ve bilinçli olarak MVP dışında
+- bırakılan konuların netleştirilmesi. Sonraki tüm goal'lar
+- (GOAL-002+) bu dokümanı referans alır.
+-
+- @author GOAL-001 (FAZ-0) pilot kapsamı
+  */
 
 # Pilot Klinik Kapsamı (MVP-1)
 

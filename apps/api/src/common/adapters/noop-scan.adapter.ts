@@ -1,21 +1,19 @@
 /**
  * @file Noop scan adapter (dev/test).
  * @module apps/api/common/adapters/noop-scan
- *
  * @description Geliştirme ve test ortamı için tarama atlayan
  * implementasyon. Tüm dosyaları `skipped` olarak işaretler; production
  * ortamında ClamAV adapter devreye alınır.
  *
  * Test senaryoları: `scanStatus = skipped` olan dosyalar indirilebilir;
  * infected testi için `MockScanAdapter` (vitest) ile davranış değiştirilir.
- *
- * @since GOAL-014 (FAZ-1) dosya ve medya servisi
+ * GOAL-014 (Faz 1) dosya ve medya servisinin geliştirme/test adapter'ıdır.
  */
 
 import { pipeline } from "node:stream/promises";
-import type { Readable } from "node:stream";
 
 import type { ScanAdapter, ScanResult } from "./scan.adapter.js";
+import type { Readable } from "node:stream";
 
 /**
  * Noop scan adapter. Stream'i tamamen tüketir (backpressure'ı önlemek
@@ -45,7 +43,7 @@ export class NoopScanAdapter implements ScanAdapter {
     };
   }
 
-  public async healthCheck(): Promise<boolean> {
-    return true;
+  public healthCheck(): Promise<boolean> {
+    return Promise.resolve(true);
   }
 }

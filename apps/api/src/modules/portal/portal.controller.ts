@@ -39,15 +39,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import type { Request, Response } from "express";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { Public } from "../../common/decorators/public.decorator.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   portalAcceptInputSchema,
   portalInviteInputSchema,
@@ -58,6 +49,15 @@ import {
 } from "@vetniva/contracts";
 
 import { PortalService } from "./portal.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { Public } from "../../common/decorators/public.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { Request, Response } from "express";
 
 @ApiTags("portal")
 @UseGuards(PermissionsGuard)
@@ -148,7 +148,9 @@ export class PortalController {
     // Public endpoint: actor yoksa (development default placeholder
     // olabilir) kabul edilebilir; actor varsa o kullanılır. Audit
     // bağlamı için minimal context üret.
-    const actor: ActorContext | undefined = (request as Request & { actor?: ActorContext }).actor;
+    const actor: ActorContext | undefined = (
+      request as Request & { actor?: ActorContext }
+    ).actor;
     return this.service.acceptInvitation(body, actor);
   }
 

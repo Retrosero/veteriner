@@ -34,10 +34,7 @@
 
 import { z } from "zod";
 
-import {
-  petshopPaymentMethodSchema,
-  type PetshopPaymentMethod,
-} from "./petshop-sale.js";
+import { petshopPaymentMethodSchema } from "./petshop-sale.js";
 
 /* --------------------------------------------------------------------------
  * Enum'lar
@@ -71,17 +68,11 @@ export const petshopSaleReturnLineInputSchema = z.object({
   productId: z.string().min(1).max(100),
   lotId: z.string().min(1).max(100).optional(),
   unit: z.string().min(1).max(32),
-  quantity: z
-    .string()
-    .regex(/^\d+(\.\d{1,4})?$/, "Geçersiz miktar"),
-  unitPrice: z
-    .string()
-    .regex(/^\d+(\.\d{1,4})?$/, "Geçersiz fiyat"),
-  discountPercent: z
-    .number()
-    .min(0)
-    .max(100)
-    .optional(),
+  // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden miktar doğrulamasıdır.
+  quantity: z.string().regex(/^\d+(\.\d{1,4})?$/, "Geçersiz miktar"),
+  // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden fiyat doğrulamasıdır.
+  unitPrice: z.string().regex(/^\d+(\.\d{1,4})?$/, "Geçersiz fiyat"),
+  discountPercent: z.number().min(0).max(100).optional(),
   reason: z.string().max(2000).optional(),
 });
 export type PetshopSaleReturnLineInput = z.infer<
@@ -156,9 +147,7 @@ export const petshopSaleReturnLineSchema = z.object({
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
-export type PetshopSaleReturnLine = z.infer<
-  typeof petshopSaleReturnLineSchema
->;
+export type PetshopSaleReturnLine = z.infer<typeof petshopSaleReturnLineSchema>;
 
 export const petshopSaleReturnSchema = z.object({
   id: z.string(),
@@ -220,5 +209,3 @@ export const petshopSaleReturnListResponseSchema = z.object({
 export type PetshopSaleReturnListResponse = z.infer<
   typeof petshopSaleReturnListResponseSchema
 >;
-
-export type { PetshopPaymentMethod };

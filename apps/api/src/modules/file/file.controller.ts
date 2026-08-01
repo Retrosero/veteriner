@@ -36,12 +36,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
 import {
   fileArchiveRequestSchema,
   fileListQuerySchema,
@@ -57,6 +51,12 @@ import {
 import { z } from "zod";
 
 import { FileService } from "./file.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 /**
  * Upload body: `data` base64-encoded içerik + metadata.
@@ -138,7 +138,10 @@ export class FileController {
     summary: "Dosya detayı",
   })
   @ApiResponse({ status: 200, description: "Dosya döner." })
-  @ApiResponse({ status: 404, description: "Dosya bulunamadı/karantinada/arsiv." })
+  @ApiResponse({
+    status: 404,
+    description: "Dosya bulunamadı/karantinada/arsiv.",
+  })
   public async findById(
     @Param("id", new ParseUUIDPipe()) id: string,
     @CurrentActor() actor: ActorContext,
@@ -166,7 +169,11 @@ export class FileController {
     body: SignedUrlRequest,
     @CurrentActor() actor: ActorContext,
   ): Promise<SignedUrlResponse> {
-    return this.service.getSignedUrl(id, { expiresInSec: body.expiresInSec }, actor);
+    return this.service.getSignedUrl(
+      id,
+      { expiresInSec: body.expiresInSec },
+      actor,
+    );
   }
 
   /**

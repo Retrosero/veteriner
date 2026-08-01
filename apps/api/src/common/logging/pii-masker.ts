@@ -1,14 +1,11 @@
 /**
  * @file PII Masker.
  * @module apps/api/common/logging/pii-masker
- *
  * @description PII alanlarını log/audit payload'larında
  * mask'ler. Tüm log çağrıları bu servisten geçmeden
  * yazılmaz. Kurallar: docs/errors/PII_MASKING.md.
- *
  * @security Plain text PII asla loglanmaz. Hash'leme
  *   SHA-256 + PII_SALT. KVKK / UK GDPR uyumlu.
- *
  * @since GOAL-004 (FAZ-0) audit + log + hata standardı
  */
 
@@ -62,9 +59,10 @@ export class PiiMasker {
   /**
    * Verilen payload'daki tüm PII alanlarını mask'ler.
    * Nested objeler ve diziler desteklenir.
+   * @param payload
    */
   public mask<T>(payload: T): T {
-    return this.walk(payload as unknown) as T;
+    return this.walk(payload) as T;
   }
 
   /**
@@ -76,15 +74,13 @@ export class PiiMasker {
    * NOT: Bilgi sızdırmaz; sadece doğrudan tespit edilebilen
    * PII parçaları mask'lenir. Yapısal payload'lar için `mask`
    * tercih edilmelidir.
+   * @param input
    */
   public maskString(input: string): string {
     if (typeof input !== "string" || input.length === 0) return input;
     let s = input;
     // Email
-    s = s.replace(
-      /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g,
-      "***@***",
-    );
+    s = s.replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, "***@***");
     // Telefon (basit: 10+ ardışık rakam, gruplama)
     s = s.replace(/\+?\d[\d\s\-()]{8,}\d/g, (m) => {
       const digits = m.replace(/\D/g, "");
@@ -105,17 +101,17 @@ export class PiiMasker {
     if (typeof value !== "object") return value;
     if (Array.isArray(value)) return value.map((v) => this.walk(v));
 
-    const out: Record<string, unknown> = {};
-    for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
-      if (PII_FIELDS.has(key)) {
-        out[key] = this.maskValue(key, val);
-      } else if (val !== null && typeof val === "object") {
-        out[key] = this.walk(val);
-      } else {
-        out[key] = val;
-      }
-    }
-    return out;
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, val]) => {
+        if (PII_FIELDS.has(key)) {
+          return [key, this.maskValue(key, val)];
+        }
+        if (val !== null && typeof val === "object") {
+          return [key, this.walk(val)];
+        }
+        return [key, val];
+      }),
+    );
   }
 
   private maskValue(field: string, value: unknown): unknown {
@@ -132,7 +128,9 @@ export class PiiMasker {
       case "full_name": {
         return v
           .split(" ")
-          .map((part) => (part.length > 0 ? part[0]!.toUpperCase() + "***" : ""))
+          .map((part) =>
+            part.length > 0 ? part[0]!.toUpperCase() + "***" : "",
+          )
           .join(" ");
       }
       case "email": {
@@ -157,7 +155,10 @@ export class PiiMasker {
         return Number.isFinite(Number(year)) ? year : "[redacted]";
       }
       case "address": {
-        const parts = v.split(",").map((p) => p.trim()).filter(Boolean);
+        const parts = v
+          .split(",")
+          .map((p) => p.trim())
+          .filter(Boolean);
         if (parts.length <= 1) return "[redacted]";
         return parts.slice(-2).join(", ");
       }
@@ -188,6 +189,7 @@ export class PiiMasker {
   /**
    * Tek bir değeri SHA-256 ile hash'ler (PII salt ile).
    * Audit trail'de aynı kişiyi takip için kullanılır.
+   * @param value
    */
   public hash(value: string): string {
     return createHash("sha256")

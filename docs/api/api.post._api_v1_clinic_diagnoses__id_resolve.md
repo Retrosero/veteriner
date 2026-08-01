@@ -57,8 +57,9 @@ Teşhis kaydını çözümlenmiş (`resolved`) olarak işaretler. Yalnızca
   (klinik kayıt politikası).
 
 **Tenant izolasyonu:** Service `requireTenantScope(actor, tenantId)`
-+ `findById(tenantId, id)` tenant-scoped; cross-tenant denemesi →
-403 `VET-AUTHZ-0001` veya 404 `VET-CLINIC-0001`.
+
+- `findById(tenantId, id)` tenant-scoped; cross-tenant denemesi →
+  403 `VET-AUTHZ-0001` veya 404 `VET-CLINIC-0001`.
 
 **İlgili dokümanlar:**
 

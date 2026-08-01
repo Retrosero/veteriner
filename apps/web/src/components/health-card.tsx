@@ -1,17 +1,16 @@
 /**
  * @file Sağlık durumu kartı.
  * @module @vetniva/web/components/health-card
- *
  * @description API'nin `/api/v1/ready` endpoint'inden dönen
  * `ReadinessResponse`'i görüntüler. Üç durumu (ok / degraded / down)
  * renkli bir rozet ile gösterir; DB latency ve sürüm bilgisini
  * kullanıcıya sunar.
- *
  * @security Bilgiler teknik tanı bilgisi içerir; PII taşımaz.
  * Correlation ID görüntülenir ki destek ekibi aynı isteği loglardan
  * bulabilsin.
  */
 
+import { type ReadinessResponse } from "@vetniva/contracts";
 import {
   Card,
   CardBody,
@@ -20,8 +19,6 @@ import {
   CardTitle,
   cn,
 } from "@vetniva/ui";
-
-import { type ReadinessResponse } from "@vetniva/contracts";
 
 const STATUS_LABEL_KEY: Record<"ok" | "degraded" | "down", string> = {
   ok: "health.ok",
@@ -58,18 +55,34 @@ export type HealthCardProps = {
   };
 };
 
-function getStatusLabelKey(status: "ok" | "degraded" | "down"): string {
-  return STATUS_LABEL_KEY[status];
-}
-
+/**
+ *
+ * @param status
+ */
+/**
+ *
+ * @param status
+ */
 function getStatusBadgeClass(status: "ok" | "degraded" | "down"): string {
-  return STATUS_BADGE_CLASS[status];
+  switch (status) {
+    case "ok":
+      return STATUS_BADGE_CLASS.ok;
+    case "degraded":
+      return STATUS_BADGE_CLASS.degraded;
+    case "down":
+      return STATUS_BADGE_CLASS.down;
+  }
 }
 
 /**
  * Readiness yanıtını ve varsa hatayı tek bir kartta gösterir. Loading
  * durumu server-side fetch nedeniyle bu bileşene ulaşmaz; sayfa
  * düzeyinde suspense ile yönetilir.
+ * @param root0
+ * @param root0.data
+ * @param root0.error
+ * @param root0.correlationId
+ * @param root0.labels
  */
 export function HealthCard({
   data,

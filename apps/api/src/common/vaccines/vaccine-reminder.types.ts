@@ -153,7 +153,9 @@ export function computeScheduledFor(args: {
 
   let dueMs: number | null = null;
   if (application.nextDueDate) {
-    const parsed = new Date(`${application.nextDueDate}T00:00:00.000Z`).getTime();
+    const parsed = new Date(
+      `${application.nextDueDate}T00:00:00.000Z`,
+    ).getTime();
     if (!Number.isNaN(parsed)) dueMs = parsed;
   }
   if (dueMs === null && step && step.boosterIntervalDays !== undefined) {
@@ -215,8 +217,6 @@ export function pickStepForApplication(
   const appMs = new Date(applicationDate).getTime();
   if (Number.isNaN(appMs)) return protocol.steps[0] ?? null;
   // En küçük ageWeeks farkı (büyük step = rapel).
-  const sorted = [...protocol.steps].sort(
-    (a, b) => a.ageWeeks - b.ageWeeks,
-  );
+  const sorted = [...protocol.steps].sort((a, b) => a.ageWeeks - b.ageWeeks);
   return sorted[sorted.length - 1] ?? null;
 }

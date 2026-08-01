@@ -1,24 +1,21 @@
 /**
  * @file İletimerkezi SMS provider stub.
  * @module apps/api/common/notifications/providers/iletimerkezi-sms
- *
  * @description Türkiye pazarı için İletimerkezi SMS sağlayıcısının
  * FAZ-0 stub'ı. Faz 13+ ile gerçek HTTP entegrasyonu gelecek.
  * Stub gelen isteği loglar ve queued status döner.
- *
  * @since GOAL-015 (FAZ-2) bildirim altyapısı temeli
  * @updated Faz 13+ İletimerkezi HTTP entegrasyonu
  */
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { NotificationChannel } from "@vetniva/contracts";
-
 import type {
   NotificationProvider,
   ProviderSendPayload,
   ProviderSendResult,
 } from "../provider.interface.js";
+import type { NotificationChannel } from "@vetniva/contracts";
 
 /**
  * İletimerkezi SMS provider. FAZ-0 stub. TR lokasyonlu tenant
@@ -42,6 +39,7 @@ export class IletimerkeziSmsProvider implements NotificationProvider {
   }
 }
 
+/** Telefon numarasını sağlayıcı günlüklerinde PII göstermeyecek şekilde maskeler. */
 function maskPhone(phone: string): string {
   if (phone.length < 6) return "***";
   return `${phone.slice(0, 4)}***${phone.slice(-2)}`;

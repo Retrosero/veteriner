@@ -1,7 +1,6 @@
 /**
  * @file Appointment reminder controller.
  * @module apps/api/modules/appointment-reminders/appointment-reminders.controller
- *
  * @description GOAL-036 randevu hatırlatma REST API. Bir randevuya
  * ait hatırlatmaları listeler ve admin job'u manuel tetikler.
  *
@@ -10,7 +9,6 @@
  *   ait hatırlatmaları listele (status/limit/offset filtreleri).
  * - `POST /api/v1/clinic/appointment-reminders/process` — Zamanı
  *   gelen hatırlatmaları dispatch et (admin/system job endpoint'i).
- *
  * @since GOAL-036 (FAZ-3) randevu hatırlatma core
  */
 
@@ -25,26 +23,24 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
-import type { ReminderListQuery } from "@vetniva/contracts";
 import { reminderListQuerySchema } from "@vetniva/contracts";
 
-import type { ScheduledReminder } from "./appointment-reminders.service.js";
 import { AppointmentRemindersService } from "./appointment-reminders.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ScheduledReminder } from "./appointment-reminders.service.js";
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { ReminderListQuery } from "@vetniva/contracts";
 
 @ApiTags("appointment-reminders")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/clinic")
 export class AppointmentRemindersController {
-  public constructor(
-    private readonly service: AppointmentRemindersService,
-  ) {}
+  public constructor(private readonly service: AppointmentRemindersService) {}
 
   @Get("appointments/:id/reminders")
   @RequirePermissions("clinic:appointment:read")
@@ -84,9 +80,7 @@ export class AppointmentRemindersController {
       "Tenant-bazlı çalışır; tüm tenant'ları kapsar.",
   })
   @ApiResponse({ status: 200, description: "İşlem tamamlandı." })
-  public async processDue(
-    @CurrentActor() actor: ActorContext,
-  ): Promise<{
+  public async processDue(@CurrentActor() actor: ActorContext): Promise<{
     processed: number;
     sent: number;
     failed: number;

@@ -31,21 +31,23 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   patientCreateInputSchema,
   patientOwnershipTransferInputSchema,
   patientSearchQuerySchema,
+  type PatientCreateInput,
   type PatientOwnershipTransferInput,
+  type PatientSearchQuery,
 } from "@vetniva/contracts";
 
 import { PatientsService, type TransferResult } from "./patients.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { Patient } from "../../common/patients/patient.types.js";
 
 @ApiTags("patients")
@@ -69,7 +71,7 @@ export class PatientsController {
   @ApiResponse({ status: 422, description: "Validation hatası." })
   public async create(
     @Body(new ZodValidationPipe(patientCreateInputSchema))
-    body: import("@vetniva/contracts").PatientCreateInput,
+    body: PatientCreateInput,
     @CurrentActor() actor: ActorContext,
   ): Promise<Patient> {
     const tenantId = this.requireTenant(actor);
@@ -111,7 +113,7 @@ export class PatientsController {
   })
   public async search(
     @Query(new ZodValidationPipe(patientSearchQuerySchema))
-    query: import("@vetniva/contracts").PatientSearchQuery,
+    query: PatientSearchQuery,
     @CurrentActor() actor: ActorContext,
   ): Promise<{ items: Patient[]; total: number }> {
     const tenantId = this.requireTenant(actor);
@@ -147,7 +149,10 @@ export class PatientsController {
       "yayınlanır (warning); PII alanları mask'lenir.",
   })
   @ApiResponse({ status: 200, description: "Devir tamamlandı." })
-  @ApiResponse({ status: 404, description: "Hasta veya yeni sahip bulunamadı." })
+  @ApiResponse({
+    status: 404,
+    description: "Hasta veya yeni sahip bulunamadı.",
+  })
   @ApiResponse({ status: 422, description: "Arşivli hasta veya aynı sahip." })
   public async transfer(
     @Param("id", new ParseUUIDPipe()) id: string,

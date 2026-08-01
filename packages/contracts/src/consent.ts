@@ -34,21 +34,12 @@ export const consentTemplateTypeSchema = z.enum([
   "anesthesia",
   "procedure",
 ]);
-export type ConsentTemplateType = z.infer<
-  typeof consentTemplateTypeSchema
->;
+export type ConsentTemplateType = z.infer<typeof consentTemplateTypeSchema>;
 
-export const consentStatusSchema = z.enum([
-  "draft",
-  "signed",
-  "revoked",
-]);
+export const consentStatusSchema = z.enum(["draft", "signed", "revoked"]);
 export type ConsentStatus = z.infer<typeof consentStatusSchema>;
 
-export const consentSignatureMethodSchema = z.enum([
-  "manual",
-  "electronic",
-]);
+export const consentSignatureMethodSchema = z.enum(["manual", "electronic"]);
 export type ConsentSignatureMethod = z.infer<
   typeof consentSignatureMethodSchema
 >;

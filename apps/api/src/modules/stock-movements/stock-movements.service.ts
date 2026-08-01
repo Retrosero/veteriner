@@ -39,8 +39,11 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import {
+  type StockMovementSearchFilters,
+  StockMovementsRepository,
+} from "./stock-movements.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import {
   addSignedDecimals,
@@ -50,6 +53,10 @@ import {
   toStockMovement,
   type StockMovementRecord,
 } from "../../common/stock-movements/stock-movement.types.js";
+import { InventoryService } from "../inventory/inventory.service.js";
+import { ProductsService } from "../products/products.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   StockBalance,
   StockBalanceListResponse,
@@ -58,16 +65,7 @@ import type {
   StockMovementFilters,
   StockMovementListResponse,
   StockMovementReverseInput,
-  StockMovementType,
 } from "@vetniva/contracts";
-
-import { ProductsService } from "../products/products.service.js";
-import { InventoryService } from "../inventory/inventory.service.js";
-
-import {
-  type StockMovementSearchFilters,
-  StockMovementsRepository,
-} from "./stock-movements.repository.js";
 
 /* --------------------------------------------------------------------------
  * Public service
@@ -361,7 +359,8 @@ export class StockMovementsService {
     if (product.kind === "service") {
       throw new DomainError({
         errorCode: "VET-STOCK-0008",
-        message: "Hizmet (service) türünde ürün için stok hareketi oluşturulamaz",
+        message:
+          "Hizmet (service) türünde ürün için stok hareketi oluşturulamaz",
         httpStatus: 422,
         severity: "warning",
         i18nKey: "error.VET-STOCK-0008",
@@ -515,7 +514,7 @@ export class StockMovementsService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,
@@ -523,9 +522,7 @@ export class StockMovementsService {
     };
   }
 
-  private toSearchFilters(
-    f: StockMovementFilters,
-  ): StockMovementSearchFilters {
+  private toSearchFilters(f: StockMovementFilters): StockMovementSearchFilters {
     return {
       productId: f.productId,
       lotId: f.lotId,

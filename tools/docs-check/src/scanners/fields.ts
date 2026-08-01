@@ -1,7 +1,6 @@
 /**
  * @file Alan referansı tarayıcısı.
  * @module @vetniva/docs-check/scanners/fields
- *
  * @description Kodda geçen alan referanslarını bulur. Format:
  * `<entity>.<field>` (ör. `tenant.slug`, `patient.microchip`,
  * `payment.amount`). Çıktı, `docs/fields/fields.yaml` kataloğu
@@ -27,16 +26,16 @@
  *   elenir.
  * - Node.js builtin modülleri elenir.
  * - Tek satırlık literal'ler (error kodu, permission kodu) elenir.
- *
  * @author GOAL-112 (FAZ-11) alan sözlüğü ve yetki kataloğu
  * @since 2026-07-31
  * @security Tarayıcı yalnızca public alan adlarını okur. PII içerik
  *   taramaz; loglanmaz.
  */
 
-import fg from "fast-glob";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+
+import fg from "fast-glob";
 
 /**
  * Tarayıcının ürettiği alan referansı.
@@ -54,14 +53,12 @@ export type FieldRef = {
  * Yalnızca `z.` ile başlayan değerleri yakalar (sıradan object literal
  * değerleri elenir).
  */
-const ZOD_FIELD_RE = /^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*z\./gm;
 
 /**
  * TypeScript interface/type field. Format:
  *   `slug: string;` veya `id: string;`
  * Object tipindeki property'leri yakalar.
  */
-const TS_FIELD_RE = /^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\??\s*:\s*[^=;]+[;,\n]/gm;
 
 /**
  * Schema değişken isminden entity çıkarımı.
@@ -70,7 +67,7 @@ const TS_FIELD_RE = /^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\??\s*:\s*[^=;]+[;,\n]/gm;
  * Öncelik: bilinen varlık adları sözlüğü.
  */
 const SCHEMA_NAME_RE =
-  /\b([a-zA-Z]+)(Tenant|Branch|User|Patient|Owner|Visit|Examination|Prescription|Product|Sale|Payment|Appointment|Vaccination|Test|Result|Order|Note|Event|Job|Sweep|Policy|Note|Link|Assignment|Transition|Group|Fingerprint|Cash|Refund|Stock|Movement|Count|Snapshot|File|Folder|Upload|Invitation|Share|Access|Token|Session|Setting|Plan|Rule|Alert|Block|Role|Permission|Adapter|Device|Export|Import|Account|Ledger|Entry|Invoice|Estimate)([A-Z][a-zA-Z]*)?Schema\b/g;
+  /\b([a-zA-Z]+)(Tenant|Branch|User|Patient|Owner|Visit|Examination|Prescription|Product|Sale|Payment|Appointment|Vaccination|Test|Result|Order|Note|Event|Job|Sweep|Policy|Note|Link|Assignment|Transition|Group|Fingerprint|Cash|Refund|Stock|Movement|Count|Snapshot|File|Folder|Upload|Invitation|Share|Access|Token|Session|Setting|Plan|Rule|Alert|Block|Role|Permission|Adapter|Device|Export|Import|Account|Ledger|Entry|Invoice|Estimate)([A-Z][a-zA-Z]*)?Schema\b/g; // eslint-disable-line security/detect-unsafe-regex -- Sabit desen yalnızca TypeScript kaynak envanterinde kullanılır.
 
 /**
  * Bilinen varlık adları — schema adından entity çıkarımı için.
@@ -194,6 +191,10 @@ const TS_KEYWORDS = new Set([
   "default",
 ]);
 
+/**
+ * Bir tanımlayıcının gerçek alan adı olma olasılığını kontrol eder.
+ * @param name
+ */
 function isLikelyFieldName(name: string): boolean {
   if (!name) return false;
   if (TS_KEYWORDS.has(name)) return false;
@@ -208,7 +209,9 @@ function isLikelyFieldName(name: string): boolean {
  * Schema değişken isminden entity adı çıkarır.
  * Örnek: `createTenantRequestSchema` → "tenant"
  *         `branchAddressSchema` → "branch"
- *         `tenantSchema` → "tenant"
+ *         `tenantSchema` → "tenant".
+ * @param schemaName
+ * @param fileEntity
  */
 function extractEntityFromSchemaName(
   schemaName: string,
@@ -240,7 +243,8 @@ function extractEntityFromSchemaName(
 /**
  * Dosya yolundan entity adı çıkarır.
  * Örnek: `packages/contracts/src/tenant.ts` → "tenant"
- *         `apps/api/src/modules/owners/owners.service.ts` → "owner"
+ *         `apps/api/src/modules/owners/owners.service.ts` → "owner".
+ * @param relPath
  */
 function extractEntityFromFile(relPath: string): string | null {
   // Önce src/<entity>.ts desenini dene (contracts klasörü için).
@@ -264,6 +268,7 @@ function extractEntityFromFile(relPath: string): string | null {
  * Çoğul isimleri tekil hale getirir. Basit heuristic: "s" veya "es"
  * sonekini kaldırır. Tam kapsamlı değildir; amaç sadece bilinen
  * modül klasörleridir (`owners` → `owner`, `patients` → `patient`).
+ * @param s
  */
 function singularize(s: string): string {
   if (s.endsWith("ies") && s.length > 3) {
@@ -282,13 +287,11 @@ function singularize(s: string): string {
  * Tarayıcı ana fonksiyonu. Verilen kök dizin altındaki tüm
  * contracts ve API modülü TS dosyalarını tarar ve alan
  * referanslarını döner.
+ * @param root
  */
 export async function scanFields(root: string): Promise<FieldRef[]> {
   const files = await fg(
-    [
-      "packages/contracts/src/**/*.ts",
-      "apps/api/src/modules/**/*.ts",
-    ],
+    ["packages/contracts/src/**/*.ts", "apps/api/src/modules/**/*.ts"],
     {
       cwd: root,
       onlyFiles: true,
@@ -306,6 +309,7 @@ export async function scanFields(root: string): Promise<FieldRef[]> {
 
   for (const rel of files) {
     const abs = path.join(root, rel);
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- Yol repo kökü ve glob sonucu ile sınırlıdır.
     const text = await readFile(abs, "utf8");
     const fileEntity = extractEntityFromFile(rel);
 
@@ -342,6 +346,7 @@ export async function scanFields(root: string): Promise<FieldRef[]> {
 /**
  * Zod object şeması bloklarını toplar. Her blok için adı ve alan
  * adlarını döner.
+ * @param text
  */
 function collectSchemaBlocks(
   text: string,
@@ -351,7 +356,7 @@ function collectSchemaBlocks(
   // Schema adı + z.object({ ... }) bloğu eşleştirmesi.
   // Çok satırlı olabilir; en yakın eşleşen küme parantezini bul.
   const schemaDeclRe =
-    /(?:export\s+)?const\s+([a-zA-Z][a-zA-Z0-9_]*Schema)\s*=\s*z\.object\(\s*\{/g;
+    /(?:export\s+)?const\s+([a-zA-Z][a-zA-Z0-9_]*Schema)\s*=\s*z\.object\(\s*\{/g; // eslint-disable-line security/detect-unsafe-regex -- Sabit desen taranan kaynak metninden şema bildirimlerini çıkarır.
   let m: RegExpExecArray | null;
   while ((m = schemaDeclRe.exec(text)) !== null) {
     const name = m[1];
@@ -376,6 +381,10 @@ function collectSchemaBlocks(
 /**
  * Basit küme parantez eşleştirmesi. Verilen açma indeksi için
  * eşleşen kapama indeksini döner. Bulunamazsa -1.
+ * @param text
+ * @param openIdx
+ * @param openChar
+ * @param closeChar
  */
 function findMatchingClose(
   text: string,
@@ -385,7 +394,7 @@ function findMatchingClose(
 ): number {
   let depth = 0;
   for (let i = openIdx; i < text.length; i++) {
-    const c = text[i];
+    const c = text.charAt(i);
     if (c === openChar) depth++;
     else if (c === closeChar) {
       depth--;
@@ -398,6 +407,8 @@ function findMatchingClose(
 /**
  * TS interface/type alanlarını toplar. Zod şeması olmayan yapılar
  * için fallback. Varlık adı dosyadan gelir.
+ * @param text
+ * @param fileEntity
  */
 function collectInterfaceFields(
   text: string,
@@ -409,7 +420,7 @@ function collectInterfaceFields(
   // interface/type bloğu: `{`, `= {`, veya `extends ... {` ile
   // başlayabilir. Açma karakteri pozisyonu en sonda olmalı.
   const interfaceRe =
-    /(?:export\s+)?(?:interface|type)\s+[A-Z][a-zA-Z0-9_]*[^{=]*\{/g;
+    /(?:export\s+)?(?:interface|type)\s+[A-Z][a-zA-Z0-9_]*[^{=]*\{/g; // eslint-disable-line security/detect-unsafe-regex -- Sabit desen taranan kaynak metnindeki type/interface blokları içindir.
   let m: RegExpExecArray | null;
   while ((m = interfaceRe.exec(text)) !== null) {
     const openIdx = m.index + m[0].length - 1;

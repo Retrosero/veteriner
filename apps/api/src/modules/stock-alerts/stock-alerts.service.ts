@@ -51,8 +51,8 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { StockAlertAcksRepository } from "./stock-alert-acks.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import {
   computeExpirySeverity,
@@ -67,6 +67,11 @@ import {
   type ExpiringLotAlertRecord,
   type LowStockAlertRecord,
 } from "../../common/stock-alerts/stock-alert.types.js";
+import { InventoryService } from "../inventory/inventory.service.js";
+import { ProductsService } from "../products/products.service.js";
+import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   ExpiringLotAlert,
   ExpiringLotAlertFilters,
@@ -80,12 +85,6 @@ import type {
   StockAlertRefreshResponse,
   StockAlertSummary,
 } from "@vetniva/contracts";
-
-import { InventoryService } from "../inventory/inventory.service.js";
-import { ProductsService } from "../products/products.service.js";
-import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
-
-import { StockAlertAcksRepository } from "./stock-alert-acks.repository.js";
 
 @Injectable()
 export class StockAlertsService {
@@ -134,7 +133,10 @@ export class StockAlertsService {
     actor: ActorContext,
   ): Promise<ExpiringLotAlertListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const computed = await this.computeExpiringLots(tenantId, filters.daysAhead);
+    const computed = await this.computeExpiringLots(
+      tenantId,
+      filters.daysAhead,
+    );
     return this.applyExpiringLotFilters(computed, filters);
   }
 
@@ -168,7 +170,8 @@ export class StockAlertsService {
     const response: StockAlertRefreshResponse = {
       computedAt,
       lowStockAlertCount: lowStock.filter((r) => r.status === "active").length,
-      expiringLotAlertCount: expiring.filter((r) => r.status === "active").length,
+      expiringLotAlertCount: expiring.filter((r) => r.status === "active")
+        .length,
       criticalLowStockCount: lowStock.filter(
         (r) => r.severity === "critical" && r.status === "active",
       ).length,
@@ -383,9 +386,8 @@ export class StockAlertsService {
       expiredLotCount: exp.filter(
         (r) => r.severity === "expired" && r.status === "active",
       ).length,
-      acknowledgedLowStockCount: low.filter(
-        (r) => r.status === "acknowledged",
-      ).length,
+      acknowledgedLowStockCount: low.filter((r) => r.status === "acknowledged")
+        .length,
       acknowledgedLotCount: exp.filter((r) => r.status === "acknowledged")
         .length,
     };
@@ -400,19 +402,28 @@ export class StockAlertsService {
    * lowStockThreshold !== null) ürünler için uyarı hesapla. Sonuç
    * transient'tır; status'ler ack repository'sinden alınır.
    */
-  private async computeLowStock(tenantId: string): Promise<LowStockAlertRecord[]> {
+  private async computeLowStock(
+    tenantId: string,
+  ): Promise<LowStockAlertRecord[]> {
     const listResult = await this.products.listProducts(
       tenantId,
       { active: true, limit: 200, offset: 0 },
-      { actorId: null, actorType: "system", tenantId, isSuperadmin: true } as ActorContext,
+      {
+        actorId: null,
+        actorType: "system",
+        tenantId,
+        isSuperadmin: true,
+      } as ActorContext,
     );
     // listProducts zaten yukarıda requireTenantScope yapıyor;
     // superadmin shortcut ile tenant kapsamı korunur.
     const nowIso = new Date().toISOString();
-    const balances = this.stockMovements.listBalances(
+    const balances = this.stockMovements.listBalances(tenantId, {
+      actorId: null,
+      actorType: "system",
       tenantId,
-      { actorId: null, actorType: "system", tenantId, isSuperadmin: true } as ActorContext,
-    );
+      isSuperadmin: true,
+    } as ActorContext);
     const balanceByProduct = new Map<string, string>();
     for (const b of balances.items) {
       balanceByProduct.set(b.productId, b.netQuantity);
@@ -474,14 +485,21 @@ export class StockAlertsService {
     const lotsResult = await this.inventory.listLots(
       tenantId,
       { active: true, limit: 200, offset: 0 },
-      { actorId: null, actorType: "system", tenantId, isSuperadmin: true } as ActorContext,
+      {
+        actorId: null,
+        actorType: "system",
+        tenantId,
+        isSuperadmin: true,
+      } as ActorContext,
     );
     // listLots zaten tenant kapsamı koruyor.
     const nowIso = new Date().toISOString();
-    const balances = this.stockMovements.listBalances(
+    const balances = this.stockMovements.listBalances(tenantId, {
+      actorId: null,
+      actorType: "system",
       tenantId,
-      { actorId: null, actorType: "system", tenantId, isSuperadmin: true } as ActorContext,
-    );
+      isSuperadmin: true,
+    } as ActorContext);
     const balanceByLot = new Map<string, string>();
     for (const b of balances.items) {
       if (b.lotId !== null) {
@@ -492,7 +510,12 @@ export class StockAlertsService {
     const products = await this.products.listProducts(
       tenantId,
       { active: true, limit: 200, offset: 0 },
-      { actorId: null, actorType: "system", tenantId, isSuperadmin: true } as ActorContext,
+      {
+        actorId: null,
+        actorType: "system",
+        tenantId,
+        isSuperadmin: true,
+      } as ActorContext,
     );
     const productById = new Map<string, (typeof products.items)[number]>();
     for (const p of products.items) {
@@ -558,7 +581,9 @@ export class StockAlertsService {
     const offset = filters.offset ?? 0;
     const limit = filters.limit ?? 50;
     return {
-      items: filtered.slice(offset, offset + limit).map((r) => toLowStockAlert(r)),
+      items: filtered
+        .slice(offset, offset + limit)
+        .map((r) => toLowStockAlert(r)),
       total,
     };
   }
@@ -579,9 +604,9 @@ export class StockAlertsService {
     const offset = filters.offset ?? 0;
     const limit = filters.limit ?? 50;
     return {
-      items: filtered.slice(offset, offset + limit).map((r) =>
-        toExpiringLotAlert(r),
-      ),
+      items: filtered
+        .slice(offset, offset + limit)
+        .map((r) => toExpiringLotAlert(r)),
       total,
     };
   }
@@ -612,7 +637,7 @@ export class StockAlertsService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

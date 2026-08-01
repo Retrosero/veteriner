@@ -37,14 +37,7 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
-import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import {
   cageAssignmentCreateInputSchema,
   cageAssignmentEndInputSchema,
@@ -77,14 +70,19 @@ import {
 } from "@vetniva/contracts";
 
 import { HospitalizationService } from "./hospitalization.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("clinic/hospitalization")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/clinic")
 export class HospitalizationController {
-  public constructor(
-    private readonly service: HospitalizationService,
-  ) {}
+  public constructor(private readonly service: HospitalizationService) {}
 
   // ===========================================================================
   // CAGE
@@ -97,8 +95,7 @@ export class HospitalizationController {
     operationId: "cageCreate",
     summary: "Yeni kafes",
     description:
-      "Tenant-scoped kafes tanımı. Aynı code mevcutsa 409 " +
-      "VET-HOSP-0006.",
+      "Tenant-scoped kafes tanımı. Aynı code mevcutsa 409 " + "VET-HOSP-0006.",
   })
   public async createCage(
     @Body(new ZodValidationPipe(cageCreateInputSchema))
@@ -176,8 +173,7 @@ export class HospitalizationController {
   @ApiOperation({
     operationId: "hospitalizationCreate",
     summary: "Yeni yatış (planned)",
-    description:
-      "Aynı hasta için aktif yatış varsa 409 VET-HOSP-0007.",
+    description: "Aynı hasta için aktif yatış varsa 409 VET-HOSP-0007.",
   })
   public async createHospitalization(
     @Body(new ZodValidationPipe(hospitalizationCreateInputSchema))
@@ -238,8 +234,7 @@ export class HospitalizationController {
   @ApiOperation({
     operationId: "hospitalizationUpdate",
     summary: "Yatış güncelleme (planned/admitted/active)",
-    description:
-      "discharged/cancelled yatış düzenlenemez (409 VET-HOSP-0002).",
+    description: "discharged/cancelled yatış düzenlenemez (409 VET-HOSP-0002).",
   })
   public async updateHospitalization(
     @Param("id") id: string,
@@ -325,17 +320,10 @@ export class HospitalizationController {
     @CurrentActor() actor: ActorContext,
   ): Promise<CageAssignment> {
     const tenantId = this.requireTenant(actor);
-    return this.service.assignCage(
-      tenantId,
-      hospitalizationId,
-      body,
-      actor,
-    );
+    return this.service.assignCage(tenantId, hospitalizationId, body, actor);
   }
 
-  @Post(
-    "hospitalizations/cage-assignments/:assignmentId/end",
-  )
+  @Post("hospitalizations/cage-assignments/:assignmentId/end")
   @RequirePermissions("clinic:hospitalization:admit")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({

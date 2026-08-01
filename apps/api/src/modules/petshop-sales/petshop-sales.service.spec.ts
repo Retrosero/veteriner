@@ -17,23 +17,23 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { PetshopSalesRepository } from "./petshop-sales.repository.js";
+import { PetshopSalesService } from "./petshop-sales.service.js";
+import { InventoryRepository } from "../inventory/inventory.repository.js";
+import { InventoryService } from "../inventory/inventory.service.js";
+import { ProductsRepository } from "../products/products.repository.js";
+import { ProductsService } from "../products/products.service.js";
+import { StockMovementsRepository } from "../stock-movements/stock-movements.repository.js";
+import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-
-import { PetshopSalesService } from "./petshop-sales.service.js";
-import { PetshopSalesRepository } from "./petshop-sales.repository.js";
-import { ProductsService } from "../products/products.service.js";
-import { ProductsRepository } from "../products/products.repository.js";
-import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
-import { StockMovementsRepository } from "../stock-movements/stock-movements.repository.js";
-import { InventoryService } from "../inventory/inventory.service.js";
-import { InventoryRepository } from "../inventory/inventory.repository.js";
 import type {
   PetshopSaleCancelInput,
   PetshopSaleCompleteInput,
   PetshopSaleCreateInput,
+  ProductCreateInput,
 } from "@vetniva/contracts";
-import type { ProductCreateInput } from "@vetniva/contracts";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -251,11 +251,7 @@ describe("PetshopSalesService", () => {
         STAFF_A,
       );
       await expect(
-        service.createSale(
-          TENANT_A,
-          makeSaleInput(pid),
-          STAFF_A,
-        ),
+        service.createSale(TENANT_A, makeSaleInput(pid), STAFF_A),
       ).rejects.toMatchObject({
         errorCode: "VET-SALE-0006",
         httpStatus: 422,
@@ -298,11 +294,9 @@ describe("PetshopSalesService", () => {
       expect(completed.sale.completedAt).not.toBeNull();
       expect(completed.sale.completedBy).toBe("usr-staff-a");
       // Satış tipinde en az 1 hareket oluşmalı.
-      const balances = await stockService.listBalances(
-        TENANT_A,
-        STAFF_A,
-        { productId: pid },
-      );
+      const balances = stockService.listBalances(TENANT_A, STAFF_A, {
+        productId: pid,
+      });
       expect(balances.items.length).toBe(1);
       // net quantity = -2 (çıkış)
       expect(balances.items[0]?.netQuantity).toBe("-2");
@@ -370,12 +364,7 @@ describe("PetshopSalesService", () => {
         STAFF_A,
       );
       await expect(
-        service.updateSale(
-          TENANT_A,
-          created.sale.id,
-          { notes: "x" },
-          STAFF_A,
-        ),
+        service.updateSale(TENANT_A, created.sale.id, { notes: "x" }, STAFF_A),
       ).rejects.toMatchObject({
         errorCode: "VET-SALE-0003",
         httpStatus: 409,
@@ -426,11 +415,9 @@ describe("PetshopSalesService", () => {
       );
       expect(cancelled.sale.status).toBe("cancelled");
       // Net bakiye 0 olmalı (sale -2 + reversal +2 = 0).
-      const balances = await stockService.listBalances(
-        TENANT_A,
-        STAFF_A,
-        { productId: pid },
-      );
+      const balances = stockService.listBalances(TENANT_A, STAFF_A, {
+        productId: pid,
+      });
       expect(balances.items[0]?.netQuantity).toBe("0");
     });
 
@@ -484,11 +471,7 @@ describe("PetshopSalesService", () => {
     it("cross-tenant create 403 VET-AUTHZ-0001", async () => {
       const pid = await seedProduct("SKU-CISO", "Ürün CISO", "50");
       await expect(
-        service.createSale(
-          TENANT_B,
-          makeSaleInput(pid),
-          STAFF_A,
-        ),
+        service.createSale(TENANT_B, makeSaleInput(pid), STAFF_A),
       ).rejects.toMatchObject({
         errorCode: "VET-AUTHZ-0001",
         httpStatus: 403,

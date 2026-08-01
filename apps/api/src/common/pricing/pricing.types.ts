@@ -134,9 +134,7 @@ export function toPriceListItem(rec: PriceListItemRecord): PriceListItem {
  * Decimal string'i normalize et (gereksiz baştan sıfırları kırp).
  * Format: `^\d+(\.\d{1,4})?$`. Geçersiz formatta null döner.
  */
-export function normalizePricingDecimal(
-  value: string,
-): string | null {
+export function normalizePricingDecimal(value: string): string | null {
   if (!/^\d+(\.\d{1,4})?$/.test(value)) return null;
   const parts = value.split(".");
   const intPart = parts[0] ?? "0";
@@ -200,8 +198,9 @@ export function isItemEffectiveAt(
  * Fiyat listesi türüne göre resolver önceliği. customer_specific
  * en yüksek önceliğe sahiptir; ardından promotional, sonra standard.
  */
-export const PRICE_LIST_TYPE_PRIORITY: Readonly<Record<PriceListType, number>> = {
-  customer_specific: 3,
-  promotional: 2,
-  standard: 1,
-};
+export const PRICE_LIST_TYPE_PRIORITY: Readonly<Record<PriceListType, number>> =
+  {
+    customer_specific: 3,
+    promotional: 2,
+    standard: 1,
+  };

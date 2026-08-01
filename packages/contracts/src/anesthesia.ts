@@ -102,9 +102,7 @@ export const anesthesiaCreateInputSchema = z.object({
   inductionAt: z.string().datetime().optional(),
   notes: z.string().max(4000).optional(),
 });
-export type AnesthesiaCreateInput = z.infer<
-  typeof anesthesiaCreateInputSchema
->;
+export type AnesthesiaCreateInput = z.infer<typeof anesthesiaCreateInputSchema>;
 
 /* --------------------------------------------------------------------------
  * Alt kayıt inputları
@@ -189,9 +187,7 @@ export const anesthesiaStaffInputSchema = z.object({
   endedAt: z.string().datetime().optional(),
   notes: z.string().max(2000).optional(),
 });
-export type AnesthesiaStaffInput = z.infer<
-  typeof anesthesiaStaffInputSchema
->;
+export type AnesthesiaStaffInput = z.infer<typeof anesthesiaStaffInputSchema>;
 
 /** Finalize isteği. */
 export const anesthesiaFinalizeInputSchema = z.object({
@@ -238,9 +234,7 @@ export const anesthesiaMedicationSchema = z.object({
   notes: z.string().nullable(),
   createdAt: z.string().datetime(),
 });
-export type AnesthesiaMedication = z.infer<
-  typeof anesthesiaMedicationSchema
->;
+export type AnesthesiaMedication = z.infer<typeof anesthesiaMedicationSchema>;
 
 export const anesthesiaVitalSchema = z.object({
   id: z.string(),

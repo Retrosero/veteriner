@@ -1,9 +1,11 @@
 # GOAL-106 — PII Maskeleme ve Log Retention (Completion Report)
 
 ## Faz
+
 FAZ-10 (Hata merkezi)
 
 ## Özet
+
 Log pipeline içinde kişisel ve klinik verileri maskeleyen
 ortak sanitizer (PiiMasker, GOAL-004) + tenant/logType/severity
 bazlı retention ve arşivleme kuralları. 6 logType × 4 severity
@@ -12,6 +14,7 @@ default matrisi + tenant override + global override zinciri.
 ## Çıktılar
 
 ### Core (GOAL-106 core commit `cd443d3`)
+
 - `packages/contracts/src/log-retention.ts` — 6 logType
   (audit_log, error_event, security_event, job_run,
   notification, request_log) + 4 severity (info, warning,
@@ -20,9 +23,9 @@ default matrisi + tenant override + global override zinciri.
   RetentionPolicyFilters + RetentionPolicyListResponse +
   RetentionSweepBucket + RetentionSweepResult +
   RetentionSweepHistoryFilters + RetentionSweepHistoryResponse
-  + TriggerRetentionSweep + 3 default matrisi
-  (DEFAULT_RETENTION_DAYS, DEFAULT_ARCHIVE_AFTER_DAYS,
-  DEFAULT_ARCHIVE_STORAGE).
+  - TriggerRetentionSweep + 3 default matrisi
+    (DEFAULT_RETENTION_DAYS, DEFAULT_ARCHIVE_AFTER_DAYS,
+    DEFAULT_ARCHIVE_STORAGE).
 - `apps/api/src/common/logging/log-retention.types.ts` —
   RetentionPolicyRecord + RetentionSweepRecord +
   toRetentionPolicy + toRetentionSweep dönüşümleri.
@@ -58,18 +61,19 @@ default matrisi + tenant override + global override zinciri.
 
 ### Endpoint'ler (8)
 
-| # | Method | Path | Yetki |
-|---|--------|------|-------|
-| 1 | GET | `/api/v1/superadmin/log-retention/policies` | `audit:log:read` |
-| 2 | GET | `/api/v1/superadmin/log-retention/policies/effective` | `audit:log:read` |
-| 3 | GET | `/api/v1/superadmin/log-retention/policies/{id}` | `audit:log:read` |
-| 4 | PUT | `/api/v1/superadmin/log-retention/policies` | `audit:log:read` |
-| 5 | DELETE | `/api/v1/superadmin/log-retention/policies/{id}` | `audit:log:read` |
-| 6 | POST | `/api/v1/superadmin/log-retention/sweeps` | `audit:log:read` |
-| 7 | GET | `/api/v1/superadmin/log-retention/sweeps` | `audit:log:read` |
-| 8 | GET | `/api/v1/superadmin/log-retention/sweeps/{id}` | `audit:log:read` |
+| #   | Method | Path                                                  | Yetki            |
+| --- | ------ | ----------------------------------------------------- | ---------------- |
+| 1   | GET    | `/api/v1/superadmin/log-retention/policies`           | `audit:log:read` |
+| 2   | GET    | `/api/v1/superadmin/log-retention/policies/effective` | `audit:log:read` |
+| 3   | GET    | `/api/v1/superadmin/log-retention/policies/{id}`      | `audit:log:read` |
+| 4   | PUT    | `/api/v1/superadmin/log-retention/policies`           | `audit:log:read` |
+| 5   | DELETE | `/api/v1/superadmin/log-retention/policies/{id}`      | `audit:log:read` |
+| 6   | POST   | `/api/v1/superadmin/log-retention/sweeps`             | `audit:log:read` |
+| 7   | GET    | `/api/v1/superadmin/log-retention/sweeps`             | `audit:log:read` |
+| 8   | GET    | `/api/v1/superadmin/log-retention/sweeps/{id}`        | `audit:log:read` |
 
 ### Döküman (bu commit)
+
 - 8 API doc.
 - `docs/ai/AI_CHUNKS.yaml` — yeni `glossary-log-retention` +
   `flow-log-retention-sweep` chunk'ları v1.0.0.
@@ -77,6 +81,7 @@ default matrisi + tenant override + global override zinciri.
   yeni sayfa kataloğu.
 
 ## İş Kuralları
+
 - **6 logType × 4 severity:** default retention matrisi
   - `audit_log`: 365 (info|warning) / 730 (error) / 1825 (critical) gün
   - `error_event`: 30 / 90 / 180 / 365 gün
@@ -108,6 +113,7 @@ default matrisi + tenant override + global override zinciri.
   `audit:log_retention.sweep_trigger` (info|warning).
 
 ## Yapılmayanlar / Bilinçli Atlamalar
+
 - **Prisma migration** → Faz 10+ DB katmanı.
 - **Cold storage adapter (S3/Azure Blob)** → Faz 12+ (gerçek
   storage provider).
@@ -118,13 +124,16 @@ default matrisi + tenant override + global override zinciri.
 - **GDPR/KVKK export (tenant'ın kendi verisi)** → GOAL-126.
 
 ## Döküman Uyum
+
 - `pnpm docs:check` → temiz (log-retention özgü).
 - `pnpm i18n:check` → temiz.
 
 ## Testler
+
 - `log-retention.service.spec.ts` → unit testler (paralel core).
 - Full api regresyon: 1435 yeşil, 9 skipped, 0 hata.
 
 ## Commit
+
 - Core: `cd443d3` — `GOAL-106 core: PII maskeleme ve log retention modülü`
 - Docs: (bu commit) — `docs(log-retention): GOAL-106 PII maskeleme ve log retention doküman ve i18n tamamla + FAZ-10 kapanışı`

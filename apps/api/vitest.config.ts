@@ -15,10 +15,7 @@ export default defineConfig({
     },
   },
   test: {
-    include: [
-      "src/**/*.spec.ts",
-      "src/**/*.test.ts",
-    ],
+    include: ["src/**/*.spec.ts", "src/**/*.test.ts"],
     environment: "node",
     globals: false,
     testTimeout: 15000,
@@ -26,4 +23,3 @@ export default defineConfig({
     passWithNoTests: true,
   },
 });
-

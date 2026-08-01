@@ -30,17 +30,17 @@
  */
 
 import { Injectable, Logger } from "@nestjs/common";
+
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
+import { FeatureFlagService } from "../feature-flag/feature-flag.service.js";
+
+import type { ListTenantsFilter } from "./superadmin.types.js";
 import type {
   AuditEventSummary,
   TenantDetailResponse,
   TenantOverview,
 } from "@vetniva/contracts";
-
-import { PrismaService } from "../../prisma/prisma.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { FeatureFlagService } from "../feature-flag/feature-flag.service.js";
-
-import type { ListTenantsFilter } from "./superadmin.types.js";
 
 /** 1 MB cinsinden byte. BigInt hassasiyeti için Number.MAX_SAFE_INTEGER altında. */
 const BYTES_PER_MB = 1024 * 1024;
@@ -92,7 +92,9 @@ export class SuperadminService {
    * (SUPERADMIN tüm tenant'ları görür) ancak actor SUPERADMIN değilse
    * service `VET-AUTHZ-0001` fırlatır.
    */
-  public async getTenantDetail(tenantId: string): Promise<TenantDetailResponse> {
+  public async getTenantDetail(
+    tenantId: string,
+  ): Promise<TenantDetailResponse> {
     const tenant = await this.prisma.tenant.findUnique({
       where: { id: tenantId },
     });
@@ -207,7 +209,7 @@ export class SuperadminService {
       tenantId: tenant.id,
       name: tenant.name,
       country: tenant.country as "TR" | "GB",
-      status: tenant.status as "active" | "suspended" | "closed",
+      status: tenant.status,
       createdAt: tenant.createdAt.toISOString(),
       branchCount,
       userCount,

@@ -61,7 +61,10 @@ export class AnesthesiaRepository {
   /** Alt kayıtlar. */
   private readonly medications = new Map<string, AnesthesiaMedicationRecord>();
   private readonly vitals = new Map<string, AnesthesiaVitalRecord>();
-  private readonly complications = new Map<string, AnesthesiaComplicationRecord>();
+  private readonly complications = new Map<
+    string,
+    AnesthesiaComplicationRecord
+  >();
   private readonly staff = new Map<string, AnesthesiaStaffRecord>();
 
   // -------------------------------------------------------------------------
@@ -90,10 +93,7 @@ export class AnesthesiaRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): AnesthesiaRecord | null {
+  public findById(tenantId: string, id: string): AnesthesiaRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -132,12 +132,8 @@ export class AnesthesiaRepository {
     for (const rec of this.byId.values()) {
       if (rec.tenantId !== tenantId) continue;
       if (filters.status && rec.status !== filters.status) continue;
-      if (filters.patientId && rec.patientId !== filters.patientId)
-        continue;
-      if (
-        filters.surgeryPlanId &&
-        rec.surgeryPlanId !== filters.surgeryPlanId
-      )
+      if (filters.patientId && rec.patientId !== filters.patientId) continue;
+      if (filters.surgeryPlanId && rec.surgeryPlanId !== filters.surgeryPlanId)
         continue;
       all.push(rec);
     }

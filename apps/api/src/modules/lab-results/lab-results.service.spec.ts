@@ -15,14 +15,14 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { LabResultsRepository } from "./lab-results.repository.js";
+import { LabResultsService } from "./lab-results.service.js";
+import { type LabOrdersService } from "../lab-orders/lab-orders.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-
-import { LabResultsService } from "./lab-results.service.js";
-import { LabResultsRepository } from "./lab-results.repository.js";
-import { LabOrdersService } from "../lab-orders/lab-orders.service.js";
-import type { LabOrder } from "@vetniva/contracts";
 import type {
+  LabOrder,
   LabResultAmendInput,
   LabResultApproveInput,
   LabResultCreateInput,
@@ -288,12 +288,7 @@ describe("LabResultsService", () => {
       const order = makeOrder({ status: "ordered" });
       labOrders.addOrder(order);
       await expect(
-        service.createLabResult(
-          TENANT_A,
-          order.id,
-          makeCreateInput(),
-          VET_A,
-        ),
+        service.createLabResult(TENANT_A, order.id, makeCreateInput(), VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-LABRES-0004",
         httpStatus: 422,
@@ -304,12 +299,7 @@ describe("LabResultsService", () => {
       const order = makeOrder({ status: "collected" });
       labOrders.addOrder(order);
       await expect(
-        service.createLabResult(
-          TENANT_A,
-          order.id,
-          makeCreateInput(),
-          VET_A,
-        ),
+        service.createLabResult(TENANT_A, order.id, makeCreateInput(), VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-LABRES-0004",
       });
@@ -319,12 +309,7 @@ describe("LabResultsService", () => {
       const order = makeOrder({ status: "cancelled" });
       labOrders.addOrder(order);
       await expect(
-        service.createLabResult(
-          TENANT_A,
-          order.id,
-          makeCreateInput(),
-          VET_A,
-        ),
+        service.createLabResult(TENANT_A, order.id, makeCreateInput(), VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-LABRES-0005",
         httpStatus: 422,
@@ -355,12 +340,7 @@ describe("LabResultsService", () => {
         VET_A,
       );
       await expect(
-        service.createLabResult(
-          TENANT_A,
-          order.id,
-          makeCreateInput(),
-          VET_A,
-        ),
+        service.createLabResult(TENANT_A, order.id, makeCreateInput(), VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-LABRES-0003",
         httpStatus: 409,
@@ -690,11 +670,7 @@ describe("LabResultsService", () => {
         makeCreateInput(),
         VET_A,
       );
-      const got = await service.getLabResultDetail(
-        TENANT_A,
-        order.id,
-        VET_A,
-      );
+      const got = await service.getLabResultDetail(TENANT_A, order.id, VET_A);
       expect(got?.id).toBe(created.id);
     });
 
@@ -707,11 +683,7 @@ describe("LabResultsService", () => {
         makeCreateInput(),
         VET_A,
       );
-      const got = await service.getLabResultDetail(
-        TENANT_B,
-        order.id,
-        STAFF_B,
-      );
+      const got = await service.getLabResultDetail(TENANT_B, order.id, STAFF_B);
       expect(got).toBeNull();
     });
   });

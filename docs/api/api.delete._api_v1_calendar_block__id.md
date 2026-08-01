@@ -12,9 +12,9 @@ yayınlanır.
 
 **Path parametreleri:**
 
-| Ad | Tip | Zorunlu | Açıklama |
-| --- | --- | --- | --- |
-| `id` | string | evet | Block ID (ör. `blk-<uuid>`). Yanlış tenant ID'si → 404 `VET-APPT-0002`. |
+| Ad   | Tip    | Zorunlu | Açıklama                                                                |
+| ---- | ------ | ------- | ----------------------------------------------------------------------- |
+| `id` | string | evet    | Block ID (ör. `blk-<uuid>`). Yanlış tenant ID'si → 404 `VET-APPT-0002`. |
 
 **Response 200:**
 

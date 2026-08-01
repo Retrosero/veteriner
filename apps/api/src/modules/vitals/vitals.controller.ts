@@ -24,20 +24,17 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
-import type {
-  VitalSignsCreateInput,
-  VitalsRecord,
-} from "@vetniva/contracts";
 import { vitalSignsCreateInputSchema } from "@vetniva/contracts";
 
 import { VitalsService } from "./vitals.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { VitalSignsCreateInput, VitalsRecord } from "@vetniva/contracts";
 
 @ApiTags("vitals")
 @UseGuards(PermissionsGuard)
@@ -59,7 +56,10 @@ export class VitalsController {
   })
   @ApiResponse({ status: 201, description: "Oluşturuldu." })
   @ApiResponse({ status: 404, description: "Muayene bulunamadı." })
-  @ApiResponse({ status: 422, description: "Geçersiz input veya boş vital seti." })
+  @ApiResponse({
+    status: 422,
+    description: "Geçersiz input veya boş vital seti.",
+  })
   public async record(
     @Param("id") examinationId: string,
     @Body(new ZodValidationPipe(vitalSignsCreateInputSchema))

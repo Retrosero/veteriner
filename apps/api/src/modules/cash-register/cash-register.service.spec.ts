@@ -1,7 +1,6 @@
 /**
  * @file CashRegisterService unit testleri.
  * @module apps/api/modules/cash-register/cash-register.service.spec
- *
  * @description GOAL-074 (FAZ-7) kasa ve gün sonu service testleri.
  *   - openSession: şubede açık oturum yokken başarılı; var
  *     iken 409 VET-CASH_REGISTER-0003.
@@ -14,19 +13,18 @@
  *   - listSessions: branchId + status filtresi.
  *   - getSummary: hesap bazlı kırılım.
  *   - Cross-tenant read 403.
- *
  * @since GOAL-074 (FAZ-7) kasa ve gün sonu core
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import type { KasaEntryRecord } from "../../common/payments/kasa.types.js";
-
-import { CashRegisterService } from "./cash-register.service.js";
 import { CashRegisterRepository } from "./cash-register.repository.js";
+import { CashRegisterService } from "./cash-register.service.js";
+import { DomainError } from "../../common/errors/domain-error.js";
 import { KasaRepository } from "../payments/kasa.repository.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { KasaEntryRecord } from "../../common/payments/kasa.types.js";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -72,7 +70,7 @@ const VET_A: ActorContext = {
   source: "header",
 };
 
-const OWNER_B: ActorContext = {
+const _OWNER_B: ActorContext = {
   actorId: "usr-owner-b",
   actorType: "user",
   role: "OWNER",
@@ -85,6 +83,9 @@ const OWNER_B: ActorContext = {
   source: "header",
 };
 
+/**
+ *
+ */
 function makeAuditMock() {
   return {
     record: vi.fn().mockResolvedValue({ eventId: "ev-1" }),
@@ -92,6 +93,9 @@ function makeAuditMock() {
   };
 }
 
+/**
+ *
+ */
 function makeKasaRepository() {
   return new KasaRepository();
 }
@@ -421,12 +425,7 @@ describe("CashRegisterService", () => {
         STAFF_A,
       );
       await expect(
-        service.reopenSession(
-          TENANT_A,
-          opened.id,
-          { reason: "Yanlış" },
-          VET_A,
-        ),
+        service.reopenSession(TENANT_A, opened.id, { reason: "Yanlış" }, VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-CASH_REGISTER-0006",
         httpStatus: 403,
@@ -440,12 +439,7 @@ describe("CashRegisterService", () => {
         STAFF_A,
       );
       await expect(
-        service.reopenSession(
-          TENANT_A,
-          opened.id,
-          { reason: "Test" },
-          OWNER_A,
-        ),
+        service.reopenSession(TENANT_A, opened.id, { reason: "Test" }, OWNER_A),
       ).rejects.toMatchObject({
         errorCode: "VET-CASH_REGISTER-0007",
         httpStatus: 409,
@@ -593,6 +587,15 @@ describe("CashRegisterService", () => {
  * Modül-düzeyinde test yardımcıları
  * -------------------------------------------------------------------------- */
 
+/**
+ *
+ * @param target
+ * @param tenantId
+ * @param account
+ * @param amountSigned
+ * @param direction
+ * @param referenceId
+ */
 function insertKasaEntry(
   target: KasaRepository,
   tenantId: string,

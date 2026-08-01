@@ -18,12 +18,7 @@ import type {
   WorkingHours,
 } from "@vetniva/contracts";
 
-export type {
-  CalendarDay,
-  CalendarSlot,
-  CalendarSlotStatus,
-  WorkingHours,
-};
+export type { CalendarDay, CalendarSlot, CalendarSlotStatus, WorkingHours };
 
 /** 0=Pazar, 1=Pazartesi ... 6=Cumartesi. ISO-8601 uyumu. */
 export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;

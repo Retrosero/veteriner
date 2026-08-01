@@ -1,7 +1,6 @@
 /**
  * @file RBAC controller.
  * @module apps/api/common/rbac/rbac.controller
- *
  * @description VetNiva RBAC REST API. Aktif kullanıcının kendi
  * permission/üyelik bilgilerini sorgulaması, tenant üyelik
  * yönetimi (OWNER) ve aktif branch context değişimi için
@@ -14,11 +13,9 @@
  * - `POST   /api/v1/rbac/tenants/:tenantId/users`  — Kullanıcıya rol ata.
  * - `DELETE /api/v1/rbac/tenants/:tenantId/users/:userId` — Üyeliği iptal et.
  * - `PUT    /api/v1/rbac/me/branch`                — Aktif branch context değiştir.
- *
  * @security Tüm endpoint'ler `PermissionsGuard` ve `@RequirePermission`
  *   ile korunur. Tenant ID URL'den gelir; actor.tenantId ile eşleşmeli
  *   veya actor SUPERADMIN olmalı. Cross-tenant denemesi → 403.
- *
  * @since GOAL-012 (FAZ-1) RBAC ve izin motoru
  */
 
@@ -37,8 +34,12 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import type { Request } from "express";
 
+import { PermissionsGuard } from "./permissions.guard.js";
+import { RbacService } from "./rbac.service.js";
+import { RequirePermission } from "./require-permission.decorator.js";
+
+import type { ActorContext } from "../actor/actor-context.service.js";
 import type {
   AssignMembershipRequest,
   AssignMembershipResponse,
@@ -48,12 +49,7 @@ import type {
   SwitchBranchRequest,
   SwitchBranchResponse,
 } from "@vetniva/contracts";
-
-import type { ActorContext } from "../actor/actor-context.service.js";
-
-import { PermissionsGuard } from "./permissions.guard.js";
-import { RbacService } from "./rbac.service.js";
-import { RequirePermission } from "./require-permission.decorator.js";
+import type { Request } from "express";
 
 @ApiTags("rbac")
 @UseGuards(PermissionsGuard)
@@ -111,8 +107,14 @@ export class RbacController {
   })
   @ApiResponse({ status: 201, description: "Üyelik atandı." })
   @ApiResponse({ status: 403, description: "Yetkisiz." })
-  @ApiResponse({ status: 404, description: "Tenant veya kullanıcı bulunamadı." })
-  @ApiResponse({ status: 409, description: "Kendine rol atama veya son OWNER iptali." })
+  @ApiResponse({
+    status: 404,
+    description: "Tenant veya kullanıcı bulunamadı.",
+  })
+  @ApiResponse({
+    status: 409,
+    description: "Kendine rol atama veya son OWNER iptali.",
+  })
   public async assignTenantUser(
     @Param("tenantId", ParseUUIDPipe) tenantId: string,
     @Body() body: AssignMembershipRequest,

@@ -17,9 +17,10 @@
  */
 
 import { Injectable } from "@nestjs/common";
-import type { Prisma, Tenant } from "@prisma/client";
 
 import { PrismaService } from "../../prisma/prisma.service.js";
+
+import type { Prisma, Tenant } from "@prisma/client";
 
 export interface ListTenantsArgs {
   page: number;
@@ -142,7 +143,10 @@ export class TenantRepository {
   /**
    * Slug çakışma kontrolü. Create/update öncesi çağrılır.
    */
-  public async existsBySlug(slug: string, excludeId?: string): Promise<boolean> {
+  public async existsBySlug(
+    slug: string,
+    excludeId?: string,
+  ): Promise<boolean> {
     const found = await this.prisma.tenant.findUnique({
       where: { slug },
       select: { id: true },

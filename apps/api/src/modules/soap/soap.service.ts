@@ -31,19 +31,6 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import type {
-  SoapAmendInput,
-  SoapAmendRecord as SoapAmendRecordContract,
-  SoapNote,
-  SoapUpdateInput,
-} from "@vetniva/contracts";
-
-import { ExaminationsService } from "../examinations/examinations.service.js";
-
-import type { SoapInitial } from "../../common/soap/soap.types.js";
 import {
   type SoapAmendRecord,
   type SoapNoteRecord,
@@ -51,6 +38,18 @@ import {
   SoapNotesRepository,
   toSoapNote,
 } from "./soap.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { ExaminationsService } from "../examinations/examinations.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { SoapInitial } from "../../common/soap/soap.types.js";
+import type {
+  SoapAmendInput,
+  SoapAmendRecord as SoapAmendRecordContract,
+  SoapNote,
+  SoapUpdateInput,
+} from "@vetniva/contracts";
 
 @Injectable()
 export class SoapService {
@@ -97,8 +96,7 @@ export class SoapService {
     if (exam.status !== "in_progress") {
       throw new DomainError({
         errorCode: "VET-SOAP-0001",
-        message:
-          "SOAP yalnızca devam eden muayene için oluşturulabilir",
+        message: "SOAP yalnızca devam eden muayene için oluşturulabilir",
         httpStatus: 409,
         severity: "warning",
         i18nKey: "error.VET-SOAP-0001",
@@ -446,7 +444,7 @@ export class SoapService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

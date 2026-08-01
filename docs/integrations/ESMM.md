@@ -1,9 +1,11 @@
 # e-SMM Gerçek Entegrasyonu (GOAL-130)
 
 ## Faz
+
 FAZ-13 (Türkiye uyumluluk ve entegrasyonlar)
 
 ## Amaç
+
 FAZ-7'deki mock e-SMM adapter'ı (GOAL-077) gerçek bir Türk
 e-Fatura/e-Arşiv sağlayıcısı ile değiştirme. e-SMM (e-Serbest
 Meslek Makbuzu) zorunlu olduğu için pilot kapsamda gerçek
@@ -12,17 +14,20 @@ entegrasyon gerekir.
 ## Sağlayıcı Seçenekleri
 
 ### 1. Logo İşbaşı (önerilen pilot için)
+
 - **API:** REST.
 - **Webhook:** evet (belge durumu).
 - **Entegrasyon süresi:** 2-3 hafta.
 - **Maliyet:** düşük-orta.
 
 ### 2. Paraşüt
+
 - **API:** REST.
 - **Webhook:** evet.
 - **Avantaj:** kolay UI, küçük işletme odaklı.
 
 ### 3. eFatura.gov.tr (GİB)
+
 - **API:** SOAP + REST.
 - **Avantaj:** resmi altyapı; dezavantaj: bürokrasi.
 
@@ -59,6 +64,7 @@ ESMM_WEBHOOK_SECRET=xxx
 ```
 
 ## Gİb Uyumluluğu
+
 - Belge formatı: UBL-TR.
 - XAdES imza: provider tarafında.
 - e-SMM UUID: provider tarafında atanır; local'de
@@ -66,11 +72,13 @@ ESMM_WEBHOOK_SECRET=xxx
 - Saklama: 5 yıl (Vergi Usul Kanunu).
 
 ## Testler
+
 - **Mock provider (FAZ-7):** development + test ortamı.
 - **Sandbox provider (FAZ-13+):** staging ortamı.
 - **Production provider:** pilot onayından sonra.
 
 ## Yapılmayanlar / Bilinçli Atlamalar
+
 - **e-Fatura** (e-SMM'den ayrı) → Faz 14+ (e-Fatura
   gereken klinikler için).
 - **e-Arşiv** → Faz 14+ (e-Arşiv portal entegrasyonu).
@@ -79,10 +87,12 @@ ESMM_WEBHOOK_SECRET=xxx
   (Gİb API'si ayrı).
 
 ## Commit
+
 - Core: (FAZ-7) — `apps/api/src/modules/esmm/` mock.
 - Real: (bu commit) — adapter iskeleti (FAZ-7 sözleşmesi).
 
 ## İlgili dokümanlar
+
 - `goals/GOAL-077_COMPLETION_REPORT.md` (FAZ-7 mock).
 - `apps/api/src/common/esmm/esmm.types.ts` (sözleşme).
 - `docs/errors/ERROR_CATALOG.md` (VET-ESMM-* hatalar).

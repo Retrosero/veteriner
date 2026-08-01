@@ -15,13 +15,15 @@
 
 import { Injectable } from "@nestjs/common";
 
-import type { VaccineApplicationStatus } from "@vetniva/contracts";
-
 import {
   toVaccineApplication,
   type VaccineApplicationRecord,
 } from "../../common/vaccines/vaccine-application.types.js";
-import type { VaccineApplication } from "@vetniva/contracts";
+
+import type {
+  VaccineApplicationStatus,
+  VaccineApplication,
+} from "@vetniva/contracts";
 
 /** Patch tipi: kısmi güncelleme için izin verilen alanlar. */
 export interface VaccineApplicationPatch {
@@ -115,8 +117,7 @@ export class VaccineApplicationsRepository {
       )
         continue;
       if (filters.patientId && rec.patientId !== filters.patientId) continue;
-      if (filters.protocolId && rec.protocolId !== filters.protocolId)
-        continue;
+      if (filters.protocolId && rec.protocolId !== filters.protocolId) continue;
       if (filters.status && rec.status !== filters.status) continue;
       if (filters.from && rec.applicationDate < filters.from) continue;
       if (filters.to && rec.applicationDate > filters.to) continue;
@@ -166,7 +167,10 @@ export class VaccineApplicationsRepository {
    * İki lot'un eşit olup olmadığını kontrol eder. Aynı
    * `stockProductId` + `lot` + `expiryDate` üçlüsü eşit sayılır.
    */
-  public isSameLot(a: VaccineApplicationRecord["lot"], b: VaccineApplicationRecord["lot"]): boolean {
+  public isSameLot(
+    a: VaccineApplicationRecord["lot"],
+    b: VaccineApplicationRecord["lot"],
+  ): boolean {
     return (
       a.stockProductId === b.stockProductId &&
       a.lot === b.lot &&

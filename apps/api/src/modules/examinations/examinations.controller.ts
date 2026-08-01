@@ -28,13 +28,20 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import {
+  examinationAmendInputSchema,
+  examinationCreateInputSchema,
+  examinationFiltersSchema,
+} from "@vetniva/contracts";
 
+import { ExaminationsService } from "./examinations.service.js";
 import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
 import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
 import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
 import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   Examination,
   ExaminationAmend,
@@ -43,13 +50,6 @@ import type {
   ExaminationFilters,
   ExaminationListResponse,
 } from "@vetniva/contracts";
-import {
-  examinationAmendInputSchema,
-  examinationCreateInputSchema,
-  examinationFiltersSchema,
-} from "@vetniva/contracts";
-
-import { ExaminationsService } from "./examinations.service.js";
 
 @ApiTags("examinations")
 @UseGuards(PermissionsGuard)
@@ -69,7 +69,10 @@ export class ExaminationsController {
       "patientId + veterinarianId appointment'tan türetilir.",
   })
   @ApiResponse({ status: 201, description: "Oluşturuldu." })
-  @ApiResponse({ status: 404, description: "Appointment veya patient bulunamadı." })
+  @ApiResponse({
+    status: 404,
+    description: "Appointment veya patient bulunamadı.",
+  })
   @ApiResponse({ status: 422, description: "Geçersiz input." })
   public async start(
     @Body(new ZodValidationPipe(examinationCreateInputSchema))

@@ -13,9 +13,7 @@
 
 import { Injectable } from "@nestjs/common";
 
-import type {
-  ConsentRecord,
-} from "../../common/consents/consent.types.js";
+import type { ConsentRecord } from "../../common/consents/consent.types.js";
 import type {
   ConsentSignatureMethod,
   ConsentStatus,
@@ -65,10 +63,7 @@ export class ConsentsRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): ConsentRecord | null {
+  public findById(tenantId: string, id: string): ConsentRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -98,15 +93,10 @@ export class ConsentsRepository {
     for (const rec of this.byId.values()) {
       if (rec.tenantId !== tenantId) continue;
       if (filters.status && rec.status !== filters.status) continue;
-      if (
-        filters.templateType &&
-        rec.templateType !== filters.templateType
-      )
+      if (filters.templateType && rec.templateType !== filters.templateType)
         continue;
-      if (filters.patientId && rec.patientId !== filters.patientId)
-        continue;
-      if (filters.ownerId && rec.ownerId !== filters.ownerId)
-        continue;
+      if (filters.patientId && rec.patientId !== filters.patientId) continue;
+      if (filters.ownerId && rec.ownerId !== filters.ownerId) continue;
       all.push(rec);
     }
     const sort = filters.sort ?? "desc";

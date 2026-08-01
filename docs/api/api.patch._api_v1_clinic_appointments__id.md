@@ -33,7 +33,7 @@ geri konur.
   `VET-VALIDATION-0009`.
 - `durationMin` (1-240).
 - `status` (enum) — `scheduled | confirmed | arrived | in_progress |
-  completed | cancelled | no_show`. `cancelled` ve `completed` durumdan
+completed | cancelled | no_show`. `cancelled` ve `completed` durumdan
   güncelleme → 422 `VET-APPT-0006` (ayrı endpoint'ler kullanın:
   `/cancel`, `/complete`, `/no-show`).
 - `type` (enum), `veterinarianId` (string), `notes` (string | null).

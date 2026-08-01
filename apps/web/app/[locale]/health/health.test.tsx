@@ -1,7 +1,6 @@
 /**
  * @file Sağlık sayfası component testleri.
  * @module @vetniva/web/app/[locale]/health/health.test
- *
  * @description `HealthPage` server component'inin fetch davranışı ve
  * `HealthCard` render'ı iki senaryo ile doğrulanır:
  *   1. API başarılı döner → status badge görünür, DB latency yazılır.
@@ -9,20 +8,19 @@
  *
  * Not: api-client modülü `vi.mock` ile komple mock'lanır; spy yerine
  * modül düzeyinde mock daha güvenilirdir (ESM + dynamic import).
- *
  * @security Test verileri sabit; gerçek tenant bilgisi içermez.
  */
 
 import "@testing-library/jest-dom/vitest";
 
+import { render, type RenderResult } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { render, type RenderResult } from "@testing-library/react";
-import type { ReactElement } from "react";
-
 import { HealthCard } from "@/components/health-card";
-import type { ReadinessResponse } from "@vetniva/contracts";
 import { apiClient } from "@/lib/api-client";
+
+import type { ReadinessResponse } from "@vetniva/contracts";
+import type { ReactElement } from "react";
 
 vi.mock("@/lib/api-client", () => ({
   apiClient: {
@@ -59,6 +57,10 @@ const SAMPLE_DATA: ReadinessResponse = {
   },
 };
 
+/**
+ *
+ * @param ui
+ */
 function renderWithProviders(ui: ReactElement): RenderResult {
   return render(ui);
 }
@@ -128,7 +130,9 @@ describe("HealthPage fetch senaryoları", () => {
     } else {
       process.env["API_BASE_URL"] = originalApiBase;
     }
-    vi.restoreAllMocks();
+    // `apiClient` modül mock'u test dosyası boyunca sabit kalmalı;
+    // restoreAllMocks ikinci senaryoda request fonksiyonunu boş bırakır.
+    vi.clearAllMocks();
   });
 
   it("API başarılı döndüğünde HealthCard ok badge gösterir", async () => {
@@ -160,7 +164,7 @@ describe("HealthPage fetch senaryoları", () => {
     requestMock.mockResolvedValueOnce({
       ok: false,
       error: {
-        error_code: "TR_COMMON_0001",
+        error_code: "VET-COMMON-0001",
         message: "API bağlantısı kurulamadı",
         source: "unknown",
         severity: "error",

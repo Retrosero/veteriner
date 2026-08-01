@@ -1,14 +1,12 @@
 /**
  * @file Auth HTTP endpoint'leri için DTO yardımcıları.
  * @module apps/api/common/auth/dto
- *
  * @description Request'ten DTO ve meta veri (IP, UA, correlation) çıkar.
  * Service katmanı için ortak bir `AttemptContext` üretir.
- *
  * @since GOAL-011 (FAZ-1) kimlik doğrulama
  */
 
-import { Request } from "express";
+import { type Request } from "express";
 
 /** Login denemesi / parola sıfırlama / davet için gerekli meta. */
 export interface AttemptMeta {
@@ -17,7 +15,10 @@ export interface AttemptMeta {
   correlationId: string;
 }
 
-/** Express request'ten AttemptContext üretir. */
+/**
+ * Express request'ten AttemptContext üretir.
+ * @param request
+ */
 export function attemptMetaFromRequest(
   request: Request & { requestId?: string },
 ): AttemptMeta {
@@ -26,7 +27,9 @@ export function attemptMetaFromRequest(
     request.ip ??
     request.socket?.remoteAddress ??
     null;
-  const ip = ipRaw ? maskIp(typeof ipRaw === "string" ? ipRaw : String(ipRaw)) : null;
+  const ip = ipRaw
+    ? maskIp(typeof ipRaw === "string" ? ipRaw : String(ipRaw))
+    : null;
   const ua = request.header("user-agent") ?? null;
   const userAgentHash = ua ? hashUserAgent(ua) : null;
   return {
@@ -36,12 +39,14 @@ export function attemptMetaFromRequest(
   };
 }
 
+/** İstemci adresini PII maskeli deneme bağlamına dönüştürür. */
 function maskIp(ip: string): string {
   const cleaned = ip.split(",")[0]?.trim() ?? ip;
   if (cleaned.includes(":")) return "***";
   return cleaned.replace(/\.\d+$/, ".***");
 }
 
+/** User-Agent değerinden loglanabilir tek yönlü özet üretir. */
 function hashUserAgent(ua: string): string {
   let hash = 2166136261;
   for (let i = 0; i < ua.length; i++) {

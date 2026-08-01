@@ -51,11 +51,7 @@ export type AuditAction =
  * - job: BullMQ worker
  */
 export type AuditActorType =
-  | "user"
-  | "system"
-  | "integration"
-  | "job"
-  | "portal_user";
+  "user" | "system" | "integration" | "job" | "portal_user";
 
 /**
  * Audit event ciddiyet seviyesi.

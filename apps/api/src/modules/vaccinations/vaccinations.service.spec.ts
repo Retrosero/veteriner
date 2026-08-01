@@ -14,15 +14,15 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { VaccinationsRepository } from "./vaccinations.repository.js";
+import { VaccinationsService } from "./vaccinations.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
 import type { Patient } from "../../common/patients/patient.types.js";
 import type { PatientsService } from "../patients/patients.service.js";
 import type { VaccinesService } from "../vaccines/vaccines.service.js";
 import type { VaccineProtocol } from "@vetniva/contracts";
-
-import { VaccinationsService } from "./vaccinations.service.js";
-import { VaccinationsRepository } from "./vaccinations.repository.js";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -55,7 +55,11 @@ const VET_B: ActorContext = {
 
 /** Mock patient store. */
 const patientsStore = new Map<string, Patient>();
-function seedPatient(tenantId: string, id: string, species: Patient["species"]): void {
+function seedPatient(
+  tenantId: string,
+  id: string,
+  species: Patient["species"],
+): void {
   const p: Patient = {
     id,
     tenantId,
@@ -223,7 +227,9 @@ describe("VaccinationsService", () => {
       seedProtocol(
         validProtocol({
           id: "vacp-single",
-          steps: [{ ageWeeks: 8, vaccineName: "Rabies", boosterIntervalDays: 365 }],
+          steps: [
+            { ageWeeks: 8, vaccineName: "Rabies", boosterIntervalDays: 365 },
+          ],
         }),
       );
       const v = await service.record(
@@ -250,11 +256,7 @@ describe("VaccinationsService", () => {
       // TENANT_A'da → protocol cross-tenant 404.
       seedPatient(TENANT_B, "pat-dog-b", "dog");
       await expect(
-        service.record(
-          TENANT_B,
-          validInput({ patientId: "pat-dog-b" }),
-          VET_B,
-        ),
+        service.record(TENANT_B, validInput({ patientId: "pat-dog-b" }), VET_B),
       ).rejects.toMatchObject({
         errorCode: "VET-VACC-0004",
         httpStatus: 404,
@@ -264,11 +266,7 @@ describe("VaccinationsService", () => {
     it("duplicate lot (tenant+protocol) → 409 VET-VACC-0003", async () => {
       await service.record(TENANT_A, validInput(), VET_A);
       await expect(
-        service.record(
-          TENANT_A,
-          validInput({ vaccineName: "DHPP-2" }),
-          VET_A,
-        ),
+        service.record(TENANT_A, validInput({ vaccineName: "DHPP-2" }), VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-VACC-0003",
         httpStatus: 409,
@@ -295,9 +293,7 @@ describe("VaccinationsService", () => {
         validInput({ administeredAt: undefined }),
         VET_A,
       );
-      expect(v.administeredAt).toMatch(
-        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/,
-      );
+      expect(v.administeredAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
     });
   });
 
@@ -309,9 +305,7 @@ describe("VaccinationsService", () => {
     it("patientId filtresi", async () => {
       await service.record(TENANT_A, validInput(), VET_A);
       seedPatient(TENANT_A, "pat-cat-1", "cat");
-      seedProtocol(
-        validProtocol({ id: "vacp-cat", species: "cat" }),
-      );
+      seedProtocol(validProtocol({ id: "vacp-cat", species: "cat" }));
       await service.record(
         TENANT_A,
         validInput({
@@ -321,11 +315,7 @@ describe("VaccinationsService", () => {
         }),
         VET_A,
       );
-      const r = await service.list(
-        TENANT_A,
-        { patientId: "pat-dog-1" },
-        VET_A,
-      );
+      const r = await service.list(TENANT_A, { patientId: "pat-dog-1" }, VET_A);
       expect(r.total).toBe(1);
       expect(r.items[0]?.patientId).toBe("pat-dog-1");
     });
@@ -364,11 +354,7 @@ describe("VaccinationsService", () => {
         validInput({ administeredAt: yesterday }),
         VET_A,
       );
-      const list = await service.getNextDue(
-        TENANT_A,
-        "pat-dog-1",
-        VET_A,
-      );
+      const list = await service.getNextDue(TENANT_A, "pat-dog-1", VET_A);
       expect(list).toHaveLength(1);
       expect(list[0]?.id).toBe(v.id);
     });
@@ -380,17 +366,9 @@ describe("VaccinationsService", () => {
         validInput({ administeredAt: "2020-01-15T10:00:00.000Z" }),
         VET_A,
       );
-      const overdue = await service.getOverdue(
-        TENANT_A,
-        "pat-dog-1",
-        VET_A,
-      );
+      const overdue = await service.getOverdue(TENANT_A, "pat-dog-1", VET_A);
       expect(overdue).toHaveLength(1);
-      const nextDue = await service.getNextDue(
-        TENANT_A,
-        "pat-dog-1",
-        VET_A,
-      );
+      const nextDue = await service.getNextDue(TENANT_A, "pat-dog-1", VET_A);
       expect(nextDue).toHaveLength(0);
     });
   });

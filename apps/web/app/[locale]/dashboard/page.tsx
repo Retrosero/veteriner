@@ -1,25 +1,22 @@
 /**
  * @file Dashboard sayfasi (server component).
  * @module @vetniva/web/app/[locale]/dashboard/page
- *
  * @description Giris yapan klinik personeli icin anasayfa. Gunluk
  * oncelikleri ozetler: bugunku randevular, bekleyen hastalar, stok
  * uyarilari, tahsilat, hizli erisim butonlari, sistem durumu.
  *
  * Not: GOAL-000 kapsaminda veriler placeholder'dir; GOAL-001 ile
  * birlikte gercek API sorgularina baglanir.
- *
  * @security Tenant filtresi URL'den alinan `tenant_id` veya oturum
  * uzerinden uygulanir. Buradaki placeholder veriler zaten
  * tenant-baglaminda uretilmis gibi davranir.
  */
 
+import { SUPPORTED_LOCALES } from "@vetniva/contracts";
+import { Badge } from "@vetniva/ui";
 import { notFound } from "next/navigation";
 
-import { SUPPORTED_LOCALES, type Locale } from "@vetniva/contracts";
-
 import { AppShell } from "@/components/layouts/app-shell";
-import { Badge } from "@vetniva/ui";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PageHeader } from "@/components/ui/page-header";
@@ -214,6 +211,10 @@ const SAMPLE_APPOINTMENTS: AppointmentRow[] = [
 
 type PageParams = { locale: string };
 
+/**
+ *
+ * @param status
+ */
 function statusTone(
   status: AppointmentRow["status"],
 ): "warning" | "info" | "success" {
@@ -222,6 +223,11 @@ function statusTone(
   return "success";
 }
 
+/**
+ *
+ * @param now
+ * @param locale
+ */
 function greetingKey(
   now: Date,
   locale: string,
@@ -237,6 +243,11 @@ function greetingKey(
   return "greetingEvening";
 }
 
+/**
+ *
+ * @param locale
+ * @param now
+ */
 function formatToday(locale: string, now: Date): string {
   const dayKey =
     ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][now.getDay()] ?? "mon";
@@ -255,11 +266,10 @@ function formatToday(locale: string, now: Date): string {
       "nov",
       "dec",
     ][now.getMonth()] ?? "jan";
-  const labels = getLabels(locale as Locale);
+  const labels = getLabels(locale);
   const day = labels.days[dayKey as keyof typeof labels.days];
   const month = labels.months[monthKey as keyof typeof labels.months];
   const dd = String(now.getDate()).padStart(2, "0");
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
   const yyyy = now.getFullYear();
   if (locale === "en-GB") {
     return `${day}, ${month} ${dd}, ${yyyy}`;
@@ -267,6 +277,11 @@ function formatToday(locale: string, now: Date): string {
   return `${dd} ${month} ${yyyy}, ${day}`;
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.params
+ */
 export default async function DashboardPage({
   params,
 }: {
@@ -485,6 +500,13 @@ export default async function DashboardPage({
   );
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.href
+ * @param root0.icon
+ * @param root0.label
+ */
 function QuickAction({
   href,
   icon,
@@ -510,6 +532,13 @@ function QuickAction({
   );
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.label
+ * @param root0.status
+ * @param root0.meta
+ */
 function SystemStatusRow({
   label,
   status,

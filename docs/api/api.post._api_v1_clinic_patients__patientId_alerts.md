@@ -33,7 +33,7 @@ tenant IDOR koruması uygulanır.
 ```
 
 - `category` (enum, zorunlu) — `allergy | chronic_condition |
-  medication_conflict | behavior`.
+medication_conflict | behavior`.
 - `severity` (enum, zorunlu) — `info | warning | critical`.
   `critical` UI'da zorunlu dikkat, audit tetikler.
 - `title` (string, 1-200, zorunlu) — kısa başlık.

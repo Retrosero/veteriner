@@ -1,16 +1,29 @@
 # @file PII Maskeleme Standardı.
+
 # @module docs/errors/PII_MASKING
+
 #
+
 # @description VetNiva'da kişisel bilgilerin (PII) log,
+
 # audit, hata response ve telemetride nasıl
+
 # maskeleneceğini tanımlar. KVKK (TR) ve UK GDPR
+
 # uyumluluğu için zorunlu.
+
 #
+
 # @author GOAL-004 (FAZ-0) audit + log + hata standardı
+
 # @since 2026-07-30
+
 # @security PII asla plain text loglanmaz. Hash veya
-#   mask ile değiştirilir. Production'da development
-#   log seviyesi "info" altına indirilmez.
+
+# mask ile değiştirilir. Production'da development
+
+# log seviyesi "info" altına indirilmez.
+
 # =============================================================================
 
 # PII Maskeleme Standardı
@@ -29,33 +42,33 @@ bunlar `docs/fields/FIELD_GLOSSARY.md`'de işaretlenir.
 
 ### 1.1 Doğrudan tanımlayıcı
 
-| Alan             | Tür                | Hassasiyet | Maskeleme       |
-| ---------------- | ------------------ | ---------- | --------------- |
-| `first_name`     | ad                 | yüksek     | ilk harf + `*`  |
-| `last_name`      | soyad              | yüksek     | ilk harf + `*`  |
-| `full_name`      | tam ad             | yüksek     | mask            |
-| `email`          | e-posta            | yüksek     | `j***@e.com`    |
-| `phone`          | telefon            | yüksek     | `5** *** ** 34` |
-| `tax_id`         | VKN/TCKN          | yüksek     | hash (SHA-256)  |
-| `iban`           | IBAN               | yüksek     | `TR12 **** ****` |
-| `passport_no`    | pasaport no        | yüksek     | mask            |
-| `id_card_no`     | kimlik no (TR)     | yüksek     | hash            |
-| `address`        | adres              | orta       | il/ilçe         |
-| `postal_code`    | posta kodu         | düşük      | plain (kamuya açık) |
-| `birth_date`     | doğum tarihi       | orta       | yıl            |
-| `nationality`    | uyruk              | düşük      | plain          |
-| `gender`         | cinsiyet           | orta       | plain (klinik gereği) |
-| `vet_license_no` | veteriner diploma  | orta       | mask            |
+| Alan             | Tür               | Hassasiyet | Maskeleme             |
+| ---------------- | ----------------- | ---------- | --------------------- |
+| `first_name`     | ad                | yüksek     | ilk harf + `*`        |
+| `last_name`      | soyad             | yüksek     | ilk harf + `*`        |
+| `full_name`      | tam ad            | yüksek     | mask                  |
+| `email`          | e-posta           | yüksek     | `j***@e.com`          |
+| `phone`          | telefon           | yüksek     | `5** *** ** 34`       |
+| `tax_id`         | VKN/TCKN          | yüksek     | hash (SHA-256)        |
+| `iban`           | IBAN              | yüksek     | `TR12 **** ****`      |
+| `passport_no`    | pasaport no       | yüksek     | mask                  |
+| `id_card_no`     | kimlik no (TR)    | yüksek     | hash                  |
+| `address`        | adres             | orta       | il/ilçe               |
+| `postal_code`    | posta kodu        | düşük      | plain (kamuya açık)   |
+| `birth_date`     | doğum tarihi      | orta       | yıl                   |
+| `nationality`    | uyruk             | düşük      | plain                 |
+| `gender`         | cinsiyet          | orta       | plain (klinik gereği) |
+| `vet_license_no` | veteriner diploma | orta       | mask                  |
 
 ### 1.2 Dolaylı tanımlayıcı
 
-| Alan           | Maskeleme        |
-| -------------- | ---------------- |
-| `ip_address`   | son oktet mask   |
-| `user_agent`   | hash            |
-| `device_id`    | hash            |
-| `session_id`   | plain (sunucu log) |
-| `cookie_id`    | plain (sunucu log) |
+| Alan         | Maskeleme          |
+| ------------ | ------------------ |
+| `ip_address` | son oktet mask     |
+| `user_agent` | hash               |
+| `device_id`  | hash               |
+| `session_id` | plain (sunucu log) |
+| `cookie_id`  | plain (sunucu log) |
 
 ### 1.3 Klinik / finansal içerik (PII değil, ama hassas)
 
@@ -70,17 +83,17 @@ taşır. **Asla** düz metin loglanmaz; yalnızca ID
 
 Bir PII alan log'a yazılacaksa:
 
-| Tür           | Kural                  | Örnek              |
-| ------------- | ---------------------- | ------------------ |
-| Ad            | İlk harf + `***`       | `A***`             |
-| Soyad         | İlk harf + `***`       | `Y***`             |
-| E-posta       | İlk harf + `***@domain` | `a***@example.com` |
-| Telefon       | Son 2 hane görünür     | `5** *** ** 34`    |
-| TCKN          | İlk 3 + `***` + son 2  | `123***45`         |
-| VKN           | İlk 2 + `***` + son 2  | `12***89`          |
-| IBAN          | Ülke kodu + ` **** **** **** ` + son 4 | `TR12 **** **** **** 1234` |
-| Adres         | Yalnızca il/ilçe       | `Kadıköy, İstanbul` |
-| Doğum tarihi  | Yıl                    | `1990`             |
+| Tür          | Kural                                | Örnek                      |
+| ------------ | ------------------------------------ | -------------------------- |
+| Ad           | İlk harf + `***`                     | `A***`                     |
+| Soyad        | İlk harf + `***`                     | `Y***`                     |
+| E-posta      | İlk harf + `***@domain`              | `a***@example.com`         |
+| Telefon      | Son 2 hane görünür                   | `5** *** ** 34`            |
+| TCKN         | İlk 3 + `***` + son 2                | `123***45`                 |
+| VKN          | İlk 2 + `***` + son 2                | `12***89`                  |
+| IBAN         | Ülke kodu + `**** **** ****` + son 4 | `TR12 **** **** **** 1234` |
+| Adres        | Yalnızca il/ilçe                     | `Kadıköy, İstanbul`        |
+| Doğum tarihi | Yıl                                  | `1990`                     |
 
 ### 2.2 Güçlü: Hash (SHA-256 + salt)
 
@@ -122,11 +135,21 @@ yardımcısı (Faz 10'da).
 import { createHash } from "node:crypto";
 
 const PII_FIELDS = new Set([
-  "first_name", "last_name", "full_name",
-  "email", "phone", "tax_id", "iban",
-  "passport_no", "id_card_no", "address",
-  "vet_license_no", "ip_address", "user_agent",
-  "device_id", "birth_date",
+  "first_name",
+  "last_name",
+  "full_name",
+  "email",
+  "phone",
+  "tax_id",
+  "iban",
+  "passport_no",
+  "id_card_no",
+  "address",
+  "vet_license_no",
+  "ip_address",
+  "user_agent",
+  "device_id",
+  "birth_date",
 ]);
 
 export class PiiMasker {
@@ -205,7 +228,10 @@ Her log satırı çıkmadan önce `PiiMasker.mask()` çağrılır.
 // apps/api/src/common/audit/audit.service.ts
 await this.audit.record({
   ...this.piiMasker.mask(event),
-  tenant_id, user_id, correlation_id, action,
+  tenant_id,
+  user_id,
+  correlation_id,
+  action,
 });
 ```
 

@@ -1,7 +1,6 @@
 /**
  * @file Appointment reminder service.
  * @module apps/api/modules/appointment-reminders/appointment-reminders.service
- *
  * @description GOAL-036 randevu hatırlatma iş kuralları. Queue
  * tabanlı zamanlama; tenant-bazlı, locale-bazlı mesaj, kullanıcı
  * iletişim izni, idempotent job, retry, delivery status, iptal
@@ -23,24 +22,29 @@
  *   olanlar işlenir. NotificationService.send → status='sent' veya
  *   'failed'. SYSTEM audit. Cross-tenant izolasyonu repo'da uygulanır.
  * - `listForAppointment`: tenant-scoped listeleme.
- *
  * @security Tenant bilgisi yalnızca actor.tenantId'den alınır;
  *   request body/query'den güvenilmez. Cross-tenant erişim denemesi
  *   404 ile maskelenir.
- *
  * @since GOAL-036 (FAZ-3) randevu hatırlatma core
  */
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import {
+  AppointmentRemindersRepository,
+  type AppointmentReminderRecord,
+} from "./appointment-reminders.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import { ConsentService } from "../../common/notifications/consent.service.js";
-import type { NotificationsService } from "../notifications/notifications.service.js";
-import type { OwnersService } from "../owners/owners.service.js";
-import type { PatientsService } from "../patients/patients.service.js";
-import type { TenantService } from "../tenant/tenant.service.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
+import { OwnersService } from "../owners/owners.service.js";
+import { PatientsService } from "../patients/patients.service.js";
+import { TenantService } from "../tenant/tenant.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { Owner } from "../../common/owners/owner.types.js";
+import type { Patient } from "../../common/patients/patient.types.js";
 import type {
   Appointment,
   NotificationChannel,
@@ -48,13 +52,6 @@ import type {
   ReminderListQuery,
   ReminderStatus,
 } from "@vetniva/contracts";
-import type { Owner } from "../../common/owners/owner.types.js";
-import type { Patient } from "../../common/patients/patient.types.js";
-
-import {
-  AppointmentRemindersRepository,
-  type AppointmentReminderRecord,
-} from "./appointment-reminders.repository.js";
 
 /** Default hatırlatma config (tenant override etmediği sürece). */
 const DEFAULT_HOURS_BEFORE = 24;
@@ -98,7 +95,9 @@ export class AppointmentRemindersService {
    * Randevu için default config ile hatırlatma planlar. Randevu
    * zaten planlanmışsa idempotent no-op. Randevu başlangıcı
    * defaultHours'tan daha yakınsa planlama yapılmaz.
-   *
+   * @param tenantId
+   * @param appointment
+   * @param actor
    * @returns Oluşturulan (veya mevcut) reminder id; skip durumunda null.
    */
   public async scheduleForAppointment(
@@ -141,11 +140,7 @@ export class AppointmentRemindersService {
       });
       return null;
     }
-    const owner = await this.owners.findById(
-      tenantId,
-      patient.ownerId,
-      actor,
-    );
+    const owner = await this.owners.findById(tenantId, patient.ownerId, actor);
     if (!owner) {
       this.logger.warn({
         msg: "appointment_reminder.schedule.skip",
@@ -184,6 +179,13 @@ export class AppointmentRemindersService {
    * (appointmentId, channel, scheduledFor) için mevcut kayıt döner.
    * Snapshot appointment'ı processDueReminders sırasında
    * kullanılmak üzere saklanır.
+   * @param tenantId
+   * @param appointment
+   * @param userId
+   * @param channel
+   * @param scheduledFor
+   * @param locale
+   * @param actor
    */
   private async scheduleOne(
     tenantId: string,
@@ -251,6 +253,9 @@ export class AppointmentRemindersService {
    * Randevu iptal edildiğinde planlanmış hatırlatmaları iptal eder.
    * Zaten gönderilmiş olanlara dokunmaz. Tenant scope guard
    * zorunludur — actor farklı tenant'tan geliyorsa 403.
+   * @param tenantId
+   * @param appointmentId
+   * @param actor
    */
   public async cancelForAppointment(
     tenantId: string,
@@ -286,7 +291,12 @@ export class AppointmentRemindersService {
    * Randevu zamanı değiştiğinde hatırlatmaları yeni zamana taşır.
    * Geçmişe kayan hatırlatmalar iptal edilir. Tenant scope guard
    * zorunludur.
-   *
+   * @param tenantId
+   * @param appointmentId
+   * @param oldStartIso
+   * @param newStartIso
+   * @param newEndIso
+   * @param actor
    * @returns Taşınan/kaydırılan kayıt sayısı.
    */
   public async rescheduleForAppointment(
@@ -338,12 +348,10 @@ export class AppointmentRemindersService {
    * Zamanı gelmiş `scheduled` hatırlatmaları işler. Her biri için
    * tenant/owner/patient/template çözümlenir, NotificationsService.send
    * çağrılır. Sonuca göre status güncellenir.
-   *
+   * @param now
    * @returns İşlenen kayıt sayısı + (sent, failed, retried) breakdown.
    */
-  public async processDueReminders(
-    now: number = Date.now(),
-  ): Promise<{
+  public async processDueReminders(now: number = Date.now()): Promise<{
     processed: number;
     sent: number;
     failed: number;
@@ -430,7 +438,7 @@ export class AppointmentRemindersService {
 
       // 3) Consent kontrolü: appointment_reminder category.
       const notifChannel: NotificationChannel =
-        rec.channel === "in_app" ? "in_app" : (rec.channel as NotificationChannel);
+        rec.channel === "in_app" ? "in_app" : rec.channel;
       if (
         !this.consent.canSend(owner.id, notifChannel, "appointment_reminder")
       ) {
@@ -538,6 +546,10 @@ export class AppointmentRemindersService {
    * bağımlılık circular import yaratır). Bu nedenle appointmentId
    * geçersizse boş liste + total=0 döner; controller 404 atmaz
    * (kullanıcı kendi tenant'ında sorgu atıyor).
+   * @param tenantId
+   * @param appointmentId
+   * @param query
+   * @param actor
    */
   public async listForAppointment(
     tenantId: string,
@@ -596,6 +608,8 @@ export class AppointmentRemindersService {
    * Tenant locale'ini TenantService üzerinden çözer. System
    * job context'inde actor.tenantId set edilir, bu sayede service
    * kendi tenant'ını okuyabilir.
+   * @param tenantId
+   * @param actor
    */
   private async resolveTenantLocale(
     tenantId: string,
@@ -646,7 +660,8 @@ export class AppointmentRemindersService {
     );
     const ownerName = `${owner.firstName} ${owner.lastName}`.trim();
     return {
-      ownerName: ownerName || (locale === "tr-TR" ? "Sayın Hasta Sahibi" : "Dear Owner"),
+      ownerName:
+        ownerName || (locale === "tr-TR" ? "Sayın Hasta Sahibi" : "Dear Owner"),
       petName: petName || (locale === "tr-TR" ? "Hayvanınız" : "Your pet"),
       clinicName: "", // tenant.name çekilebilir; şimdilik boş bırakıldı (template boş handle eder)
       date: dateStr,

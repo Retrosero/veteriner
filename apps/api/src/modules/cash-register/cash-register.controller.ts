@@ -1,7 +1,6 @@
 /**
  * @file CashRegister (kasa ve gün sonu) controller.
  * @module apps/api/modules/cash-register/cash-register.controller
- *
  * @description GOAL-074 (FAZ-7) kasa ve gün sonu REST API.
  *   Tenant ID URL'de taşınmaz; actor.tenantId'den alınır.
  *
@@ -13,8 +12,7 @@
  * - `POST  /api/v1/cash-register/sessions/:id/close`   — kapanış
  * - `POST  /api/v1/cash-register/sessions/:id/reopen`  — yeniden açma
  * - `GET   /api/v1/cash-register/sessions/:id/movements` — hareketler
- * - `GET   /api/v1/cash-register/sessions/:id/summary`   — özet + variance
- *
+ * - `GET   /api/v1/cash-register/sessions/:id/summary`   — özet + variance.
  * @since GOAL-074 (FAZ-7) kasa ve gün sonu core
  */
 
@@ -31,14 +29,7 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
-import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import {
   cashRegisterSessionCloseInputSchema,
   cashRegisterSessionFiltersSchema,
@@ -55,14 +46,19 @@ import {
 } from "@vetniva/contracts";
 
 import { CashRegisterService } from "./cash-register.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("cash-register")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/cash-register")
 export class CashRegisterController {
-  public constructor(
-    private readonly service: CashRegisterService,
-  ) {}
+  public constructor(private readonly service: CashRegisterService) {}
 
   @Post("sessions")
   @RequirePermissions("cash_register:session:open")

@@ -1,11 +1,14 @@
 # KVKK ve Veri Yaşam Döngüsü (GOAL-126)
 
 ## Faz
+
 FAZ-12 (Pilot, güvenlik, üretime hazırlık)
 
 ## Genel Bakış
+
 KVKK (Türkiye) ve UK GDPR (İngiltere) uyumlu veri yaşam
 döngüsü. Tenant verisinin:
+
 1. **Erişim** (audit)
 2. **Düzeltme** (amendment, append-only)
 3. **Dışa aktarma** (export)
@@ -18,6 +21,7 @@ politikaları.
 ## Yasal Dayanak
 
 ### Türkiye — KVKK (6698 sayılı Kanun)
+
 - **Madde 6:** Özel nitelikli kişisel veriler (sağlık, cinsel
   hayat vb.) için açık rıza + ek tedbir.
 - **Madde 7:** Sağlık verileri: yalnızca anonimleştirilmiş
@@ -28,6 +32,7 @@ politikaları.
   işlenmenin kısıtlanması, itiraz.
 
 ### İngiltere — UK GDPR
+
 - **Article 6:** Yasal dayanak (sözleşme, meşru menfaat,
   yasal yükümlülük).
 - **Article 9:** Özel nitelikli veriler (sağlık).
@@ -38,6 +43,7 @@ politikaları.
 ## Yaşam Döngüsü
 
 ### 1. Erişim (Audit)
+
 - Tüm okuma + yazma aksiyonları `audit:*` event'i
   üretir (`audit_log` tablosu).
 - Audit log'lar en az 3 yıl saklanır
@@ -46,6 +52,7 @@ politikaları.
   hayvanlarına ait verileri görebilir (`self_only` flag).
 
 ### 2. Düzeltme (Amendment)
+
 - Tıbbi kayıtlar (muayene, SOAP, vital, teşhis, order,
   reçete, aşı) **append-only**.
 - Düzeltme yeni bir amendment versiyonu ile yapılır
@@ -54,6 +61,7 @@ politikaları.
   ile düzeltilir (`PaymentReversal`, `SaleReversal`).
 
 ### 3. Dışa Aktarma (Export)
+
 - `GET /api/v1/kvkk/export` (FAZ-12+ endpoint'i ile)
   tenant verisinin tamamını JSON formatında dışa aktarır.
 - PII alanları mask'lenmeden dışa aktarılır
@@ -61,6 +69,7 @@ politikaları.
 - Export audit olayı: `audit:kvkk.export.applied`.
 
 ### 4. Silme (Erasure)
+
 - **PII alanları:** firstName, lastName, email, phone,
   taxId, address → `kvkk-erased-<hash>` ile
   anonimleştirilir.
@@ -72,6 +81,7 @@ politikaları.
 - 30 gün içinde tamamlanır (KVKK Madde 12).
 
 ### 5. Arşivleme (Retention)
+
 - Tenant bazlı override → global override → default
   sırasıyla çözülür (bkz. `docs/errors/LOG_RETENTION.md`).
 - Default retention matrisi:
@@ -84,6 +94,7 @@ politikaları.
   retention süresi sonrası → sil.
 
 ### 6. Yasal Saklama (Legal Hold)
+
 - Dava/devlet talebi durumunda `legalHold: true` set
   edilir; retention süresi dolsa bile kayıt silinmez.
 - SUPERADMIN tarafından yönetilir
@@ -91,12 +102,12 @@ politikaları.
 
 ## API Endpoints (planlanan)
 
-| # | Method | Path | Yetki |
-|---|--------|------|-------|
-| 1 | POST | `/api/v1/kvkk/erasure-requests` | `clinic:owner:read` |
-| 2 | GET | `/api/v1/kvkk/erasure-requests` | SUPERADMIN |
-| 3 | POST | `/api/v1/kvkk/erasure-requests/{id}/apply` | SUPERADMIN |
-| 4 | GET | `/api/v1/kvkk/export` | `clinic:tenant:export` |
+| #   | Method | Path                                       | Yetki                  |
+| --- | ------ | ------------------------------------------ | ---------------------- |
+| 1   | POST   | `/api/v1/kvkk/erasure-requests`            | `clinic:owner:read`    |
+| 2   | GET    | `/api/v1/kvkk/erasure-requests`            | SUPERADMIN             |
+| 3   | POST   | `/api/v1/kvkk/erasure-requests/{id}/apply` | SUPERADMIN             |
+| 4   | GET    | `/api/v1/kvkk/export`                      | `clinic:tenant:export` |
 
 ## Hasta Sahibi (Portal) Hakları
 
@@ -117,6 +128,7 @@ kullanıcının farklı alanları farklı hash alır, ancak
 çapraz-tenant eşleşme yapılamaz.
 
 Örnek:
+
 - `firstName: "Mehmet"` → `firstName: "kvkk-erased-a3b8c2d1"`
 - `email: "m@example.com"` → `email: "kvkk-erased-7f9e1a4b"`
 - `taxId: "12345678901"` → `taxId: "kvkk-erased-2c5d8e6f"`

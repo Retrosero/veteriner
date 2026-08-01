@@ -38,22 +38,13 @@ export const purchaseOrderStatusSchema = z.enum([
   "received",
   "cancelled",
 ]);
-export type PurchaseOrderStatus = z.infer<
-  typeof purchaseOrderStatusSchema
->;
+export type PurchaseOrderStatus = z.infer<typeof purchaseOrderStatusSchema>;
 
 /* --------------------------------------------------------------------------
  * Para birimi
  * -------------------------------------------------------------------------- */
-export const purchaseOrderCurrencySchema = z.enum([
-  "TRY",
-  "GBP",
-  "USD",
-  "EUR",
-]);
-export type PurchaseOrderCurrency = z.infer<
-  typeof purchaseOrderCurrencySchema
->;
+export const purchaseOrderCurrencySchema = z.enum(["TRY", "GBP", "USD", "EUR"]);
+export type PurchaseOrderCurrency = z.infer<typeof purchaseOrderCurrencySchema>;
 
 /* --------------------------------------------------------------------------
  * Satın alma sipariş satırı (PurchaseOrderLine)
@@ -72,10 +63,10 @@ export const purchaseOrderLineInputSchema = z.object({
   unit: z.string().min(1).max(32),
   orderedQuantity: z
     .string()
+    // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden miktar doğrulamasıdır.
     .regex(/^\d+(\.\d{1,4})?$/, "Geçersiz miktar formatı"),
-  unitPrice: z
-    .string()
-    .regex(/^\d+(\.\d{1,4})?$/, "Geçersiz fiyat formatı"),
+  // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden fiyat doğrulamasıdır.
+  unitPrice: z.string().regex(/^\d+(\.\d{1,4})?$/, "Geçersiz fiyat formatı"),
   notes: z.string().max(2000).optional(),
 });
 export type PurchaseOrderLineInput = z.infer<
@@ -95,10 +86,10 @@ export const purchaseOrderReceiveLineInputSchema = z.object({
   lineId: z.string().min(1).max(100),
   receivedQuantity: z
     .string()
+    // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden miktar doğrulamasıdır.
     .regex(/^\d+(\.\d{1,4})?$/, "Geçersiz miktar formatı"),
-  unitCost: z
-    .string()
-    .regex(/^\d+(\.\d{1,4})?$/, "Geçersiz maliyet formatı"),
+  // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden maliyet doğrulamasıdır.
+  unitCost: z.string().regex(/^\d+(\.\d{1,4})?$/, "Geçersiz maliyet formatı"),
   notes: z.string().max(2000).optional(),
 });
 export type PurchaseOrderReceiveLineInput = z.infer<
@@ -150,10 +141,7 @@ export type PurchaseOrderUpdateInput = z.infer<
 
 /** Mal kabul isteği (toplu — birden çok satır tek seferde). */
 export const purchaseOrderReceiveInputSchema = z.object({
-  lines: z
-    .array(purchaseOrderReceiveLineInputSchema)
-    .min(1)
-    .max(500),
+  lines: z.array(purchaseOrderReceiveLineInputSchema).min(1).max(500),
   notes: z.string().max(2000).optional(),
 });
 export type PurchaseOrderReceiveInput = z.infer<
@@ -221,9 +209,7 @@ export const purchaseOrderDetailSchema = z.object({
   order: purchaseOrderSchema,
   lines: z.array(purchaseOrderLineSchema),
 });
-export type PurchaseOrderDetail = z.infer<
-  typeof purchaseOrderDetailSchema
->;
+export type PurchaseOrderDetail = z.infer<typeof purchaseOrderDetailSchema>;
 
 /** Liste filtreleri. */
 export const purchaseOrderFiltersSchema = z.object({
@@ -236,9 +222,7 @@ export const purchaseOrderFiltersSchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).max(10000).default(0),
 });
-export type PurchaseOrderFilters = z.infer<
-  typeof purchaseOrderFiltersSchema
->;
+export type PurchaseOrderFilters = z.infer<typeof purchaseOrderFiltersSchema>;
 
 /** Liste response şeması. */
 export const purchaseOrderListResponseSchema = z.object({

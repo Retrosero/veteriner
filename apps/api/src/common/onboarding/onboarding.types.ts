@@ -145,11 +145,7 @@ export interface LocalizedOnboardingScenario {
  * isimlendirme (SHR'lerden arındırılmış).
  */
 export type OnboardingRole =
-  | "SUPERADMIN"
-  | "OWNER"
-  | "VETERINARIAN"
-  | "STAFF"
-  | "PET_OWNER_PORTAL";
+  "SUPERADMIN" | "OWNER" | "VETERINARIAN" | "STAFF" | "PET_OWNER_PORTAL";
 
 /**
  * Ask endpoint girdi şeması (Zod).
@@ -197,11 +193,7 @@ export interface OnboardingAskResponse {
  * danışın").
  */
 export type OnboardingRefusalReason =
-  | "medical"
-  | "dosage"
-  | "diagnosis"
-  | "treatment"
-  | "out_of_scope";
+  "medical" | "dosage" | "diagnosis" | "treatment" | "out_of_scope";
 
 /**
  * Senaryo listesi endpoint çıktısı.

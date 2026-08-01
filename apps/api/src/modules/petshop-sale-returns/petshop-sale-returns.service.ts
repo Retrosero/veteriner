@@ -36,10 +36,9 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { PetshopSaleReturnsRepository } from "./petshop-sale-returns.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
-import type { InventoryService } from "../inventory/inventory.service.js";
 import {
   addDecimalString,
   multiplyDecimalString,
@@ -48,12 +47,14 @@ import {
   type PetshopSaleReturnLineRecord,
   type PetshopSaleReturnRecord,
 } from "../../common/petshop-sale-returns/petshop-sale-return.types.js";
+import { InventoryService } from "../inventory/inventory.service.js";
+import { PetshopSalesRepository } from "../petshop-sales/petshop-sales.repository.js";
+import { ProductsService } from "../products/products.service.js";
+import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { PetshopSaleLineRecord } from "../../common/petshop-sales/petshop-sale.types.js";
 import type {
-  PetshopSaleLineRecord,
-  PetshopSaleRecord,
-} from "../../common/petshop-sales/petshop-sale.types.js";
-import type {
-  PetshopPaymentMethod,
   PetshopSaleReturnCancelInput,
   PetshopSaleReturnCompleteInput,
   PetshopSaleReturnCreateInput,
@@ -62,11 +63,6 @@ import type {
   PetshopSaleReturnLineInput,
   PetshopSaleReturnListResponse,
 } from "@vetniva/contracts";
-
-import { PetshopSaleReturnsRepository } from "./petshop-sale-returns.repository.js";
-import { PetshopSalesRepository } from "../petshop-sales/petshop-sales.repository.js";
-import { ProductsService } from "../products/products.service.js";
-import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
 
 @Injectable()
 export class PetshopSaleReturnsService {
@@ -93,7 +89,10 @@ export class PetshopSaleReturnsService {
     this.requireTenantScope(actor, tenantId);
 
     // 1) Orijinal satış var mı ve completed mı?
-    const originalSale = this.salesRepo.findById(tenantId, input.originalSaleId);
+    const originalSale = this.salesRepo.findById(
+      tenantId,
+      input.originalSaleId,
+    );
     if (!originalSale) {
       throw new DomainError({
         errorCode: "VET-RETURN-0001",
@@ -150,8 +149,7 @@ export class PetshopSaleReturnsService {
       if (!orig) {
         throw new DomainError({
           errorCode: "VET-RETURN-0004",
-          message:
-            "İade satırı orijinal satışta bulunamadı",
+          message: "İade satırı orijinal satışta bulunamadı",
           httpStatus: 422,
           severity: "warning",
           i18nKey: "error.VET-RETURN-0004",
@@ -164,8 +162,7 @@ export class PetshopSaleReturnsService {
       if (orig.productId !== line.productId) {
         throw new DomainError({
           errorCode: "VET-RETURN-0004",
-          message:
-            "İade satırı ürünü orijinal satırdaki ürünle eşleşmiyor",
+          message: "İade satırı ürünü orijinal satırdaki ürünle eşleşmiyor",
           httpStatus: 422,
           severity: "warning",
           i18nKey: "error.VET-RETURN-0004",
@@ -176,8 +173,7 @@ export class PetshopSaleReturnsService {
           },
         });
       }
-      const already =
-        alreadyReturned.get(line.originalLineId) ?? "0";
+      const already = alreadyReturned.get(line.originalLineId) ?? "0";
       const projected = addDecimalString(already, line.quantity);
       if (
         projected === null ||
@@ -185,8 +181,7 @@ export class PetshopSaleReturnsService {
       ) {
         throw new DomainError({
           errorCode: "VET-RETURN-0003",
-          message:
-            "İade miktarı orijinal satış miktarını aşıyor",
+          message: "İade miktarı orijinal satış miktarını aşıyor",
           httpStatus: 422,
           severity: "warning",
           i18nKey: "error.VET-RETURN-0003",
@@ -202,11 +197,7 @@ export class PetshopSaleReturnsService {
       // senaryolarda lot belirtilen satırlarda lot varlık +
       // arşiv kontrolü).
       if (line.lotId) {
-        const lot = await this.inventory.getLot(
-          tenantId,
-          line.lotId,
-          actor,
-        );
+        const lot = await this.inventory.getLot(tenantId, line.lotId, actor);
         if (!lot) {
           throw new DomainError({
             errorCode: "VET-RETURN-0006",
@@ -230,8 +221,7 @@ export class PetshopSaleReturnsService {
         if (lot.productId !== line.productId) {
           throw new DomainError({
             errorCode: "VET-RETURN-0008",
-            message:
-              "İade satırı lot'ı ürünle eşleşmiyor",
+            message: "İade satırı lot'ı ürünle eşleşmiyor",
             httpStatus: 422,
             severity: "warning",
             i18nKey: "error.VET-RETURN-0008",
@@ -446,8 +436,7 @@ export class PetshopSaleReturnsService {
       }
     }
 
-    const refundMethod =
-      input?.refundMethod ?? existing.refundMethod;
+    const refundMethod = input?.refundMethod ?? existing.refundMethod;
     if (input?.notes !== undefined) {
       this.repo.update(tenantId, id, {
         notes: input.notes,
@@ -532,8 +521,7 @@ export class PetshopSaleReturnsService {
     if (existing.status === "completed") {
       throw new DomainError({
         errorCode: "VET-RETURN-0010",
-        message:
-          "Tamamlanmış iadeler iptal edilemez (ayrı ters kayıt açın)",
+        message: "Tamamlanmış iadeler iptal edilemez (ayrı ters kayıt açın)",
         httpStatus: 409,
         severity: "warning",
         i18nKey: "error.VET-RETURN-0010",
@@ -701,7 +689,7 @@ export class PetshopSaleReturnsService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

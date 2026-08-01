@@ -62,9 +62,8 @@ export type ClinicalUsageSourceType = z.infer<
 export const clinicalUsageLineInputSchema = z.object({
   productId: z.string().min(1).max(100),
   unit: z.string().min(1).max(32),
-  quantity: z
-    .string()
-    .regex(/^\d+(\.\d{1,4})?$/, "Geçersiz miktar"),
+  // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden decimal doğrulamasıdır.
+  quantity: z.string().regex(/^\d+(\.\d{1,4})?$/, "Geçersiz miktar"),
   lotId: z.string().min(1).max(100).optional(),
   notes: z.string().max(2000).optional(),
 });
@@ -130,9 +129,7 @@ export const clinicalUsageDetailSchema = z.object({
   usage: clinicalUsageSchema,
   lines: z.array(clinicalUsageLineSchema),
 });
-export type ClinicalUsageDetail = z.infer<
-  typeof clinicalUsageDetailSchema
->;
+export type ClinicalUsageDetail = z.infer<typeof clinicalUsageDetailSchema>;
 
 /** Liste filtreleri. */
 export const clinicalUsageFiltersSchema = z.object({
@@ -144,9 +141,7 @@ export const clinicalUsageFiltersSchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).max(10000).default(0),
 });
-export type ClinicalUsageFilters = z.infer<
-  typeof clinicalUsageFiltersSchema
->;
+export type ClinicalUsageFilters = z.infer<typeof clinicalUsageFiltersSchema>;
 
 /** Liste response şeması. */
 export const clinicalUsageListResponseSchema = z.object({

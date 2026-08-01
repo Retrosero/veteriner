@@ -18,11 +18,36 @@ tanım kabul edilmez; aynı gün tekrarı veya `endTime <= startTime`
 {
   "veterinarianId": "vet-uuid",
   "hours": [
-    { "dayOfWeek": 1, "startTime": "09:00", "endTime": "17:00", "slotDurationMin": 30 },
-    { "dayOfWeek": 2, "startTime": "09:00", "endTime": "17:00", "slotDurationMin": 30 },
-    { "dayOfWeek": 3, "startTime": "09:00", "endTime": "17:00", "slotDurationMin": 30 },
-    { "dayOfWeek": 4, "startTime": "09:00", "endTime": "17:00", "slotDurationMin": 30 },
-    { "dayOfWeek": 5, "startTime": "09:00", "endTime": "14:00", "slotDurationMin": 30 }
+    {
+      "dayOfWeek": 1,
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "slotDurationMin": 30
+    },
+    {
+      "dayOfWeek": 2,
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "slotDurationMin": 30
+    },
+    {
+      "dayOfWeek": 3,
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "slotDurationMin": 30
+    },
+    {
+      "dayOfWeek": 4,
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "slotDurationMin": 30
+    },
+    {
+      "dayOfWeek": 5,
+      "startTime": "09:00",
+      "endTime": "14:00",
+      "slotDurationMin": 30
+    }
   ]
 }
 ```

@@ -104,7 +104,3 @@ export const patientOwnershipTransferInputSchema = z.object({
 export type PatientOwnershipTransferInput = z.infer<
   typeof patientOwnershipTransferInputSchema
 >;
-
-/** Re-export: ownership sözleşmesindeki zengin transfer şeması. */
-export { ownershipTransferInputSchema } from "./ownership.js";
-export type { OwnershipTransferInput } from "./ownership.js";

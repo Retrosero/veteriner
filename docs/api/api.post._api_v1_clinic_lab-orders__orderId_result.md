@@ -30,7 +30,7 @@ POST /api/v1/clinic/lab-orders/lo-uuid/result
 - `value` (string) zorunlu.
 - `unit` (string, 1-30) opsiyonel.
 - `abnormalFlag` (enum: `low|normal|high|critical_low|
-  critical_high`) opsiyonel.
+critical_high`) opsiyonel.
 - `referenceRangeLow`/`referenceRangeHigh` (string)
   opsiyonel.
 - `notes` (string) opsiyonel.

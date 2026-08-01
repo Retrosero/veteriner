@@ -1,7 +1,6 @@
 /**
  * @file API bootstrap.
  * @module apps/api
- *
  * @description NestJS uygulamasını başlatır:
  * - Global exception filter (AllExceptionsFilter)
  * - Global request ID interceptor
@@ -12,13 +11,10 @@
  * - Cookie parser (GOAL-011 session cookie)
  * - Compression
  * - Swagger UI (/api/docs)
- * - Shutdown hooks
- *
- * @security Production'da reverse proxy (nginx) TLS, rate limit ve
- *   IP filtreleme uygular. Session cookie httpOnly + secure (prod)
- *   + SameSite=Lax.
- *
- * @since GOAL-011 (FAZ-1) cookie tabanlı session
+ * - Shutdown hooks.
+ * Güvenlik: Production'da reverse proxy (nginx) TLS, rate limit ve IP
+ * filtreleme uygular. Session cookie httpOnly + secure (prod) + SameSite=Lax.
+ * GOAL-011 (FAZ-1) ile cookie tabanlı session eklenmiştir.
  */
 
 import "reflect-metadata";
@@ -37,10 +33,13 @@ import {
   REQUEST_ID_HEADER,
   RequestIdInterceptor,
 } from "./common/interceptors/request-id.interceptor.js";
-import { ErrorEventsService } from "./modules/error-events/error-events.service.js";
 import { validateEnv } from "./env.js";
+import { ErrorEventsService } from "./modules/error-events/error-events.service.js";
 
-async function bootstrap(): Promise<void> {
+import type { INestApplication } from "@nestjs/common";
+
+/** API uygulamasını HTTP dinleme olmadan production varsayımlarıyla kurar. */
+export async function createApiApplication(): Promise<INestApplication> {
   const env = validateEnv();
   const app = await NestFactory.create(AppModule, {
     logger: ["error", "warn", "log"],
@@ -84,15 +83,8 @@ async function bootstrap(): Promise<void> {
       { type: "apiKey", name: REQUEST_ID_HEADER, in: "header" },
       "request-id",
     )
-    .addCookieAuth(
-      "vetniva_session",
-      undefined,
-      "Session cookie (GOAL-011)",
-    )
-    .addApiKey(
-      { type: "apiKey", name: "x-actor-id", in: "header" },
-      "actor-id",
-    )
+    .addCookieAuth("vetniva_session", undefined, "Session cookie (GOAL-011)")
+    .addApiKey({ type: "apiKey", name: "x-actor-id", in: "header" }, "actor-id")
     .addApiKey(
       { type: "apiKey", name: "x-actor-role", in: "header" },
       "actor-role",
@@ -107,6 +99,14 @@ async function bootstrap(): Promise<void> {
     swaggerOptions: { persistAuthorization: true },
   });
 
+  return app;
+}
+
+/** API uygulamasını güvenli varsayılanlarla başlatır. */
+async function bootstrap(): Promise<void> {
+  const env = validateEnv();
+  const app = await createApiApplication();
+
   await app.listen(env.PORT_API, "0.0.0.0");
   const logger = new Logger("Bootstrap");
   logger.log(
@@ -119,8 +119,12 @@ async function bootstrap(): Promise<void> {
   );
 }
 
-bootstrap().catch((err) => {
-  // eslint-disable-next-line no-console
-  console.error("API başlatılamadı:", err);
-  process.exit(1);
-});
+// Vitest bu modülü embedded HTTP E2E için import eder; test sürecinde ikinci
+// bir sabit-port bootstrap başlatılmaz. `node dist/main.js` ortamında VITEST
+// tanımlı değildir ve normal production bootstrap her zaman çalışır.
+if (process.env["VITEST"] !== "true") {
+  bootstrap().catch((err) => {
+    console.error("API başlatılamadı:", err);
+    process.exitCode = 1;
+  });
+}

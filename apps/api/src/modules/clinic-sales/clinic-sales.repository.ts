@@ -80,9 +80,7 @@ export class ClinicSalesRepository {
     return record;
   }
 
-  public insertLine(
-    record: ClinicSaleLineRecord,
-  ): ClinicSaleLineRecord {
+  public insertLine(record: ClinicSaleLineRecord): ClinicSaleLineRecord {
     this.lineById.set(record.id, record);
     const list = this.linesBySale.get(record.saleId) ?? [];
     list.push(record.id);
@@ -90,10 +88,7 @@ export class ClinicSalesRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): ClinicSaleRecord | null {
+  public findById(tenantId: string, id: string): ClinicSaleRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -148,16 +143,10 @@ export class ClinicSalesRepository {
         rec.customerPatientId !== filters.customerPatientId
       )
         continue;
-      if (filters.sourceType && rec.sourceType !== filters.sourceType)
-        continue;
-      if (filters.sourceId && rec.sourceId !== filters.sourceId)
-        continue;
+      if (filters.sourceType && rec.sourceType !== filters.sourceType) continue;
+      if (filters.sourceId && rec.sourceId !== filters.sourceId) continue;
       if (needle) {
-        const hay = [
-          rec.id,
-          rec.sourceId,
-          rec.notes ?? "",
-        ]
+        const hay = [rec.id, rec.sourceId, rec.notes ?? ""]
           .join(" ")
           .toLowerCase();
         if (!hay.includes(needle)) continue;

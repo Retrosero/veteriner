@@ -17,4 +17,5 @@ export const PERMISSIONS_KEY = "rbac:permissions";
  */
 export const RequirePermission = (
   ...permissions: string[]
-): MethodDecorator & ClassDecorator => SetMetadata(PERMISSIONS_KEY, permissions);
+): MethodDecorator & ClassDecorator =>
+  SetMetadata(PERMISSIONS_KEY, permissions);

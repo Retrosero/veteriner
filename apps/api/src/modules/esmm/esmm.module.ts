@@ -11,10 +11,11 @@
 
 import { Module } from "@nestjs/common";
 
-import { MockEsmmAdapter } from "../../common/esmm/mock-esmm-adapter.js";
 import { EsmmDocumentsController } from "./esmm.controller.js";
 import { EsmmDocumentsRepository } from "./esmm.repository.js";
 import { EsmmDocumentsService } from "./esmm.service.js";
+import { ESMM_ADAPTER } from "../../common/esmm/esmm.types.js";
+import { MockEsmmAdapter } from "../../common/esmm/mock-esmm-adapter.js";
 
 @Module({
   controllers: [EsmmDocumentsController],
@@ -22,6 +23,7 @@ import { EsmmDocumentsService } from "./esmm.service.js";
     EsmmDocumentsService,
     EsmmDocumentsRepository,
     MockEsmmAdapter,
+    { provide: ESMM_ADAPTER, useExisting: MockEsmmAdapter },
   ],
   exports: [EsmmDocumentsService, EsmmDocumentsRepository],
 })

@@ -47,7 +47,7 @@ exhaustiveness guard ile korunur.
 
 - `GET    /api/v1/clinic/examinations/{id}/pdf` (`pdf`, yetki
   `clinic:examination:read`, FAZ-0 `text/plain` + `Content-Disposition:
-  attachment`).
+attachment`).
 - `POST   /api/v1/clinic/examinations/{id}/share` (`share`, yetki
   `clinic:report:export`, `@HttpCode(200)`).
 - `GET    /api/v1/clinic/examinations/{id}/shares` (`listShares`, yetki
@@ -120,12 +120,12 @@ Hata kataloğu: yeni hata kodu eklenmedi (mevcut `VET-CLINIC-0001`,
   tablosu, `tenantId` + `examinationId` index, `revokedAt` partial
   index).
 - Gerçek PDF render (`pdfkit`/`puppeteer` + tenant header/footer/logo
-  + veteriner imza alanı + `confidential` watermark + çok sayfalı
-  yapı). FAZ-10+.
+  - veteriner imza alanı + `confidential` watermark + çok sayfalı
+    yapı). FAZ-10+.
 - Gerçek signed URL mekanizması (S3/object storage presigned
   veya app-issued HMAC token + revocation). FAZ-10+.
 - `NotificationService` gerçek kanal adapter'ları (SMTP/Twilio/FCM
-  + portal in-app). FAZ-10+.
+  - portal in-app). FAZ-10+.
 - Frontend paylaşım CTA (muayene detayında "Paylaş" butonu + kanal
   seçici + sent/pending durum göstergesi + geri sayım).
 - Paylaşım listesi UI (aktif/iptal badge + sentChannels durumu).

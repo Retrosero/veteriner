@@ -15,12 +15,12 @@
 
 import { Injectable } from "@nestjs/common";
 
-import type { Prescription } from "@vetniva/contracts";
-
 import {
   toPrescription,
   type PrescriptionRecord,
 } from "../../common/prescriptions/prescription.types.js";
+
+import type { Prescription } from "@vetniva/contracts";
 
 /** Patch tipi: kısmi güncelleme için izin verilen alanlar. */
 export interface PrescriptionPatch {
@@ -49,10 +49,7 @@ export class PrescriptionsRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): PrescriptionRecord | null {
+  public findById(tenantId: string, id: string): PrescriptionRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;

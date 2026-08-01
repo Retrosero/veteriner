@@ -76,10 +76,7 @@ export class ExaminationsRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): ExaminationRecord | null {
+  public findById(tenantId: string, id: string): ExaminationRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -177,10 +174,7 @@ export class ExaminationAmendsRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): ExaminationAmendRecord | null {
+  public findById(tenantId: string, id: string): ExaminationAmendRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;

@@ -37,13 +37,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   expiringLotAlertAcknowledgeInputSchema,
   expiringLotAlertFiltersSchema,
@@ -61,6 +54,13 @@ import {
 } from "@vetniva/contracts";
 
 import { StockAlertsService } from "./stock-alerts.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("stock-alerts")
 @UseGuards(PermissionsGuard)
@@ -181,7 +181,12 @@ export class StockAlertsController {
     @CurrentActor() actor: ActorContext,
   ): Promise<LowStockAlert> {
     const tenantId = this.requireTenant(actor);
-    return this.service.acknowledgeLowStock(tenantId, productId, body?.note, actor);
+    return this.service.acknowledgeLowStock(
+      tenantId,
+      productId,
+      body?.note,
+      actor,
+    );
   }
 
   // =========================================================================
@@ -203,12 +208,19 @@ export class StockAlertsController {
   @ApiResponse({ status: 422, description: "Resolved uyarı ack edilemez." })
   public async acknowledgeExpiringLot(
     @Param("lotId", new ParseUUIDPipe()) lotId: string,
-    @Body(new ZodValidationPipe(expiringLotAlertAcknowledgeInputSchema.optional()))
+    @Body(
+      new ZodValidationPipe(expiringLotAlertAcknowledgeInputSchema.optional()),
+    )
     body: { note?: string } | undefined,
     @CurrentActor() actor: ActorContext,
   ): Promise<ExpiringLotAlert> {
     const tenantId = this.requireTenant(actor);
-    return this.service.acknowledgeExpiringLot(tenantId, lotId, body?.note, actor);
+    return this.service.acknowledgeExpiringLot(
+      tenantId,
+      lotId,
+      body?.note,
+      actor,
+    );
   }
 
   // =========================================================================

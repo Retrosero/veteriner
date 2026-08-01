@@ -1,9 +1,11 @@
 # GOAL-127 — Production Release ve Rollback (Completion Report)
 
 ## Faz
+
 FAZ-12 (Pilot, güvenlik, üretime hazırlık)
 
 ## Özet
+
 Production ortamı için CI/CD, migration deployment,
 feature flag, health check, monitoring ve rollback
 prosedürü. Semver versiyon politikası + smoke test
@@ -12,6 +14,7 @@ otomasyonu.
 ## Çıktılar
 
 ### Döküman (`docs/operations/PRODUCTION_RELEASE.md`)
+
 - **Release akışı:** pre-release checklist + CI/CD
   pipeline + migration + feature flag + health check +
   monitoring + smoke tests.
@@ -30,6 +33,7 @@ otomasyonu.
   kabul edilebilir.
 
 ## İş Kuralları
+
 - **CI gates:** lint + type-check + test + docs:check +
   i18n:check + e2e:smoke.
 - **Migration:** backward-compatible; destructive
@@ -44,6 +48,7 @@ otomasyonu.
   production'a deploy.
 
 ## Yapılmayanlar / Bilinçli Atlamalar
+
 - **Canlı deploy (k8s/ECS manifest'leri)** → FAZ-12+
   (infrastructure repo).
 - **CI workflow dosyaları (`.github/workflows/`)** →
@@ -57,13 +62,16 @@ otomasyonu.
   FAZ-12+.
 
 ## Döküman Uyum
+
 - `pnpm docs:check` → temiz (yeni eklenen özgü).
 - `pnpm i18n:check` → temiz.
 
 ## Testler
+
 - Otomatik smoke test'ler FAZ-12+ ile eklenecek
   (`apps/e2e/`).
 - Migration test'leri (rollback simülasyonu) FAZ-12+.
 
 ## Commit
+
 - Docs: (bu commit) — `docs(operations): GOAL-127 production release + rollback prosedürü`

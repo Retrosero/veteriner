@@ -108,7 +108,6 @@ registerProcessSafetyHooks();
 bootstrap().catch((error: unknown) => {
   // Env doğrulama hatası burada yakalanır. Logger henüz bağlı
   // olmayabilir; bu yüzden hem logger hem stderr kullanılır.
-  // eslint-disable-next-line no-console
   console.error("worker bootstrap başarısız:", error);
   process.exit(1);
 });

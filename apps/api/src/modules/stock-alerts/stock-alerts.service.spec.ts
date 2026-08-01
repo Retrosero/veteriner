@@ -18,24 +18,22 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { StockAlertAcksRepository } from "./stock-alert-acks.repository.js";
+import { StockAlertsService } from "./stock-alerts.service.js";
+import { InventoryRepository } from "../inventory/inventory.repository.js";
+import { InventoryService } from "../inventory/inventory.service.js";
+import { ProductsRepository } from "../products/products.repository.js";
+import { ProductsService } from "../products/products.service.js";
+import { StockMovementsRepository } from "../stock-movements/stock-movements.repository.js";
+import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
 import type {
   ProductCreateInput,
   StockLotCreateInput,
   StockMovementCreateInput,
 } from "@vetniva/contracts";
-
-import { InventoryService } from "../inventory/inventory.service.js";
-import { InventoryRepository } from "../inventory/inventory.repository.js";
-import { ProductsService } from "../products/products.service.js";
-import { ProductsRepository } from "../products/products.repository.js";
-import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
-import { StockMovementsRepository } from "../stock-movements/stock-movements.repository.js";
-
-import { StockAlertAcksRepository } from "./stock-alert-acks.repository.js";
-import { StockAlertsService } from "./stock-alerts.service.js";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -96,20 +94,6 @@ function makeAudit(): AuditService {
       ),
   } as unknown as AuditService;
 }
-
-/** Sistem-actor (internal compute çağrıları için). */
-const SYSTEM_ACTOR: ActorContext = {
-  actorId: "system",
-  actorType: "system",
-  role: "SYSTEM",
-  tenantId: TENANT_A,
-  branchId: null,
-  isSuperadmin: false,
-  correlationId: "req-system",
-  ipAddress: null,
-  userAgentHash: null,
-  source: "header",
-};
 
 function makeProductInput(
   overrides: Partial<ProductCreateInput> = {},
@@ -256,7 +240,7 @@ describe("StockAlertsService — GOAL-067", () => {
     });
 
     it("qty=0 için severity=critical", async () => {
-      const p = await ctx.productsService.createProduct(
+      await ctx.productsService.createProduct(
         TENANT_A,
         makeProductInput({ lowStockThreshold: "5" }),
         STAFF_A,
@@ -553,12 +537,10 @@ describe("StockAlertsService — GOAL-067", () => {
       );
       await expect(
         ctx.service.acknowledgeLowStock(TENANT_A, p.id, undefined, STAFF_A),
-      ).rejects.toThrowError(
-        expect.objectContaining({
-          errorCode: "VET-STOCK_ALERT-0001",
-          httpStatus: 404,
-        }),
-      );
+      ).rejects.toMatchObject({
+        errorCode: "VET-STOCK_ALERT-0001",
+        httpStatus: 404,
+      });
     });
 
     it("SKT uyarısı yoksa 404 VET-STOCK_ALERT-0001", async () => {
@@ -580,12 +562,10 @@ describe("StockAlertsService — GOAL-067", () => {
           undefined,
           STAFF_A,
         ),
-      ).rejects.toThrowError(
-        expect.objectContaining({
-          errorCode: "VET-STOCK_ALERT-0001",
-          httpStatus: 404,
-        }),
-      );
+      ).rejects.toMatchObject({
+        errorCode: "VET-STOCK_ALERT-0001",
+        httpStatus: 404,
+      });
     });
   });
 
@@ -605,12 +585,7 @@ describe("StockAlertsService — GOAL-067", () => {
         makeMovementInput(p.id, "3"),
         STAFF_A,
       );
-      await ctx.service.acknowledgeLowStock(
-        TENANT_A,
-        p.id,
-        undefined,
-        STAFF_A,
-      );
+      await ctx.service.acknowledgeLowStock(TENANT_A, p.id, undefined, STAFF_A);
       // Refresh: ack korunur.
       const result = await ctx.service.refresh(TENANT_A, undefined, STAFF_A);
       expect(result.lowStockAlertCount).toBe(0); // acknowledged → active filtresi 0
@@ -634,12 +609,7 @@ describe("StockAlertsService — GOAL-067", () => {
         makeMovementInput(p.id, "3"),
         STAFF_A,
       );
-      await ctx.service.acknowledgeLowStock(
-        TENANT_A,
-        p.id,
-        undefined,
-        STAFF_A,
-      );
+      await ctx.service.acknowledgeLowStock(TENANT_A, p.id, undefined, STAFF_A);
       await ctx.service.refresh(
         TENANT_A,
         { resetAcknowledgements: true },
@@ -660,7 +630,7 @@ describe("StockAlertsService — GOAL-067", () => {
 
   describe("summary", () => {
     it("doğru sayıları döner", async () => {
-      const p1 = await ctx.productsService.createProduct(
+      await ctx.productsService.createProduct(
         TENANT_A,
         makeProductInput({ lowStockThreshold: "5" }),
         STAFF_A,
@@ -702,17 +672,11 @@ describe("StockAlertsService — GOAL-067", () => {
   describe("tenant izolasyonu", () => {
     it("cross-tenant listLowStock → 403 VET-AUTHZ-0001", async () => {
       await expect(
-        ctx.service.listLowStock(
-          TENANT_A,
-          { limit: 50, offset: 0 },
-          STAFF_B,
-        ),
-      ).rejects.toThrowError(
-        expect.objectContaining({
-          errorCode: "VET-AUTHZ-0001",
-          httpStatus: 403,
-        }),
-      );
+        ctx.service.listLowStock(TENANT_A, { limit: 50, offset: 0 }, STAFF_B),
+      ).rejects.toMatchObject({
+        errorCode: "VET-AUTHZ-0001",
+        httpStatus: 403,
+      });
     });
 
     it("cross-tenant listExpiringLots → 403 VET-AUTHZ-0001", async () => {
@@ -722,23 +686,19 @@ describe("StockAlertsService — GOAL-067", () => {
           { limit: 50, offset: 0, daysAhead: 30 },
           STAFF_B,
         ),
-      ).rejects.toThrowError(
-        expect.objectContaining({
-          errorCode: "VET-AUTHZ-0001",
-          httpStatus: 403,
-        }),
-      );
+      ).rejects.toMatchObject({
+        errorCode: "VET-AUTHZ-0001",
+        httpStatus: 403,
+      });
     });
 
     it("cross-tenant acknowledgeLowStock → 403 VET-AUTHZ-0001", async () => {
       await expect(
         ctx.service.acknowledgeLowStock(TENANT_A, "prd-x", undefined, STAFF_B),
-      ).rejects.toThrowError(
-        expect.objectContaining({
-          errorCode: "VET-AUTHZ-0001",
-          httpStatus: 403,
-        }),
-      );
+      ).rejects.toMatchObject({
+        errorCode: "VET-AUTHZ-0001",
+        httpStatus: 403,
+      });
     });
 
     it("cross-tenant acknowledgeExpiringLot → 403 VET-AUTHZ-0001", async () => {
@@ -749,36 +709,32 @@ describe("StockAlertsService — GOAL-067", () => {
           undefined,
           STAFF_B,
         ),
-      ).rejects.toThrowError(
-        expect.objectContaining({
-          errorCode: "VET-AUTHZ-0001",
-          httpStatus: 403,
-        }),
-      );
+      ).rejects.toMatchObject({
+        errorCode: "VET-AUTHZ-0001",
+        httpStatus: 403,
+      });
     });
 
     it("cross-tenant refresh → 403 VET-AUTHZ-0001", async () => {
       await expect(
         ctx.service.refresh(TENANT_A, undefined, STAFF_B),
-      ).rejects.toThrowError(
-        expect.objectContaining({
-          errorCode: "VET-AUTHZ-0001",
-          httpStatus: 403,
-        }),
-      );
+      ).rejects.toMatchObject({
+        errorCode: "VET-AUTHZ-0001",
+        httpStatus: 403,
+      });
     });
 
     it("cross-tenant summary → 403 VET-AUTHZ-0001", async () => {
-      await expect(ctx.service.summary(TENANT_A, STAFF_B)).rejects.toThrowError(
-        expect.objectContaining({
-          errorCode: "VET-AUTHZ-0001",
-          httpStatus: 403,
-        }),
-      );
+      await expect(
+        ctx.service.summary(TENANT_A, STAFF_B),
+      ).rejects.toMatchObject({
+        errorCode: "VET-AUTHZ-0001",
+        httpStatus: 403,
+      });
     });
 
     it("SUPERADMIN tüm tenantlarda erişebilir", async () => {
-      const p = await ctx.productsService.createProduct(
+      await ctx.productsService.createProduct(
         TENANT_A,
         makeProductInput({ lowStockThreshold: "5" }),
         STAFF_A,
@@ -803,7 +759,7 @@ describe("StockAlertsService — GOAL-067", () => {
         makeProductInput({ lowStockThreshold: "5" }),
         STAFF_A,
       );
-      const p2 = await ctx.productsService.createProduct(
+      await ctx.productsService.createProduct(
         TENANT_A,
         makeProductInput({ lowStockThreshold: "5" }),
         STAFF_A,
@@ -834,12 +790,7 @@ describe("StockAlertsService — GOAL-067", () => {
         makeMovementInput(p.id, "3"),
         STAFF_A,
       );
-      await ctx.service.acknowledgeLowStock(
-        TENANT_A,
-        p.id,
-        undefined,
-        STAFF_A,
-      );
+      await ctx.service.acknowledgeLowStock(TENANT_A, p.id, undefined, STAFF_A);
       const result = await ctx.service.listLowStock(
         TENANT_A,
         { activeOnly: true, limit: 50, offset: 0 },

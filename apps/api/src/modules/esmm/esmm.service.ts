@@ -31,16 +31,19 @@
  * @since GOAL-077 (FAZ-7) e-SMM adapter sözleşmesi core
  */
 
-import { Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { EsmmDocumentsRepository } from "./esmm.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import {
+  ESMM_ADAPTER,
   toEsmmDocument,
   type EsmmAdapter,
   type EsmmDocumentRecord,
 } from "../../common/esmm/esmm.types.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   EsmmDocument,
   EsmmDocumentCreateInput,
@@ -49,14 +52,13 @@ import type {
   EsmmSubmitDocumentInput,
 } from "@vetniva/contracts";
 
-import { EsmmDocumentsRepository } from "./esmm.repository.js";
-
 @Injectable()
 export class EsmmDocumentsService {
   private readonly logger = new Logger(EsmmDocumentsService.name);
 
   public constructor(
     private readonly repo: EsmmDocumentsRepository,
+    @Inject(ESMM_ADAPTER)
     private readonly adapter: EsmmAdapter,
     private readonly audit: AuditService,
   ) {}
@@ -74,10 +76,7 @@ export class EsmmDocumentsService {
 
     // Manuel belge numarası unique kontrolü (tenant-scoped).
     if (input.manualDocumentNumber) {
-      const dup = this.findByManualNumber(
-        tenantId,
-        input.manualDocumentNumber,
-      );
+      const dup = this.findByManualNumber(tenantId, input.manualDocumentNumber);
       if (dup) {
         throw new DomainError({
           errorCode: "VET-ESMM-0004",
@@ -231,8 +230,7 @@ export class EsmmDocumentsService {
     });
 
     const newStatus = response.status;
-    const acceptedAt =
-      newStatus === "accepted" ? response.respondedAt : null;
+    const acceptedAt = newStatus === "accepted" ? response.respondedAt : null;
     this.repo.update(tenantId, id, {
       status: newStatus,
       providerDocumentId: response.providerDocumentId,
@@ -312,8 +310,7 @@ export class EsmmDocumentsService {
       payload: existing.payload,
     });
     const newStatus = response.status;
-    const acceptedAt =
-      newStatus === "accepted" ? response.respondedAt : null;
+    const acceptedAt = newStatus === "accepted" ? response.respondedAt : null;
     this.repo.update(tenantId, id, {
       status: newStatus,
       providerDocumentId: response.providerDocumentId,
@@ -382,10 +379,7 @@ export class EsmmDocumentsService {
         await this.adapter.cancelDocument(existing.providerDocumentId);
       }
     }
-    if (
-      existing.status === "draft" &&
-      existing.lastAttemptAt === null
-    ) {
+    if (existing.status === "draft" && existing.lastAttemptAt === null) {
       // Henüz gönderilmemiş taslak → doğrudan iptal.
     }
 
@@ -461,7 +455,7 @@ export class EsmmDocumentsService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

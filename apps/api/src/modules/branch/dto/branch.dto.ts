@@ -1,22 +1,17 @@
 /**
  * @file Branch DTO ve mapper.
  * @module apps/api/modules/branch/dto
- *
  * @description Prisma Branch modeli ile API response şeması arasındaki
  * dönüşüm. `addressJson` → `address` alanına map edilir.
- *
  * @since GOAL-010 (FAZ-1) tenant ve şube altyapısı
  */
 
 import type { Branch, Prisma } from "@prisma/client";
-
-import type {
-  BranchAddress,
-  BranchResponse,
-} from "@vetniva/contracts";
+import type { BranchAddress, BranchResponse } from "@vetniva/contracts";
 
 /**
  * Prisma Branch modelini API response şemasına dönüştürür.
+ * @param branch
  */
 export function toBranchResponse(branch: Branch): BranchResponse {
   return {
@@ -27,13 +22,14 @@ export function toBranchResponse(branch: Branch): BranchResponse {
     city: branch.city,
     address: parseAddress(branch.addressJson),
     phone: branch.phone,
-    status: branch.status as BranchResponse["status"],
+    status: branch.status,
     createdAt: branch.createdAt.toISOString(),
     updatedAt: branch.updatedAt.toISOString(),
     archivedAt: branch.archivedAt ? branch.archivedAt.toISOString() : null,
   };
 }
 
+/** Prisma JSON adresini API sözleşmesindeki adres nesnesine dönüştürür. */
 function parseAddress(value: Prisma.JsonValue | null): BranchAddress | null {
   if (value === null || value === undefined) return null;
   if (typeof value !== "object" || Array.isArray(value)) return null;
@@ -44,8 +40,7 @@ function parseAddress(value: Prisma.JsonValue | null): BranchAddress | null {
   const result: BranchAddress = {
     line1: v["line1"],
     city: v["city"],
-    postalCode:
-      typeof v["postalCode"] === "string" ? v["postalCode"] : "",
+    postalCode: typeof v["postalCode"] === "string" ? v["postalCode"] : "",
     country: typeof v["country"] === "string" ? v["country"] : "TR",
   };
   if (typeof v["line2"] === "string") result.line2 = v["line2"];

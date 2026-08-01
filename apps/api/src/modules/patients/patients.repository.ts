@@ -130,7 +130,11 @@ export class PatientsRepository {
     return { items, total };
   }
 
-  public archive(tenantId: string, id: string, at: string): PatientRecord | null {
+  public archive(
+    tenantId: string,
+    id: string,
+    at: string,
+  ): PatientRecord | null {
     const rec = this.findById(tenantId, id);
     if (!rec) return null;
     rec.archivedAt = at;

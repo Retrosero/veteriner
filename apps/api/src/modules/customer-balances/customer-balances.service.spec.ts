@@ -1,7 +1,6 @@
 /**
  * @file CustomerBalancesService unit testleri.
  * @module apps/api/modules/customer-balances/customer-balances.service.spec
- *
  * @description GOAL-075 müşteri borç/alacak görünümü service
  *   testleri.
  *   - getSummary: clinic + petshop toplamları, payment
@@ -10,28 +9,30 @@
  *   - listTransactions: tarih sıralı birleşik liste;
  *     type filtresi.
  *   - Cross-tenant read 403.
- *
  * @since GOAL-075 (FAZ-7) müşteri borç/alacak görünümü core
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-
 import { CustomerBalancesService } from "./customer-balances.service.js";
-import { ClinicSalesService } from "../clinic-sales/clinic-sales.service.js";
 import { ClinicSalesRepository } from "../clinic-sales/clinic-sales.repository.js";
-import { PetshopSalesService } from "../petshop-sales/petshop-sales.service.js";
+import { ClinicSalesService } from "../clinic-sales/clinic-sales.service.js";
+import { type PaymentsService } from "../payments/payments.service.js";
 import { PetshopSalesRepository } from "../petshop-sales/petshop-sales.repository.js";
-import { ProductsService } from "../products/products.service.js";
+import { PetshopSalesService } from "../petshop-sales/petshop-sales.service.js";
 import { ProductsRepository } from "../products/products.repository.js";
-import { PaymentsService } from "../payments/payments.service.js";
+import { ProductsService } from "../products/products.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   ClinicSaleCreateInput,
+  Payment,
   PetshopSaleCreateInput,
   PaymentCreateInput,
+  PaymentFilters,
+  PaymentListResponse,
+  ProductCreateInput,
 } from "@vetniva/contracts";
-import type { ProductCreateInput } from "@vetniva/contracts";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -49,22 +50,12 @@ const STAFF_A: ActorContext = {
   source: "header",
 };
 
-const STAFF_B: ActorContext = {
-  actorId: "usr-staff-b",
-  actorType: "user",
-  role: "STAFF",
-  tenantId: TENANT_B,
-  branchId: null,
-  isSuperadmin: false,
-  correlationId: "req-2",
-  ipAddress: null,
-  userAgentHash: null,
-  source: "header",
-};
-
 const OWNER_A = "00000000-0000-0000-0000-000000000001";
 const PATIENT_A = "00000000-0000-0000-0000-000000000002";
 
+/**
+ *
+ */
 function makeAuditMock() {
   return {
     record: vi.fn().mockResolvedValue({ eventId: "ev-1" }),
@@ -78,24 +69,30 @@ class StubPaymentsService {
     items: [],
     total: 0,
   };
-  public createdPayments: unknown[] = [];
+  public createdPayments: Payment[] = [];
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public async listPayments(_tenantId: string, _filters: any, _actor: any): Promise<any> {
+  public async listPayments(
+    _tenantId: string,
+    _filters: PaymentFilters,
+    _actor: ActorContext,
+  ): Promise<PaymentListResponse> {
     // createdPayments'i döndür; tüm tahsilatlarımız.
     return { items: this.createdPayments, total: this.createdPayments.length };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public async createPayment(tenantId: string, input: any, _actor: any): Promise<any> {
-    const fake = {
+  public async createPayment(
+    tenantId: string,
+    input: PaymentCreateInput,
+    _actor: ActorContext,
+  ): Promise<Payment> {
+    const fake: Payment = {
       id: `pm-stub-${Date.now()}-${Math.random()}`,
       tenantId,
       sourceType: input.sourceType,
       sourceId: input.sourceId,
       amount: input.amount,
       method: input.method,
-      currency: input.currency,
+      currency: input.currency ?? "TRY",
       paidAt: new Date().toISOString(),
       idempotencyKey: input.idempotencyKey ?? null,
       reference: null,
@@ -114,6 +111,9 @@ class StubPaymentsService {
   }
 }
 
+/**
+ *
+ */
 function makeProductInput(): ProductCreateInput {
   return {
     kind: "service",
@@ -157,13 +157,14 @@ describe("CustomerBalancesService", () => {
       audit as never,
     );
     payments = new StubPaymentsService() as unknown as PaymentsService;
-    service = new CustomerBalancesService(
-      clinicSales,
-      petshopSales,
-      payments,
-    );
+    service = new CustomerBalancesService(clinicSales, petshopSales, payments);
   });
 
+  /**
+   *
+   * @param sku
+   * @param name
+   */
   async function seedProduct(sku: string, name: string): Promise<string> {
     const p = await productsService.createProduct(
       TENANT_A,
@@ -200,17 +201,11 @@ describe("CustomerBalancesService", () => {
           sourceId: "exam-cb-1",
           currency: "TRY",
           globalDiscountPercent: 0,
-          lines: [
-            { productId: pid, unit: "unit", quantity: "1" },
-          ],
+          lines: [{ productId: pid, unit: "unit", quantity: "1" }],
         } satisfies ClinicSaleCreateInput,
         STAFF_A,
       );
-      await clinicSales.completeClinicSale(
-        TENANT_A,
-        sale.sale.id,
-        STAFF_A,
-      );
+      await clinicSales.completeClinicSale(TENANT_A, sale.sale.id, STAFF_A);
       // Tahsilat: tam tutar.
       await payments.createPayment(
         TENANT_A,
@@ -252,12 +247,7 @@ describe("CustomerBalancesService", () => {
         } satisfies PetshopSaleCreateInput,
         STAFF_A,
       );
-      await petshopSales.completeSale(
-        TENANT_A,
-        sale.sale.id,
-        {},
-        STAFF_A,
-      );
+      await petshopSales.completeSale(TENANT_A, sale.sale.id, {}, STAFF_A);
       const out = await service.getSummary(TENANT_A, OWNER_A, STAFF_A);
       // 2 * 100 (default salePrice) = 200.
       expect(out.totalSaleAmount).toBe("200");
@@ -280,17 +270,11 @@ describe("CustomerBalancesService", () => {
           sourceId: "exam-cb-3",
           currency: "TRY",
           globalDiscountPercent: 0,
-          lines: [
-            { productId: pid, unit: "unit", quantity: "1" },
-          ],
+          lines: [{ productId: pid, unit: "unit", quantity: "1" }],
         } satisfies ClinicSaleCreateInput,
         STAFF_A,
       );
-      await clinicSales.completeClinicSale(
-        TENANT_A,
-        sale.sale.id,
-        STAFF_A,
-      );
+      await clinicSales.completeClinicSale(TENANT_A, sale.sale.id, STAFF_A);
       await payments.createPayment(
         TENANT_A,
         {
@@ -325,17 +309,11 @@ describe("CustomerBalancesService", () => {
           sourceId: "exam-cb-4",
           currency: "TRY",
           globalDiscountPercent: 0,
-          lines: [
-            { productId: pid, unit: "unit", quantity: "1" },
-          ],
+          lines: [{ productId: pid, unit: "unit", quantity: "1" }],
         } satisfies ClinicSaleCreateInput,
         STAFF_A,
       );
-      await clinicSales.completeClinicSale(
-        TENANT_A,
-        sale.sale.id,
-        STAFF_A,
-      );
+      await clinicSales.completeClinicSale(TENANT_A, sale.sale.id, STAFF_A);
       await payments.createPayment(
         TENANT_A,
         {
@@ -365,11 +343,7 @@ describe("CustomerBalancesService", () => {
   describe("tenant izolasyonu", () => {
     it("cross-tenant read 403 VET-AUTHZ-0001", async () => {
       await expect(
-        service.getSummary(
-          TENANT_B,
-          OWNER_A,
-          STAFF_A,
-        ),
+        service.getSummary(TENANT_B, OWNER_A, STAFF_A),
       ).rejects.toMatchObject({
         errorCode: "VET-AUTHZ-0001",
         httpStatus: 403,

@@ -1,7 +1,6 @@
 /**
  * @file ClinicalConsumption (klinik tüketim) controller.
  * @module apps/api/modules/clinical-consumption/clinical-consumption.controller
- *
  * @description GOAL-066 (FAZ-6) klinik tüketimden otomatik stok
  * düşümü REST API. Muayene/aşı/ameliyat/yatış sırasında kullanılan
  * ürünlerin klinik tüketim kaydı olarak tutulmasını ve stoktan
@@ -11,12 +10,11 @@
  * - `POST  /api/v1/inventory/clinical-consumptions`           — Tüketim kaydı oluştur
  * - `GET   /api/v1/inventory/clinical-consumptions`           — Arama + pagination
  * - `GET   /api/v1/inventory/clinical-consumptions/:id`       — Detay
- * - `POST  /api/v1/inventory/clinical-consumptions/:id/cancel` — İptal (ters kayıt)
+ * - `POST  /api/v1/inventory/clinical-consumptions/:id/cancel` — İptal (ters kayıt).
  *
  * Sistem akışları (reçete dispense, aşı uygulaması, ameliyat
  * notu, yatış order) bu endpoint'i çağırmaz; doğrudan
  * `ClinicalConsumptionService.recordFor*` üzerinden kayıt oluşturur.
- *
  * @since GOAL-066 (FAZ-6) klinik tüketimden otomatik stok düşümü core
  */
 
@@ -32,13 +30,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   clinicalConsumptionCancelInputSchema,
   clinicalConsumptionCreateInputSchema,
@@ -51,14 +42,19 @@ import {
 } from "@vetniva/contracts";
 
 import { ClinicalConsumptionService } from "./clinical-consumption.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("inventory")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/inventory/clinical-consumptions")
 export class ClinicalConsumptionController {
-  public constructor(
-    private readonly service: ClinicalConsumptionService,
-  ) {}
+  public constructor(private readonly service: ClinicalConsumptionService) {}
 
   // -------------------------------------------------------------------------
   // create

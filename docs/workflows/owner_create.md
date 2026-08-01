@@ -6,14 +6,17 @@
 **Sayfa:** `/[locale]/clinic/owners/new`
 
 ## Amaç
+
 Kliniğe gelen hayvanın yasal sahibini kayıt altına almak.
 İlk temas anında veya daha sonra gerçekleşebilir.
 
 ## Aktör
+
 - VETERINARIAN
 - STAFF (resepsiyon)
 
 ## Tetikleyici
+
 - Hayvan sahibi kliniğe gelir.
 - Telefon / e-posta ile randevu talebi gelir.
 - Mevcut sahiplik devri (ownership transfer) başlatılır.
@@ -59,25 +62,28 @@ Kliniğe gelen hayvanın yasal sahibini kayıt altına almak.
    - CTA: "Şimdi hayvan ekle".
 
 ## Tenant izolasyonu
+
 - Tüm CRUD tenant-scoped.
 - Cross-tenant erişim → 404 `VET-CLINIC-0001` (bilgi sızdırmaz).
 
 ## Audit
+
 - `audit:owner.create` (info).
 - `audit:owner.read` (info; listeleme/detay).
 
 ## Hata senaryoları
 
-| Senaryo | HTTP | Hata kodu | Çözüm |
-|---------|------|-----------|-------|
-| Duplicate phone | 409 | `VET-OWNER-0001` | Aynı telefonla sahip zaten kayıtlı; mevcudu bul. |
-| Geçersiz telefon | 422 | `VET-VALIDATION-0004` | E.164 formatında gir. |
-| Geçersiz TCKN | 422 | `VET-VALIDATION-0006` | 11 hane gir. |
-| Geçersiz VKN | 422 | `VET-VALIDATION-0005` | 10 hane gir. |
-| Cross-tenant | 404 | `VET-CLINIC-0001` | Tenant sınırı; kontrolü yap. |
-| Yetkisiz | 403 | `VET-AUTHZ-0001` | `clinic:owner:create` gerekli. |
+| Senaryo          | HTTP | Hata kodu             | Çözüm                                            |
+| ---------------- | ---- | --------------------- | ------------------------------------------------ |
+| Duplicate phone  | 409  | `VET-OWNER-0001`      | Aynı telefonla sahip zaten kayıtlı; mevcudu bul. |
+| Geçersiz telefon | 422  | `VET-VALIDATION-0004` | E.164 formatında gir.                            |
+| Geçersiz TCKN    | 422  | `VET-VALIDATION-0006` | 11 hane gir.                                     |
+| Geçersiz VKN     | 422  | `VET-VALIDATION-0005` | 10 hane gir.                                     |
+| Cross-tenant     | 404  | `VET-CLINIC-0001`     | Tenant sınırı; kontrolü yap.                     |
+| Yetkisiz         | 403  | `VET-AUTHZ-0001`      | `clinic:owner:create` gerekli.                   |
 
 ## İlgili dokümanlar
+
 - `docs/api/api.post._api_v1_owner_owners.md`
 - `docs/pages/web.app.locale.clinic.owners.yaml` (planlanan)
 - `docs/permissions/PERMISSION_CATALOG.yaml#clinic:owner:create`

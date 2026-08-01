@@ -1,12 +1,13 @@
 # POST /api/v1/clinic/hospitalizations
 
 Yeni yatış kaydı oluşturur (`status='planned'`). `patientId`
-+ `admittingVetId` + `reason` zorunlu. Kafes
-opsiyonel (admit sırasında atanır).
 
-- **Modül:** hospitalization
-- **Yetki:** `clinic:hospitalization:admit`
-- **Audit:** `audit:hospitalization.create` (info)
+- `admittingVetId` + `reason` zorunlu. Kafes
+  opsiyonel (admit sırasında atanır).
+
+* **Modül:** hospitalization
+* **Yetki:** `clinic:hospitalization:admit`
+* **Audit:** `audit:hospitalization.create` (info)
 
 **Request body (`HospitalizationCreateInput`):**
 

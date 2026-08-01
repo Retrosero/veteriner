@@ -15,7 +15,7 @@
   `ExaminationsService.findById(tenantId, id, actor)` ile aynı tenant'ta
   mı doğrulanır (cross-tenant → 404 `VET-CLINIC-0001`). `status='pending'`,
   `patientId` muayeneden türetilir; client gönderemez. `id =
-  order-<tenant8>-000001` (artan sayaç, tenant başına). Audit
+order-<tenant8>-000001` (artan sayaç, tenant başına). Audit
   `audit:order.create` (info) — examinationId, patientId, type, status.
 - **`list(tenantId, filters, actor)`** — tenant-scoped; `patientId` /
   `type` / `status` / `from` / `to` / `limit` / `offset` filtreleri;

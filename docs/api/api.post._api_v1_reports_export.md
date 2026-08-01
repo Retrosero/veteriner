@@ -24,7 +24,7 @@ POST /api/v1/reports/export
 ```
 
 - `reportType` (enum: `daily_sales|payment_methods|
-  open_balances|custom`) zorunlu.
+open_balances|custom`) zorunlu.
 - `format` (enum: `pdf|csv`) zorunlu.
 - `filters` (object) zorunlu — report type'a göre.
 - `title` (string) opsiyonel.

@@ -51,18 +51,24 @@
  * @since GOAL-094 (FAZ-9) cihaz ve dış laboratuvar adapter altyapısı core
  */
 
-import { Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { LabAdaptersRepository } from "./lab-adapters.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
-import type { LabAdapter } from "../../common/lab-adapters/lab-adapter.types.js";
 import {
+  EXTERNAL_LAB_ADAPTER,
+  LAB_DEVICE_ADAPTER,
   toLabAdapterExport,
   toLabAdapterImport,
+  type LabAdapter,
   type LabAdapterExportRecord,
   type LabAdapterImportRecord,
 } from "../../common/lab-adapters/lab-adapter.types.js";
+import { LabOrdersService } from "../lab-orders/lab-orders.service.js";
+import { LabResultsService } from "../lab-results/lab-results.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   LabAdapterExport,
   LabAdapterExportCancelInput,
@@ -78,10 +84,6 @@ import type {
   LabResultCreateInput,
 } from "@vetniva/contracts";
 
-import { LabAdaptersRepository } from "./lab-adapters.repository.js";
-import { LabOrdersService } from "../lab-orders/lab-orders.service.js";
-import { LabResultsService } from "../lab-results/lab-results.service.js";
-
 @Injectable()
 export class LabAdaptersService {
   private readonly logger = new Logger(LabAdaptersService.name);
@@ -90,7 +92,9 @@ export class LabAdaptersService {
     private readonly repo: LabAdaptersRepository,
     private readonly labOrders: LabOrdersService,
     private readonly labResults: LabResultsService,
+    @Inject(LAB_DEVICE_ADAPTER)
     private readonly deviceAdapter: LabAdapter,
+    @Inject(EXTERNAL_LAB_ADAPTER)
     private readonly externalLabAdapter: LabAdapter,
     private readonly audit: AuditService,
   ) {}
@@ -172,8 +176,7 @@ export class LabAdaptersService {
       if (latest.status === "accepted") {
         throw new DomainError({
           errorCode: "VET-LABADAPTER-0006",
-          message:
-            "Bu lab order zaten kabul edilmiş bir export kaydına sahip",
+          message: "Bu lab order zaten kabul edilmiş bir export kaydına sahip",
           httpStatus: 409,
           severity: "warning",
           i18nKey: "error.VET-LABADAPTER-0006",
@@ -268,14 +271,10 @@ export class LabAdaptersService {
   ): Promise<LabAdapterExport> {
     this.requireTenantScope(actor, tenantId);
     const existing = this.requireExport(tenantId, exportId);
-    if (
-      existing.status !== "failed" &&
-      existing.status !== "rejected"
-    ) {
+    if (existing.status !== "failed" && existing.status !== "rejected") {
       throw new DomainError({
         errorCode: "VET-LABADAPTER-0007",
-        message:
-          "Yalnızca başarısız/reddedilmiş export'lar tekrar denenebilir",
+        message: "Yalnızca başarısız/reddedilmiş export'lar tekrar denenebilir",
         httpStatus: 409,
         severity: "warning",
         i18nKey: "error.VET-LABADAPTER-0007",
@@ -439,7 +438,7 @@ export class LabAdaptersService {
     const readings = Array.isArray(
       (fetched.rawPayload as { readings?: unknown }).readings,
     )
-      ? ((fetched.rawPayload as { readings: unknown[] }).readings as unknown[])
+      ? (fetched.rawPayload as { readings: unknown[] }).readings
       : [];
 
     if (
@@ -447,14 +446,12 @@ export class LabAdaptersService {
       (order.status === "processing" || order.status === "completed")
     ) {
       const first = readings[0] as Record<string, unknown> | undefined;
-      const value = first ? String(first["value"] ?? "") : "";
+      const value = first ? toPrimitiveString(first["value"], "") : "";
       const unit =
-        first && typeof first["unit"] === "string"
-          ? (first["unit"] as string)
-          : order.unit;
+        first && typeof first["unit"] === "string" ? first["unit"] : order.unit;
       const referenceRange =
         first && typeof first["referenceRange"] === "string"
-          ? (first["referenceRange"] as string)
+          ? first["referenceRange"]
           : order.referenceRange;
       if (value.length > 0) {
         const createInput: LabResultCreateInput = {
@@ -476,17 +473,13 @@ export class LabAdaptersService {
           status = "applied";
         } catch (e) {
           status = "rejected";
-          errorMessage =
-            e instanceof Error ? e.message : "mapping başarısız";
+          errorMessage = e instanceof Error ? e.message : "mapping başarısız";
         }
       } else {
         status = "rejected";
         errorMessage = "rawPayload içinde value bulunamadı";
       }
-    } else if (
-      order.status !== "processing" &&
-      order.status !== "completed"
-    ) {
+    } else if (order.status !== "processing" && order.status !== "completed") {
       // Order henüz processing/completed değilse; sadece received
       // olarak sakla. Mapping daha sonra yeniden denenebilir
       // (sonraki tick).
@@ -628,10 +621,7 @@ export class LabAdaptersService {
   // Private helpers
   // -------------------------------------------------------------------------
 
-  private requireExport(
-    tenantId: string,
-    id: string,
-  ): LabAdapterExportRecord {
+  private requireExport(tenantId: string, id: string): LabAdapterExportRecord {
     const rec = this.repo.findExportById(tenantId, id);
     if (!rec) {
       throw new DomainError({
@@ -646,10 +636,7 @@ export class LabAdaptersService {
     return rec;
   }
 
-  private fetchUpdatedExport(
-    tenantId: string,
-    id: string,
-  ): LabAdapterExport {
+  private fetchUpdatedExport(tenantId: string, id: string): LabAdapterExport {
     const updated = this.repo.findExportById(tenantId, id);
     if (!updated) {
       throw new DomainError({
@@ -683,11 +670,24 @@ export class LabAdaptersService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,
       country: "TR",
     };
   }
+}
+
+/** Harici adapter payloadundaki primitive sonucu metne cevirir. */
+function toPrimitiveString(value: unknown, fallback: string): string {
+  if (typeof value === "string") return value;
+  if (
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    typeof value === "bigint"
+  ) {
+    return String(value);
+  }
+  return fallback;
 }

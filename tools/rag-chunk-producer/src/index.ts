@@ -22,7 +22,14 @@ import { load as parseYaml, dump as stringifyYaml } from "js-yaml";
 /** Üretilen chunk'ın yapısı. */
 export interface ProducedChunk {
   chunk_id: string;
-  type: "glossary" | "flow" | "field" | "permission" | "error" | "page" | "user_education";
+  type:
+    | "glossary"
+    | "flow"
+    | "field"
+    | "permission"
+    | "error"
+    | "page"
+    | "user_education";
   source: string;
   entity: string;
   locale: "tr-TR" | "en-GB";
@@ -145,8 +152,7 @@ export function chunkYaml(
     (parsed["name"] as string | undefined) ??
     id;
   const purpose = parsed["purpose"] as
-    | { "tr-TR"?: string; "en-GB"?: string }
-    | undefined;
+    { "tr-TR"?: string; "en-GB"?: string } | undefined;
   const summary = purpose?.[config.defaultLocale] ?? purpose?.["tr-TR"] ?? "";
   return [
     {
@@ -182,10 +188,21 @@ export async function mergeChunks(
   newChunks: ProducedChunk[],
 ): Promise<{ added: number; skipped: number }> {
   let existing: ProducedChunk[] = [];
+  let catalog: Record<string, unknown> = { version: "1.0.0" };
   try {
     const raw = await readFile(outputFile, "utf8");
-    const parsed = parseYaml(raw) as ProducedChunk[] | null;
-    if (Array.isArray(parsed)) existing = parsed;
+    const parsed = parseYaml(raw) as
+      ProducedChunk[] | Record<string, unknown> | null;
+    if (Array.isArray(parsed)) {
+      // Eski kök-listesi formatı, kayıpsız biçimde yeni şemaya taşınır.
+      existing = parsed;
+    } else if (parsed && typeof parsed === "object") {
+      catalog = { ...parsed };
+      const catalogChunks = parsed["chunks"];
+      if (Array.isArray(catalogChunks)) {
+        existing = catalogChunks as ProducedChunk[];
+      }
+    }
   } catch (err) {
     // Dosya yoksa veya parse hatası varsa sıfırdan başla.
     if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
@@ -198,7 +215,10 @@ export async function mergeChunks(
     return { added: 0, skipped: newChunks.length };
   }
   const merged = [...existing, ...toAdd];
-  const yaml = stringifyYaml(merged, { lineWidth: 100, noRefs: true });
+  const yaml = stringifyYaml(
+    { ...catalog, chunks: merged },
+    { lineWidth: 100, noRefs: true },
+  );
   await writeFile(outputFile, yaml, "utf8");
   return { added: toAdd.length, skipped: newChunks.length - toAdd.length };
 }
@@ -230,21 +250,29 @@ export async function runPipeline(config: PipelineConfig): Promise<{
  * --------------------------------------------------------------------------
  */
 
-export function inferChunkId(filePath: string, title: string, kind: string): string {
+export function inferChunkId(
+  filePath: string,
+  title: string,
+  kind: string,
+): string {
   const slug = title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 64);
-  const fileSlug = relative(".", filePath)
-    .replace(/^docs\//, "")
-    .replace(/\.(md|yaml|yml)$/i, "")
-    .split("/")
-    .pop() ?? "unknown";
+  const fileSlug =
+    relative(".", filePath)
+      .replace(/^docs\//, "")
+      .replace(/\.(md|yaml|yml)$/i, "")
+      .split("/")
+      .pop() ?? "unknown";
   return `${kind}-${fileSlug}-${slug}`.replace(/--+/g, "-");
 }
 
-export function inferType(filePath: string, title: string): ProducedChunk["type"] {
+export function inferType(
+  filePath: string,
+  title: string,
+): ProducedChunk["type"] {
   if (filePath.includes("/workflows/")) return "flow";
   if (filePath.includes("/pages/")) return "page";
   if (filePath.includes("/errors/")) return "error";
@@ -252,7 +280,10 @@ export function inferType(filePath: string, title: string): ProducedChunk["type"
   if (filePath.includes("/fields/")) return "field";
   if (filePath.includes("/user-education/")) return "user_education";
   if (filePath.includes("/domain/")) return "glossary";
-  if (title.toLowerCase().includes("akış") || title.toLowerCase().includes("flow")) {
+  if (
+    title.toLowerCase().includes("akış") ||
+    title.toLowerCase().includes("flow")
+  ) {
     return "flow";
   }
   return "glossary";
@@ -268,8 +299,21 @@ export function inferEntity(filePath: string): string {
 export function extractKeywords(title: string, body: string): string[] {
   const text = `${title} ${body}`.toLowerCase();
   const stopwords = new Set([
-    "ve", "ile", "için", "olan", "olarak", "bu", "şu", "bir",
-    "the", "and", "for", "with", "this", "that", "from",
+    "ve",
+    "ile",
+    "için",
+    "olan",
+    "olarak",
+    "bu",
+    "şu",
+    "bir",
+    "the",
+    "and",
+    "for",
+    "with",
+    "this",
+    "that",
+    "from",
   ]);
   const tokens = text.split(/[^\p{L}\p{N}]+/u).filter((t) => t.length > 3);
   const set = new Set<string>();

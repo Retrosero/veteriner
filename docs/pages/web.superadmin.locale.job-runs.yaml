@@ -114,7 +114,27 @@ related_api:
   - "GET /api/v1/superadmin/job-runs/attempts/{jobKey}"
   - "GET /api/v1/superadmin/job-runs/{id}"
 keywords:
-  tr-TR: [job run, background job, BullMQ, queue, retry, dead letter, entegrasyon, SUPERADMIN]
-  en-GB: [job run, background job, BullMQ, queue, retry, dead letter, integration, SUPERADMIN]
+  tr-TR:
+    [
+      job run,
+      background job,
+      BullMQ,
+      queue,
+      retry,
+      dead letter,
+      entegrasyon,
+      SUPERADMIN,
+    ]
+  en-GB:
+    [
+      job run,
+      background job,
+      BullMQ,
+      queue,
+      retry,
+      dead letter,
+      integration,
+      SUPERADMIN,
+    ]
 version: "1.0.0"
 last_verified_at: 2026-07-31

@@ -14,32 +14,30 @@
  * @since GOAL-015 (FAZ-2) bildirim altyapısı temeli
  */
 
-import { Injectable, Logger } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
 
-import type {
-  NotificationCategory,
-  NotificationChannel,
-  NotificationLocale,
-  NotificationRequest,
-  NotificationStatus,
-} from "@vetniva/contracts";
+import { Injectable, Logger } from "@nestjs/common";
 
 import { ActorContext } from "../../common/actor/actor-context.service.js";
 import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import { ConsentService } from "../../common/notifications/consent.service.js";
 import { IdempotencyService } from "../../common/notifications/idempotency.service.js";
+import { InboxStore } from "../../common/notifications/providers/in-app.provider.js";
 import {
   NotificationQueue,
   QueueProcessOutcome,
 } from "../../common/notifications/queue.js";
 import { TemplateService } from "../../common/notifications/template.service.js";
+
 import type {
   InboxItem,
   NotificationRecord,
 } from "../../common/notifications/notification.types.js";
-import { InboxStore } from "../../common/notifications/providers/in-app.provider.js";
+import type {
+  NotificationRequest,
+  NotificationStatus,
+} from "@vetniva/contracts";
 
 @Injectable()
 export class NotificationsService {
@@ -69,7 +67,10 @@ export class NotificationsService {
     if (request.idempotencyKey) {
       const existing = this.idempotency.wasSent(request.idempotencyKey);
       if (existing) {
-        return this.lookupRecord(existing.recordId) ?? this.buildOptedOutRecord(request);
+        return (
+          this.lookupRecord(existing.recordId) ??
+          this.buildOptedOutRecord(request)
+        );
       }
     }
 
@@ -125,7 +126,7 @@ export class NotificationsService {
     this.queue.enqueue({
       recordId: record.id,
       channel: request.channel,
-      payload: enrichedPayload as Parameters<typeof this.queue.enqueue>[0]["payload"],
+      payload: enrichedPayload,
     });
 
     // 6. Senkron processAll (FAZ-0). Faz 11+'da worker async yapar.
@@ -136,12 +137,19 @@ export class NotificationsService {
     // olabilir (retrying → failed); en güncel (son) outcome alınır.
     const outcomes = await this.dispatchAll();
     const sameRecord = outcomes.filter((o) => o.recordId === record.id);
-    const own = sameRecord.length > 0 ? sameRecord[sameRecord.length - 1] : undefined;
+    const own =
+      sameRecord.length > 0 ? sameRecord[sameRecord.length - 1] : undefined;
     const finalRecord = this.applyOutcome(record, own);
 
     // 7. Audit.
     const severity = this.auditSeverityFor(finalRecord.status);
-    await this.recordAudit(request, actor, finalRecord.status, severity, finalRecord);
+    await this.recordAudit(
+      request,
+      actor,
+      finalRecord.status,
+      severity,
+      finalRecord,
+    );
 
     return finalRecord;
   }
@@ -192,7 +200,9 @@ export class NotificationsService {
     };
   }
 
-  private buildOptedOutRecord(request: NotificationRequest): NotificationRecord {
+  private buildOptedOutRecord(
+    request: NotificationRequest,
+  ): NotificationRecord {
     return this.buildRecord(request, "opted_out", 0, {
       lastError: "user opted out (idempotency hit)",
     });

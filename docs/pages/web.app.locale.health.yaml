@@ -55,7 +55,7 @@ step_by_step:
     - "Check the status, DB state, and version info."
     - "In case of 'down', note the correlation_id and contact support."
 possible_errors:
-  - error_code: TR_COMMON_0001
+  - error_code: VET-COMMON-0001
     resolution:
       tr-TR: "API erişilemiyor. API servisinin çalıştığını ve API_BASE_URL'in doğru olduğunu kontrol edin."
       en-GB: "API unreachable. Check that the API service is running and API_BASE_URL is correct."

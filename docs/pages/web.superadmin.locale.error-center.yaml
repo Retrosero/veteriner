@@ -180,7 +180,29 @@ related_api:
   - "PATCH /api/v1/superadmin/error-events/{id}/status"
   - "GET /api/v1/superadmin/error-events/{id}/audit-log"
 keywords:
-  tr-TR: [hata merkezi, hata olayı, fingerprint, SUPERADMIN, durum yönetimi, atama, çözüm notu, destek bağlantısı, audit log]
-  en-GB: [error center, error event, fingerprint, SUPERADMIN, status management, assignment, resolution note, support link, audit log]
+  tr-TR:
+    [
+      hata merkezi,
+      hata olayı,
+      fingerprint,
+      SUPERADMIN,
+      durum yönetimi,
+      atama,
+      çözüm notu,
+      destek bağlantısı,
+      audit log,
+    ]
+  en-GB:
+    [
+      error center,
+      error event,
+      fingerprint,
+      SUPERADMIN,
+      status management,
+      assignment,
+      resolution note,
+      support link,
+      audit log,
+    ]
 version: "1.0.0"
 last_verified_at: 2026-07-31

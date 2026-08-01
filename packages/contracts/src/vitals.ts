@@ -73,9 +73,7 @@ export const vitalSignsCreateInputSchema = z.object({
   /** ISO 8601 datetime (UTC). Boşsa service now set eder. */
   takenAt: z.string().datetime().optional(),
 });
-export type VitalSignsCreateInput = z.infer<
-  typeof vitalSignsCreateInputSchema
->;
+export type VitalSignsCreateInput = z.infer<typeof vitalSignsCreateInputSchema>;
 
 /** API response şeması. */
 export const vitalsRecordSchema = z.object({

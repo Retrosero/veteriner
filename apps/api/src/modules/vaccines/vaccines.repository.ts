@@ -19,6 +19,7 @@ import {
   toVaccineProtocol,
   type VaccineProtocolRecord,
 } from "../../common/vaccines/vaccine.types.js";
+
 import type {
   SpeciesTarget,
   VaccineCategory,
@@ -56,10 +57,7 @@ export class VaccinesRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): VaccineProtocolRecord | null {
+  public findById(tenantId: string, id: string): VaccineProtocolRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -105,10 +103,7 @@ export class VaccinesRepository {
       if (rec.archivedAt !== null) continue;
       if (filters.species && rec.species !== filters.species) continue;
       if (filters.category && rec.category !== filters.category) continue;
-      if (
-        filters.isCore !== undefined &&
-        rec.isCore !== filters.isCore
-      )
+      if (filters.isCore !== undefined && rec.isCore !== filters.isCore)
         continue;
       all.push(rec);
     }

@@ -95,10 +95,10 @@ audit meta) Prisma ile eklenecek; service imzaları korunur.
 
 ## API değişiklikleri
 
-- `POST   /api/v1/files`                — Upload (multipart). Body: `file` (binary), `category`, `relatedEntityType?`, `relatedEntityId?`. Auth + `file:file:upload`. 201 → `FileMeta`.
-- `GET    /api/v1/files/:id`            — Meta. Auth + `file:file:read`. 200 → `FileMeta`. 404 (`VET-FILE-0003`) cross-tenant dahil.
-- `GET    /api/v1/files/:id/download`   — Binary stream. Auth + `file:file:read`.
-- `DELETE /api/v1/files/:id`            — Archive. Auth + `file:file:delete`. 204.
+- `POST   /api/v1/files` — Upload (multipart). Body: `file` (binary), `category`, `relatedEntityType?`, `relatedEntityId?`. Auth + `file:file:upload`. 201 → `FileMeta`.
+- `GET    /api/v1/files/:id` — Meta. Auth + `file:file:read`. 200 → `FileMeta`. 404 (`VET-FILE-0003`) cross-tenant dahil.
+- `GET    /api/v1/files/:id/download` — Binary stream. Auth + `file:file:read`.
+- `DELETE /api/v1/files/:id` — Archive. Auth + `file:file:delete`. 204.
 - `POST   /api/v1/files/:id/signed-url` — S3 signed URL (S3 driver seçiliyse). Auth + `file:file:read`. Üretim öncesi stub.
 
 ## Test sonucu

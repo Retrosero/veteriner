@@ -116,14 +116,10 @@ export const supplierListResponseSchema = z.object({
   items: z.array(supplierSchema),
   total: z.number().int().nonnegative(),
 });
-export type SupplierListResponse = z.infer<
-  typeof supplierListResponseSchema
->;
+export type SupplierListResponse = z.infer<typeof supplierListResponseSchema>;
 
 /** Arşivleme isteği. */
 export const supplierArchiveInputSchema = z.object({
   reason: z.string().min(1).max(2000),
 });
-export type SupplierArchiveInput = z.infer<
-  typeof supplierArchiveInputSchema
->;
+export type SupplierArchiveInput = z.infer<typeof supplierArchiveInputSchema>;

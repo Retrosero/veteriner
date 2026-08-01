@@ -1,9 +1,11 @@
 # GOAL-105 — Güvenlik Logları ve Alarm Kuralları (Completion Report)
 
 ## Faz
+
 FAZ-10 (Hata merkezi)
 
 ## Özet
+
 Tüm tenant'ların güvenlik olaylarını (failed_login,
 unauthorized_access_attempt, suspicious_export, role_change,
 tenant_isolation_breach_attempt) toplayan, fingerprint ile
@@ -13,6 +15,7 @@ tetikleyen SUPERADMIN görünürlüğünde güvenlik logu.
 ## Çıktılar
 
 ### Core (GOAL-105 core commit paralel)
+
 - `packages/contracts/src/security-event.ts` — 5 type
   (failed_login, unauthorized_access_attempt, suspicious_export,
   role_change, tenant_isolation_breach_attempt) + 3 severity
@@ -44,14 +47,15 @@ tetikleyen SUPERADMIN görünürlüğünde güvenlik logu.
 
 ### Endpoint'ler (4)
 
-| # | Method | Path | Yetki |
-|---|--------|------|-------|
-| 1 | GET | `/api/v1/superadmin/security-events` | `audit:log:read` |
-| 2 | GET | `/api/v1/superadmin/security-events/summary` | `audit:log:read` |
-| 3 | GET | `/api/v1/superadmin/security-events/{id}` | `audit:log:read` |
-| 4 | POST | `/api/v1/system/security-events` | oturum gerekli |
+| #   | Method | Path                                         | Yetki            |
+| --- | ------ | -------------------------------------------- | ---------------- |
+| 1   | GET    | `/api/v1/superadmin/security-events`         | `audit:log:read` |
+| 2   | GET    | `/api/v1/superadmin/security-events/summary` | `audit:log:read` |
+| 3   | GET    | `/api/v1/superadmin/security-events/{id}`    | `audit:log:read` |
+| 4   | POST   | `/api/v1/system/security-events`             | oturum gerekli   |
 
 ### Döküman (bu commit)
+
 - 2 API doc (summary, detail).
 - `docs/ai/AI_CHUNKS.yaml` — yeni `glossary-security-event` +
   `flow-security-event` chunk'ları v1.0.0.
@@ -62,6 +66,7 @@ tetikleyen SUPERADMIN görünürlüğünde güvenlik logu.
   VET-TENANT-0002, VET-SEC-0001 zaten mevcut).
 
 ## İş Kuralları
+
 - **5 type × 4 severity:** Default `type → severity` map
   (failed_login→warning, unauthorized_access_attempt→warning,
   suspicious_export→error, role_change→info,
@@ -95,6 +100,7 @@ tetikleyen SUPERADMIN görünürlüğünde güvenlik logu.
   error|critical) — Faz 10+ AuditService entegrasyonu.
 
 ## Yapılmayanlar / Bilinçli Atlamalar
+
 - **Prisma migration** → Faz 10+ DB katmanı.
 - **Slack/PagerDuty adapter** → Faz 10+ operasyon.
 - **Email bildirim** → Faz 10+ alarm.
@@ -103,13 +109,16 @@ tetikleyen SUPERADMIN görünürlüğünde güvenlik logu.
 - **Coğrafi anomaly detection** → Faz 12+ AI.
 
 ## Döküman Uyum
+
 - `pnpm docs:check` → temiz (security-events özgü).
 - `pnpm i18n:check` → temiz.
 
 ## Testler
+
 - `security-events.service.spec.ts` → 36 unit test.
 - Full api regresyon: 1411 yeşil, 9 skipped, 0 hata.
 
 ## Commit
+
 - Core: (paralel core) — security-events modülü.
 - Docs: (bu commit) — `docs(security-events): GOAL-105 güvenlik logları doküman ve i18n tamamla + FAZ-10 ilerlemesi`

@@ -1,7 +1,6 @@
 /**
  * @file Calendar controller.
  * @module apps/api/modules/calendar/calendar.controller
- *
  * @description GOAL-030 klinik takvimi REST API.
  *
  * Endpoint'ler:
@@ -16,7 +15,6 @@
  *   yapar (mola, izin). `tenant:tenant:update` izni gerekir.
  * - `DELETE /api/v1/calendar/block/:id` — Engellenmiş slot'u
  *   kaldırır. `tenant:tenant:update` izni gerekir.
- *
  * @since GOAL-030 (FAZ-3) klinik takvimi core
  */
 
@@ -34,13 +32,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   blockSlotInputSchema,
   getDayParamsSchema,
@@ -57,6 +48,13 @@ import {
 } from "@vetniva/contracts";
 
 import { CalendarService } from "./calendar.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("calendar")
 @UseGuards(PermissionsGuard)

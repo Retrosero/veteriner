@@ -33,14 +33,17 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { LabResultsRepository } from "./lab-results.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import {
   toLabResult,
   toLabResultRevision,
   type LabResultRecord,
 } from "../../common/lab-results/lab-result.types.js";
+import { LabOrdersService } from "../lab-orders/lab-orders.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   LabResult,
   LabResultAmendInput,
@@ -50,9 +53,6 @@ import type {
   LabResultSubmitInput,
   LabResultUpdateInput,
 } from "@vetniva/contracts";
-
-import { LabResultsRepository } from "./lab-results.repository.js";
-import { LabOrdersService } from "../lab-orders/lab-orders.service.js";
 
 @Injectable()
 export class LabResultsService {
@@ -260,9 +260,7 @@ export class LabResultsService {
   ): Promise<LabResult> {
     this.requireTenantScope(actor, tenantId);
     const existing = this.requireResult(tenantId, labOrderId);
-    this.requireStateTransition(existing.status, "pending_review", [
-      "draft",
-    ]);
+    this.requireStateTransition(existing.status, "pending_review", ["draft"]);
 
     const nowIso = new Date().toISOString();
     this.repo.update(tenantId, existing.id, {
@@ -411,10 +409,7 @@ export class LabResultsService {
   // Private helpers
   // -------------------------------------------------------------------------
 
-  private requireResult(
-    tenantId: string,
-    labOrderId: string,
-  ): LabResultRecord {
+  private requireResult(tenantId: string, labOrderId: string): LabResultRecord {
     const rec = this.repo.findActiveByOrder(tenantId, labOrderId);
     if (!rec) {
       throw new DomainError({
@@ -497,7 +492,7 @@ export class LabResultsService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

@@ -1,14 +1,12 @@
 /**
  * @file Ortam değişkeni doğrulama modülü.
  * @module apps/api/env
- *
  * @description API'nin çalışması için gerekli ortam değişkenlerini Zod
  * ile doğrular. Yanlış veya eksik değerlerde uygulama başlamaz.
  * Zorunlu değişkenler: `NODE_ENV`, `APP_VERSION`, `DATABASE_URL`,
  * `LOG_LEVEL`. Opsiyonel: port, redis, locale, vb.
- *
- * @security Secret değerler bu modülde loglanmaz; yalnızca anahtarlar
- * ve varlık kontrolü yapılır. PII taşıyan env değişkenleri desteklenmez.
+ * Güvenlik: Secret değerler bu modülde loglanmaz; yalnızca anahtarlar ve
+ * varlık kontrolü yapılır. PII taşıyan env değişkenleri desteklenmez.
  */
 
 import { z } from "zod";
@@ -35,6 +33,11 @@ export type Env = z.infer<typeof envSchema>;
 
 let cached: Env | undefined;
 
+/**
+ * Ortam değişkenlerini doğrular ve aynı süreçte sonucu önbelleğe alır.
+ * @param {object} source Doğrulanacak ortam değişkenleri.
+ * @returns {Env} Doğrulanmış uygulama yapılandırması.
+ */
 export function validateEnv(source: NodeJS.ProcessEnv = process.env): Env {
   if (cached) return cached;
   const result = envSchema.safeParse(source);

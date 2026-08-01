@@ -11,10 +11,10 @@
 
 import { Module } from "@nestjs/common";
 
-import { SuppliersModule } from "../suppliers/suppliers.module.js";
 import { PurchaseOrdersController } from "./purchase-orders.controller.js";
 import { PurchaseOrdersRepository } from "./purchase-orders.repository.js";
 import { PurchaseOrdersService } from "./purchase-orders.service.js";
+import { SuppliersModule } from "../suppliers/suppliers.module.js";
 
 @Module({
   imports: [SuppliersModule],

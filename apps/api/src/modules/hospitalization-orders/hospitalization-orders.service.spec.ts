@@ -14,13 +14,13 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { HospitalizationOrdersRepository } from "./hospitalization-orders.repository.js";
+import { HospitalizationOrdersService } from "./hospitalization-orders.service.js";
+import { HospitalizationRepository } from "../hospitalization/hospitalization.repository.js";
+import { HospitalizationService } from "../hospitalization/hospitalization.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-
-import { HospitalizationOrdersService } from "./hospitalization-orders.service.js";
-import { HospitalizationOrdersRepository } from "./hospitalization-orders.repository.js";
-import { HospitalizationService } from "../hospitalization/hospitalization.service.js";
-import { HospitalizationRepository } from "../hospitalization/hospitalization.repository.js";
 import type {
   HospitalizationOrderApplyInput,
   HospitalizationOrderCancelInput,
@@ -148,20 +148,13 @@ describe("HospitalizationOrdersService", () => {
   });
 
   /** Yatış oluşturup id döner (active). */
-  async function makeHosp(
-    patientId: string = PATIENT_A,
-  ): Promise<string> {
+  async function makeHosp(patientId: string = PATIENT_A): Promise<string> {
     const h = await hospService.createHospitalization(
       TENANT_A,
       { patientId },
       VET_A,
     );
-    await hospService.admitHospitalization(
-      TENANT_A,
-      h.id,
-      {},
-      VET_A,
-    );
+    await hospService.admitHospitalization(TENANT_A, h.id, {}, VET_A);
     return h.id;
   }
 
@@ -290,19 +283,9 @@ describe("HospitalizationOrdersService", () => {
         makeOrderInput({ hospitalizationId: hospId }),
         VET_A,
       );
-      await service.cancelOrder(
-        TENANT_A,
-        order.id,
-        makeCancelInput(),
-        VET_A,
-      );
+      await service.cancelOrder(TENANT_A, order.id, makeCancelInput(), VET_A);
       await expect(
-        service.cancelOrder(
-          TENANT_A,
-          order.id,
-          makeCancelInput(),
-          VET_A,
-        ),
+        service.cancelOrder(TENANT_A, order.id, makeCancelInput(), VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-HORD-0005",
         httpStatus: 409,
@@ -341,19 +324,9 @@ describe("HospitalizationOrdersService", () => {
         makeOrderInput({ hospitalizationId: hospId }),
         VET_A,
       );
-      await service.cancelOrder(
-        TENANT_A,
-        order.id,
-        makeCancelInput(),
-        VET_A,
-      );
+      await service.cancelOrder(TENANT_A, order.id, makeCancelInput(), VET_A);
       await expect(
-        service.addSchedule(
-          TENANT_A,
-          order.id,
-          makeScheduleInput(),
-          VET_A,
-        ),
+        service.addSchedule(TENANT_A, order.id, makeScheduleInput(), VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-HORD-0004",
         httpStatus: 409,
@@ -398,19 +371,9 @@ describe("HospitalizationOrdersService", () => {
         makeScheduleInput(),
         VET_A,
       );
-      await service.applySchedule(
-        TENANT_A,
-        s.id,
-        makeApplyInput(),
-        VET_A,
-      );
+      await service.applySchedule(TENANT_A, s.id, makeApplyInput(), VET_A);
       await expect(
-        service.applySchedule(
-          TENANT_A,
-          s.id,
-          makeApplyInput(),
-          VET_A,
-        ),
+        service.applySchedule(TENANT_A, s.id, makeApplyInput(), VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-HORD-0007",
         httpStatus: 409,
@@ -455,19 +418,9 @@ describe("HospitalizationOrdersService", () => {
         makeScheduleInput(),
         VET_A,
       );
-      await service.skipSchedule(
-        TENANT_A,
-        s.id,
-        makeSkipInput(),
-        VET_A,
-      );
+      await service.skipSchedule(TENANT_A, s.id, makeSkipInput(), VET_A);
       await expect(
-        service.skipSchedule(
-          TENANT_A,
-          s.id,
-          makeSkipInput(),
-          VET_A,
-        ),
+        service.skipSchedule(TENANT_A, s.id, makeSkipInput(), VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-HORD-0007",
         httpStatus: 409,
@@ -487,19 +440,9 @@ describe("HospitalizationOrdersService", () => {
         makeScheduleInput(),
         VET_A,
       );
-      await service.skipSchedule(
-        TENANT_A,
-        s.id,
-        makeSkipInput(),
-        VET_A,
-      );
+      await service.skipSchedule(TENANT_A, s.id, makeSkipInput(), VET_A);
       await expect(
-        service.applySchedule(
-          TENANT_A,
-          s.id,
-          makeApplyInput(),
-          VET_A,
-        ),
+        service.applySchedule(TENANT_A, s.id, makeApplyInput(), VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-HORD-0007",
         httpStatus: 409,
@@ -549,12 +492,7 @@ describe("HospitalizationOrdersService", () => {
         makeOrderInput({ hospitalizationId: hospId }),
         VET_A,
       );
-      await service.addSchedule(
-        TENANT_A,
-        order.id,
-        makeScheduleInput(),
-        VET_A,
-      );
+      await service.addSchedule(TENANT_A, order.id, makeScheduleInput(), VET_A);
       const result = await service.listSchedules(
         TENANT_A,
         { status: "pending", limit: 50, offset: 0 },
@@ -576,17 +514,8 @@ describe("HospitalizationOrdersService", () => {
         makeOrderInput({ hospitalizationId: hospId }),
         VET_A,
       );
-      await service.addSchedule(
-        TENANT_A,
-        order.id,
-        makeScheduleInput(),
-        VET_A,
-      );
-      const detail = await service.getOrderDetail(
-        TENANT_A,
-        order.id,
-        VET_A,
-      );
+      await service.addSchedule(TENANT_A, order.id, makeScheduleInput(), VET_A);
+      const detail = await service.getOrderDetail(TENANT_A, order.id, VET_A);
       expect(detail).not.toBeNull();
       expect(detail!.order.id).toBe(order.id);
       expect(detail!.schedules.length).toBe(1);

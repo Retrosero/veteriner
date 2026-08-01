@@ -33,20 +33,21 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { VaccineApplicationsService } from "./vaccine-applications.service.js";
+import { VaccineCardsRepository } from "./vaccine-cards.repository.js";
+import { VaccinesService } from "./vaccines.service.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
+import { toVaccineApplication } from "../../common/vaccines/vaccine-application.types.js";
 import {
   buildCardEntry,
   defaultCardOptions,
   todayUtcIso,
 } from "../../common/vaccines/vaccine-card.types.js";
-import { toVaccineApplication } from "../../common/vaccines/vaccine-application.types.js";
 import { toVaccineProtocol } from "../../common/vaccines/vaccine.types.js";
-import type { PatientsService } from "../patients/patients.service.js";
-import { VaccinesService } from "./vaccines.service.js";
-import { VaccineApplicationsService } from "./vaccine-applications.service.js";
-import { VaccineCardsRepository } from "./vaccine-cards.repository.js";
+import { PatientsService } from "../patients/patients.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   TenantVaccineCardPortalSetting,
   TenantVaccineCardPortalSettingInput,
@@ -174,7 +175,7 @@ export class VaccineCardsService {
       "update",
       {
         actorId: actor.actorId,
-        actorType: actor.actorType as "user" | "system",
+        actorType: actor.actorType,
         tenantId: actor.tenantId,
         branchId: actor.branchId,
         correlationId: actor.correlationId,
@@ -195,7 +196,11 @@ export class VaccineCardsService {
 
   private async computeCard(
     tenantId: string,
-    patient: { id: string; species: "dog" | "cat" | "bird" | "other"; birthDate: string | null },
+    patient: {
+      id: string;
+      species: "dog" | "cat" | "bird" | "other";
+      birthDate: string | null;
+    },
     actor: ActorContext,
     options: VaccineCardOptions,
   ): Promise<VaccineCard> {

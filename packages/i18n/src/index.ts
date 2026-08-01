@@ -1,12 +1,10 @@
 /**
  * @file @vetniva/i18n kök modülü.
  * @module @vetniva/i18n
- *
  * @description Frontend ve backend'in ortak kullandığı i18n kaynakları ve
  * yapılandırması. Sunucu tarafında `createCoreI18n`, istemci tarafında
  * `createBrowserI18n` kullanılır. İki fabrika ayrı tutularak Next.js
  * server bundle'ına `react-i18next` sızması engellenir.
- *
  * @security Çeviri anahtarları PII içermez; anahtar adları büyük/küçük
  * harf ve nokta notasyonu ile sabit tanımlanır (i18next standardı).
  */

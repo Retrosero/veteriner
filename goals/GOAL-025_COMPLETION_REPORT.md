@@ -30,6 +30,7 @@ filtreli.
 
 **PortalController** — 4 yeni endpoint
 (`apps/api/src/modules/portal/portal.controller.ts`):
+
 - `POST   /api/v1/portal/invitations` — `user:user:invite`, 201.
 - `GET    /api/v1/portal/invitations?ownerId=...` —
   `clinic:owner:read`, 200.
@@ -38,7 +39,7 @@ filtreli.
 - `POST   /api/v1/portal/invitations/accept` — **public** (token
   tabanlı), 200; kabul sonrası `portalUserId` + `sessionToken`
   döner. Swagger `operationId: portalInviteCreate |
-  portalInviteList | portalInviteRevoke | portalInviteAccept`.
+portalInviteList | portalInviteRevoke | portalInviteAccept`.
   `ZodValidationPipe` ile input doğrulama.
 
 **Sözleşme** (`packages/contracts/src/portal.ts`):
@@ -111,12 +112,12 @@ Yok. In-memory `byId` Map (davetler) + `portalUsers` Map +
 
 ## API
 
-| Method | Path                                       | Yetki                 | Kod |
-| ------ | ------------------------------------------ | --------------------- | --- |
-| POST   | /api/v1/portal/invitations                 | user:user:invite      | 201 |
-| GET    | /api/v1/portal/invitations?ownerId=...     | clinic:owner:read     | 200 |
-| DELETE | /api/v1/portal/invitations/:id             | user:user:invite      | 200 |
-| POST   | /api/v1/portal/invitations/accept          | public                | 200 |
+| Method | Path                                   | Yetki             | Kod |
+| ------ | -------------------------------------- | ----------------- | --- |
+| POST   | /api/v1/portal/invitations             | user:user:invite  | 201 |
+| GET    | /api/v1/portal/invitations?ownerId=... | clinic:owner:read | 200 |
+| DELETE | /api/v1/portal/invitations/:id         | user:user:invite  | 200 |
+| POST   | /api/v1/portal/invitations/accept      | public            | 200 |
 
 Hatalar: 404 `VET-AUTHZ-0002` (cross-tenant owner/patient), 404
 `VET-PORTAL-0001` (token bulunamadı), 409 `VET-PORTAL-0002`

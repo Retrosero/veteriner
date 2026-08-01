@@ -87,8 +87,12 @@ export class AppointmentRemindersRepository {
   /** Yeni kayıt ekler. Idempotency: aynı tenant+dedupeKey varsa no-op. */
   public insert(
     record: AppointmentReminderRecord,
-  ): { inserted: true; record: AppointmentReminderRecord } | { inserted: false; existing: AppointmentReminderRecord } {
-    const existing = this.byDedupe.get(`${record.tenantId}|${record.dedupeKey}`);
+  ):
+    | { inserted: true; record: AppointmentReminderRecord }
+    | { inserted: false; existing: AppointmentReminderRecord } {
+    const existing = this.byDedupe.get(
+      `${record.tenantId}|${record.dedupeKey}`,
+    );
     if (existing) {
       const found = this.byId.get(existing);
       if (found) return { inserted: false, existing: found };
@@ -135,10 +139,7 @@ export class AppointmentRemindersRepository {
    * tenant'lardan getirir (cron / job çağrısı için). Üst sınır
    * uygulanır (batch).
    */
-  public listDue(
-    now: number,
-    limit: number,
-  ): AppointmentReminderRecord[] {
+  public listDue(now: number, limit: number): AppointmentReminderRecord[] {
     const out: AppointmentReminderRecord[] = [];
     for (const rec of this.byId.values()) {
       if (rec.status !== "scheduled") continue;
@@ -193,10 +194,7 @@ export class AppointmentRemindersRepository {
    * Bir appointment'ın tüm `scheduled` kayıtlarını `cancelled`
    * yapar. Randevu iptal edildiğinde çağrılır.
    */
-  public cancelForAppointment(
-    tenantId: string,
-    appointmentId: string,
-  ): number {
+  public cancelForAppointment(tenantId: string, appointmentId: string): number {
     let n = 0;
     for (const rec of this.byId.values()) {
       if (rec.tenantId !== tenantId) continue;

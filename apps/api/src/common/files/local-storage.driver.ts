@@ -1,24 +1,22 @@
 /**
  * @file Local disk storage driver (FAZ-0).
  * @module apps/api/common/files/local-storage.driver
- *
  * @description Dosyaları yerel disk üzerinde `uploads/{tenantId}/{category}/
  * {yyyy}/{mm}/{fileId}.{ext}` path'inde saklar. FAZ-0 için disk tabanlı;
  * test veya development için opsiyonel in-memory mod destekler. S3 / object
  * storage entegrasyonu FAZ-14+'da devreye girer.
- *
  * @security `path` alanı `path.resolve` ile normalize edilir;
  *   `..` segmentleri root dışına çıkmayı engeller. Signed URL
  *   HMAC-SHA256 ile imzalanır; süre dolmuş URL'ler proxy
  *   controller tarafından reddedilir.
- *
  * @since GOAL-014 (FAZ-2) dosya ve medya servisi
  */
 
-import { Injectable, Logger } from "@nestjs/common";
+import * as crypto from "node:crypto";
 import { promises as fsp } from "node:fs";
 import * as path from "node:path";
-import * as crypto from "node:crypto";
+
+import { Injectable, Logger } from "@nestjs/common";
 
 import type { StorageDriver } from "./storage.interface.js";
 
@@ -34,6 +32,7 @@ export class LocalStorageDriver implements StorageDriver {
   private readonly memStore: Map<string, Buffer> | null;
 
   /**
+   * Doğrulanmış uploads kökü veya test için bellek deposuyla driver oluşturur.
    * @param rootDir Kök dizin. Varsayılan: `process.cwd()/uploads`.
    * @param memStore Opsiyonel in-memory store. Verilirse disk I/O
    *   atlanır; test'lerde kullanılır.
@@ -43,15 +42,24 @@ export class LocalStorageDriver implements StorageDriver {
     this.memStore = memStore ?? null;
   }
 
-  public async put(filePath: string, data: Buffer, _mime: string): Promise<void> {
+  public async put(
+    filePath: string,
+    data: Buffer,
+    _mime: string,
+  ): Promise<void> {
     const resolved = this.resolveSafe(filePath);
     if (this.memStore !== null) {
       this.memStore.set(resolved, Buffer.from(data));
       return;
     }
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- resolved, resolveSafe ile uploads kökü içinde doğrulanır.
     await fsp.mkdir(path.dirname(resolved), { recursive: true });
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- resolved, resolveSafe ile uploads kökü içinde doğrulanır.
     await fsp.writeFile(resolved, data);
-    this.logger.debug({ path: resolved, size: data.length }, "local-storage.put");
+    this.logger.debug(
+      { path: resolved, size: data.length },
+      "local-storage.put",
+    );
   }
 
   public async get(filePath: string): Promise<Buffer> {
@@ -63,6 +71,7 @@ export class LocalStorageDriver implements StorageDriver {
       }
       return Buffer.from(data);
     }
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- resolved, resolveSafe ile uploads kökü içinde doğrulanır.
     return fsp.readFile(resolved);
   }
 
@@ -73,6 +82,7 @@ export class LocalStorageDriver implements StorageDriver {
       return;
     }
     try {
+      // eslint-disable-next-line security/detect-non-literal-fs-filename -- resolved, resolveSafe ile uploads kökü içinde doğrulanır.
       await fsp.unlink(resolved);
     } catch (err) {
       const code = (err as NodeJS.ErrnoException).code;
@@ -80,7 +90,10 @@ export class LocalStorageDriver implements StorageDriver {
     }
   }
 
-  public async signedUrl(filePath: string, expiresInSec: number): Promise<string> {
+  public async signedUrl(
+    filePath: string,
+    expiresInSec: number,
+  ): Promise<string> {
     if (!Number.isFinite(expiresInSec) || expiresInSec <= 0) {
       throw new Error("expiresInSec must be a positive number");
     }
@@ -98,6 +111,7 @@ export class LocalStorageDriver implements StorageDriver {
   /**
    * Path'i root altında normalize eder. Root dışına çıkan path'ler
    * hata fırlatır (path traversal engeli).
+   * @param filePath
    */
   private resolveSafe(filePath: string): string {
     if (filePath.includes("\0")) {
@@ -112,6 +126,9 @@ export class LocalStorageDriver implements StorageDriver {
   }
 
   private signingSecret(): string {
-    return process.env["FILE_SIGNING_SECRET"] ?? "vetniva-dev-secret-do-not-use-in-prod";
+    return (
+      process.env["FILE_SIGNING_SECRET"] ??
+      "vetniva-dev-secret-do-not-use-in-prod"
+    );
   }
 }

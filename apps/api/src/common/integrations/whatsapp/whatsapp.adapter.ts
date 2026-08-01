@@ -71,7 +71,10 @@ export interface WhatsAppAdapter {
     name: string,
     language: string,
     category: "marketing" | "utility" | "authentication",
-  ): Promise<{ templateId: string; status: "pending" | "approved" | "rejected" }>;
+  ): Promise<{
+    templateId: string;
+    status: "pending" | "approved" | "rejected";
+  }>;
 }
 
 /** DI token. */

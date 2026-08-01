@@ -1,9 +1,15 @@
 # @file Çoklu Dil ve Ülke Adaptörü Dokümanları.
+
 # @module docs/i18n/README
+
 #
+
 # @description VetNiva'nın i18n ve country adapter mimarisine
+
 # ilişkin tüm sözleşme ve rehber dokümanları. GOAL-003 ile
+
 # birlikte üretildi.
+
 # =============================================================================
 
 # Çoklu Dil ve Ülke Adaptörü Dokümanları

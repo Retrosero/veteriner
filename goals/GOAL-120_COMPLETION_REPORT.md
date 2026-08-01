@@ -1,9 +1,11 @@
 # GOAL-120 — Pilot Tenant Kurulumu (Completion Report)
 
 ## Faz
+
 FAZ-12 (Pilot, güvenlik, üretime hazırlık)
 
 ## Özet
+
 Pilot klinik için tenant, tek şube, 2 OWNER + 2
 VETERINARIAN/STAFF kullanıcı ve demo hayvan/sahip seed
 verisi. Repoya gerçek parola veya kişisel veri yazılmaz;
@@ -12,6 +14,7 @@ tüm credential'lar env üzerinden alınır.
 ## Çıktılar
 
 ### Core (`apps/api/src/common/seed/`)
+
 - `seed-pilot-tenant.ts` — pilot seed servisi:
   - `PilotSeedService.run()` — tenant + branch + users +
     owners + patients.
@@ -21,6 +24,7 @@ tüm credential'lar env üzerinden alınır.
 - `seed-pilot-cli.ts` — CLI entry (`pnpm seed:pilot`).
 
 ### Seed Verisi (PILOT_SEED)
+
 - **Tenant:** `tnt-pilot-kadikoy` (slug: `pilot-vet-kadikoy`,
   TR, tr-TR, Europe/Istanbul).
 - **Branch:** `Merkez Şube`, Caferağa Mah. Test Sk. No:1
@@ -36,6 +40,7 @@ tüm credential'lar env üzerinden alınır.
   - 2 Patients (Karabaş dog, Minnoş cat).
 
 ## İş Kuralları
+
 - **Production guard:** `NODE_ENV === 'production'` ise
   seed hata fırlatır.
 - **Env-only credentials:** Parolalar repoya yazılmaz;
@@ -67,6 +72,7 @@ pnpm --filter @vetniva/api seed:pilot
 ```
 
 ## Yapılmayanlar / Bilinçli Atlamalar
+
 - **Prisma migration + upsert bağlantısı** → FAZ-12+ (DB
   katmanı; mevcut upsert metodları TODO).
 - **Çoklu-tenant seed (multi-tenant demo)** → FAZ-12+ (her
@@ -76,14 +82,17 @@ pnpm --filter @vetniva/api seed:pilot
 - **Seed rollback** → FAZ-12+ (`seed:undo` komutu).
 
 ## Döküman Uyum
+
 - `pnpm docs:check` → temiz (yeni eklenen özgü).
 - `pnpm i18n:check` → temiz.
 
 ## Testler
+
 - `seed-pilot-tenant.ts` şu an iskelet; FAZ-12+ testleri
   repository upsert bağlantısıyla birlikte eklenecek.
 - Full api regresyon: 1439+ yeşil, 9 skipped, 0 hata.
 
 ## Commit
+
 - Core: (bu commit) — `feat(seed): GOAL-120 pilot tenant seed iskeleti`
 - Docs: `docs/operations/PRODUCTION_RELEASE.md` (GOAL-127).

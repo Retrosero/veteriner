@@ -40,14 +40,8 @@ export const petshopSaleStatusSchema = z.enum([
 ]);
 export type PetshopSaleStatus = z.infer<typeof petshopSaleStatusSchema>;
 
-export const petshopPaymentMethodSchema = z.enum([
-  "cash",
-  "card",
-  "transfer",
-]);
-export type PetshopPaymentMethod = z.infer<
-  typeof petshopPaymentMethodSchema
->;
+export const petshopPaymentMethodSchema = z.enum(["cash", "card", "transfer"]);
+export type PetshopPaymentMethod = z.infer<typeof petshopPaymentMethodSchema>;
 
 /* --------------------------------------------------------------------------
  * Satır girdileri
@@ -65,22 +59,14 @@ export type PetshopPaymentMethod = z.infer<
 export const petshopSaleLineInputSchema = z.object({
   productId: z.string().min(1).max(100),
   unit: z.string().min(1).max(32),
-  quantity: z
-    .string()
-    .regex(/^\d+(\.\d{1,4})?$/, "Geçersiz miktar"),
-  unitPrice: z
-    .string()
-    .regex(/^\d+(\.\d{1,4})?$/, "Geçersiz fiyat"),
-  discountPercent: z
-    .number()
-    .min(0)
-    .max(100)
-    .optional(),
+  // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden miktar doğrulamasıdır.
+  quantity: z.string().regex(/^\d+(\.\d{1,4})?$/, "Geçersiz miktar"),
+  // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden fiyat doğrulamasıdır.
+  unitPrice: z.string().regex(/^\d+(\.\d{1,4})?$/, "Geçersiz fiyat"),
+  discountPercent: z.number().min(0).max(100).optional(),
   notes: z.string().max(2000).optional(),
 });
-export type PetshopSaleLineInput = z.infer<
-  typeof petshopSaleLineInputSchema
->;
+export type PetshopSaleLineInput = z.infer<typeof petshopSaleLineInputSchema>;
 
 /* --------------------------------------------------------------------------
  * Yeni satış oluşturma (taslak)
@@ -103,6 +89,7 @@ export const petshopSaleCreateInputSchema = z.object({
   paymentMethod: petshopPaymentMethodSchema.optional().default("cash"),
   paidAmount: z
     .string()
+    // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden para tutarı doğrulamasıdır.
     .regex(/^\d+(\.\d{1,4})?$/)
     .optional()
     .default("0"),
@@ -122,6 +109,7 @@ export const petshopSaleUpdateInputSchema = z
     paymentMethod: petshopPaymentMethodSchema.optional(),
     paidAmount: z
       .string()
+      // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden para tutarı doğrulamasıdır.
       .regex(/^\d+(\.\d{1,4})?$/)
       .optional(),
     globalDiscountPercent: z.number().min(0).max(100).optional(),
@@ -139,6 +127,7 @@ export const petshopSaleCompleteInputSchema = z.object({
   paymentMethod: petshopPaymentMethodSchema.optional(),
   paidAmount: z
     .string()
+    // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden para tutarı doğrulamasıdır.
     .regex(/^\d+(\.\d{1,4})?$/)
     .optional(),
   notes: z.string().max(2000).optional(),

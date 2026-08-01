@@ -1,23 +1,25 @@
 /**
  * @file RbacService unit testleri.
  * @module apps/api/common/rbac/rbac.service.spec
- *
  * @since GOAL-012 (FAZ-1) RBAC ve izin motoru
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AuditService } from "../audit/audit.service.js";
-import { RbacService } from "./rbac.service.js";
 import {
   resetPermissionCatalogCache,
   loadPermissionCatalog,
 } from "./permission-catalog.loader.js";
-import type { RbacRepository } from "./rbac.repository.js";
-import type {
-  PermissionEvaluationContext,
-} from "./permission.types.js";
+import { RbacService } from "./rbac.service.js";
+import { type AuditService } from "../audit/audit.service.js";
 
+import type { PermissionEvaluationContext } from "./permission.types.js";
+import type { RbacRepository } from "./rbac.repository.js";
+
+/**
+ *
+ * @param overrides
+ */
 function makeActor(
   overrides: Partial<PermissionEvaluationContext["actor"]> = {},
 ): PermissionEvaluationContext["actor"] {
@@ -32,6 +34,10 @@ function makeActor(
   };
 }
 
+/**
+ *
+ * @param overrides
+ */
 function makeCtx(
   overrides: Partial<PermissionEvaluationContext> = {},
 ): PermissionEvaluationContext {
@@ -42,6 +48,9 @@ function makeCtx(
   };
 }
 
+/**
+ *
+ */
 function makeAuditStub(): AuditService {
   return {
     recordSimple: vi.fn().mockResolvedValue({

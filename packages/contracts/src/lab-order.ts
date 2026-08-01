@@ -37,11 +37,7 @@ export const labOrderStatusSchema = z.enum([
 export type LabOrderStatus = z.infer<typeof labOrderStatusSchema>;
 
 /** Öncelik seviyesi. */
-export const labOrderPrioritySchema = z.enum([
-  "routine",
-  "urgent",
-  "stat",
-]);
+export const labOrderPrioritySchema = z.enum(["routine", "urgent", "stat"]);
 export type LabOrderPriority = z.infer<typeof labOrderPrioritySchema>;
 
 /** Numune kaynağı — order'ın nereden açıldığı. */
@@ -61,9 +57,7 @@ export const labOrderSampleQualitySchema = z.enum([
   "contaminated",
   "other",
 ]);
-export type LabOrderSampleQuality = z.infer<
-  typeof labOrderSampleQualitySchema
->;
+export type LabOrderSampleQuality = z.infer<typeof labOrderSampleQualitySchema>;
 
 /* --------------------------------------------------------------------------
  * Yeni lab isteği
@@ -114,9 +108,7 @@ export type LabOrderStartProcessingInput = z.infer<
 export const labOrderCompleteInputSchema = z.object({
   notes: z.string().max(2000).optional(),
 });
-export type LabOrderCompleteInput = z.infer<
-  typeof labOrderCompleteInputSchema
->;
+export type LabOrderCompleteInput = z.infer<typeof labOrderCompleteInputSchema>;
 
 /** İptal. */
 export const labOrderCancelInputSchema = z.object({
@@ -183,6 +175,4 @@ export const labOrderListResponseSchema = z.object({
   items: z.array(labOrderSchema),
   total: z.number().int().nonnegative(),
 });
-export type LabOrderListResponse = z.infer<
-  typeof labOrderListResponseSchema
->;
+export type LabOrderListResponse = z.infer<typeof labOrderListResponseSchema>;

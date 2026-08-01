@@ -16,20 +16,16 @@
 
 import { Module, forwardRef } from "@nestjs/common";
 
-import { OwnersModule } from "../owners/owners.module.js";
-import { PatientsModule } from "../patients/patients.module.js";
-
 import { OwnershipHistoryController } from "./ownership-history.controller.js";
 import { OwnershipHistoryRepository } from "./ownership-history.repository.js";
 import { OwnershipHistoryService } from "./ownership-history.service.js";
+import { OwnersModule } from "../owners/owners.module.js";
+import { PatientsModule } from "../patients/patients.module.js";
 
 @Module({
   imports: [OwnersModule, forwardRef(() => PatientsModule)],
   controllers: [OwnershipHistoryController],
-  providers: [
-    OwnershipHistoryService,
-    OwnershipHistoryRepository,
-  ],
+  providers: [OwnershipHistoryService, OwnershipHistoryRepository],
   exports: [OwnershipHistoryService, OwnershipHistoryRepository],
 })
 export class OwnershipHistoryModule {}

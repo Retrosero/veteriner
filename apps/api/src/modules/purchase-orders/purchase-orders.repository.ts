@@ -24,9 +24,7 @@ import type {
   PurchaseOrderLineRecord,
   PurchaseOrderRecord,
 } from "../../common/purchase-orders/purchase-order.types.js";
-import type {
-  PurchaseOrderStatus,
-} from "@vetniva/contracts";
+import type { PurchaseOrderStatus } from "@vetniva/contracts";
 
 /** Sipariş patch tipi. */
 export interface PurchaseOrderPatch {
@@ -97,9 +95,7 @@ export class PurchaseOrdersRepository {
     return record;
   }
 
-  public insertLine(
-    record: PurchaseOrderLineRecord,
-  ): PurchaseOrderLineRecord {
+  public insertLine(record: PurchaseOrderLineRecord): PurchaseOrderLineRecord {
     this.lineById.set(record.id, record);
     const list = this.linesByOrder.get(record.purchaseOrderId) ?? [];
     list.push(record.id);
@@ -107,10 +103,7 @@ export class PurchaseOrdersRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): PurchaseOrderRecord | null {
+  public findById(tenantId: string, id: string): PurchaseOrderRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -194,16 +187,10 @@ export class PurchaseOrdersRepository {
     for (const rec of this.byId.values()) {
       if (rec.tenantId !== tenantId) continue;
       if (filters.status && rec.status !== filters.status) continue;
-      if (filters.supplierId && rec.supplierId !== filters.supplierId)
-        continue;
-      if (filters.branchId && rec.branchId !== filters.branchId)
-        continue;
+      if (filters.supplierId && rec.supplierId !== filters.supplierId) continue;
+      if (filters.branchId && rec.branchId !== filters.branchId) continue;
       if (needle) {
-        const hay = [
-          rec.id,
-          rec.supplierId,
-          rec.notes ?? "",
-        ]
+        const hay = [rec.id, rec.supplierId, rec.notes ?? ""]
           .join(" ")
           .toLowerCase();
         if (!hay.includes(needle)) continue;

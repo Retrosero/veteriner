@@ -19,8 +19,10 @@
 
 import { Injectable } from "@nestjs/common";
 
-import type { SupplierType } from "../../common/suppliers/supplier.types.js";
-import type { SupplierRecord } from "../../common/suppliers/supplier.types.js";
+import type {
+  SupplierType,
+  SupplierRecord,
+} from "../../common/suppliers/supplier.types.js";
 
 /** Patch tipi: kısmi güncelleme için izin verilen alanlar. */
 export interface SupplierPatch {
@@ -71,20 +73,14 @@ export class SuppliersRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): SupplierRecord | null {
+  public findById(tenantId: string, id: string): SupplierRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
   }
 
   /** Code'a göre tenant-scoped arama. */
-  public findByCode(
-    tenantId: string,
-    code: string,
-  ): SupplierRecord | null {
+  public findByCode(tenantId: string, code: string): SupplierRecord | null {
     const id = this.byCode.get(this.codeKey(tenantId, code));
     if (!id) return null;
     const rec = this.byId.get(id);
@@ -105,10 +101,7 @@ export class SuppliersRepository {
     if (!rec) return null;
     if (patch.code !== undefined && patch.code !== rec.code) {
       this.byCode.delete(this.codeKey(rec.tenantId, rec.code));
-      this.byCode.set(
-        this.codeKey(rec.tenantId, patch.code),
-        rec.id,
-      );
+      this.byCode.set(this.codeKey(rec.tenantId, patch.code), rec.id);
     }
     for (const [k, v] of Object.entries(patch)) {
       if (v !== undefined) {

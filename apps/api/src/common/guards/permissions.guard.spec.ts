@@ -1,28 +1,36 @@
 /**
  * @file PermissionsGuard unit testleri.
  * @module apps/api/common/guards/permissions.guard.spec
- *
  * @since GOAL-012 (FAZ-1) RBAC ve izin motoru
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ExecutionContext } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ActorContext, ActorRole } from "../actor/actor-context.service.js";
-import { AuthService } from "../auth/auth.service.js";
-import { PERMISSIONS_KEY } from "../decorators/require-permissions.decorator.js";
-import { RbacService } from "../../modules/rbac/rbac.service.js";
 import { PermissionsGuard } from "./permissions.guard.js";
+import { RbacService } from "../../modules/rbac/rbac.service.js";
+import { type AuthService } from "../auth/auth.service.js";
+import { PERMISSIONS_KEY } from "../decorators/require-permissions.decorator.js";
 
+import type {
+  ActorContext,
+  ActorRole,
+} from "../actor/actor-context.service.js";
+import type { ExecutionContext } from "@nestjs/common";
+
+/**
+ *
+ * @param args
+ * @param args.actor
+ */
 function makeContext(args: { actor?: ActorContext }): ExecutionContext {
   return {
     getHandler: () =>
-      ({} as unknown) as ExecutionContext["getHandler"] extends () => infer H
+      ({}) as unknown as ExecutionContext["getHandler"] extends () => infer H
         ? H
         : never,
     getClass: () =>
-      ({} as unknown) as ExecutionContext["getClass"] extends () => infer C
+      ({}) as unknown as ExecutionContext["getClass"] extends () => infer C
         ? C
         : never,
     switchToHttp: () => ({
@@ -34,17 +42,26 @@ function makeContext(args: { actor?: ActorContext }): ExecutionContext {
   } as unknown as ExecutionContext;
 }
 
+/**
+ *
+ * @param perms
+ */
 function makeReflector(perms: ReadonlyArray<string>): Reflector {
   const r = new Reflector();
-  vi.spyOn(r, "getAllAndOverride").mockImplementation(
-    ((key: string, _targets: unknown[]) => {
-      if (key === PERMISSIONS_KEY) return perms;
-      return undefined;
-    }) as never,
-  );
+  vi.spyOn(r, "getAllAndOverride").mockImplementation(((
+    key: string,
+    _targets: unknown[],
+  ) => {
+    if (key === PERMISSIONS_KEY) return perms;
+    return undefined;
+  }) as never);
   return r;
 }
 
+/**
+ *
+ * @param overrides
+ */
 function makeActor(overrides: Partial<ActorContext> = {}): ActorContext {
   return {
     actorId: "user-1",
@@ -81,7 +98,9 @@ describe("PermissionsGuard — GOAL-012 minimum core", () => {
   it("Doğru permission varsa geçer", () => {
     const reflector = makeReflector(["clinic:owner:read"]);
     const guard = new PermissionsGuard(reflector, rbac);
-    const ctx = makeContext({ actor: makeActor({ role: "OWNER" as ActorRole }) });
+    const ctx = makeContext({
+      actor: makeActor({ role: "OWNER" as ActorRole }),
+    });
     expect(guard.canActivate(ctx)).toBe(true);
   });
 

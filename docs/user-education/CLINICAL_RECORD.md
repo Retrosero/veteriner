@@ -1,12 +1,14 @@
 # Kullanıcı Eğitimi — Klinik Kayıt Yönetimi
 
 ## Amaç
+
 Muayene, SOAP notu, vital bulgular, teşhis, tedavi planı,
 reçete, lab sonucu ve taburcu özeti gibi klinik kayıtların
 nasıl oluşturulacağını, güncelleneceğini ve paylaşılacağını
 açıklar.
 
 ## Hedef kitle
+
 - VETERINARIAN (ana kullanıcı)
 - LAB_TECH (lab sonucu)
 - OWNER (portal görüntüleme)
@@ -116,14 +118,15 @@ C: Yatış detayında "Taburcu Özeti" sekmesi. Yatış
 
 ## Hata durumları
 
-| Hata | Çözüm |
-|------|-------|
-| Pasif muayene | Yeni muayene oluşturun. |
-| İmzalı muayenede değişiklik | Amendment açın. |
-| Cross-tenant | Tenant sınırı; yetkili kliniğe yönlendirin. |
-| Yetkisiz | VETERINARIAN rolü gerekli. |
+| Hata                        | Çözüm                                       |
+| --------------------------- | ------------------------------------------- |
+| Pasif muayene               | Yeni muayene oluşturun.                     |
+| İmzalı muayenede değişiklik | Amendment açın.                             |
+| Cross-tenant                | Tenant sınırı; yetkili kliniğe yönlendirin. |
+| Yetkisiz                    | VETERINARIAN rolü gerekli.                  |
 
 ## İlgili dokümanlar
+
 - `docs/workflows/examination_start.md`
 - `docs/api/api.get._api_v1_clinic_examinations.md`
 - `goals/GOAL-040 → 047_COMPLETION_REPORT.md`

@@ -18,10 +18,7 @@
 
 import { Injectable } from "@nestjs/common";
 
-import type {
-  ClinicalRecordShare,
-  ShareChannel,
-} from "@vetniva/contracts";
+import type { ClinicalRecordShare, ShareChannel } from "@vetniva/contracts";
 
 /** Persist edilmiş share record. */
 export interface ClinicalRecordShareRecord {

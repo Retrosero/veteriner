@@ -13,10 +13,10 @@ filtreleri. Default sıralama `createdAt DESC`.
 - `productId` (string) opsiyonel.
 - `lotId` (string) opsiyonel.
 - `type` (enum: `purchase|sale|clinical_use|vaccination|
-  return|transfer|count_adjustment|waste|reversal`) opsiyonel.
+return|transfer|count_adjustment|waste|reversal`) opsiyonel.
 - `direction` (enum: `in|out`) opsiyonel.
 - `sourceType` (enum: `manual|purchase_order|sale|
-  examination|vaccine_application|return|transfer`) opsiyonel.
+examination|vaccine_application|return|transfer`) opsiyonel.
 - `dateFrom`, `dateTo` (ISO datetime) opsiyonel.
 - `limit` (integer, 1-200, default 50).
 - `offset` (integer, 0-10000, default 0).

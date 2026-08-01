@@ -1,7 +1,6 @@
 /**
  * @file DischargeSummaries service.
  * @module apps/api/modules/discharge-summaries/discharge-summaries.service
- *
  * @description GOAL-086 (FAZ-8) gözlem kayıtları + taburcu özeti
  * iş kuralları. 2 varlık (Observation, DischargeSummary) tek
  * modülde. Cross-module: HospitalizationService (yatış var mı
@@ -21,23 +20,24 @@
  *   (draft) oluşur. Audit.
  * - `sharePortal`: portalShared = true + portalSharedAt = now.
  *   Yalnızca finalized (409 VET-DSUM-0007). Audit.
- *
  * @security Tenant bilgisi yalnızca actor.tenantId'den alınır.
- *
  * @since GOAL-086 (FAZ-8) gözlem ve taburcu özeti core
  */
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
+import { DischargeSummariesRepository } from "./discharge-summaries.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import {
   toDischargeSummary,
   toObservation,
   type DischargeSummaryRecord,
   type ObservationRecord,
 } from "../../common/discharge-summaries/discharge-summary.types.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { HospitalizationService } from "../hospitalization/hospitalization.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   DischargeSummary,
   DischargeSummaryAmendInput,
@@ -49,9 +49,6 @@ import type {
   ObservationFilters,
   ObservationListResponse,
 } from "@vetniva/contracts";
-
-import { DischargeSummariesRepository } from "./discharge-summaries.repository.js";
-import { HospitalizationService } from "../hospitalization/hospitalization.service.js";
 
 @Injectable()
 export class DischargeSummariesService {
@@ -569,7 +566,7 @@ export class DischargeSummariesService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

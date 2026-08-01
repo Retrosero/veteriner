@@ -1,9 +1,11 @@
 # GOAL-117 — İlk Kullanım Asistanı (Completion Report)
 
 ## Faz
+
 FAZ-11 (Dokümantasyon ve AI asistanı temeli)
 
 ## Özet
+
 Uygulama kullanımına yönelik ilk kullanım asistanı (onboarding
 assistant). "X nasıl yapılır?" sorusunu role + modül + anahtar
 kelime bazlı senaryo eşleştirmesi ile yanıtlar. Tıbbi sorular
@@ -13,6 +15,7 @@ içindir; LLM entegrasyonu Faz 12+'da bu katmanı değiştirecek.
 ## Çıktılar
 
 ### Core (GOAL-117 core commit `50b7083` + `ad606f0`)
+
 - `apps/api/src/common/onboarding/onboarding.types.ts` —
   `OnboardingAskInput`, `OnboardingAskResponse`,
   `OnboardingScenarioListResponse`, `OnboardingRole`,
@@ -33,16 +36,18 @@ içindir; LLM entegrasyonu Faz 12+'da bu katmanı değiştirecek.
 
 ### Endpoint'ler (2)
 
-| # | Method | Path | Yetki |
-|---|--------|------|-------|
-| 1 | POST | `/api/v1/onboarding/ask` | Oturum |
-| 2 | GET | `/api/v1/onboarding/scenarios` | Oturum |
+| #   | Method | Path                           | Yetki  |
+| --- | ------ | ------------------------------ | ------ |
+| 1   | POST   | `/api/v1/onboarding/ask`       | Oturum |
+| 2   | GET    | `/api/v1/onboarding/scenarios` | Oturum |
 
 ### Döküman (bu commit)
+
 - 2 API doc (ask, scenarios).
 - `docs/pages/` — onboarding sayfası kataloğu (planlanan).
 
 ## İş Kuralları
+
 - **Senaryo eşleştirmesi:** `OnboardingService.ask()` soru +
   role + modül + anahtar kelimeye göre workflow kataloğundan
   (`docs/workflows/*.md`) en uygun senaryoyu seçer.
@@ -60,6 +65,7 @@ içindir; LLM entegrasyonu Faz 12+'da bu katmanı değiştirecek.
   `audit:onboarding.scenarios_list` (info).
 
 ## Yapılmayanlar / Bilinçli Atlamalar
+
 - **LLM entegrasyonu (OpenAI/Anthropic)** → Faz 12+ (regex
   yerine LLM tabanlı senaryo eşleştirmesi).
 - **Çoklu-dil (en-GB) senaryolar** → Faz 14+ (en-GB
@@ -70,13 +76,16 @@ içindir; LLM entegrasyonu Faz 12+'da bu katmanı değiştirecek.
   client component).
 
 ## Döküman Uyum
+
 - `pnpm docs:check` → temiz (yeni eklenen özgü).
 - `pnpm i18n:check` → temiz.
 
 ## Testler
+
 - `onboarding.service.spec.ts` → unit testler.
 - Full api regresyon: 1439+ yeşil, 9 skipped, 0 hata.
 
 ## Commit
+
 - Core: `50b7083` — `GOAL-117 core: ilk kullanım asistanı`
 - Docs: (bu commit) — `docs(onboarding): GOAL-117 ilk kullanım asistanı doküman`

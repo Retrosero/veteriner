@@ -1,9 +1,11 @@
 # Pilot Kabul Testleri (GOAL-121)
 
 ## Faz
+
 FAZ-12 (Pilot, güvenlik, üretime hazırlık)
 
 ## Amaç
+
 Pilot veterinerle uygulanacak uçtan uca kabul testleri. Her
 senaryoda işlem süresi, hata, gereksiz adım ve kullanıcı
 yorumu kaydedilir.
@@ -11,6 +13,7 @@ yorumu kaydedilir.
 ## Senaryolar (10)
 
 ### 1. Yeni müşteri/hayvan
+
 - **Adımlar:**
   1. `/clinic/owners/new` → yeni sahip oluştur.
   2. `/clinic/owners/{id}/patients/new` → yeni hayvan
@@ -22,6 +25,7 @@ yorumu kaydedilir.
 - **Test kullanıcısı:** `staff@pilot.vetniva.local`.
 
 ### 2. Randevu
+
 - **Adımlar:**
   1. `/clinic/calendar/new` → yeni randevu.
   2. Tarih + saat + veteriner seç.
@@ -33,6 +37,7 @@ yorumu kaydedilir.
 - **Test kullanıcısı:** `staff@pilot.vetniva.local`.
 
 ### 3. Muayene
+
 - **Adımlar:**
   1. Randevudan "Muayeneyi Başlat" → `/clinic/examinations/{id}/work`.
   2. SOAP sekmesi: S, O, A, P doldur.
@@ -48,6 +53,7 @@ yorumu kaydedilir.
 - **Test kullanıcısı:** `vet@pilot.vetniva.local`.
 
 ### 4. Aşı
+
 - **Adımlar:**
   1. `/clinic/patients/{id}/vaccinations/new` → aşı seç.
   2. Lot + SKT gir.
@@ -61,6 +67,7 @@ yorumu kaydedilir.
 - **Test kullanıcısı:** `vet@pilot.vetniva.local`.
 
 ### 5. Petshop satışı
+
 - **Adımlar:**
   1. `/petshop/sales/new` → POS.
   2. Müşteri + ürünler barkod ile ekle.
@@ -74,6 +81,7 @@ yorumu kaydedilir.
 - **Test kullanıcısı:** `staff@pilot.vetniva.local`.
 
 ### 6. Tahsilat
+
 - **Adımlar:**
   1. Satış detayından "Ödeme Al".
   2. Tutar + yöntem gir.
@@ -86,6 +94,7 @@ yorumu kaydedilir.
 - **Test kullanıcısı:** `staff@pilot.vetniva.local`.
 
 ### 7. Ameliyat
+
 - **Adımlar:**
   1. `/clinic/surgery-plans/new` → ameliyat planı.
   2. Onam formu oluştur.
@@ -99,6 +108,7 @@ yorumu kaydedilir.
 - **Test kullanıcısı:** `vet@pilot.vetniva.local`.
 
 ### 8. Yatış
+
 - **Adımlar:**
   1. `/clinic/patients/{id}/hospitalizations/new` → yatış.
   2. Kafes ata.
@@ -112,6 +122,7 @@ yorumu kaydedilir.
 - **Test kullanıcısı:** `vet@pilot.vetniva.local`.
 
 ### 9. Laboratuvar
+
 - **Adımlar:**
   1. `/clinic/lab-orders/new` → lab order.
   2. Numune toplama.
@@ -124,6 +135,7 @@ yorumu kaydedilir.
 - **Test kullanıcısı:** `vet@pilot.vetniva.local`.
 
 ### 10. Portal
+
 - **Adımlar:**
   1. `owner@pilot.vetniva.local` → portal login.
   2. `/portal/pets` → hayvanları gör.
@@ -140,11 +152,11 @@ yorumu kaydedilir.
 
 Her senaryo için doldurulacak tablo:
 
-| Senaryo | Kullanıcı | Süre | Hata | Adım sayısı | Yorum | Skor (1-5) |
-|---------|-----------|------|------|-------------|-------|------------|
-| 1. Yeni müşteri/hayvan | staff | 75s | yok | 4 | "Anlaşılır" | 4 |
-| 2. Randevu | staff | 22s | yok | 3 | "Hızlı" | 5 |
-| ... | ... | ... | ... | ... | ... | ... |
+| Senaryo                | Kullanıcı | Süre | Hata | Adım sayısı | Yorum       | Skor (1-5) |
+| ---------------------- | --------- | ---- | ---- | ----------- | ----------- | ---------- |
+| 1. Yeni müşteri/hayvan | staff     | 75s  | yok  | 4           | "Anlaşılır" | 4          |
+| 2. Randevu             | staff     | 22s  | yok  | 3           | "Hızlı"     | 5          |
+| ...                    | ...       | ...  | ...  | ...         | ...         | ...        |
 
 ## Kabul Kriterleri (Genel)
 
@@ -154,10 +166,12 @@ Her senaryo için doldurulacak tablo:
 - Tüm akışlar ≤ hedef süreler.
 
 ## Yapılmayanlar / Bilinçli Atlamalar
+
 - **Gerçek pilot ortamı** → Faz 12+ (FAZ-12 kapsamında
   pilot tenant kurulumu + acceptance runbook).
 - **Pilot veri şifreleme** → Faz 12+ (production data
   encryption at-rest).
 
 ## Commit
+
 - Docs: (bu commit) — `docs(operations): GOAL-121 pilot kabul testleri`

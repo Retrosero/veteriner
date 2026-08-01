@@ -1,7 +1,6 @@
 /**
  * @file Doküman envanteri okuyucusu.
  * @module @vetniva/docs-check/scanners/docs
- *
  * @description `docs/pages/`, `docs/api/`, `docs/errors/ERROR_CATALOG.md`,
  * `docs/permissions/PERMISSION_MATRIX.md` ve `docs/ai/AI_CHUNKS.yaml`
  * dosyalarını okuyup envanter çıkarır. Diğer tarayıcılar bu
@@ -11,18 +10,24 @@
  * GOAL-005: AI_CHUNKS.yaml desteği eklendi.
  */
 
-import fg from "fast-glob";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import yaml from "js-yaml";
+
+import fg from "fast-glob";
+import { load as parseYaml, loadAll as parseAllYaml } from "js-yaml";
 
 import type { DocInventory } from "../types.js";
 
 /** VET- formatı. */
 const VET_CODE_RE = /`?(VET-[A-Z]{2,12}-[0-9]{4})`?/g;
 /** Eski TR_/EN_ formatı. */
+// eslint-disable-next-line security/detect-unsafe-regex -- Sabit desen, yalnızca repo dokümanlarında statik envanter taraması yapar.
 const LEGACY_CODE_RE = /`?((TR|EN)_[A-Z]+(_[A-Z]+)*_[0-9]{1,4})`?/g;
 
+/**
+ * Dokümantasyon kaynaklarından doğrulama envanterini çıkarır.
+ * @param docsRoot
+ */
 export async function readDocFiles(docsRoot: string): Promise<DocInventory> {
   const inv: DocInventory = {
     pageFiles: new Set(),
@@ -72,7 +77,7 @@ export async function readDocFiles(docsRoot: string): Promise<DocInventory> {
   const permissionMatrix = await tryRead(permissionMatrixPath);
   if (permissionMatrix) {
     for (const m of permissionMatrix.matchAll(
-      /`([a-zA-Z][a-zA-Z0-9_-]+:[a-zA-Z][a-zA-Z0-9_-]+(?::[a-zA-Z][a-zA-Z0-9_-]+)?)`/g,
+      /`([a-zA-Z][a-zA-Z0-9_-]+:[a-zA-Z][a-zA-Z0-9_-]+(?::[a-zA-Z][a-zA-Z0-9_-]+)?)`/g, // eslint-disable-line security/detect-unsafe-regex -- Sabit izin biçimi yalnızca yerel doküman envanterinde kullanılır.
     )) {
       const perm = m[1];
       if (perm) inv.permissions.add(perm);
@@ -87,17 +92,18 @@ export async function readDocFiles(docsRoot: string): Promise<DocInventory> {
   const aiChunksText = await tryRead(aiChunksPath);
   if (aiChunksText) {
     try {
-      const documents = yaml.loadAll(aiChunksText) as Array<
+      const documents = parseAllYaml(aiChunksText) as Array<
         Record<string, unknown>
       >;
       for (const doc of documents) {
-        const chunks = doc["chunks"];
+        const chunks = doc.chunks;
         if (Array.isArray(chunks)) {
           for (const c of chunks) {
-            if (c && typeof (c as { chunk_id?: string }).chunk_id === "string") {
-              inv.aiChunks.add(
-                (c as { chunk_id: string }).chunk_id,
-              );
+            if (
+              c &&
+              typeof (c as { chunk_id?: string }).chunk_id === "string"
+            ) {
+              inv.aiChunks.add((c as { chunk_id: string }).chunk_id);
             }
           }
         }
@@ -114,7 +120,7 @@ export async function readDocFiles(docsRoot: string): Promise<DocInventory> {
   const fieldsText = await tryRead(fieldsPath);
   if (fieldsText) {
     try {
-      const parsed = yaml.load(fieldsText) as {
+      const parsed = parseYaml(fieldsText) as {
         entities?: Array<{
           fields?: Array<{ id?: string }>;
         }>;
@@ -123,7 +129,7 @@ export async function readDocFiles(docsRoot: string): Promise<DocInventory> {
         for (const entity of parsed.entities) {
           if (!entity || !Array.isArray(entity.fields)) continue;
           for (const f of entity.fields) {
-            if (f && typeof (f as { id?: string }).id === "string") {
+            if (f && typeof f.id === "string") {
               inv.fieldIds.add((f as { id: string }).id);
             }
           }
@@ -137,8 +143,13 @@ export async function readDocFiles(docsRoot: string): Promise<DocInventory> {
   return inv;
 }
 
+/**
+ * Okunamayan veya olmayan bir dosya için hata yükseltmeden içerik okur.
+ * @param p
+ */
 async function tryRead(p: string): Promise<string | undefined> {
   try {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- Yol runner tarafından repo içinden oluşturulur.
     return await readFile(p, "utf8");
   } catch {
     return undefined;

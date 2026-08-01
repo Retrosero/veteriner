@@ -1,15 +1,27 @@
 # @file Sayfa Kataloğu Şeması.
+
 # @module docs/pages/PAGE_SCHEMA
+
 #
+
 # @description VetNiva'daki tüm UI sayfaları için
+
 # makinece okunabilir + insan okunabilir şema. Her
+
 # sayfa kaydı bu şemaya uygun yazılır; `pnpm docs:check`
+
 # tutarlılığı doğrular.
+
 #
+
 # @author GOAL-005 (FAZ-0) dokümantasyon ve AI bilgi havuzu
+
 # @since 2026-07-30
+
 # @security `purpose` ve `step_by_step` alanları PII
-#   içermemeli; sadece yapısal bilgi taşır.
+
+# içermemeli; sadece yapısal bilgi taşır.
+
 # =============================================================================
 
 # Sayfa Kataloğu Şeması
@@ -40,25 +52,25 @@ türetilir. Tire alt çizgi ile değiştirilir.
 
 ## 2. Zorunlu Alanlar
 
-| Alan                  | Tür       | Açıklama |
-| --------------------- | --------- | -------- |
-| `page_id`             | string    | Benzersiz ID. Dosya adıyla aynı. |
-| `route`               | string    | URL pattern (`/app/[locale]/health` veya `/[locale]`). |
-| `module`              | enum      | `landing` / `health` / `dashboard` / `clinic` / `petshop` / `finance` / `settings` / `auth` vb. Modüller GOAL-002 ile tanımlı. |
-| `title_key`           | string    | i18n anahtarı (`health.title`). |
-| `purpose`             | map       | `tr-TR` / `en-GB` açıklama (1-3 cümle). |
-| `allowed_roles`       | string[]  | Boş olabilir (public). Eğer varsa: `SUPERADMIN` / `OWNER` / `VETERINARIAN` / `STAFF` / `PET_OWNER_PORTAL`. |
-| `required_permissions`| string[]  | `<domain>:<resource>:<action>` formatında. Boş olabilir. |
-| `prerequisites`       | string[]  | Sayfanın açılması için gereken koşullar (örn. `auth.session`). |
-| `fields`              | Field[]   | Sayfadaki form alanları / gösterilen alanlar. |
-| `actions`             | Action[]  | Sayfadaki buton / aksiyonlar. |
-| `step_by_step`        | map       | `tr-TR` / `en-GB` adım adım kullanım. |
-| `possible_errors`     | ErrorRef[]| Karşılaşılabilecek hata kodları + çözüm. |
-| `related_pages`       | string[]  | Diğer sayfa `page_id`'leri. |
-| `related_api`         | string[]  | İlgili API endpoint'leri. |
-| `keywords`            | map       | `tr-TR` / `en-GB` arama anahtar kelimeleri. |
-| `version`             | string    | Semver. |
-| `last_verified_at`    | ISO 8601  | Son doğrulama tarihi. |
+| Alan                   | Tür        | Açıklama                                                                                                                       |
+| ---------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `page_id`              | string     | Benzersiz ID. Dosya adıyla aynı.                                                                                               |
+| `route`                | string     | URL pattern (`/app/[locale]/health` veya `/[locale]`).                                                                         |
+| `module`               | enum       | `landing` / `health` / `dashboard` / `clinic` / `petshop` / `finance` / `settings` / `auth` vb. Modüller GOAL-002 ile tanımlı. |
+| `title_key`            | string     | i18n anahtarı (`health.title`).                                                                                                |
+| `purpose`              | map        | `tr-TR` / `en-GB` açıklama (1-3 cümle).                                                                                        |
+| `allowed_roles`        | string[]   | Boş olabilir (public). Eğer varsa: `SUPERADMIN` / `OWNER` / `VETERINARIAN` / `STAFF` / `PET_OWNER_PORTAL`.                     |
+| `required_permissions` | string[]   | `<domain>:<resource>:<action>` formatında. Boş olabilir.                                                                       |
+| `prerequisites`        | string[]   | Sayfanın açılması için gereken koşullar (örn. `auth.session`).                                                                 |
+| `fields`               | Field[]    | Sayfadaki form alanları / gösterilen alanlar.                                                                                  |
+| `actions`              | Action[]   | Sayfadaki buton / aksiyonlar.                                                                                                  |
+| `step_by_step`         | map        | `tr-TR` / `en-GB` adım adım kullanım.                                                                                          |
+| `possible_errors`      | ErrorRef[] | Karşılaşılabilecek hata kodları + çözüm.                                                                                       |
+| `related_pages`        | string[]   | Diğer sayfa `page_id`'leri.                                                                                                    |
+| `related_api`          | string[]   | İlgili API endpoint'leri.                                                                                                      |
+| `keywords`             | map        | `tr-TR` / `en-GB` arama anahtar kelimeleri.                                                                                    |
+| `version`              | string     | Semver.                                                                                                                        |
+| `last_verified_at`     | ISO 8601   | Son doğrulama tarihi.                                                                                                          |
 
 ## 3. Field (Alan) Tanımı
 
@@ -79,16 +91,16 @@ fields:
     related_field_chunk: field-patient.microchip
 ```
 
-| Alan           | Tür     | Açıklama |
-| -------------- | ------- | -------- |
-| `key`          | string  | Alan adı (nokta ile qualified). |
-| `label_key`    | string  | i18n anahtarı. |
-| `description`  | map     | `tr-TR` / `en-GB` açıklama. |
-| `type`         | enum    | `string` / `number` / `boolean` / `date` / `datetime` / `enum` / `array` / `object` / `currency` / `percent`. |
-| `required`     | boolean | Form alanı zorunlu mu? |
-| `pii`          | boolean | PII alanı mı? (Mask'leme için.) |
-| `validation`   | object  | `min_length`, `max_length`, `pattern`, `min`, `max`, `enum_values`. |
-| `related_field_chunk` | string | FIELD_GLOSSARY'deki chunk_id. |
+| Alan                  | Tür     | Açıklama                                                                                                      |
+| --------------------- | ------- | ------------------------------------------------------------------------------------------------------------- |
+| `key`                 | string  | Alan adı (nokta ile qualified).                                                                               |
+| `label_key`           | string  | i18n anahtarı.                                                                                                |
+| `description`         | map     | `tr-TR` / `en-GB` açıklama.                                                                                   |
+| `type`                | enum    | `string` / `number` / `boolean` / `date` / `datetime` / `enum` / `array` / `object` / `currency` / `percent`. |
+| `required`            | boolean | Form alanı zorunlu mu?                                                                                        |
+| `pii`                 | boolean | PII alanı mı? (Mask'leme için.)                                                                               |
+| `validation`          | object  | `min_length`, `max_length`, `pattern`, `min`, `max`, `enum_values`.                                           |
+| `related_field_chunk` | string  | FIELD_GLOSSARY'deki chunk_id.                                                                                 |
 
 ## 4. Action (Aksiyon) Tanımı
 
@@ -106,15 +118,15 @@ actions:
     destructive: false
 ```
 
-| Alan                  | Tür     | Açıklama |
-| --------------------- | ------- | -------- |
-| `key`                 | string  | Aksiyon adı. |
-| `description`          | map     | `tr-TR` / `en-GB`. |
-| `button_label_key`    | string  | i18n anahtarı. |
-| `required_permission` | string  | Permission spec. |
-| `related_api`         | string[]| API endpoint. |
-| `confirm`             | boolean | Onay modal'i gerekiyor mu? |
-| `destructive`         | boolean | Silme / geri alınamaz aksiyon mu? |
+| Alan                  | Tür      | Açıklama                          |
+| --------------------- | -------- | --------------------------------- |
+| `key`                 | string   | Aksiyon adı.                      |
+| `description`         | map      | `tr-TR` / `en-GB`.                |
+| `button_label_key`    | string   | i18n anahtarı.                    |
+| `required_permission` | string   | Permission spec.                  |
+| `related_api`         | string[] | API endpoint.                     |
+| `confirm`             | boolean  | Onay modal'i gerekiyor mu?        |
+| `destructive`         | boolean  | Silme / geri alınamaz aksiyon mu? |
 
 ## 5. Error Reference (Hata Referansı)
 

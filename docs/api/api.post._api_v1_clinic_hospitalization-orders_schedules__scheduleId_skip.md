@@ -21,7 +21,7 @@ POST /api/v1/clinic/hospitalization-orders/schedules/hos-uuid/skip
 ```
 
 - `skipReason` (enum: `patient_refused|vomited|asleep|
-  missed_window|out_of_stock|other`) zorunlu.
+missed_window|out_of_stock|other`) zorunlu.
 - `notes` (string) opsiyonel.
 
 **Response 200 (`HospitalizationOrderSchedule`):**

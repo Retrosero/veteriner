@@ -3,7 +3,6 @@
 /**
  * @file Üst bar (top bar).
  * @module @vetniva/web/components/layouts/top-bar
- *
  * @description Sayfa başlığı, breadcrumb, bildirim, locale
  * switcher ve kullanıcı menüsünü içeren üst bar. Sabit yükseklik
  * (64px) ve mobil drawer tetikleyicisi içerir.
@@ -12,17 +11,15 @@
  * - `<header>` semantiği
  * - `aria-label` her bölümde
  * - Klavye ile gezinilebilir menü
- * - Dropdown menüler `aria-expanded` / `aria-haspopup` kullanır
- *
+ * - Dropdown menüler `aria-expanded` / `aria-haspopup` kullanır.
  * @security Bildirim ve kullanıcı menüsü tenant bağlamı taşır;
  * cross-tenant veri sızıntısı olmaması için bu bileşen yalnızca
  * oturum açmış kullanıcıya gösterilir (auth layout'ta kontrol
  * edilir).
  */
 
+import { Avatar, cn } from "@vetniva/ui";
 import { useEffect, useRef, useState } from "react";
-
-import { Avatar, Badge, cn } from "@vetniva/ui";
 
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { getLabels, type Locale } from "@/lib/labels";
@@ -94,6 +91,15 @@ const Icon = {
   ),
 } as const;
 
+/**
+ *
+ * @param root0
+ * @param root0.locale
+ * @param root0.pageTitle
+ * @param root0.pageDescription
+ * @param root0.user
+ * @param root0.onToggleSidebar
+ */
 export function TopBar({
   locale,
   pageTitle,
@@ -108,6 +114,10 @@ export function TopBar({
   const userRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    /**
+     *
+     * @param event
+     */
     function onClick(event: MouseEvent): void {
       if (
         notifRef.current &&

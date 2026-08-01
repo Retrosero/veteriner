@@ -35,8 +35,8 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { PurchaseOrdersRepository } from "./purchase-orders.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import {
   addDecimalString,
@@ -47,21 +47,19 @@ import {
   type PurchaseOrderLineRecord,
   type PurchaseOrderRecord,
 } from "../../common/purchase-orders/purchase-order.types.js";
+import { SuppliersService } from "../suppliers/suppliers.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
-  PurchaseOrder,
   PurchaseOrderCreateInput,
   PurchaseOrderCancelInput,
   PurchaseOrderDetail,
   PurchaseOrderFilters,
-  PurchaseOrderLine,
   PurchaseOrderLineInput,
   PurchaseOrderListResponse,
   PurchaseOrderReceiveInput,
   PurchaseOrderUpdateInput,
 } from "@vetniva/contracts";
-
-import { PurchaseOrdersRepository } from "./purchase-orders.repository.js";
-import { SuppliersService } from "../suppliers/suppliers.service.js";
 
 @Injectable()
 export class PurchaseOrdersService {
@@ -445,9 +443,7 @@ export class PurchaseOrdersService {
       "info",
       {
         linesChanged: input.lines !== undefined,
-        fieldsChanged: Object.keys(input).filter(
-          (k) => k !== "lines",
-        ),
+        fieldsChanged: Object.keys(input).filter((k) => k !== "lines"),
       },
     );
 
@@ -544,10 +540,7 @@ export class PurchaseOrdersService {
         httpStatus: 404,
       });
     }
-    if (
-      existing.status !== "approved" &&
-      existing.status !== "partial"
-    ) {
+    if (existing.status !== "approved" && existing.status !== "partial") {
       throw new DomainError({
         errorCode: "VET-PURCHASE_ORDER-0002",
         message: "Yalnızca onaylı/kısmi siparişler kabul edilebilir",
@@ -767,7 +760,7 @@ export class PurchaseOrdersService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

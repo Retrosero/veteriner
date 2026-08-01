@@ -10,10 +10,11 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
 import { TenantService } from "./tenant.service.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+
 import type { TenantRepository } from "./tenant.repository.js";
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
 
 const SUPERADMIN: ActorContext = {

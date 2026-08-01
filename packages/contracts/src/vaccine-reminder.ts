@@ -32,11 +32,16 @@
 
 import { z } from "zod";
 
-import { reminderChannelSchema, reminderStatusSchema } from "./appointment-reminder.js";
+import {
+  reminderChannelSchema,
+  reminderStatusSchema,
+} from "./appointment-reminder.js";
 
 /** Aşı hatırlatma kanalı. Randevu hatırlatmadaki ile aynı sözleşme. */
 export const vaccineReminderChannelSchema = reminderChannelSchema;
-export type VaccineReminderChannel = z.infer<typeof vaccineReminderChannelSchema>;
+export type VaccineReminderChannel = z.infer<
+  typeof vaccineReminderChannelSchema
+>;
 
 /** Aşı hatırlatma kaydı durumları. */
 export const vaccineReminderStatusSchema = reminderStatusSchema;

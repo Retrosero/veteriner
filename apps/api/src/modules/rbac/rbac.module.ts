@@ -10,10 +10,10 @@
 
 import { Global, Module } from "@nestjs/common";
 
+import { RbacService } from "./rbac.service.js";
 import { AuthModule } from "../../common/auth/auth.module.js";
 import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
 import { RolesGuard } from "../../common/guards/roles.guard.js";
-import { RbacService } from "./rbac.service.js";
 
 @Global()
 @Module({

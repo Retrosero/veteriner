@@ -19,10 +19,13 @@
 
 import { Injectable } from "@nestjs/common";
 
-import type { VaccineReminderChannel, VaccineReminderStatus } from "@vetniva/contracts";
+import { buildVaccineReminderDedupeKey } from "../../common/vaccines/vaccine-reminder.types.js";
 
 import type { VaccineReminderRecord } from "../../common/vaccines/vaccine-reminder.types.js";
-import { buildVaccineReminderDedupeKey } from "../../common/vaccines/vaccine-reminder.types.js";
+import type {
+  VaccineReminderChannel,
+  VaccineReminderStatus,
+} from "@vetniva/contracts";
 
 /**
  * Tenant başına hatırlatma config kaydı (in-memory). Faz 11+ için
@@ -45,7 +48,10 @@ export class VaccineRemindersRepository {
   /** Her tenant için sayaç. */
   private readonly counters = new Map<string, number>();
   /** Tenant config'leri. */
-  private readonly tenantConfigs = new Map<string, VaccineReminderTenantConfig>();
+  private readonly tenantConfigs = new Map<
+    string,
+    VaccineReminderTenantConfig
+  >();
 
   /** Yeni id üretir. */
   public nextId(tenantId: string): string {
@@ -66,8 +72,12 @@ export class VaccineRemindersRepository {
   /** Yeni kayıt ekler. Idempotency: aynı tenant+dedupeKey varsa no-op. */
   public insert(
     record: VaccineReminderRecord,
-  ): { inserted: true; record: VaccineReminderRecord } | { inserted: false; existing: VaccineReminderRecord } {
-    const existing = this.byDedupe.get(`${record.tenantId}|${record.dedupeKey}`);
+  ):
+    | { inserted: true; record: VaccineReminderRecord }
+    | { inserted: false; existing: VaccineReminderRecord } {
+    const existing = this.byDedupe.get(
+      `${record.tenantId}|${record.dedupeKey}`,
+    );
     if (existing) {
       const found = this.byId.get(existing);
       if (found) return { inserted: false, existing: found };
@@ -78,10 +88,7 @@ export class VaccineRemindersRepository {
   }
 
   /** Tenant-scoped id ile bul. */
-  public findById(
-    tenantId: string,
-    id: string,
-  ): VaccineReminderRecord | null {
+  public findById(tenantId: string, id: string): VaccineReminderRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -104,7 +111,8 @@ export class VaccineRemindersRepository {
       if (rec.tenantId !== tenantId) continue;
       if (rec.patientId !== patientId) continue;
       if (filters.protocolId && rec.protocolId !== filters.protocolId) continue;
-      if (filters.applicationId && rec.applicationId !== filters.applicationId) continue;
+      if (filters.applicationId && rec.applicationId !== filters.applicationId)
+        continue;
       if (filters.status && rec.status !== filters.status) continue;
       all.push(rec);
     }
@@ -158,10 +166,7 @@ export class VaccineRemindersRepository {
    * Bir uygulamanın tüm `scheduled` kayıtlarını `cancelled`
    * yapar. Uygulama iptal edildiğinde hook ile çağrılır.
    */
-  public cancelForApplication(
-    tenantId: string,
-    applicationId: string,
-  ): number {
+  public cancelForApplication(tenantId: string, applicationId: string): number {
     let n = 0;
     for (const rec of this.byId.values()) {
       if (rec.tenantId !== tenantId) continue;

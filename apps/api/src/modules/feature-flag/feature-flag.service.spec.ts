@@ -14,9 +14,10 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { AuditService } from "../../common/audit/audit.service.js";
 import { FeatureFlagService } from "./feature-flag.service.js";
+import { type AuditService } from "../../common/audit/audit.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 function makeActor(overrides: Partial<ActorContext> = {}): ActorContext {
   return {
@@ -75,9 +76,7 @@ describe("FeatureFlagService", () => {
     const actor = makeActor();
     await service.enableModule("tnt-1", "imaging", actor);
     expect(auditRecord).toHaveBeenCalledTimes(1);
-    const [call] = auditRecord.mock.calls[0] as [
-      Record<string, unknown>,
-    ];
+    const [call] = auditRecord.mock.calls[0] as [Record<string, unknown>];
     expect(call["eventName"]).toBe("audit:feature_flag.enable");
     expect(call["severity"]).toBe("info");
     expect(call["targetType"]).toBe("tenant_module");
@@ -88,9 +87,7 @@ describe("FeatureFlagService", () => {
     const actor = makeActor();
     await service.disableModule("tnt-1", "petshop", actor);
     expect(auditRecord).toHaveBeenCalledTimes(1);
-    const [call] = auditRecord.mock.calls[0] as [
-      Record<string, unknown>,
-    ];
+    const [call] = auditRecord.mock.calls[0] as [Record<string, unknown>];
     expect(call["eventName"]).toBe("audit:feature_flag.disable");
     expect(call["severity"]).toBe("warning");
   });

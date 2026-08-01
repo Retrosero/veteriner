@@ -1,7 +1,6 @@
 /**
  * @file ClinicSale (klinik satış taslağı) controller.
  * @module apps/api/modules/clinic-sales/clinic-sales.controller
- *
  * @description GOAL-071 (FAZ-7) klinik satış taslağı REST API.
  *   Tenant ID URL'de taşınmaz; actor.tenantId'den alınır.
  *
@@ -11,8 +10,7 @@
  * - `GET    /api/v1/clinic/sales/:id`             — Detay
  * - `PATCH  /api/v1/clinic/sales/:id`             — Taslak düzenle
  * - `POST   /api/v1/clinic/sales/:id/complete`    — Tamamla
- * - `POST   /api/v1/clinic/sales/:id/cancel`      — İptal
- *
+ * - `POST   /api/v1/clinic/sales/:id/cancel`      — İptal.
  * @since GOAL-071 (FAZ-7) klinik satış taslağı core
  */
 
@@ -29,14 +27,7 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
-import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import {
   clinicSaleCancelInputSchema,
   clinicSaleCreateInputSchema,
@@ -51,14 +42,19 @@ import {
 } from "@vetniva/contracts";
 
 import { ClinicSalesService } from "./clinic-sales.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("clinic/sales")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/clinic/sales")
 export class ClinicSalesController {
-  public constructor(
-    private readonly service: ClinicSalesService,
-  ) {}
+  public constructor(private readonly service: ClinicSalesService) {}
 
   @Post()
   @RequirePermissions("clinic:payment:create")

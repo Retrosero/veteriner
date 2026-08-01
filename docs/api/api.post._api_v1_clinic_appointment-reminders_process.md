@@ -63,7 +63,7 @@ Her `due` kaydı için sırasıyla:
    actor ile. Bulunamazsa `status='failed'` + `lastError`.
 4. **Locale resolve** — `TenantService.resolveLocale` (tr-TR / en-GB).
 5. **Consent** — `ConsentService.canSend(userId, channel,
-   "appointment_reminder")` — opt-out → `cancelled` (`opted_out`).
+"appointment_reminder")` — opt-out → `cancelled` (`opted_out`).
 6. **Notification dispatch** — `NotificationsService.send` ile
    `idempotencyKey="appt-reminder|{id}"`. Sonuç:
    - `sent` → `status='sent'`, `sentAt=<now>`.

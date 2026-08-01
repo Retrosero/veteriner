@@ -10,13 +10,13 @@ olarak DÖNMEZ (aktif kayıtlar).
 
 **Query parametreleri:**
 
-| Ad | Tip | Zorunlu | Açıklama |
-| --- | --- | --- | --- |
-| `ownerId` | UUID | hayır | Owner ID filtresi |
-| `species` | enum | hayır | `dog` \| `cat` \| `bird` \| `other` |
-| `search` | string | hayır | Ad/ırk/mikroçip içinde arama (1-200 karakter) |
-| `limit` | int | hayır | Sayfa boyutu (default 20, max 200) |
-| `offset` | int | hayır | Sayfa başlangıcı (default 0) |
+| Ad        | Tip    | Zorunlu | Açıklama                                      |
+| --------- | ------ | ------- | --------------------------------------------- |
+| `ownerId` | UUID   | hayır   | Owner ID filtresi                             |
+| `species` | enum   | hayır   | `dog` \| `cat` \| `bird` \| `other`           |
+| `search`  | string | hayır   | Ad/ırk/mikroçip içinde arama (1-200 karakter) |
+| `limit`   | int    | hayır   | Sayfa boyutu (default 20, max 200)            |
+| `offset`  | int    | hayır   | Sayfa başlangıcı (default 0)                  |
 
 **Response 200:**
 

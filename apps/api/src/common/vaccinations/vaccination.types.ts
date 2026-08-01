@@ -26,10 +26,7 @@
 
 /** Aşı uygulama kaydı durumu. */
 export type VaccinationStatus =
-  | "administered"
-  | "scheduled"
-  | "cancelled"
-  | "overdue";
+  "administered" | "scheduled" | "cancelled" | "overdue";
 
 /**
  * Persist edilmiş aşı uygulama kaydı. API sözleşmesinin (public

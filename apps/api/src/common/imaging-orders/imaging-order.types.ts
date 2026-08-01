@@ -104,9 +104,7 @@ export type {
 };
 
 /** Record → public ImagingReport. */
-export function toImagingReport(
-  rec: ImagingReportRecord,
-): ImagingReport {
+export function toImagingReport(rec: ImagingReportRecord): ImagingReport {
   return {
     revision: rec.revision,
     findings: rec.findings,
@@ -149,9 +147,7 @@ export function toImagingOrder(rec: ImagingOrderRecord): ImagingOrder {
     clinicalInfo: rec.clinicalInfo,
     attachments: [...rec.attachments],
     report:
-      revisions.length > 0
-        ? (revisions[revisions.length - 1] ?? null)
-        : null,
+      revisions.length > 0 ? (revisions[revisions.length - 1] ?? null) : null,
     reportRevisions: revisions,
     cancelledAt: rec.cancelledAt,
     cancelledBy: rec.cancelledBy,

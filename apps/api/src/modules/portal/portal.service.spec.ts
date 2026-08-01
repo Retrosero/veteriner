@@ -12,15 +12,15 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { PortalRepository } from "./portal.repository.js";
+import { PortalService } from "./portal.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
 import type { Owner } from "../../common/owners/owner.types.js";
 import type { Patient } from "../../common/patients/patient.types.js";
 import type { OwnersService } from "../owners/owners.service.js";
 import type { PatientsService } from "../patients/patients.service.js";
-
-import { PortalService } from "./portal.service.js";
-import { PortalRepository } from "./portal.repository.js";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -262,7 +262,9 @@ describe("PortalService", () => {
       );
       (audit.record as ReturnType<typeof vi.fn>).mockClear();
 
-      const result = await service.acceptInvitation({ token: inv.invitationToken });
+      const result = await service.acceptInvitation({
+        token: inv.invitationToken,
+      });
 
       expect(result.portalUserId).toMatch(/^pusr-/);
       expect(result.sessionToken).toMatch(

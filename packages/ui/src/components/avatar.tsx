@@ -1,11 +1,9 @@
 /**
  * @file Avatar primitive.
  * @module @vetniva/ui/components/avatar
- *
  * @description Kullanıcı veya hayvan görseli için yuvarlak avatar.
  * Görsel URL yoksa baş harfler (initials) gösterilir. Üç boyut ve
  * iki ton (renkli / gri) destekler.
- *
  * @security Avatar görseli kullanıcı tarafından yüklenebilir; bu
  * durumda CDN üzerinden getirilmesi ve virus tarama gerekir. GOAL-001+
  * ile birlikte bu akış devreye girer.
@@ -37,6 +35,8 @@ export type AvatarProps = HTMLAttributes<HTMLSpanElement> & {
 /**
  * İki harflik (veya tek harflik) baş harfleri üretir. Ad ve
  * soyadın baş harfleri; yalnız ad varsa adın baş harfi.
+ * @param {string | undefined} name Baş harfleri üretilecek ad.
+ * @returns {string} Gösterime uygun bir veya iki harfli metin.
  */
 function deriveInitials(name: string | undefined): string {
   if (!name) return "?";
@@ -65,10 +65,13 @@ export const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(function Avatar(
         alt={alt ?? ""}
         className={cn(
           "inline-block rounded-full object-cover",
+          // size kapalı union olduğu için dış girdiden property injection
+          // yapılamaz; değer statik Tailwind sınıf haritasından seçilir.
+          // eslint-disable-next-line security/detect-object-injection
           sizeClasses[size],
           className,
         )}
-        {...(rest as unknown as React.ImgHTMLAttributes<HTMLImageElement>)}
+        {...rest}
       />
     );
   }
@@ -80,7 +83,10 @@ export const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(function Avatar(
       aria-label={alt}
       className={cn(
         "inline-flex shrink-0 select-none items-center justify-center rounded-full font-semibold",
+        // size ve tone kapalı union'lardır; haritalar sabittir.
+        // eslint-disable-next-line security/detect-object-injection
         sizeClasses[size],
+        // eslint-disable-next-line security/detect-object-injection
         toneClasses[tone],
         className,
       )}

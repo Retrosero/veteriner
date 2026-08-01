@@ -26,6 +26,7 @@ ise 404, (c) `patient.ownerId !== portalUser.ownerId` ise 404
 tek `notFound` helper'ından `VET-CLINIC-0001` döner.
 
 **PortalPetsController** (`.controller.ts`), `@UseGuards(PortalSessionGuard)`:
+
 - `GET /api/v1/portal-pets` — 200, `{ items: PortalPetSummary[], total }`.
   Tenant + `portalUserId` session'dan; `actor` `actorType: "portal_user"`,
   `role: "PET_OWNER_PORTAL"`, `source: "portal_session"`.
@@ -91,10 +92,10 @@ HINT) + `archivedAt` partial index (portal list eleme için).
 
 ## API
 
-| Method | Path | Auth | Kod |
-| ------ | ---- | ---- | --- |
-| GET    | /api/v1/portal-pets        | portal session | 200 |
-| GET    | /api/v1/portal-pets/:id    | portal session | 200 |
+| Method | Path                    | Auth           | Kod |
+| ------ | ----------------------- | -------------- | --- |
+| GET    | /api/v1/portal-pets     | portal session | 200 |
+| GET    | /api/v1/portal-pets/:id | portal session | 200 |
 
 Hatalar: 401 portal session yok (Guard), 403 `VET-AUTHZ-0001`
 (cross-tenant), 404 `VET-CLINIC-0001` (cross-tenant/archived/owner
@@ -103,8 +104,9 @@ uyuşmazlığı/portal user yok), 400 `VET-VALIDATION-0001` (UUID parse).
 ## Test
 
 8 yeni unit test. List 4 (happy 2 hasta + archived eleme + sıralama
-+ portal user yok); detail 4 (happy + cross-tenant + archived +
-owner uyuşmazlığı). Başarısız: 0. `npx tsc --noEmit` temiz.
+
+- portal user yok); detail 4 (happy + cross-tenant + archived +
+  owner uyuşmazlığı). Başarısız: 0. `npx tsc --noEmit` temiz.
 
 ## Bilinen riskler
 

@@ -1,15 +1,13 @@
 /**
  * @file ClinicalUsage (klinik tüketim) controller.
  * @module apps/api/modules/clinical-usages/clinical-usages.controller
- *
  * @description GOAL-066 (FAZ-6) klinik tüketimden otomatik stok
  * düşümü REST API.
  *
  * Endpoint'ler:
  * - `POST   /api/v1/clinic/usages`            — Yeni tüketim kaydı
  * - `GET    /api/v1/clinic/usages`            — Arama
- * - `GET    /api/v1/clinic/usages/:id`        — Detay
- *
+ * - `GET    /api/v1/clinic/usages/:id`        — Detay.
  * @since GOAL-066 (FAZ-6) klinik tüketimden otomatik stok düşümü core
  */
 
@@ -26,13 +24,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   clinicalUsageCreateInputSchema,
   clinicalUsageFiltersSchema,
@@ -43,14 +34,19 @@ import {
 } from "@vetniva/contracts";
 
 import { ClinicalUsagesService } from "./clinical-usages.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("clinic/usages")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/clinic/usages")
 export class ClinicalUsagesController {
-  public constructor(
-    private readonly service: ClinicalUsagesService,
-  ) {}
+  public constructor(private readonly service: ClinicalUsagesService) {}
 
   @Post()
   @RequirePermissions("clinic:stock:decrement")
@@ -80,8 +76,7 @@ export class ClinicalUsagesController {
   @ApiOperation({
     operationId: "clinicalUsageList",
     summary: "Klinik tüketim arama",
-    description:
-      "Tenant-scoped arama. sourceType/sourceId/sort filtreleri.",
+    description: "Tenant-scoped arama. sourceType/sourceId/sort filtreleri.",
   })
   public async list(
     @Query(new ZodValidationPipe(clinicalUsageFiltersSchema))

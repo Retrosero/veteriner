@@ -14,12 +14,11 @@
 
 import { Module } from "@nestjs/common";
 
-import { ExaminationsModule } from "../examinations/examinations.module.js";
-import { ClinicalConsumptionModule } from "../clinical-consumption/clinical-consumption.module.js";
-
 import { PrescriptionsController } from "./prescriptions.controller.js";
-import { PrescriptionsService } from "./prescriptions.service.js";
 import { PrescriptionsRepository } from "./prescriptions.repository.js";
+import { PrescriptionsService } from "./prescriptions.service.js";
+import { ClinicalConsumptionModule } from "../clinical-consumption/clinical-consumption.module.js";
+import { ExaminationsModule } from "../examinations/examinations.module.js";
 
 @Module({
   imports: [ExaminationsModule, ClinicalConsumptionModule],

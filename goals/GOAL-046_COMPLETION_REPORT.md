@@ -18,8 +18,8 @@
   `VET-VALIDATION-0009`). Veterinarian `veterinarianId` override
   varsa o, yoksa `examination.veterinarianId`; ikisi de yoksa 422
   `VET-VALIDATION-0009`. `AppointmentsService.create(tenantId,
-  { type:'follow_up', durationMin:30, notes:'[Kontrol Randevusu] …' },
-  actor)` ile randevu yaratır (calendar uygunluk kontrolü dahil).
+{ type:'follow_up', durationMin:30, notes:'[Kontrol Randevusu] …' },
+actor)` ile randevu yaratır (calendar uygunluk kontrolü dahil).
   Audit `audit:followup.create` (info) — `source: 'examination'`,
   examinationId, patientId, veterinarianId, start, end, type.
 - **`scheduleFromPrescription(tenantId, prescriptionId, followUpDate, notes?, actor)`** — Prescription

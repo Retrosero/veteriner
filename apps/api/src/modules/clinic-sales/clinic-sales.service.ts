@@ -1,7 +1,6 @@
 /**
  * @file ClinicSale (klinik satış taslağı) service.
  * @module apps/api/modules/clinic-sales/clinic-sales.service
- *
  * @description GOAL-071 (FAZ-7) klinik satış taslağı iş kuralları.
  *
  * İş kuralları:
@@ -26,7 +25,6 @@
  *   tick'te bağlanmaz.
  * - `cancelClinicSale`: draft/completed → cancelled. Audit
  *   `audit:clinic_sale.cancel`.
- *
  * @security Tenant bilgisi yalnızca actor.tenantId'den alınır.
  *   Klinik satış üzerinde fiziksel silme YOKTUR.
  *
@@ -35,9 +33,8 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
+import { ClinicSalesRepository } from "./clinic-sales.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import {
   addDecimalString,
   multiplyDecimalString,
@@ -46,20 +43,19 @@ import {
   type ClinicSaleLineRecord,
   type ClinicSaleRecord,
 } from "../../common/clinic-sales/clinic-sale.types.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { ProductsService } from "../products/products.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
-  ClinicSale,
   ClinicSaleCancelInput,
   ClinicSaleCreateInput,
   ClinicSaleDetail,
   ClinicSaleFilters,
-  ClinicSaleLine,
   ClinicSaleLineInput,
   ClinicSaleListResponse,
   ClinicSaleUpdateInput,
 } from "@vetniva/contracts";
-
-import { ClinicSalesRepository } from "./clinic-sales.repository.js";
-import { ProductsService } from "../products/products.service.js";
 
 /** İndirim yetki sınırı (satır + global, % cinsinden). */
 const STAFF_MAX_DISCOUNT_PERCENT = 10;
@@ -88,11 +84,7 @@ export class ClinicSalesService {
     this.requireTenantScope(actor, tenantId);
 
     // 1) İndirim yetkisi kontrolü.
-    this.assertDiscountAllowed(
-      input.globalDiscountPercent,
-      input.lines,
-      actor,
-    );
+    this.assertDiscountAllowed(input.globalDiscountPercent, input.lines, actor);
 
     // 2) Ürün doğrulama (her satır).
     await this.assertProductsAvailable(tenantId, input.lines, actor);
@@ -267,7 +259,7 @@ export class ClinicSalesService {
       // Eski satırları updatedAt set edip bırakıyoruz (draft'ta
       // henüz stok/ödeme etkisi yok).
       const oldLines = this.repo.listLinesBySale(tenantId, id);
-      for (const old of oldLines) {
+      for (const _old of oldLines) {
         // Şu an için satır delete API'si yok; updatedAt set
         // edilir. Faz 8'de cancelLine eklenecek.
         this.repo.update(tenantId, id, { updatedAt: nowIso });
@@ -284,7 +276,11 @@ export class ClinicSalesService {
         totalAmount,
         input.globalDiscountPercent ?? existing.globalDiscountPercent,
       );
-      this.repo.update(tenantId, id, { totalAmount, netAmount, updatedAt: nowIso });
+      this.repo.update(tenantId, id, {
+        totalAmount,
+        netAmount,
+        updatedAt: nowIso,
+      });
     }
 
     if (input.globalDiscountPercent !== undefined) {
@@ -688,7 +684,7 @@ export class ClinicSalesService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

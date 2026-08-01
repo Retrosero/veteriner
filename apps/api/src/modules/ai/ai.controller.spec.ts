@@ -1,10 +1,8 @@
 /**
  * @file AI controller unit testleri.
  * @module apps/api/modules/ai/ai.controller.spec
- *
  * @description AiController'ın temel davranışını doğrular.
  * RetrievalService mock'lanır; LLM çağrısı yapılmaz (FAZ-11).
- *
  * @since GOAL-005 (FAZ-0) dokümantasyon ve AI bilgi havuzu
  * @updated GOAL-115 (FAZ-11) context-aware help endpoint
  */
@@ -12,10 +10,11 @@
 import { describe, expect, it } from "vitest";
 
 import { AiController } from "./ai.controller.js";
-import { RetrievalService } from "../../common/ai/retrieval.service.js";
 import { InMemoryVectorStore } from "../../common/ai/in-memory-vector-store.js";
-import type { ChunkMetadata } from "../../common/ai/chunk.types.js";
+import { RetrievalService } from "../../common/ai/retrieval.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { ChunkMetadata } from "../../common/ai/chunk.types.js";
 
 const STAFF: ActorContext = {
   actorId: "usr-staff-test",
@@ -93,7 +92,8 @@ describe("AiController", () => {
       version: "1.0.0",
       last_verified_at: "2026-07-30",
       title: "Test sayfası",
-      content: "Sayfa açıklaması içeriği test kelimesi geçen uzun bir paragraf.",
+      content:
+        "Sayfa açıklaması içeriği test kelimesi geçen uzun bir paragraf.",
       keywords: ["test", "sayfa"],
     };
     // Aynı token'lar için aynı vektör; query "test" ile match etmesi için.

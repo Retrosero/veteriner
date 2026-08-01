@@ -1,9 +1,11 @@
 # GOAL-104 — Hata Atama ve Zaman Notları (Completion Report)
 
 ## Faz
+
 FAZ-10 (Hata merkezi)
 
 ## Özet
+
 SUPERADMIN hata merkezi için: geliştirici/sorumlu ataması,
 çözüm notu (append-only), destek kaydı bağlantısı (JIRA/
 Linear/Zendesk/GitHub) ve birleşik audit log. 7 yeni endpoint
@@ -12,6 +14,7 @@ ile birlikte toplam 16 superadmin endpoint.
 ## Çıktılar
 
 ### Core (GOAL-104 core commit `de876ee`)
+
 - `packages/contracts/src/error-event.ts`:
   - `errorEventNoteSchema` + `errorEventNoteCreateInputSchema`
     (visibility: internal | shared).
@@ -41,12 +44,14 @@ ile birlikte toplam 16 superadmin endpoint.
     `GET /:id/assignments`, `GET /:id/audit-log`.
 
 ### Döküman (bu commit)
+
 - 7 yeni API doc (notes, support-links, assignment, assignments,
   audit-log).
 - `docs/ai/AI_CHUNKS.yaml` — yeni `flow-error-assignment`
   chunk'ı v1.0.0.
 
 ## İş Kuralları
+
 - **Çözüm notu (append-only):** Silinemez veya düzeltilemez;
   düzeltme yeni not ile yapılır. `body` PII mask'lı.
 - **Visibility:** `internal` (yalnızca SUPERADMIN) | `shared`
@@ -57,15 +62,16 @@ ile birlikte toplam 16 superadmin endpoint.
   atama kaldırma. Status değiştirmez; salt atama aksiyonu
   izlenir.
 - **Birleşik audit log:** Tüm aksiyonlar (status transition
-  + not + destek bağlantısı + atama + occurrence_recorded)
-  occurredAt artan sırada; UI `action` discriminator'ı ile
-  render eder.
+  - not + destek bağlantısı + atama + occurrence_recorded)
+    occurredAt artan sırada; UI `action` discriminator'ı ile
+    render eder.
 - **Audit:**
   `audit:error_event.note_added` (info),
   `audit:error_event.support_link_added` (info),
   `audit:error_event.assignment_change` (info).
 
 ## Yapılmayanlar / Bilinçli Atlamalar
+
 - **Tenant yöneticileriyle paylaşım** (`visibility=shared`)
   → Faz 12+ (GOAL-125 tenant export kapsamında).
 - **Email/Slack bildirimleri (assignment_change)** → Faz 10+
@@ -74,10 +80,12 @@ ile birlikte toplam 16 superadmin endpoint.
   Faz 10+ ops.
 
 ## Döküman Uyum
+
 - `pnpm docs:check` → temiz.
 - `pnpm i18n:check` → temiz.
 
 ## Testler
+
 - `error-events.service.spec.ts` → 32 yeni test
   (addErrorEventNote 5, listErrorEventNotes 4,
   addErrorEventSupportLink 5, listErrorEventSupportLinks 4,
@@ -87,5 +95,6 @@ ile birlikte toplam 16 superadmin endpoint.
 - Full api regresyon: 1346 → 1378 yeşil, 9 skipped, 0 hata.
 
 ## Commit
+
 - Core: `de876ee` — `GOAL-104 core: hata atama, çözüm notu, destek bağlantısı ve birleşik audit log`
 - Docs: (bu commit) — `docs(error-events): GOAL-100/101/102/103/104 doküman ve i18n tamamla`

@@ -98,9 +98,7 @@ export function toPetshopSale(rec: PetshopSaleRecord): PetshopSale {
 }
 
 /** Record → public PetshopSaleLine. */
-export function toPetshopSaleLine(
-  rec: PetshopSaleLineRecord,
-): PetshopSaleLine {
+export function toPetshopSaleLine(rec: PetshopSaleLineRecord): PetshopSaleLine {
   return {
     id: rec.id,
     tenantId: rec.tenantId,
@@ -121,10 +119,7 @@ export function toPetshopSaleLine(
  * Decimal string çarpma (purchase-order'daki ile uyumlu).
  * 4 ondalık basamağa kadar.
  */
-export function multiplyDecimalString(
-  a: string,
-  b: string,
-): string | null {
+export function multiplyDecimalString(a: string, b: string): string | null {
   if (!/^\d+(\.\d{1,4})?$/.test(a)) return null;
   if (!/^\d+(\.\d{1,4})?$/.test(b)) return null;
   const split = (v: string): { int: bigint; scale: number } => {
@@ -151,9 +146,7 @@ export function multiplyDecimalString(
     fracPartStr = s.slice(s.length - totalScale);
   }
   fracPartStr = fracPartStr.replace(/0+$/, "");
-  return fracPartStr.length > 0
-    ? `${intPartStr}.${fracPartStr}`
-    : intPartStr;
+  return fracPartStr.length > 0 ? `${intPartStr}.${fracPartStr}` : intPartStr;
 }
 
 export function addDecimalString(a: string, b: string): string | null {
@@ -182,7 +175,5 @@ export function addDecimalString(a: string, b: string): string | null {
     fracPartStr = s.slice(s.length - totalScale);
   }
   fracPartStr = fracPartStr.replace(/0+$/, "");
-  return fracPartStr.length > 0
-    ? `${intPartStr}.${fracPartStr}`
-    : intPartStr;
+  return fracPartStr.length > 0 ? `${intPartStr}.${fracPartStr}` : intPartStr;
 }

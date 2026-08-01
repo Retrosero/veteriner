@@ -36,6 +36,7 @@ in-app red bildirimi. (6) `findAppointmentById` cross-module helper
 (approve sonrası response için).
 
 **PortalAppointmentsController** (`.controller.ts`), iki sınıf:
+
 - `PortalAppointmentsPortalController` (`@UseGuards(PortalSessionGuard)`)
   — `POST /requests` (201, `AppointmentRequest`); `GET /requests`
   (200, `AppointmentRequestListResponse`); `POST /requests/:id/cancel`
@@ -122,11 +123,11 @@ Indexler: `(tenantId, ownerId, requestedAt DESC)` (portal liste),
 
 ## API
 
-| Method | Path | Auth | Kod |
-| ------ | ---- | ---- | --- |
-| POST   | /api/v1/portal-appointments/requests                  | portal session   | 201 |
-| GET    | /api/v1/portal-appointments/requests                  | portal session   | 200 |
-| POST   | /api/v1/portal-appointments/requests/:id/cancel       | portal session   | 200 |
+| Method | Path                                                    | Auth           | Kod |
+| ------ | ------------------------------------------------------- | -------------- | --- |
+| POST   | /api/v1/portal-appointments/requests                    | portal session | 201 |
+| GET    | /api/v1/portal-appointments/requests                    | portal session | 200 |
+| POST   | /api/v1/portal-appointments/requests/:id/cancel         | portal session | 200 |
 | POST   | /api/v1/clinic/portal-appointments/requests/:id/approve | staff + perm   | 200 |
 | POST   | /api/v1/clinic/portal-appointments/requests/:id/reject  | staff + perm   | 200 |
 

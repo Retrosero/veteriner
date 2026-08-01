@@ -16,17 +16,18 @@
 
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 
+import { AuthService } from "../../common/auth/auth.service.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import {
+  PERMISSIONS,
+  type Permission,
+} from "../../common/permissions/permission-spec.js";
+import { loadPermissionCatalog } from "../../common/rbac/permission-catalog.loader.js";
+
 import type {
   ActorContext,
   ActorRole,
 } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { AuthService } from "../../common/auth/auth.service.js";
-import {
-  ACTOR_ROLES,
-  PERMISSIONS,
-  type Permission,
-} from "../../common/permissions/permission-spec.js";
 
 export const AUTHZ_BRANCH_SCOPE_MISS = "VET-AUTHZ-0002";
 export const AUTHZ_FORBIDDEN = "VET-AUTHZ-0001";
@@ -77,7 +78,7 @@ export class RbacService {
     }
 
     if (spec.requiresBranchScope && !actor.branchId) {
-      throw RbacService.branchScopeError();
+      return RbacService.branchScopeError();
     }
 
     if (ctx.resourceOwnerId && ctx.resourceOwnerId !== actor.actorId) {
@@ -87,7 +88,10 @@ export class RbacService {
     return { allowed: true, reason: "role_match" };
   }
 
-  public hasRole(actor: ActorContext, roles: ReadonlyArray<ActorRole>): boolean {
+  public hasRole(
+    actor: ActorContext,
+    roles: ReadonlyArray<ActorRole>,
+  ): boolean {
     if (actor.isSuperadmin || actor.role === "SUPERADMIN") return true;
     if (roles.length === 0) return true;
     return roles.includes(actor.role);
@@ -142,89 +146,38 @@ export class RbacService {
   }
 
   private initCatalog(): void {
-    const branchScopeSet = new Set<Permission>([
-      "clinic:appointment:read",
-      "clinic:appointment:create",
-      "clinic:appointment:update",
-      "clinic:appointment:cancel",
-      "clinic:appointment:complete",
-      "clinic:appointment:export",
-      "clinic:appointment:request",
-      "clinic:examination:read",
-      "clinic:examination:create",
-      "clinic:examination:sign",
-      "clinic:examination:amend",
-      "clinic:examination:export",
-      "clinic:soap:read",
-      "clinic:soap:create",
-      "clinic:soap:update",
-      "clinic:soap:amend",
-      "clinic:vaccination:read",
-      "clinic:vaccination:create",
-      "clinic:vaccination:amend",
-      "clinic:vaccination:export",
-      "clinic:prescription:read",
-      "clinic:prescription:create",
-      "clinic:prescription:dispense",
-      "clinic:prescription:cancel",
-      "clinic:prescription:amend",
-      "clinic:prescription:export",
-      "clinic:surgery:read",
-      "clinic:surgery:create",
-      "clinic:surgery:schedule",
-      "clinic:surgery:start",
-      "clinic:surgery:complete",
-      "clinic:surgery:cancel",
-      "clinic:surgery:amend",
-      "clinic:surgery:export",
-      "clinic:consent:sign",
-      "clinic:consent:read",
-      "clinic:anesthesia:read",
-      "clinic:anesthesia:create",
-      "clinic:anesthesia:update",
-      "clinic:anesthesia:export",
-      "clinic:hospitalization:read",
-      "clinic:hospitalization:admit",
-      "clinic:hospitalization:add_note",
-      "clinic:hospitalization:discharge",
-      "clinic:hospitalization:export",
-      "clinic:lab:read",
-      "clinic:lab:order",
-      "clinic:lab:collect_sample",
-      "clinic:lab:enter_result",
-      "clinic:lab:amend",
-      "clinic:lab:export",
-      "clinic:imaging:read",
-      "clinic:imaging:order",
-      "clinic:imaging:perform",
-      "clinic:imaging:report",
-      "clinic:imaging:amend",
-      "clinic:imaging:export",
-      "clinic:stock:read",
-      "clinic:stock:receive",
-      "clinic:stock:decrement",
-      "clinic:stock:adjust",
-      "clinic:stock:export",
-    ]);
+    const declaredPermissions = new Set<string>(PERMISSIONS);
+    const definitions = loadPermissionCatalog();
+    const undocumentedRuntimeKeys: string[] = [];
 
-    const allRoles: ReadonlyArray<ActorRole> = ACTOR_ROLES;
-
-    for (const key of PERMISSIONS) {
-      const spec: PermissionSpec = {
+    for (const definition of definitions) {
+      if (!declaredPermissions.has(definition.key)) {
+        undocumentedRuntimeKeys.push(definition.key);
+        continue;
+      }
+      const key = definition.key as Permission;
+      this.catalog.set(key, {
         key,
-        appliesToRoles: allRoles,
-        requiresBranchScope: branchScopeSet.has(key),
-        requiresTenantScope:
-          key !== "tenant:tenant:read" &&
-          key !== "tenant:tenant:create" &&
-          key !== "tenant:tenant:update" &&
-          key !== "tenant:tenant:archive",
-      };
-      this.catalog.set(key, spec);
+        appliesToRoles: definition.appliesToRoles,
+        requiresBranchScope: definition.branchScope === "required",
+        requiresTenantScope: definition.tenantScope === "required",
+      });
+    }
+
+    if (undocumentedRuntimeKeys.length > 0) {
+      this.logger.warn(
+        `RBAC katalog anahtarları TypeScript sözleşmesinde tanımlı değil, runtime'a alınmadı: ${undocumentedRuntimeKeys.join(", ")}`,
+      );
+    }
+
+    if (this.catalog.size !== PERMISSIONS.length) {
+      throw new Error(
+        `RBAC katalog/sözleşme sayısı uyuşmuyor: katalog=${this.catalog.size}, sözleşme=${PERMISSIONS.length}`,
+      );
     }
 
     this.logger.log(
-      `RBAC kataloğu başlatıldı: ${this.catalog.size} permission, ${branchScopeSet.size} branch-scoped.`,
+      `RBAC kataloğu yüklendi: ${this.catalog.size} permission tanımı.`,
     );
   }
 }

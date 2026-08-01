@@ -3,7 +3,6 @@
 /**
  * @file Sol navigasyon menüsü (sidebar).
  * @module @vetniva/web/components/layouts/sidebar
- *
  * @description Klinik uygulamasının ana navigasyon menüsü. Aktif
  * route'u `usePathname` ile hesaplar ve ilgili menü öğesini vurgular.
  * Mobilde açılır panel (drawer) olarak çalışır; masaüstünde sabit
@@ -14,8 +13,7 @@
  * - Aktif sayfa `aria-current="page"` ile işaretli
  * - Mobil açma/kapama düğmesi `aria-expanded` ve `aria-controls`
  * kullanır
- * - Klavye navigasyonu (Tab) sırası menü öğeleriyle doğal akar
- *
+ * - Klavye navigasyonu (Tab) sırası menü öğeleriyle doğal akar.
  * @security Tenant context'i burada gösterilmez; tenant bilgisi
  * yalnızca `tenant_id` URL'inde veya oturumda taşınır. Sidebar
  * yalnızca tenant içi navigasyon içerir.
@@ -23,17 +21,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import { cn } from "@/lib/cn";
 import { getLabels, type Locale } from "@/lib/labels";
-
-type SidebarItem = {
-  key: string;
-  labelKey: keyof ReturnType<typeof getLabels>["nav"];
-  href: (locale: Locale) => string;
-  icon: React.ReactNode;
-};
 
 /**
  * Sık kullanılan çift ok ikonleri (outline, 20px). Lucide benzeri
@@ -194,6 +185,11 @@ type SidebarProps = {
   onClose: () => void;
 };
 
+/**
+ *
+ * @param pathname
+ * @param itemHref
+ */
 function isItemActive(pathname: string | null, itemHref: string): boolean {
   if (!pathname) return false;
   // Aktif route'un segment karşılaştırması: /tr-TR/patients/123 → patients
@@ -204,6 +200,13 @@ function isItemActive(pathname: string | null, itemHref: string): boolean {
   return segments.some((s) => itemSegments.includes(s));
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.locale
+ * @param root0.open
+ * @param root0.onClose
+ */
 export function Sidebar({ locale, open, onClose }: SidebarProps): JSX.Element {
   const pathname = usePathname();
   const labels = getLabels(locale);
@@ -212,6 +215,10 @@ export function Sidebar({ locale, open, onClose }: SidebarProps): JSX.Element {
   // Esc tuşu drawer'ı kapatır (mobil)
   useEffect(() => {
     if (!open) return;
+    /**
+     *
+     * @param event
+     */
     function handleKey(event: KeyboardEvent): void {
       if (event.key === "Escape") onClose();
     }
@@ -219,6 +226,10 @@ export function Sidebar({ locale, open, onClose }: SidebarProps): JSX.Element {
     return () => window.removeEventListener("keydown", handleKey);
   }, [open, onClose]);
 
+  /**
+   *
+   * @param item
+   */
   function itemHref(item: (typeof PRIMARY_ITEMS)[number]): string {
     if (item.id === "dashboard") return `/${locale}`;
     return `/${locale}/${item.id}`;

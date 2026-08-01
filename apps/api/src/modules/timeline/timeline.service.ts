@@ -45,17 +45,16 @@
  * @since GOAL-024 (FAZ-2) hayvan zaman çizelgesi core
  */
 
-import { Inject, Injectable, Logger, forwardRef } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import { TIMELINE_EVENT_SOURCES } from "./timeline.sources.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import {
   PatientsRepository,
   type PatientRecord,
 } from "../patients/patients.repository.js";
-import {
-  TIMELINE_EVENT_SOURCES,
-} from "./timeline.sources.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   TimelineEvent,
   TimelineListResult,
@@ -103,7 +102,7 @@ export class TimelineService {
 
     const events: TimelineEvent[] = [];
     settled.forEach((result, idx) => {
-      const source = this.sources[idx];
+      const source = this.sources.at(idx);
       if (!source) return;
       if (result.status === "fulfilled") {
         events.push(...result.value);
@@ -115,9 +114,10 @@ export class TimelineService {
     });
 
     // 2) Tip filtresi.
-    const typeFilter = query.types && query.types.length > 0
-      ? new Set<TimelineEvent["type"]>(query.types)
-      : null;
+    const typeFilter =
+      query.types && query.types.length > 0
+        ? new Set<TimelineEvent["type"]>(query.types)
+        : null;
     const filteredByType = typeFilter
       ? events.filter((e) => typeFilter.has(e.type))
       : events;
@@ -140,7 +140,10 @@ export class TimelineService {
     });
 
     const total = filteredByDate.length;
-    const items = filteredByDate.slice(query.offset, query.offset + query.limit);
+    const items = filteredByDate.slice(
+      query.offset,
+      query.offset + query.limit,
+    );
 
     return { items, total };
   }

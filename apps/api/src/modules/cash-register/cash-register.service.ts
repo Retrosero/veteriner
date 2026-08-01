@@ -1,7 +1,6 @@
 /**
  * @file CashRegister (kasa ve gün sonu) service.
  * @module apps/api/modules/cash-register/cash-register.service
- *
  * @description GOAL-074 (FAZ-7) kasa ve gün sonu iş kuralları.
  *
  * Kapsam:
@@ -22,7 +21,6 @@
  *   (KasaRepository.read). Şu an için: oturumun açık
  *   olduğu zaman aralığı içinde gerçekleşen tüm hareketler.
  * - `getSummary`: kapanış özeti (variance + hesap bazlı kırılım).
- *
  * @security Tenant bilgisi yalnızca actor.tenantId'den alınır.
  *   Kapanmış oturumda UPDATE yapılmaz; yalnızca status
  *   değişikliği (`reopened`) append-only tarihçeye yazılır.
@@ -32,9 +30,8 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
+import { CashRegisterRepository } from "./cash-register.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import {
   cashDecimalToScaled,
   isoDateToUtcEndExclusive,
@@ -44,6 +41,10 @@ import {
   toCashRegisterSession,
   type CashRegisterSessionRecord,
 } from "../../common/cash-register/cash-register.types.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { KasaRepository } from "../payments/kasa.repository.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { KasaEntryRecord } from "../../common/payments/kasa.types.js";
 import type {
   CashRegisterMovement,
@@ -57,9 +58,6 @@ import type {
   CashRegisterSessionSummary,
   CashRegisterAccountSummary,
 } from "@vetniva/contracts";
-
-import { KasaRepository } from "../payments/kasa.repository.js";
-import { CashRegisterRepository } from "./cash-register.repository.js";
 
 @Injectable()
 export class CashRegisterService {
@@ -194,9 +192,7 @@ export class CashRegisterService {
     if (filters.openedOnDate) {
       const start = isoDateToUtcStart(filters.openedOnDate);
       const end = isoDateToUtcEndExclusive(filters.openedOnDate);
-      records = records.filter(
-        (r) => r.openedAt >= start && r.openedAt <= end,
-      );
+      records = records.filter((r) => r.openedAt >= start && r.openedAt <= end);
     }
 
     const sort = filters.sort ?? "desc";
@@ -494,9 +490,10 @@ export class CashRegisterService {
 
   /**
    * Oturumun açık olduğu zaman aralığında gerçekleşen tüm kasa
-   * hareketleri. Zaman aralığı: openedAt → (closedAt ?? now()).
+   * hareketleri. Zaman aralığı: openedAt → (closedAt ?? Now()).
    * `KasaRepository.listForSessionRange` (GOAL-074) tenant-scoped
    * zaman aralığında entry'leri döner.
+   * @param rec
    */
   private listMovementsForRecord(
     rec: CashRegisterSessionRecord,
@@ -528,7 +525,11 @@ export class CashRegisterService {
       // hesaplanır.
       const scaled = cashDecimalToScaled(m.amountSigned);
       const abs = scaled < BigInt(0) ? -scaled : scaled;
-      const b = buckets[m.account];
+      const b: {
+        credit: bigint;
+        debit: bigint;
+        count: number;
+      } = Reflect.get(buckets, m.account);
       if (m.direction === "credit") {
         b.credit += abs;
       } else {
@@ -536,18 +537,23 @@ export class CashRegisterService {
       }
       b.count += 1;
     }
-    return (Object.keys(buckets) as Array<"cash" | "card" | "bank" | "other">)
-      .map((account) => {
-        const b = buckets[account];
-        const net = b.credit - b.debit;
-        return {
-          account,
-          totalCredit: scaledToCashDecimal(b.credit),
-          totalDebit: scaledToCashDecimal(b.debit),
-          netBalance: scaledToCashDecimal(net),
-          movementCount: b.count,
-        };
-      });
+    return (
+      Object.keys(buckets) as Array<"cash" | "card" | "bank" | "other">
+    ).map((account) => {
+      const b: {
+        credit: bigint;
+        debit: bigint;
+        count: number;
+      } = Reflect.get(buckets, account);
+      const net = b.credit - b.debit;
+      return {
+        account,
+        totalCredit: scaledToCashDecimal(b.credit),
+        totalDebit: scaledToCashDecimal(b.debit),
+        netBalance: scaledToCashDecimal(net),
+        movementCount: b.count,
+      };
+    });
   }
 
   private computeExpectedBalance(

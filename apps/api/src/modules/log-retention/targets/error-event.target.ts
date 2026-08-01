@@ -12,6 +12,7 @@
 import { Injectable } from "@nestjs/common";
 
 import { ErrorEventsRepository } from "../../error-events/error-events.repository.js";
+
 import type {
   CountOlderThanArgs,
   ExpireOlderThanArgs,

@@ -1,14 +1,12 @@
 /**
  * @file Doküman-kod uyum denetleyicisi — kök.
  * @module @vetniva/docs-check
- *
  * @description Next.js ve NestJS route'larını tarar; her route için
  * `docs/pages/` veya `docs/api/` altında bir YAML bilgi kaydı olmasını
  * zorunlu kılar. Hata kodları ve permission referansları da doğrulanır.
  *
  * Bu denetleyici CI kapısıdır (`pnpm docs:check`). Eksik kayıt varsa
  * exit code 1 ile çıkar.
- *
  * @security Denetleyici, kodda geçen sabit referansları (hata kodu,
  * permission) okur; bunlar zaten public bilgidir. PII taramaz.
  */
@@ -17,7 +15,9 @@ import { run } from "./runner.js";
 
 const root = process.cwd();
 
-run(root).then((result) => {
+/** Doküman denetimi sonucunu CLI çıkış koduna dönüştürür. */
+async function main(): Promise<void> {
+  const result = await run(root);
   // Çıktıyı renkli bas; CI ortamında renksiz düşer.
   const isCI = process.env.CI === "true";
   const red = (s: string): string => (isCI ? s : `\u001b[31m${s}\u001b[0m`);
@@ -35,9 +35,7 @@ run(root).then((result) => {
   process.stdout.write(
     `Hata kodu referansı: ${result.scanned.errorCodesVet} VET-, ${result.scanned.errorCodesLegacy} legacy\n`,
   );
-  process.stdout.write(
-    `Permission referansı: ${result.scanned.permissions}\n`,
-  );
+  process.stdout.write(`Permission referansı: ${result.scanned.permissions}\n`);
   process.stdout.write(`AI chunk: ${result.scanned.aiChunks}\n`);
   process.stdout.write(
     `Alan referansı: ${result.scanned.fieldRefs} (katalog: ${result.scanned.fieldIds})\n`,
@@ -48,7 +46,7 @@ run(root).then((result) => {
 
   if (result.issues.length === 0) {
     process.stdout.write(green("✓ Tüm kontroller geçti.\n"));
-    process.exit(0);
+    return;
   }
 
   for (const issue of result.issues) {
@@ -63,5 +61,13 @@ run(root).then((result) => {
   process.stdout.write(
     `\n${red(`${errors} hata`)}, ${yellow(`${warnings} uyarı`)}\n`,
   );
-  process.exit(errors > 0 ? 1 : 0);
+  process.exitCode = errors > 0 ? 1 : 0;
+}
+
+void main().catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+  process.stderr.write(
+    `Doküman denetimi beklenmedik biçimde sonlandı: ${message}\n`,
+  );
+  process.exitCode = 1;
 });

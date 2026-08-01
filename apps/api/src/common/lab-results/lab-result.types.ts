@@ -54,12 +54,7 @@ export interface LabResultRecord {
   updatedAt: string;
 }
 
-export type {
-  LabAbnormalFlag,
-  LabResult,
-  LabResultRevision,
-  LabResultStatus,
-};
+export type { LabAbnormalFlag, LabResult, LabResultRevision, LabResultStatus };
 
 /** Record → public LabResult. */
 export function toLabResult(rec: LabResultRecord): LabResult {
@@ -89,9 +84,7 @@ export function toLabResult(rec: LabResultRecord): LabResult {
 }
 
 /** Record → public LabResultRevision. */
-export function toLabResultRevision(
-  rec: LabResultRecord,
-): LabResultRevision {
+export function toLabResultRevision(rec: LabResultRecord): LabResultRevision {
   return {
     id: rec.id,
     revision: rec.revision,

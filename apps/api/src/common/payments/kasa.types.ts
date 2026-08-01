@@ -59,9 +59,7 @@ export interface KasaEntryRecord {
 }
 
 /** Payment metodu → kasa hesabı eşlemesi. */
-export function paymentMethodToKasaAccount(
-  method: PaymentMethod,
-): KasaAccount {
+export function paymentMethodToKasaAccount(method: PaymentMethod): KasaAccount {
   switch (method) {
     case "cash":
       return "cash";

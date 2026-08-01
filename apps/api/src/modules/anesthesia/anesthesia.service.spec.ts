@@ -1,7 +1,6 @@
 /**
  * @file AnesthesiaService unit testleri.
  * @module apps/api/modules/anesthesia/anesthesia.service.spec
- *
  * @description GOAL-082 anestezi takip service testleri.
  *   - createAnesthesia: plan in_progress olmalı; aynı plan için
  *     ikinci kayıt 409 VET-ANESTHESIA-0004.
@@ -10,19 +9,18 @@
  *   - finalizeAnesthesia: draft → finalized; tekrar finalize 409.
  *   - Cross-tenant IDOR → null; cross-tenant create 403.
  *   - Patient mismatch 422 VET-ANESTHESIA-0003.
- *
  * @since GOAL-082 (FAZ-8) anestezi takip core
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { AnesthesiaRepository } from "./anesthesia.repository.js";
+import { AnesthesiaService } from "./anesthesia.service.js";
+import { SurgeryPlansRepository } from "../surgery-plans/surgery-plans.repository.js";
+import { SurgeryPlansService } from "../surgery-plans/surgery-plans.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-
-import { AnesthesiaService } from "./anesthesia.service.js";
-import { AnesthesiaRepository } from "./anesthesia.repository.js";
-import { SurgeryPlansService } from "../surgery-plans/surgery-plans.service.js";
-import { SurgeryPlansRepository } from "../surgery-plans/surgery-plans.repository.js";
 import type {
   AnesthesiaComplicationInput,
   AnesthesiaCreateInput,
@@ -61,7 +59,7 @@ const STAFF_B: ActorContext = {
   source: "header",
 };
 
-const STAFF_A: ActorContext = {
+const _STAFF_A: ActorContext = {
   actorId: "usr-staff-a",
   actorType: "user",
   role: "STAFF",
@@ -74,6 +72,9 @@ const STAFF_A: ActorContext = {
   source: "header",
 };
 
+/**
+ *
+ */
 function makeAudit(): AuditService {
   return {
     record: vi.fn().mockResolvedValue({ eventId: "ev-1" }),
@@ -96,12 +97,20 @@ const PATIENT_A = "00000000-0000-0000-0000-000000000001";
 const PATIENT_B = "00000000-0000-0000-0000-000000000002";
 const SURGEON_A = "usr-surgeon-1";
 
+/**
+ *
+ * @param daysAhead
+ */
 function futureDate(daysAhead: number): string {
   const d = new Date();
   d.setDate(d.getDate() + daysAhead);
   return d.toISOString();
 }
 
+/**
+ *
+ * @param overrides
+ */
 function makeSurgeryInput(
   overrides: Partial<SurgeryPlanCreateInput> = {},
 ): SurgeryPlanCreateInput {
@@ -114,6 +123,10 @@ function makeSurgeryInput(
   };
 }
 
+/**
+ *
+ * @param overrides
+ */
 function makeAnesthesiaInput(
   overrides: Partial<AnesthesiaCreateInput> = {},
 ): AnesthesiaCreateInput {
@@ -125,6 +138,10 @@ function makeAnesthesiaInput(
   };
 }
 
+/**
+ *
+ * @param overrides
+ */
 function makeMedicationInput(
   overrides: Partial<AnesthesiaMedicationInput> = {},
 ): AnesthesiaMedicationInput {
@@ -138,6 +155,10 @@ function makeMedicationInput(
   };
 }
 
+/**
+ *
+ * @param overrides
+ */
 function makeVitalInput(
   overrides: Partial<AnesthesiaVitalInput> = {},
 ): AnesthesiaVitalInput {
@@ -151,6 +172,10 @@ function makeVitalInput(
   };
 }
 
+/**
+ *
+ * @param overrides
+ */
 function makeComplicationInput(
   overrides: Partial<AnesthesiaComplicationInput> = {},
 ): AnesthesiaComplicationInput {
@@ -163,6 +188,10 @@ function makeComplicationInput(
   };
 }
 
+/**
+ *
+ * @param overrides
+ */
 function makeStaffInput(
   overrides: Partial<AnesthesiaStaffInput> = {},
 ): AnesthesiaStaffInput {
@@ -469,12 +498,7 @@ describe("AnesthesiaService", () => {
         makeAnesthesiaInput({ surgeryPlanId: plan.id }),
         VET_A,
       );
-      await service.finalizeAnesthesia(
-        TENANT_A,
-        anesthesia.id,
-        {},
-        VET_A,
-      );
+      await service.finalizeAnesthesia(TENANT_A, anesthesia.id, {}, VET_A);
       await expect(
         service.addMedication(
           TENANT_A,
@@ -500,19 +524,9 @@ describe("AnesthesiaService", () => {
         makeAnesthesiaInput({ surgeryPlanId: plan.id }),
         VET_A,
       );
-      await service.finalizeAnesthesia(
-        TENANT_A,
-        anesthesia.id,
-        {},
-        VET_A,
-      );
+      await service.finalizeAnesthesia(TENANT_A, anesthesia.id, {}, VET_A);
       await expect(
-        service.finalizeAnesthesia(
-          TENANT_A,
-          anesthesia.id,
-          {},
-          VET_A,
-        ),
+        service.finalizeAnesthesia(TENANT_A, anesthesia.id, {}, VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-ANESTHESIA-0002",
         httpStatus: 409,
@@ -543,12 +557,7 @@ describe("AnesthesiaService", () => {
         makeMedicationInput(),
         VET_A,
       );
-      await service.addVital(
-        TENANT_A,
-        anesthesia.id,
-        makeVitalInput(),
-        VET_A,
-      );
+      await service.addVital(TENANT_A, anesthesia.id, makeVitalInput(), VET_A);
       await service.assignStaff(
         TENANT_A,
         anesthesia.id,

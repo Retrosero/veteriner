@@ -17,11 +17,7 @@ import {
   checkThreshold,
   evaluateScenario,
 } from "../src/thresholds.js";
-import type {
-  K6Summary,
-  ScenarioConfig,
-  ThresholdSpec,
-} from "../src/types.js";
+import type { K6Summary, ScenarioConfig, ThresholdSpec } from "../src/types.js";
 
 const SUMMARY_OK: K6Summary = {
   metrics: {
@@ -54,8 +50,14 @@ function withP95(summary: K6Summary, p95: number, p99 = p95 * 1.5): K6Summary {
     metrics: {
       ...summary.metrics,
       http_req_duration: { name: "http_req_duration", value: p95 },
-      "http_req_duration{p(95:)}": { name: "http_req_duration{p(95:)}", value: p95 },
-      "http_req_duration{p(99:)}": { name: "http_req_duration{p(99:)}", value: p99 },
+      "http_req_duration{p(95:)}": {
+        name: "http_req_duration{p(95:)}",
+        value: p95,
+      },
+      "http_req_duration{p(99:)}": {
+        name: "http_req_duration{p(99:)}",
+        value: p99,
+      },
     },
   };
 }
@@ -225,7 +227,14 @@ describe("evaluateScenario", () => {
     key: "patient_search",
     title: "Hasta arama",
     description: "x",
-    steps: [{ name: "search", method: "GET", path: "/api/v1/owners", requiresAuth: true }],
+    steps: [
+      {
+        name: "search",
+        method: "GET",
+        path: "/api/v1/owners",
+        requiresAuth: true,
+      },
+    ],
     thresholds: { p95Ms: 500, p99Ms: 1000, maxErrorRate: 0.01, minRps: 10 },
     recommendedProfiles: ["pilot"],
   };

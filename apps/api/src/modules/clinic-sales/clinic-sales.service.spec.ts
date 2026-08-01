@@ -1,7 +1,6 @@
 /**
  * @file ClinicSalesService unit testleri.
  * @module apps/api/modules/clinic-sales/clinic-sales.service.spec
- *
  * @description GOAL-071 klinik satış taslağı service testleri.
  *   - Taslak oluşturma (satır toplamı + indirim + audit).
  *   - İndirim yetkisi (STAFF max %10, OWNER sınırsız).
@@ -9,24 +8,23 @@
  *   - Tamamlama (draft → completed + audit).
  *   - İptal (draft/completed → cancelled + audit).
  *   - Cross-tenant IDOR → null; cross-tenant create 403.
- *
  * @since GOAL-071 (FAZ-7) klinik satış taslağı core
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ClinicSalesRepository } from "./clinic-sales.repository.js";
+import { ClinicSalesService } from "./clinic-sales.service.js";
+import { ProductsRepository } from "../products/products.repository.js";
+import { ProductsService } from "../products/products.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-
-import { ClinicSalesService } from "./clinic-sales.service.js";
-import { ClinicSalesRepository } from "./clinic-sales.repository.js";
-import { ProductsService } from "../products/products.service.js";
-import { ProductsRepository } from "../products/products.repository.js";
 import type {
   ClinicSaleCancelInput,
   ClinicSaleCreateInput,
+  ProductCreateInput,
 } from "@vetniva/contracts";
-import type { ProductCreateInput } from "@vetniva/contracts";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -83,6 +81,9 @@ const STAFF_B: ActorContext = {
   source: "header",
 };
 
+/**
+ *
+ */
 function makeAudit(): AuditService {
   return {
     record: vi.fn().mockResolvedValue({ eventId: "ev-1" }),
@@ -101,6 +102,10 @@ function makeAudit(): AuditService {
   } as unknown as AuditService;
 }
 
+/**
+ *
+ * @param overrides
+ */
 function makeProductInput(
   overrides: Partial<ProductCreateInput> = {},
 ): ProductCreateInput {
@@ -121,6 +126,11 @@ function makeProductInput(
   };
 }
 
+/**
+ *
+ * @param productId
+ * @param overrides
+ */
 function makeSaleInput(
   productId: string,
   overrides: Partial<ClinicSaleCreateInput> = {},
@@ -132,9 +142,7 @@ function makeSaleInput(
     sourceId: "exam-001",
     currency: "TRY",
     globalDiscountPercent: 0,
-    lines: [
-      { productId, unit: "unit", quantity: "2" },
-    ],
+    lines: [{ productId, unit: "unit", quantity: "2" }],
     ...overrides,
   };
 }
@@ -152,6 +160,12 @@ describe("ClinicSalesService", () => {
     service = new ClinicSalesService(repo, productsService, audit);
   });
 
+  /**
+   *
+   * @param sku
+   * @param name
+   * @param salePrice
+   */
   async function seedProduct(
     sku: string,
     name: string = "Test Hizmet",
@@ -292,11 +306,7 @@ describe("ClinicSalesService", () => {
         STAFF_A,
       );
       await expect(
-        service.createClinicSale(
-          TENANT_A,
-          makeSaleInput(pid),
-          OWNER_A,
-        ),
+        service.createClinicSale(TENANT_A, makeSaleInput(pid), OWNER_A),
       ).rejects.toMatchObject({
         errorCode: "VET-CLINIC_SALE-0005",
         httpStatus: 422,
@@ -495,11 +505,7 @@ describe("ClinicSalesService", () => {
         makeSaleInput(pid),
         OWNER_A,
       );
-      await service.completeClinicSale(
-        TENANT_A,
-        created.sale.id,
-        OWNER_A,
-      );
+      await service.completeClinicSale(TENANT_A, created.sale.id, OWNER_A);
       await expect(
         service.updateClinicSale(
           TENANT_A,

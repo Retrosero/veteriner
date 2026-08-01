@@ -1,26 +1,23 @@
 /**
  * @file AppointmentsService unit testleri.
  * @module apps/api/modules/appointments/appointments.service.spec
- *
  * @description Hasta cross-tenant, gelecekte olmayan start, slot
  * çakışması (booked + blocked), duration validasyonu, findById
  * tenant izolasyonu, list filtre, update çakışma, cancel /
  * complete / no_show state machine ve audit event yayını.
- *
  * @since GOAL-031 (FAZ-3) randevu oluşturma core
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { AppointmentsRepository } from "./appointments.repository.js";
+import { AppointmentsService } from "./appointments.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
 import type { Patient } from "../../common/patients/patient.types.js";
-
 import type { CalendarService } from "../calendar/calendar.service.js";
 import type { PatientsService } from "../patients/patients.service.js";
-
-import { AppointmentsService } from "./appointments.service.js";
-import { AppointmentsRepository } from "./appointments.repository.js";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -58,6 +55,12 @@ const VET_ID = "vet-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 /** Mock patient store. */
 const patientStore = new Map<string, Patient>();
 
+/**
+ *
+ * @param tenantId
+ * @param id
+ * @param ownerId
+ */
 function seedPatient(tenantId: string, id: string, ownerId: string): void {
   const p: Patient = {
     id,
@@ -78,6 +81,9 @@ function seedPatient(tenantId: string, id: string, ownerId: string): void {
   patientStore.set(`${tenantId}|${id}`, p);
 }
 
+/**
+ *
+ */
 function makePatients(): PatientsService {
   return {
     findById: vi
@@ -89,6 +95,9 @@ function makePatients(): PatientsService {
   } as unknown as PatientsService;
 }
 
+/**
+ *
+ */
 function makeCalendar(): CalendarService {
   return {
     checkAvailability: vi.fn().mockReturnValue({
@@ -101,6 +110,9 @@ function makeCalendar(): CalendarService {
   } as unknown as CalendarService;
 }
 
+/**
+ *
+ */
 function makeAudit(): AuditService {
   return {
     record: vi.fn().mockResolvedValue({ eventId: "ev-1" }),
@@ -108,7 +120,10 @@ function makeAudit(): AuditService {
   } as unknown as AuditService;
 }
 
-/** Yarından 1 saat sonrası, ISO. */
+/**
+ * Yarından 1 saat sonrası, ISO.
+ * @param plusDays
+ */
 function futureStart(plusDays = 1): string {
   const d = new Date(Date.now() + plusDays * 24 * 60 * 60 * 1000);
   d.setUTCMinutes(0, 0, 0);
@@ -116,14 +131,26 @@ function futureStart(plusDays = 1): string {
   return d.toISOString();
 }
 
-function validInput(overrides: Partial<{
-  patientId: string;
-  veterinarianId: string;
-  type: "consultation" | "vaccination" | "surgery" | "follow_up" | "lab_visit" | "grooming";
-  start: string;
-  durationMin: number;
-  notes: string;
-}> = {}) {
+/**
+ *
+ * @param overrides
+ */
+function validInput(
+  overrides: Partial<{
+    patientId: string;
+    veterinarianId: string;
+    type:
+      | "consultation"
+      | "vaccination"
+      | "surgery"
+      | "follow_up"
+      | "lab_visit"
+      | "grooming";
+    start: string;
+    durationMin: number;
+    notes: string;
+  }> = {},
+) {
   return {
     patientId: PATIENT_ID_A,
     veterinarianId: VET_ID,
@@ -247,11 +274,7 @@ describe("AppointmentsService", () => {
 
     it("durationMin=0 → 422 VET-VALIDATION-0009", async () => {
       await expect(
-        service.create(
-          TENANT_A,
-          validInput({ durationMin: 0 }),
-          STAFF_A,
-        ),
+        service.create(TENANT_A, validInput({ durationMin: 0 }), STAFF_A),
       ).rejects.toMatchObject({
         errorCode: "VET-VALIDATION-0009",
         httpStatus: 422,

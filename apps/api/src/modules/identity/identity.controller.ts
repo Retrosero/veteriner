@@ -41,7 +41,10 @@ export class IdentityController {
     if (!request.authSession) {
       throw new Error("Session bulunamadı");
     }
-    return this.auth.me(request.authSession.userId, request.authSession.sessionId);
+    return this.auth.me(
+      request.authSession.userId,
+      request.authSession.sessionId,
+    );
   }
 
   /** GET /me/sessions — kullanıcının tüm session'ları. */

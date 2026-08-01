@@ -1,22 +1,20 @@
 /**
  * @file Branch repository.
  * @module apps/api/modules/branch/branch.repository
- *
  * @description Branch veri erişim katmanı. PrismaClient üzerinden
  * sorgu yapar; tenant izolasyonu RLS (set_config) ile sağlanır.
- *
  * @security RLS: branches tablosunda `app.tenant_id` ve
  *   `app.is_superadmin` set edilerek sorgu başında context belirlenir.
  *   Bu repository her sorguda `setTenantContext` çağrısı yaparak
  *   RLS policy'sinin doğru çalışmasını sağlar.
- *
  * @since GOAL-010 (FAZ-1) tenant ve şube altyapısı
  */
 
 import { Injectable } from "@nestjs/common";
-import type { Branch, Prisma } from "@prisma/client";
 
 import { PrismaService } from "../../prisma/prisma.service.js";
+
+import type { Branch, Prisma } from "@prisma/client";
 
 export interface ListBranchesArgs {
   tenantId: string;
@@ -29,28 +27,36 @@ export class BranchRepository {
 
   /**
    * ID'ye göre branch getirir. RLS otomatik uygular (set_config).
+   * @param id
+   * @param actor
+   * @param actor.tenantId
+   * @param actor.isSuperadmin
    */
   public async findById(
     id: string,
     actor: { tenantId: string | null; isSuperadmin: boolean },
   ): Promise<Branch | null> {
-    return this.withContext(actor, () =>
-      this.prisma.branch.findUnique({ where: { id } }),
+    return this.withContext(actor, (tx) =>
+      tx.branch.findUnique({ where: { id } }),
     );
   }
 
   /**
    * Tenant'ın branch'lerini listeler. RLS actor.tenantId üzerinden
    * filtreyi uygular.
+   * @param args
+   * @param actor
+   * @param actor.tenantId
+   * @param actor.isSuperadmin
    */
   public async list(
     args: ListBranchesArgs,
     actor: { tenantId: string | null; isSuperadmin: boolean },
   ): Promise<Branch[]> {
-    return this.withContext(actor, async () => {
+    return this.withContext(actor, async (tx) => {
       const where: Prisma.BranchWhereInput = { tenantId: args.tenantId };
       if (args.status) where.status = args.status;
-      return this.prisma.branch.findMany({
+      return tx.branch.findMany({
         where,
         orderBy: { createdAt: "asc" },
       });
@@ -60,6 +66,16 @@ export class BranchRepository {
   /**
    * Yeni branch oluşturur. Unique constraint (tenant_id, code)
    * DB tarafından sağlanır; çakışma Prisma `P2002` fırlatır.
+   * @param args
+   * @param args.tenantId
+   * @param args.code
+   * @param args.name
+   * @param args.city
+   * @param args.address
+   * @param args.phone
+   * @param actor
+   * @param actor.tenantId
+   * @param actor.isSuperadmin
    */
   public async create(
     args: {
@@ -72,8 +88,8 @@ export class BranchRepository {
     },
     actor: { tenantId: string | null; isSuperadmin: boolean },
   ): Promise<Branch> {
-    return this.withContext(actor, () =>
-      this.prisma.branch.create({
+    return this.withContext(actor, (tx) =>
+      tx.branch.create({
         data: {
           tenantId: args.tenantId,
           code: args.code,
@@ -88,26 +104,35 @@ export class BranchRepository {
 
   /**
    * Branch bilgilerini günceller.
+   * @param id
+   * @param data
+   * @param actor
+   * @param actor.tenantId
+   * @param actor.isSuperadmin
    */
   public async update(
     id: string,
     data: Prisma.BranchUpdateInput,
     actor: { tenantId: string | null; isSuperadmin: boolean },
   ): Promise<Branch> {
-    return this.withContext(actor, () =>
-      this.prisma.branch.update({ where: { id }, data }),
+    return this.withContext(actor, (tx) =>
+      tx.branch.update({ where: { id }, data }),
     );
   }
 
   /**
    * Branch'i arşivler (soft delete).
+   * @param id
+   * @param actor
+   * @param actor.tenantId
+   * @param actor.isSuperadmin
    */
   public async archive(
     id: string,
     actor: { tenantId: string | null; isSuperadmin: boolean },
   ): Promise<Branch> {
-    return this.withContext(actor, () =>
-      this.prisma.branch.update({
+    return this.withContext(actor, (tx) =>
+      tx.branch.update({
         where: { id },
         data: { status: "closed", archivedAt: new Date() },
       }),
@@ -116,6 +141,12 @@ export class BranchRepository {
 
   /**
    * Tenant + code unique kontrolü. Create/update öncesi çağrılır.
+   * @param tenantId
+   * @param code
+   * @param excludeId
+   * @param actor
+   * @param actor.tenantId
+   * @param actor.isSuperadmin
    */
   public async existsByCode(
     tenantId: string,
@@ -126,8 +157,8 @@ export class BranchRepository {
       isSuperadmin: false,
     },
   ): Promise<boolean> {
-    return this.withContext(actor, async () => {
-      const found = await this.prisma.branch.findUnique({
+    return this.withContext(actor, async (tx) => {
+      const found = await tx.branch.findUnique({
         where: { tenantId_code: { tenantId, code } },
         select: { id: true },
       });
@@ -141,30 +172,30 @@ export class BranchRepository {
    * Sorgu başında RLS context'i set eder. Bu çağrı yapılmadan
    * yapılan sorgular RLS policy'si nedeniyle sonuç döndürmez.
    *
-   * Production PostgreSQL: `set_config(...)` ile GUC değişkenleri
-   * bağlam seviyesinde set edilir. Test/mock ortamda no-op.
+   * Production PostgreSQL: `set_config(...)` ile GUC değişkenleri aynı
+   * transaction ve fiziksel bağlantı üzerinde kurulur. Transaction dışında
+   * `is_local=true` kullanmak bağlamı ilk statement sonunda sileceğinden,
+   * bu repository hata durumunda fail-closed davranır.
+   * @param actor
+   * @param actor.tenantId
+   * @param actor.isSuperadmin
+   * @param fn
    */
   private async withContext<T>(
     actor: { tenantId: string | null; isSuperadmin: boolean },
-    fn: () => Promise<T>,
+    fn: (tx: Prisma.TransactionClient) => Promise<T>,
   ): Promise<T> {
     const isSuper = actor.isSuperadmin ? "true" : "false";
     const tenantId = actor.tenantId ?? "";
-    try {
+    return this.prisma.$transaction(async (tx) => {
       // `set_config(name, value, is_local=true)` transaction/connection
       // seviyesinde çalışır; `is_local=true` ile transaction sonunda
       // otomatik temizlenir.
-      await this.prisma.$executeRawUnsafe(
-        `SELECT set_config('app.is_superadmin', '${isSuper}', true)`,
-      );
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin', ${isSuper}, true)`;
       if (tenantId) {
-        await this.prisma.$executeRawUnsafe(
-          `SELECT set_config('app.tenant_id', '${tenantId.replace(/'/g, "''")}', true)`,
-        );
+        await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
       }
-    } catch {
-      // Mock/SQLite ortamda bu başarısız olur; yoksay.
-    }
-    return fn();
+      return fn(tx);
+    });
   }
 }

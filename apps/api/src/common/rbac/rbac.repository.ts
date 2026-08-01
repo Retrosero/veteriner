@@ -1,7 +1,6 @@
 /**
  * @file RBAC repository.
  * @module apps/api/common/rbac/rbac.repository
- *
  * @description RBAC veri erişim katmanı. PrismaClient üzerinden
  * `UserTenantMembership`, `UserSession`, `User`, `Tenant` ve
  * `Branch` tablolarına sorgu yapar.
@@ -12,19 +11,18 @@
  * - Aktif session'ın `activeBranchId` alanını güncelle (branch
  *   context değişimi).
  * - Tenant ve branch varlık kontrolü.
- *
  * @security
  * - RLS context (`app.tenant_id`, `app.is_superadmin`) her sorguda
  *   set edilir; branch repository ile aynı pattern.
  * - Üyelik iptali fiziksel silme DEĞİLDİR (status=revoked).
- *
  * @since GOAL-012 (FAZ-1) RBAC ve izin motoru
  */
 
 import { Injectable } from "@nestjs/common";
-import type { UserTenantMembership } from "@prisma/client";
 
 import { PrismaService } from "../../prisma/prisma.service.js";
+
+import type { Prisma, UserTenantMembership } from "@prisma/client";
 
 /** Tenant üyeliği ile birlikte kullanıcı özetini getiren sorgu sonucu. */
 export interface MembershipWithUser {
@@ -49,15 +47,15 @@ export class RbacRepository {
     tenantId: string,
     actor: { tenantId: string | null; isSuperadmin: boolean },
   ): Promise<MembershipWithUser[]> {
-    return this.withContext(actor, async () => {
-      const rows = await this.prisma.userTenantMembership.findMany({
+    return this.withContext(actor, async (tx) => {
+      const rows = await tx.userTenantMembership.findMany({
         where: { tenantId, status: { in: ["active", "suspended"] } },
         include: {
           user: { select: { id: true, email: true, displayName: true } },
         },
         orderBy: { assignedAt: "asc" },
       });
-      return rows as MembershipWithUser[];
+      return rows;
     });
   }
 
@@ -193,22 +191,16 @@ export class RbacRepository {
 
   private async withContext<T>(
     actor: { tenantId: string | null; isSuperadmin: boolean },
-    fn: () => Promise<T>,
+    fn: (tx: Prisma.TransactionClient) => Promise<T>,
   ): Promise<T> {
     const isSuper = actor.isSuperadmin ? "true" : "false";
     const tenantId = actor.tenantId ?? "";
-    try {
-      await this.prisma.$executeRawUnsafe(
-        `SELECT set_config('app.is_superadmin', '${isSuper}', true)`,
-      );
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin', ${isSuper}, true)`;
       if (tenantId) {
-        await this.prisma.$executeRawUnsafe(
-          `SELECT set_config('app.tenant_id', '${tenantId.replace(/'/g, "''")}', true)`,
-        );
+        await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
       }
-    } catch {
-      // Mock/SQLite ortamda bu başarısız olur; yoksay.
-    }
-    return fn();
+      return fn(tx);
+    });
   }
 }

@@ -22,7 +22,7 @@ GET /api/v1/clinic/vaccines/protocols
 
 - `species` (enum, opsiyonel) — `dog | cat | bird | all`.
 - `category` (enum, opsiyonel) — `core | non_core |
-  lifestyle | not_recommended`.
+lifestyle | not_recommended`.
 - `isCore` (boolean, opsiyonel) — yalnızca core aşıları
   filtrele (`true`) veya core olmayanları (`false`).
 - `limit` (1-200, default 20), `offset` (0-10000, default 0).

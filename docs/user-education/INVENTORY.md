@@ -1,11 +1,13 @@
 # Kullanıcı Eğitimi — Stok ve Petshop Yönetimi
 
 ## Amaç
+
 Ürün kataloğu, depo/raf/lot, tedarikçi, satın alma, stok
 hareketleri, petshop satış/iade, klinik tüketimi ve düşük
 stok/SKT uyarılarının nasıl yönetileceğini açıklar.
 
 ## Hedef kitle
+
 - STAFF (petshop kasiyer + depo sorumlusu)
 - VETERINARIAN (klinik tüketimi)
 - OWNER (genel yönetim)
@@ -112,14 +114,15 @@ order; petshop:sale).
 
 ## Hata durumları
 
-| Hata | Çözüm |
-|------|-------|
-| Pasif ürün | Ürünü aktifleştirin veya yeni kayıt açın. |
-| Stok yetersiz | Stok sayımı yapın; PO oluşturun. |
-| Lot SKT geçmiş | Lot pasifleşir; yenisi alın. |
-| Yetkisiz | OWNER veya depo sorumlusu yetkisi gerekli. |
+| Hata           | Çözüm                                      |
+| -------------- | ------------------------------------------ |
+| Pasif ürün     | Ürünü aktifleştirin veya yeni kayıt açın.  |
+| Stok yetersiz  | Stok sayımı yapın; PO oluşturun.           |
+| Lot SKT geçmiş | Lot pasifleşir; yenisi alın.               |
+| Yetkisiz       | OWNER veya depo sorumlusu yetkisi gerekli. |
 
 ## İlgili dokümanlar
+
 - `docs/workflows/petshop_sale.md`
 - `goals/GOAL-060 → 067_COMPLETION_REPORT.md`
 - `docs/permissions/PERMISSION_CATALOG.yaml#inventory:*`

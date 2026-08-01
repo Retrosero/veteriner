@@ -27,22 +27,25 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import {
+  soapAmendInputSchema,
+  soapUpdateInputSchema,
+} from "@vetniva/contracts";
 
+import { SoapService } from "./soap.service.js";
 import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
 import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
 import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
 import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   SoapAmendInput,
   SoapAmendRecord,
   SoapNote,
   SoapUpdateInput,
 } from "@vetniva/contracts";
-import { soapAmendInputSchema, soapUpdateInputSchema } from "@vetniva/contracts";
-
-import { SoapService } from "./soap.service.js";
 
 @ApiTags("soap")
 @UseGuards(PermissionsGuard)

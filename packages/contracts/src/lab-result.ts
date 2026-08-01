@@ -67,6 +67,7 @@ export const labResultCreateInputSchema = z.object({
   value: z.string().min(1).max(200),
   valueNumeric: z
     .string()
+    // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, isteğe bağlı eksi işareti ve en çok dört ondalık basamak kabul eden ölçüm doğrulamasıdır.
     .regex(/^-?\d+(\.\d{1,4})?$/, {
       message: "valueNumeric decimal string olmalı (4 ondalık)",
     })
@@ -75,9 +76,7 @@ export const labResultCreateInputSchema = z.object({
   notes: z.string().max(2000).optional(),
   attachments: z.array(z.string().max(200)).max(20).optional(),
 });
-export type LabResultCreateInput = z.infer<
-  typeof labResultCreateInputSchema
->;
+export type LabResultCreateInput = z.infer<typeof labResultCreateInputSchema>;
 
 /** Kısmi güncelleme. Yalnızca `draft` durumda. */
 export const labResultUpdateInputSchema = z
@@ -85,6 +84,7 @@ export const labResultUpdateInputSchema = z
     value: z.string().min(1).max(200).optional(),
     valueNumeric: z
       .string()
+      // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, isteğe bağlı eksi işareti ve en çok dört ondalık basamak kabul eden ölçüm doğrulamasıdır.
       .regex(/^-?\d+(\.\d{1,4})?$/)
       .nullable()
       .optional(),
@@ -95,25 +95,19 @@ export const labResultUpdateInputSchema = z
   .refine((v) => Object.keys(v).length > 0, {
     message: "En az bir alan gönderilmelidir",
   });
-export type LabResultUpdateInput = z.infer<
-  typeof labResultUpdateInputSchema
->;
+export type LabResultUpdateInput = z.infer<typeof labResultUpdateInputSchema>;
 
 /** İncelemeye gönder. draft → pending_review. */
 export const labResultSubmitInputSchema = z.object({
   notes: z.string().max(2000).optional(),
 });
-export type LabResultSubmitInput = z.infer<
-  typeof labResultSubmitInputSchema
->;
+export type LabResultSubmitInput = z.infer<typeof labResultSubmitInputSchema>;
 
 /** Veteriner onayı. pending_review → approved. */
 export const labResultApproveInputSchema = z.object({
   reviewNotes: z.string().max(2000).optional(),
 });
-export type LabResultApproveInput = z.infer<
-  typeof labResultApproveInputSchema
->;
+export type LabResultApproveInput = z.infer<typeof labResultApproveInputSchema>;
 
 /** Amendment. approved → amended + yeni revision. */
 export const labResultAmendInputSchema = z.object({
@@ -121,15 +115,14 @@ export const labResultAmendInputSchema = z.object({
   value: z.string().min(1).max(200),
   valueNumeric: z
     .string()
+    // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, isteğe bağlı eksi işareti ve en çok dört ondalık basamak kabul eden ölçüm doğrulamasıdır.
     .regex(/^-?\d+(\.\d{1,4})?$/)
     .optional(),
   abnormalFlag: labAbnormalFlagSchema.optional().default("normal"),
   notes: z.string().max(2000).optional(),
   attachments: z.array(z.string().max(200)).max(20).optional(),
 });
-export type LabResultAmendInput = z.infer<
-  typeof labResultAmendInputSchema
->;
+export type LabResultAmendInput = z.infer<typeof labResultAmendInputSchema>;
 
 /* --------------------------------------------------------------------------
  * Response
@@ -178,6 +171,4 @@ export const labResultListResponseSchema = z.object({
   items: z.array(labResultRevisionSchema),
   total: z.number().int().nonnegative(),
 });
-export type LabResultListResponse = z.infer<
-  typeof labResultListResponseSchema
->;
+export type LabResultListResponse = z.infer<typeof labResultListResponseSchema>;

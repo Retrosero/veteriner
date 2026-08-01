@@ -12,7 +12,7 @@
 
 - Tenant ve Branch için Prisma şeması yazıldı, Branch ↔ Tenant ilişkisi
   düzeltildi (Tenant modeline `branches Branch[]` + `memberships
-  UserTenantMembership[]`).
+UserTenantMembership[]`).
 - `prisma generate` çalıştırıldı; @prisma/client tipleri tazelendi.
 - Manuel migration dosyası (`20260101000010_init_tenant_branch_audit`)
   tablolar, enum'lar, index'ler, `touch_updated_at` trigger'ı,
@@ -34,7 +34,7 @@
   `tenantStatusSchema`, `tenantCountrySchema`, `createTenantRequestSchema`,
   `updateTenantRequestSchema`, `closeTenantRequestSchema`,
   `tenantResponseSchema`, `tenantListResponseSchema`, `listTenantsQuerySchema`
-  + branch karşılıkları.
+  - branch karşılıkları.
 - AuditService genişletildi: Prisma `auditEvent.create` best-effort DB
   yazımı eklendi (hata log'a düşer, operasyonu engellemez). PII mask'leme
   before/after/diff/metadata üzerinde uygulanır.
@@ -153,7 +153,7 @@
   - `branch.service.spec.ts` (8 test — create/update/archive, OWNER +
     SUPERADMIN yazma, cross-tenant)
   - `actor-interceptor.spec.ts` (auth placeholder)
-  - + integration test (superadmin/tenant/branch unit)
+  - - integration test (superadmin/tenant/branch unit)
 - Integration: 0 (Postgres DB'siz koşuldu; migration ve RLS CI'da
   postgres servisi ile doğrulanacak)
 - E2E: `apps/api/test/app.e2e-spec.ts` — health smoke (DB yokken skip)
@@ -183,7 +183,7 @@
   onboarding + kapatma prosedürü); INDEX.md'ye GOAL-010 zaman çizelgesi
   eklendi.
 - Sayfa kataloğu: Henüz UI yok; API kataloğu `docs/api/API_CATALOG.md`
-  + 10 endpoint doc sayfası eklendi.
+  - 10 endpoint doc sayfası eklendi.
 - Alan sözlüğü: `docs/fields/FIELD_GLOSSARY.md` — Tenant (16 alan),
   Branch (8 alan), UserTenantMembership (5 alan), AuditEvent (18 alan).
 - Hata kataloğu: `docs/errors/ERROR_CATALOG.md` — VET-TENANT-0001/0002/
@@ -207,7 +207,7 @@
   junction düzeltilirse workspace-level pnpm db:generate çalışır.
 - **RLS integration test eksik:** Service-level cross-tenant testi var
   ama gerçek DB'de (Postgres) RLS davranışı CI'da doğrulanmalı (GOAL-100
-  + Faz 12'de).
+  - Faz 12'de).
 - **Audit DB yazımı best-effort:** Prisma hata verirse log'a düşer,
   event kaybolmaz ama DB'ye yazılmaz. GOAL-100+ ile batch queue
   eklenecek.
@@ -216,7 +216,7 @@
 
 - Branch.service.ts update'te `addressJson` cast temizliği:
   `Parameters<BranchRepository["update"]>[1] extends infer R ? R extends
-  { addressJson?: infer A } ? A : never : never` karmaşık. Doğrudan
+{ addressJson?: infer A } ? A : never : never` karmaşık. Doğrudan
   `Prisma.BranchUpdateInput['addressJson']` ile sadeleştirilebilir
   (GOAL-013 feature flag ile birlikte temizlik önerilir).
 - TenantService.findAndRespond helper'ı kaldırıldı ancak

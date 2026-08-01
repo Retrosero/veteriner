@@ -35,6 +35,7 @@ import {
   isModuleKey,
   type ModuleKey,
 } from "../../common/modules/module.types.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 /**
@@ -62,7 +63,7 @@ export class FeatureFlagService {
    */
   public async isModuleEnabled(
     tenantId: string,
-    moduleKey: ModuleKey,
+    moduleKey: string,
   ): Promise<boolean> {
     if (!isModuleKey(moduleKey)) {
       this.logger.warn(`Bilinmeyen modül anahtarı sorgulandı: ${moduleKey}`);
@@ -79,7 +80,7 @@ export class FeatureFlagService {
    */
   public async enableModule(
     tenantId: string,
-    moduleKey: ModuleKey,
+    moduleKey: string,
     actor: ActorContext,
   ): Promise<void> {
     if (!isModuleKey(moduleKey)) {
@@ -118,7 +119,7 @@ export class FeatureFlagService {
    */
   public async disableModule(
     tenantId: string,
-    moduleKey: ModuleKey,
+    moduleKey: string,
     actor: ActorContext,
   ): Promise<void> {
     if (!isModuleKey(moduleKey)) {

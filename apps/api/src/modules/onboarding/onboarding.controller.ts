@@ -30,7 +30,10 @@ import {
 import { z } from "zod";
 
 import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import {
+  isModuleKey,
+  type ModuleKey,
+} from "../../common/modules/module.types.js";
 import {
   onboardingAskInputSchema,
   OnboardingService,
@@ -38,7 +41,8 @@ import {
   type OnboardingRole,
   type OnboardingScenarioListResponse,
 } from "../../common/onboarding/index.js";
-import { isModuleKey, type ModuleKey } from "../../common/modules/module.types.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 /**
  * Senaryo listesi için tenant modül filtresi query şeması.

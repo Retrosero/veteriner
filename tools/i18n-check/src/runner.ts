@@ -1,5 +1,5 @@
 /**
- * @file i18n parity çalıştırıcı.
+ * @file I18n parity çalıştırıcı.
  * @module @vetniva/i18n-check/runner
  */
 
@@ -17,9 +17,11 @@ export type RunResult = {
 };
 
 /**
- * packages/i18n/src/locales/ altındaki tüm JSON dosyalarını tarar; ilk
+ * Packages/i18n/src/locales/ altındaki tüm JSON dosyalarını tarar; ilk
  * dosyayı (alfabetik sırada en önde gelen) referans kabul edip diğer
  * dosyalarla karşılaştırır. İlk dosya genellikle tr-TR.json'dur.
+ * @param {string} root Proje kök dizini.
+ * @returns {Promise<RunResult>} Locale farklarını içeren denetim sonucu.
  */
 export async function run(root: string): Promise<RunResult> {
   const localesDir = path.join(root, "packages/i18n/src/locales");
@@ -42,6 +44,8 @@ export async function run(root: string): Promise<RunResult> {
 
   let reference: Record<string, unknown>;
   try {
+    // `referenceFile`, sabit locale listesinden ve proje kökünden türetilir.
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
     reference = JSON.parse(await readFile(referenceFile, "utf8")) as Record<
       string,
       unknown
@@ -64,6 +68,8 @@ export async function run(root: string): Promise<RunResult> {
   for (const file of files.slice(1)) {
     let other: Record<string, unknown>;
     try {
+      // `file`, sabit locale listesinden ve proje kökünden türetilir.
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
       other = JSON.parse(await readFile(file, "utf8")) as Record<
         string,
         unknown
@@ -98,6 +104,12 @@ export async function run(root: string): Promise<RunResult> {
   return { issues };
 }
 
+/**
+ * İç içe locale nesnesindeki yaprak anahtarları noktalı yola dönüştürür.
+ * @param {Record<string, unknown>} value Düzleştirilecek locale nesnesi.
+ * @param {string} prefix Üst anahtar yolu.
+ * @returns {Set<string>} Noktalı yaprak anahtarları.
+ */
 function flattenKeys(value: Record<string, unknown>, prefix = ""): Set<string> {
   const result = new Set<string>();
   for (const [k, v] of Object.entries(value)) {

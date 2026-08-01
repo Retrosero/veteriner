@@ -9,15 +9,15 @@ Muayene listesini filtreli ve tenant-scoped döner. Sıralama
 
 **Query (`ExaminationFilters`):**
 
-| Param            | Tip       | Açıklama |
-| ---------------- | --------- | -------- |
-| patientId        | string    | Hasta ID filtresi. |
-| veterinarianId   | string    | Veteriner ID filtresi. |
-| status           | enum      | `in_progress | completed | amended`. |
-| from             | ISO 8601  | `startedAt >= from`. |
-| to               | ISO 8601  | `startedAt <= to`. |
-| limit            | 1-200     | Sayfa boyutu (default 20). |
-| offset           | 0-10000   | Sayfa offset (default 0). |
+| Param          | Tip      | Açıklama                   |
+| -------------- | -------- | -------------------------- |
+| patientId      | string   | Hasta ID filtresi.         |
+| veterinarianId | string   | Veteriner ID filtresi.     |
+| status         | enum     | `in_progress               | completed | amended`. |
+| from           | ISO 8601 | `startedAt >= from`.       |
+| to             | ISO 8601 | `startedAt <= to`.         |
+| limit          | 1-200    | Sayfa boyutu (default 20). |
+| offset         | 0-10000  | Sayfa offset (default 0).  |
 
 **Response 200 (`ExaminationListResponse`):**
 

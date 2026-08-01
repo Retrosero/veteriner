@@ -1,13 +1,23 @@
 # @file Çoklu Dil (i18n) Sözleşmesi.
+
 # @module docs/i18n/I18N_CONTRACT
+
 #
+
 # @description VetNiva'nın çoklu dil mimarisinin sözleşmesi.
+
 # Locale'ler, çeviri anahtarı formatı, yükleme stratejisi,
+
 # pluralization, formatlama (tarih/saat/para/sayı) ve yeni
+
 # çeviri ekleme süreci bu dokümanda tanımlanır.
+
 #
+
 # @author GOAL-003 (FAZ-0 devamı) çoklu dil sözleşmesi
+
 # @since 2026-07-30
+
 # =============================================================================
 
 # Çoklu Dil (i18n) Sözleşmesi
@@ -128,18 +138,18 @@ sarmalayan tipli fonksiyonlar sağlar (bkz. COUNTRY_ADAPTER_CONTRACT.md).
 
 **Varsayılanlar:**
 
-| Alan | Türkiye (TR) | İngiltere (GB) |
-| --- | --- | --- |
-| Tarih | `dd.MM.yyyy` (31.07.2026) | `dd/MM/yyyy` (31/07/2026) |
-| Saat | `HH:mm` (24-saat, 14:30) | `HH:mm` (24-saat, 14:30) |
-| Tarih+Saat | `dd.MM.yyyy HH:mm` | `dd/MM/yyyy HH:mm` |
-| Para | `₺1.234,56` (1.234,56 TRY) | `£1,234.56` (1,234.56 GBP) |
-| Sayı | `1.234,56` (binlik nokta, ondalık virgül) | `1,234.56` (binlik virgül, ondalık nokta) |
-| Yüzde | `%12,5` | `12.5%` |
-| Telefon | `+90 5XX XXX XX XX` (E.164 + lokal) | `+44 7XXX XXXXXX` (E.164) |
-| Posta kodu | `34XXX` (5 hane) | `SW1A 1AA` (alfanumerik) |
-| Vergi no | `VKN/TCKN` (10/11 hane) | `UTR/VRN` (10 hane) |
-| KDV oranı | `%1, %10, %20` | `%0, %5, %20` |
+| Alan       | Türkiye (TR)                              | İngiltere (GB)                            |
+| ---------- | ----------------------------------------- | ----------------------------------------- |
+| Tarih      | `dd.MM.yyyy` (31.07.2026)                 | `dd/MM/yyyy` (31/07/2026)                 |
+| Saat       | `HH:mm` (24-saat, 14:30)                  | `HH:mm` (24-saat, 14:30)                  |
+| Tarih+Saat | `dd.MM.yyyy HH:mm`                        | `dd/MM/yyyy HH:mm`                        |
+| Para       | `₺1.234,56` (1.234,56 TRY)                | `£1,234.56` (1,234.56 GBP)                |
+| Sayı       | `1.234,56` (binlik nokta, ondalık virgül) | `1,234.56` (binlik virgül, ondalık nokta) |
+| Yüzde      | `%12,5`                                   | `12.5%`                                   |
+| Telefon    | `+90 5XX XXX XX XX` (E.164 + lokal)       | `+44 7XXX XXXXXX` (E.164)                 |
+| Posta kodu | `34XXX` (5 hane)                          | `SW1A 1AA` (alfanumerik)                  |
+| Vergi no   | `VKN/TCKN` (10/11 hane)                   | `UTR/VRN` (10 hane)                       |
+| KDV oranı  | `%1, %10, %20`                            | `%0, %5, %20`                             |
 
 **Uygulama:** Ülke adaptörü `formatDate()`, `formatCurrency()`,
 `formatNumber()` vb. fonksiyonlar sağlar. `Intl.DateTimeFormat`,

@@ -30,6 +30,7 @@ export const branchCodeSchema = z
   .min(2, "Şube kodu en az 2 karakter olmalı")
   .max(64, "Şube kodu en fazla 64 karakter olabilir")
   .regex(
+    // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, karakter sınıfı ve tekrarları üst sınırlı slug doğrulamasıdır.
     /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/,
     "Şube kodu yalnızca küçük harf, rakam ve tire içerebilir",
   );

@@ -68,7 +68,8 @@ bypass'lı.
 - Bakiye atomik olarak artırılır (in-memory'de senkronize).
 
 **Audit detayı:** `lines[]` before/after `receivedQuantity`
-+ `newMovementIds[]` payload'a eklenir.
+
+- `newMovementIds[]` payload'a eklenir.
 
 **İlgili dokümanlar:**
 

@@ -59,11 +59,11 @@
   geçebilir. Branch değişikliği `audit:auth.branch.switch` event'i
   ile loglanır.
 - `BranchController` + `TenantController` `@UseGuards(PermissionsGuard)`
-  + `@RequirePermission(...)` ile explicit yetki kontrolü.
-  Tüm endpoint'ler için permission anahtarları eklendi:
-  - Branch: `branch:branch:read`, `branch:branch:create`,
+  - `@RequirePermission(...)` ile explicit yetki kontrolü.
+    Tüm endpoint'ler için permission anahtarları eklendi:
+  * Branch: `branch:branch:read`, `branch:branch:create`,
     `branch:branch:update`, `branch:branch:archive`
-  - Tenant: `tenant:tenant:read`, `tenant:tenant:create`,
+  * Tenant: `tenant:tenant:read`, `tenant:tenant:create`,
     `tenant:tenant:update`, `tenant:tenant:archive`
 - `apps/api/src/common/rbac/` modülü oluşturuldu:
   `permission.types.ts`, `permission-catalog.loader.ts`,
@@ -211,9 +211,9 @@
   permission-denied, superadmin, branch-scope, audit-granted,
   audit-denied, api-switch-branch).
 - docs:check: 0 hata, 6 uyarı (4 pre-existing legacy hata kodu
-  + version semver + 2 yeni test permission uyarısı:
-  `rbac:permissions`, `rbac:roles` — bunlar test amaçlı
-  katalog dışı kullanım; production permission'ı değil).
+  - version semver + 2 yeni test permission uyarısı:
+    `rbac:permissions`, `rbac:roles` — bunlar test amaçlı
+    katalog dışı kullanım; production permission'ı değil).
 - i18n:check: ✓ tr-TR / en-GB parity temiz (VET-AUTHZ-0006
   eklendi).
 
@@ -249,10 +249,10 @@
   (`pnpm docs:check`) katalog ile rol setinin senkron olduğunu
   doğrular.
 - **Test amaçlı katalog dışı permission'lar:** `rbac:permissions`
-  + `rbac:roles` + `unknown:module:action` permission spec'lerde
-  kullanılıyor; bunlar `applyToRoles: []` ile katalogda yok
-  sayılır. docs:check uyarı verir; production permission'ı
-  değildir.
+  - `rbac:roles` + `unknown:module:action` permission spec'lerde
+    kullanılıyor; bunlar `applyToRoles: []` ile katalogda yok
+    sayılır. docs:check uyarı verir; production permission'ı
+    değildir.
 - **Worker test pre-existing hatası:** `apps/worker` test'i
   `REDIS_URL` env gerektirir; local'de yoktur. GOAL-012 kapsamı
   dışında.

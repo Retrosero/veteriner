@@ -28,9 +28,8 @@ generator client {
 }
 
 datasource db {
-  provider          = "postgresql"
-  url               = env("DATABASE_URL")
-  shadowDatabaseUrl = env("DATABASE_SHADOW_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // -----------------------------------------------------------------------------
@@ -86,6 +85,7 @@ model Tenant {
   memberships   UserTenantMembership[]
   invitations   UserInvitation[]
   files         FileMeta[]
+  controlledDrugEntries ControlledDrugEntry[]
 
   @@index([status, createdAt])
   @@index([country])
@@ -493,4 +493,83 @@ model FileMeta {
   @@index([scanStatus])
   @@index([archivedAt])
   @@map("file_metas")
+}
+
+// -----------------------------------------------------------------------------
+// CONTROLLED_DRUG_ENTRIES — İngiltere controlled-drug register.
+// Bu tablo append-only'dir; UPDATE/DELETE database trigger'ı ile engellenir.
+// -----------------------------------------------------------------------------
+
+enum ControlledDrugEntryType {
+  received
+  dispensed
+  wasted
+  returned
+  transferred
+  count
+  correction
+
+  @@map("controlled_drug_entry_type")
+}
+
+enum ControlledDrugSchedule {
+  S1
+  S2
+  S3
+  S4
+  S5
+
+  @@map("controlled_drug_schedule")
+}
+
+enum ControlledDrugUnit {
+  mg
+  ml
+
+  @@map("controlled_drug_unit")
+}
+
+/// İngiltere Misuse of Drugs Regulations kapsamındaki elektronik defter satırı.
+/// Kayıtlar düzeltilemez veya silinemez; hata için yeni `correction` satırı eklenir.
+model ControlledDrugEntry {
+  id                         String                  @id @default(uuid()) @db.Uuid
+  tenantId                   String                  @db.Uuid @map("tenant_id")
+  entryType                  ControlledDrugEntryType @map("entry_type")
+  drugName                   String                  @db.VarChar(200) @map("drug_name")
+  schedule                   ControlledDrugSchedule
+  unit                       ControlledDrugUnit
+  quantityDelta              Decimal                 @db.Decimal(18, 4) @map("quantity_delta")
+  branchId                   String                  @db.Uuid @map("branch_id")
+  storageAreaId              String                  @db.VarChar(100) @map("storage_area_id")
+  occurredAt                 DateTime                @db.Timestamptz(6) @map("occurred_at")
+  recordedAt                 DateTime                @default(now()) @db.Timestamptz(6) @map("recorded_at")
+  recordedBy                 String                  @db.VarChar(100) @map("recorded_by")
+  supplier                   String?                 @db.VarChar(200)
+  lotNumber                  String?                 @db.VarChar(100) @map("lot_number")
+  expiryDate                 DateTime?               @db.Date @map("expiry_date")
+  ownerId                    String?                 @db.VarChar(100) @map("owner_id")
+  patientId                  String?                 @db.VarChar(100) @map("patient_id")
+  prescribedByVeterinarianId String?                 @db.VarChar(100) @map("prescribed_by_veterinarian_id")
+  prescriptionNumber         String?                 @db.VarChar(100) @map("prescription_number")
+  emergencyUse               Boolean?                @map("emergency_use")
+  reason                     String?                 @db.VarChar(2000)
+  witnessUserId              String?                 @db.VarChar(100) @map("witness_user_id")
+  targetBranchId             String?                 @db.Uuid @map("target_branch_id")
+  targetStorageAreaId        String?                 @db.VarChar(100) @map("target_storage_area_id")
+  transferGroupId            String?                 @db.VarChar(100) @map("transfer_group_id")
+  physicalQuantity           Decimal?                @db.Decimal(18, 4) @map("physical_quantity")
+  bookQuantity               Decimal?                @db.Decimal(18, 4) @map("book_quantity")
+  discrepancy                Decimal?                @db.Decimal(18, 4)
+  countDate                  DateTime?               @db.Date @map("count_date")
+  correctsEntryId            String?                 @db.Uuid @map("corrects_entry_id")
+  notes                      String?                 @db.VarChar(2000)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([tenantId, occurredAt, id])
+  @@index([tenantId, drugName, schedule, unit, branchId, storageAreaId, occurredAt])
+  @@index([tenantId, entryType, occurredAt])
+  @@index([tenantId, transferGroupId])
+  @@index([tenantId, correctsEntryId])
+  @@map("controlled_drug_entries")
 }

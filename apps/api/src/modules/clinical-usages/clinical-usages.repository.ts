@@ -23,9 +23,7 @@ import type {
   ClinicalUsageLineRecord,
   ClinicalUsageRecord,
 } from "../../common/clinical-usages/clinical-usage.types.js";
-import type {
-  ClinicalUsageSourceType,
-} from "@vetniva/contracts";
+import type { ClinicalUsageSourceType } from "@vetniva/contracts";
 
 /** Arama filtreleri. */
 export interface ClinicalUsageSearchFilters {
@@ -79,9 +77,7 @@ export class ClinicalUsagesRepository {
     return record;
   }
 
-  public insertLine(
-    record: ClinicalUsageLineRecord,
-  ): ClinicalUsageLineRecord {
+  public insertLine(record: ClinicalUsageLineRecord): ClinicalUsageLineRecord {
     this.lineById.set(record.id, record);
     const list = this.linesByUsage.get(record.usageId) ?? [];
     list.push(record.id);
@@ -89,10 +85,7 @@ export class ClinicalUsagesRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): ClinicalUsageRecord | null {
+  public findById(tenantId: string, id: string): ClinicalUsageRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -133,16 +126,10 @@ export class ClinicalUsagesRepository {
     const all: ClinicalUsageRecord[] = [];
     for (const rec of this.byId.values()) {
       if (rec.tenantId !== tenantId) continue;
-      if (filters.sourceType && rec.sourceType !== filters.sourceType)
-        continue;
-      if (filters.sourceId && rec.sourceId !== filters.sourceId)
-        continue;
+      if (filters.sourceType && rec.sourceType !== filters.sourceType) continue;
+      if (filters.sourceId && rec.sourceId !== filters.sourceId) continue;
       if (needle) {
-        const hay = [
-          rec.id,
-          rec.sourceId,
-          rec.notes ?? "",
-        ]
+        const hay = [rec.id, rec.sourceId, rec.notes ?? ""]
           .join(" ")
           .toLowerCase();
         if (!hay.includes(needle)) continue;
@@ -169,10 +156,7 @@ export class ClinicalUsagesRepository {
     this.lineCounters.clear();
   }
 
-  private idempotencyKeyMapKey(
-    tenantId: string,
-    key: string,
-  ): string {
+  private idempotencyKeyMapKey(tenantId: string, key: string): string {
     return `${tenantId}|${key}`;
   }
 }

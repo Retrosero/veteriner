@@ -11,10 +11,9 @@
 
 import { Module } from "@nestjs/common";
 
-import { FeatureFlagModule } from "../feature-flag/feature-flag.module.js";
-
 import { SuperadminController } from "./superadmin.controller.js";
 import { SuperadminService } from "./superadmin.service.js";
+import { FeatureFlagModule } from "../feature-flag/feature-flag.module.js";
 
 @Module({
   imports: [FeatureFlagModule],

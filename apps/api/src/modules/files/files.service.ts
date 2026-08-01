@@ -24,10 +24,10 @@
  * @since GOAL-014 (FAZ-2) dosya ve medya servisi
  */
 
-import { Inject, Injectable, Logger } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import { Inject, Injectable, Logger } from "@nestjs/common";
+
 import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import {
@@ -37,13 +37,14 @@ import {
 import {
   FILE_LIMITS,
   type FileMeta,
-  type FileMimeType,
   type FileUpload,
 } from "../../common/files/file.types.js";
 import {
   STORAGE_DRIVER,
   type StorageDriver,
 } from "../../common/files/storage.interface.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @Injectable()
 export class FilesService {
@@ -96,7 +97,10 @@ export class FilesService {
     }
 
     // 3) Antivirus taraması
-    const scanResult = await this.antivirus.scan(upload.buffer, upload.mimeType);
+    const scanResult = await this.antivirus.scan(
+      upload.buffer,
+      upload.mimeType,
+    );
     if (scanResult === "infected") {
       throw new DomainError({
         errorCode: "VET-FILE-0004",

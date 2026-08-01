@@ -3,14 +3,9 @@
 /**
  * @file @vetniva/ui kök modülü.
  * @module @vetniva/ui
- *
  * @description Paylaşılan UI bileşenlerinin dışa aktarım noktası.
- * Tüketen taraf (apps/web) yalnızca `@vetniva/ui` üzerinden bileşenlere
- * erişir; iç dosya yolları dışa aktarılmaz.
- *
- * Not: Bu modül Next.js App Router ile uyumlu olacak şekilde 'use
- * client' ile işaretlenmiştir. Tüm UI primitive'leri client component
- * olarak çalışır (forwardRef, useState vb. kullanıldığı için).
+ * Tüketen taraf (apps/web) yalnızca `@vetniva/ui` üzerinden bileşenlere erişir ve iç dosya yolları dışa aktarılmaz.
+ * Next.js App Router uyumu için bu modül 'use client' ile işaretlenir ve tüm UI primitive'leri client component olarak çalışır.
  */
 
 export { Button, type ButtonProps } from "./components/button.js";

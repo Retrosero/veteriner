@@ -23,10 +23,7 @@
  */
 
 export type PortalInvitationStatus =
-  | "pending"
-  | "accepted"
-  | "expired"
-  | "revoked";
+  "pending" | "accepted" | "expired" | "revoked";
 
 /** Davet kabul edildiğinde tenant'ta oluşturulan portal kullanıcısı. */
 export interface PortalUser {

@@ -1,7 +1,6 @@
 /**
  * @file Giris (login) sayfasi.
  * @module @vetniva/web/app/[locale]/login/page
- *
  * @description Klinik personeli ve hasta sahibi portal kullanicilari
  * icin kimlik dogrulama ekrani. Tenant secimi URL'den veya formdan
  * yapilir. GOAL-001 ile birlikte gercek auth backend'i devreye girer;
@@ -11,21 +10,19 @@
  * - Form alanlari `<label htmlFor>` ile eslenir
  * - Hata mesajlari `aria-describedby` ile baglanir
  * - Submit sirasinda klavye odagi korunur
- * - Tab sirasi: email → password → forgot → submit → portal
- *
+ * - Tab sirasi: email → password → forgot → submit → portal.
  * @security PII (e-posta) maskelenmeden iletilir; HTTPS zorunlu.
  * Tenant secimi URL subdomain'ine tasinirsa cookie yok sayilabilir.
  */
 
 "use client";
 
+import { Button } from "@vetniva/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useId, useState, type FormEvent } from "react";
 
-import { Button, cn } from "@vetniva/ui";
-
-import { getLabels, type Locale } from "@/lib/labels";
+import { getLabels } from "@/lib/labels";
 
 const ICON = {
   email: (
@@ -102,6 +99,11 @@ type LoginFormState = {
   error: string | null;
 };
 
+/**
+ *
+ * @param root0
+ * @param root0.params
+ */
 export default function LoginPage({
   params,
 }: {
@@ -110,7 +112,7 @@ export default function LoginPage({
   const router = useRouter();
   const { locale: rawLocale } =
     params instanceof Promise ? { locale: "tr-TR" } : params;
-  const locale = (rawLocale === "en-GB" ? "en-GB" : "tr-TR") as Locale;
+  const locale = rawLocale === "en-GB" ? "en-GB" : "tr-TR";
   const labels = getLabels(locale);
   const formId = useId();
 
@@ -122,6 +124,10 @@ export default function LoginPage({
     error: null,
   });
 
+  /**
+   *
+   * @param event
+   */
   function handleSubmit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
     if (state.submitting) return;

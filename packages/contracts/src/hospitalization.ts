@@ -37,9 +37,7 @@ export const hospitalizationStatusSchema = z.enum([
   "discharged",
   "cancelled",
 ]);
-export type HospitalizationStatus = z.infer<
-  typeof hospitalizationStatusSchema
->;
+export type HospitalizationStatus = z.infer<typeof hospitalizationStatusSchema>;
 
 /** Kafes türü (türler arası çakışma kontrolü sonra eklenebilir). */
 export const cageKindSchema = z.enum([
@@ -264,9 +262,7 @@ export const hospitalizationDetailSchema = z.object({
   hospitalization: hospitalizationSchema,
   cageAssignments: z.array(cageAssignmentSchema),
 });
-export type HospitalizationDetail = z.infer<
-  typeof hospitalizationDetailSchema
->;
+export type HospitalizationDetail = z.infer<typeof hospitalizationDetailSchema>;
 
 /** Cage filtreleri. */
 export const cageFiltersSchema = z.object({

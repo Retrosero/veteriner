@@ -30,21 +30,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import type { Response } from "express";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
-import type {
-  Prescription,
-  PrescriptionCancelInput,
-  PrescriptionCreateInput,
-  PrescriptionFilters,
-  PrescriptionListResponse,
-} from "@vetniva/contracts";
 import {
   prescriptionCancelInputSchema,
   prescriptionCreateInputSchema,
@@ -52,6 +37,21 @@ import {
 } from "@vetniva/contracts";
 
 import { PrescriptionsService } from "./prescriptions.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type {
+  Prescription,
+  PrescriptionCancelInput,
+  PrescriptionCreateInput,
+  PrescriptionFilters,
+  PrescriptionListResponse,
+} from "@vetniva/contracts";
+import type { Response } from "express";
 
 @ApiTags("prescriptions")
 @UseGuards(PermissionsGuard)
@@ -85,11 +85,7 @@ export class PrescriptionsController {
     @CurrentActor() actor: ActorContext,
   ): Promise<Prescription> {
     const tenantId = this.requireTenant(actor);
-    return this.service.create(
-      tenantId,
-      { ...body, examinationId },
-      actor,
-    );
+    return this.service.create(tenantId, { ...body, examinationId }, actor);
   }
 
   // -------------------------------------------------------------------------

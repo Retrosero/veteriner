@@ -65,7 +65,9 @@ export interface LabAdapter {
    * export'lar için yeni deneme olarak da kullanılabilir (aynı
    * idempotencyKey ile).
    */
-  exportOrder(request: LabAdapterExportRequest): Promise<LabAdapterExportResponse>;
+  exportOrder(
+    request: LabAdapterExportRequest,
+  ): Promise<LabAdapterExportResponse>;
   /**
    * Provider'dan gelen sonucu import eder. Mock için aynı
    * providerReference ile çağrıldığında aynı sonucu döner
@@ -75,6 +77,10 @@ export interface LabAdapter {
     request: LabAdapterImportResult,
   ): Promise<LabAdapterImportResult>;
 }
+
+/** Cihaz ve dış laboratuvar adapterlarını ayıran NestJS tokenları. */
+export const LAB_DEVICE_ADAPTER = Symbol("LAB_DEVICE_ADAPTER");
+export const EXTERNAL_LAB_ADAPTER = Symbol("EXTERNAL_LAB_ADAPTER");
 
 /* --------------------------------------------------------------------------
  * Persist record'lar

@@ -1,7 +1,6 @@
 /**
  * @file Alerts controller.
  * @module apps/api/modules/alerts/alerts.controller
- *
  * @description GOAL-023 alerji/kronik uyarılar REST API.
  *
  * Endpoint'ler:
@@ -9,8 +8,7 @@
  *   (`clinic:examination:create` izni; reçetede uyarı için)
  * - `GET    /api/v1/clinic/patients/:patientId/alerts?severity=critical&activeOnly=true`
  *   — Hasta uyarıları (`clinic:patient:read`)
- * - `DELETE /api/v1/clinic/alerts/:id` — Arşivle (`clinic:examination:create`)
- *
+ * - `DELETE /api/v1/clinic/alerts/:id` — Arşivle (`clinic:examination:create`).
  * @since GOAL-023 (FAZ-2) alerji/kronik uyarılar core
  */
 
@@ -28,13 +26,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   alertCreateInputSchema,
   alertListQuerySchema,
@@ -44,6 +35,13 @@ import {
 } from "@vetniva/contracts";
 
 import { AlertsService } from "./alerts.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("alerts")
 @UseGuards(PermissionsGuard)
@@ -88,15 +86,10 @@ export class AlertsController {
     @CurrentActor() actor: ActorContext,
   ): Promise<{ items: Alert[]; total: number }> {
     const tenantId = this.requireTenant(actor);
-    const items = this.service.listForPatient(
-      tenantId,
-      patientId,
-      actor,
-      {
-        severity: query.severity,
-        activeOnly: query.activeOnly === "true",
-      },
-    );
+    const items = this.service.listForPatient(tenantId, patientId, actor, {
+      severity: query.severity,
+      activeOnly: query.activeOnly === "true",
+    });
     return { items, total: items.length };
   }
 

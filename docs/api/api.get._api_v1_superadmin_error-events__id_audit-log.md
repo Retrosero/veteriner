@@ -1,13 +1,14 @@
 # GET /api/v1/superadmin/error-events/{id}/audit-log
 
 Bir hata olayının tüm aksiyonlarını (status transition + not
-+ destek bağlantısı + atama + occurrence_recorded) occurredAt
-artan sırada birleşik timeline olarak döner. UI `action`
-discriminator'ı ile render eder.
 
-- **Modül:** error-events
-- **Yetki:** `audit:log:read` (SUPERADMIN)
-- **Audit:** okuma audit üretmez.
+- destek bağlantısı + atama + occurrence_recorded) occurredAt
+  artan sırada birleşik timeline olarak döner. UI `action`
+  discriminator'ı ile render eder.
+
+* **Modül:** error-events
+* **Yetki:** `audit:log:read` (SUPERADMIN)
+* **Audit:** okuma audit üretmez.
 
 **Path parametreleri:**
 

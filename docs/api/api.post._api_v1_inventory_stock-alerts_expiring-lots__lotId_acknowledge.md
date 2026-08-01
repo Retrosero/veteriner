@@ -50,7 +50,8 @@ bypass'lı.
 ack çağrısı 200 döner.
 
 **Audit detayı:** `firstAcknowledgedAt` (eğer yeniden ack)
-+ `lastAcknowledgedAt` + `acknowledgeNotes` payload.
+
+- `lastAcknowledgedAt` + `acknowledgeNotes` payload.
 
 **İlgili dokümanlar:**
 

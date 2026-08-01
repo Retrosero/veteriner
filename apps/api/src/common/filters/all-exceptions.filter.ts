@@ -1,7 +1,6 @@
 /**
  * @file Tüm exception'ları yakalayan global filter.
  * @module apps/api/common/filters/all-exceptions
- *
  * @description NestJS'in tüm exception türlerini (HttpException, ZodError,
  * DomainError, Error) yakalayarak `@vetniva/contracts` `ErrorResponse`
  * şemasına uygun JSON döner. Correlation ID her response'da bulunur.
@@ -17,12 +16,10 @@
  * HTTP durum korelasyonu:
  * - 5xx → severity=error
  * - 4xx → severity=warning
- * - diğer → severity=info
- *
+ * - diğer → severity=info.
  * @security Gövdeye klinik/finansal içerik yazılmaz; yalnızca sabit hata
  * kodu, güvenli mesaj ve request ID döner. PII otomatik maskelenir
  * (bkz. PII_MASKING.md).
- *
  * @since GOAL-004 (FAZ-0) audit + log + hata standardı
  * @updated GOAL-100 (FAZ-10) merkezi hata olay kaydı
  */
@@ -39,10 +36,14 @@ import {
 import { Request, Response } from "express";
 import { ZodError } from "zod";
 
-import type { ErrorCode, ErrorResponse, ErrorSeverity } from "@vetniva/contracts";
-
-import { DomainError } from "../errors/domain-error.js";
 import { ErrorEventsService } from "../../modules/error-events/error-events.service.js";
+import { DomainError } from "../errors/domain-error.js";
+
+import type {
+  ErrorCode,
+  ErrorResponse,
+  ErrorSeverity,
+} from "@vetniva/contracts";
 
 /**
  * Filter için context — request + correlation bilgisi.
@@ -86,8 +87,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     // engellemez; hata oluşursa log'a düşer.
     if (this.errorEvents && this.shouldRecord(status, errorCode)) {
       try {
-        const stack =
-          exception instanceof Error ? exception.stack : null;
+        const stack = exception instanceof Error ? exception.stack : null;
         this.errorEvents.recordError({
           requestId: correlationId,
           tenantId: reqCtx.tenantId,
@@ -139,6 +139,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
    * kayıt altına alınmamalıdır (gürültü). 5xx + critical her zaman
    * kaydedilir. Belirli VET-AUTHZ kodları 403 olarak döndüğü için
    * burada ayrıca exclude edilir.
+   * @param status
+   * @param _errorCode
    */
   private shouldRecord(status: number, _errorCode: ErrorCode): boolean {
     if (status >= 500) return true;
@@ -158,8 +160,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       (request.headers["x-forwarded-for"] as string | undefined) ??
       request.ip ??
       null;
-    const userAgent = (request.headers["user-agent"] as string | undefined) ??
-      null;
+    const userAgent = request.headers["user-agent"] ?? null;
     // Header'lar (GOAL-011 öncesi placeholder) — AuthGuard sonrası
     // session'dan taşınır. Burada yalnızca header varsa al.
     const tenantId =
@@ -173,14 +174,18 @@ export class AllExceptionsFilter implements ExceptionFilter {
       roleHeader === "PET_OWNER_PORTAL"
         ? "portal_user"
         : userId
-        ? "user"
-        : roleHeader
-        ? "user"
-        : null;
+          ? "user"
+          : roleHeader
+            ? "user"
+            : null;
     // Country adapter header'ı yoksa default TR.
     const countryHeader = request.headers["x-country"] as string | undefined;
     const country: "TR" | "GB" | "SYSTEM" =
-      countryHeader === "GB" ? "GB" : countryHeader === "SYSTEM" ? "SYSTEM" : "TR";
+      countryHeader === "GB"
+        ? "GB"
+        : countryHeader === "SYSTEM"
+          ? "SYSTEM"
+          : "TR";
     return {
       requestId: request.requestId ?? "req-unknown",
       method,
@@ -237,7 +242,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
         correlation_id: correlationId,
         timestamp: now,
       };
-      return { status, body, errorCode, severity: this.severityForStatus(status) };
+      return {
+        status,
+        body,
+        errorCode,
+        severity: this.severityForStatus(status),
+      };
     }
 
     if (exception instanceof ZodError) {

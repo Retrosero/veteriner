@@ -54,10 +54,7 @@ export type { ExtractedMetrics } from "./thresholds.js";
 export { buildReport, reportToMarkdown, reportToJson } from "./report.js";
 export type { ReportInput } from "./report.js";
 
-export {
-  K6_SHARED_TEMPLATE,
-  k6Options,
-} from "./k6-shared.js";
+export { K6_SHARED_TEMPLATE, k6Options } from "./k6-shared.js";
 
 export {
   generateScenarioScript,

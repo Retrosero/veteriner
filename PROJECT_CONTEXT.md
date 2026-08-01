@@ -290,22 +290,22 @@
     guard; env-only parolalar; audit:tenant.seed_pilot.
   - GOAL-121 ⏳ partial — core: pilot kabul testi altyapısı.
     tools/acceptance-test modülü (10 senaryo + runner + report
-    + 2 CLI) + 10 senaryo (yeni müşteri/hayvan, randevu, muayene,
-    aşı, petshop satışı, tahsilat, ameliyat, yatış, lab, portal) +
-    UatScenarioConfig/Step/Feedback/Result/RunResult sözleşmesi +
-    placeholder çözümü (self-ref tespiti + URL pattern extract
-    + ownerId/patientId/... alias) + expectField doğrulaması +
-    süre/hata/başarı kayıt + feedback PII mask (email/TCKN/tel/
-    IBAN/kart) + Markdown + JSON rapor (özet tablo + senaryo
-    bloku + başarısız adımlar) + 2 CLI (run + report) + 74/74
-    vitest (config 14 + runner 26 + feedback 17 + report 14 +
-    smoke 3) + tsc temiz. Sonraki tick: docs/RAG chunk/i18n key
-    parity + gerçek pilot ortamda 10 senaryonun canlı çalıştırma
-    + pilot geri bildirim formu (UI) + senaryo başına warm-up/
-    cool-down + senaryolar arası sıralı context (initialContext
-    runner'da mevcut; CLI'a opsiyonel) + cross-tenant pilot
-    (çoklu tenant) + kabul kriteri sözlüğü (her senaryo için
-    PASS koşulu).
+    - 2 CLI) + 10 senaryo (yeni müşteri/hayvan, randevu, muayene,
+      aşı, petshop satışı, tahsilat, ameliyat, yatış, lab, portal) +
+      UatScenarioConfig/Step/Feedback/Result/RunResult sözleşmesi +
+      placeholder çözümü (self-ref tespiti + URL pattern extract
+    - ownerId/patientId/... alias) + expectField doğrulaması +
+      süre/hata/başarı kayıt + feedback PII mask (email/TCKN/tel/
+      IBAN/kart) + Markdown + JSON rapor (özet tablo + senaryo
+      bloku + başarısız adımlar) + 2 CLI (run + report) + 74/74
+      vitest (config 14 + runner 26 + feedback 17 + report 14 +
+      smoke 3) + tsc temiz. Sonraki tick: docs/RAG chunk/i18n key
+      parity + gerçek pilot ortamda 10 senaryonun canlı çalıştırma
+    - pilot geri bildirim formu (UI) + senaryo başına warm-up/
+      cool-down + senaryolar arası sıralı context (initialContext
+      runner'da mevcut; CLI'a opsiyonel) + cross-tenant pilot
+      (çoklu tenant) + kabul kriteri sözlüğü (her senaryo için
+      PASS koşulu).
   - GOAL-122 ⏳ partial — core: performans ve yük testi altyapısı.
     tools/load-test modülü (config + thresholds + report +
     generator + k6-shared + 2 CLI: validate/report) + 7 senaryo

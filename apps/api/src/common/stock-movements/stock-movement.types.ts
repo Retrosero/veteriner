@@ -1,7 +1,6 @@
 /**
  * @file Stok hareketi (StockMovement) domain tipleri.
  * @module apps/api/common/stock-movements/stock-movement.types
- *
  * @description GOAL-063 (FAZ-6) stok hareketleri ve sayım domain
  * modeli. **Append-only** mimari: tüm stok değişiklikleri tek bir
  * hareket tablosuna yazılır; mevcut miktar (`netQuantity`)
@@ -24,22 +23,20 @@
  *
  * In-memory Map'te tutulur; production'a geçişte Prisma
  * `StockMovement` tablosu ile değiştirilecek (API sözleşmesi sabit).
- *
  * @security Tenant bilgisi yalnızca actor.tenantId'den alınır;
  *   request body/query'den güvenilmez. Hareketler üzerinde
  *   fiziksel silme YOKTUR; iptal yalnızca `reversal` hareketi
  *   ile yapılır (audit trail korunur).
- *
  * @since GOAL-063 (FAZ-6) stok hareketleri ve sayım core
  */
+
+import { REASON_REQUIRED_MOVEMENT_TYPES } from "@vetniva/contracts";
 
 import type {
   StockBalance,
   StockMovement,
   StockMovementType,
 } from "@vetniva/contracts";
-
-import { REASON_REQUIRED_MOVEMENT_TYPES } from "@vetniva/contracts";
 
 /* --------------------------------------------------------------------------
  * Persist edilmiş hareket record
@@ -71,7 +68,10 @@ export interface StockMovementRecord {
 
 export type { StockMovementType, StockMovement, StockBalance };
 
-/** Record → public StockMovement (API response). */
+/**
+ * Record → public StockMovement (API response).
+ * @param rec
+ */
 export function toStockMovement(rec: StockMovementRecord): StockMovement {
   return {
     id: rec.id,
@@ -101,6 +101,7 @@ export function toStockMovement(rec: StockMovementRecord): StockMovement {
  * Decimal string'i normalize et (ürün/lot modülü ile uyumlu).
  * İşaret korunur: "-012.30" → "-12.30", "5" → "5", "0.100" → "0.100",
  * "-0" → "-0". Geçersiz formatta null döner (caller validate eder).
+ * @param value
  */
 export function normalizeSignedDecimal(value: string): string | null {
   if (!/^-?\d+(\.\d{1,4})?$/.test(value)) return null;
@@ -111,7 +112,8 @@ export function normalizeSignedDecimal(value: string): string | null {
   const fracPart = parts[1];
   const normalizedInt =
     intPart.length > 1 ? intPart.replace(/^0+(?=\d)/, "") : intPart;
-  const body = fracPart !== undefined ? `${normalizedInt}.${fracPart}` : normalizedInt;
+  const body =
+    fracPart !== undefined ? `${normalizedInt}.${fracPart}` : normalizedInt;
   return negative && body !== "0" ? `-${body}` : body;
 }
 
@@ -119,6 +121,7 @@ export function normalizeSignedDecimal(value: string): string | null {
  * Decimal string'i sayısal karşılaştırma için BigInt'e çevir.
  * Ondalık kısım 4 basamağa kadar normalize edilir (10000 çarpanı).
  * Geçersiz format → null.
+ * @param value
  */
 export function decimalToScaledBigInt(value: string): bigint | null {
   if (!/^-?\d+(\.\d{1,4})?$/.test(value)) return null;
@@ -135,6 +138,8 @@ export function decimalToScaledBigInt(value: string): bigint | null {
  * İki decimal string'i topla (scaled). Geçersiz → null.
  * Pilot kapsamda miktar overflow riski düşük (klinik stok); yine
  * de 64-bit sınırı içinde tutmak için BigInt kullanılır.
+ * @param a
+ * @param b
  */
 export function addSignedDecimals(a: string, b: string): string | null {
   const av = decimalToScaledBigInt(a);
@@ -146,6 +151,7 @@ export function addSignedDecimals(a: string, b: string): string | null {
 
 /**
  * Decimal string'in işaretini tersine çevir. "5" → "-5", "-3.5" → "3.5".
+ * @param value
  */
 export function negateSignedDecimal(value: string): string | null {
   const scaled = decimalToScaledBigInt(value);
@@ -153,6 +159,10 @@ export function negateSignedDecimal(value: string): string | null {
   return bigIntToSignedDecimal(-scaled);
 }
 
+/**
+ * Dort basamakli sabit nokta bigint degerini isaretli ondalik metne cevirir.
+ * @param scaled
+ */
 function bigIntToSignedDecimal(scaled: bigint): string {
   const negative = scaled < BigInt(0);
   const abs = negative ? -scaled : scaled;
@@ -172,6 +182,7 @@ function bigIntToSignedDecimal(scaled: bigint): string {
  * `count_adjustment` / `waste` / `reversal` türleri için neden
  * zorunlu mu? Set'i contracts'tan re-export edilir; burada
  * yardımcı kontrol fonksiyonu.
+ * @param type
  */
 export function requiresReason(type: StockMovementType): boolean {
   return REASON_REQUIRED_MOVEMENT_TYPES.has(type);
@@ -184,6 +195,8 @@ export function requiresReason(type: StockMovementType): boolean {
  * tersidir) negatif. `transfer` iki ayrı hareket olarak temsil
  * edilir (kaynak: negatif, hedef: pozitif) — bu fonksiyon
  * transfer için çağrılmaz, çağıran kendi işaretini seçer.
+ * @param type
+ * @param reversesOriginalType
  */
 export function movementAffectsStock(
   type: StockMovementType,

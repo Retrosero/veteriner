@@ -28,8 +28,8 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { HospitalizationRepository } from "./hospitalization.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import {
   toCage,
@@ -40,6 +40,8 @@ import {
   type HospitalizationDetail,
   type HospitalizationRecord,
 } from "../../common/hospitalization/hospitalization.types.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   Cage,
   CageAssignment,
@@ -58,8 +60,6 @@ import type {
   HospitalizationListResponse,
   HospitalizationUpdateInput,
 } from "@vetniva/contracts";
-
-import { HospitalizationRepository } from "./hospitalization.repository.js";
 
 @Injectable()
 export class HospitalizationService {
@@ -793,7 +793,7 @@ export class HospitalizationService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

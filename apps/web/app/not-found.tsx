@@ -1,13 +1,15 @@
 /**
  * @file 404 sayfası.
  * @module @vetniva/web/app/not-found
- *
  * @description Bilinmeyen route'lar için gösterilen kök 404. Locale
  * segmentine düşmeyen tüm yanlış yollar buraya yönlendirilir.
  */
 
 import Link from "next/link";
 
+/**
+ *
+ */
 export default function NotFound(): JSX.Element {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center">

@@ -28,19 +28,26 @@
  * @since GOAL-014 (FAZ-1) dosya ve medya servisi
  */
 
-import { Injectable, Logger } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
-import type { Readable } from "node:stream";
 import { Readable as ReadableStream } from "node:stream";
+
+import { Inject, Injectable, Logger } from "@nestjs/common";
+
+import { toFileMetaResponse } from "./dto/file.dto.js";
+import { FileRepository } from "./file.repository.js";
+import { SCAN_ADAPTER, STORAGE_ADAPTER } from "./file.tokens.js";
+import { AuditService } from "../../common/audit/audit.service.js";
+import { DomainError } from "../../common/errors/domain-error.js";
 
 import type {
   ActorContext,
   ActorRole,
 } from "../../common/actor/actor-context.service.js";
-import type { ScanAdapter, ScanResult } from "../../common/adapters/scan.adapter.js";
+import type {
+  ScanAdapter,
+  ScanResult,
+} from "../../common/adapters/scan.adapter.js";
 import type { StorageAdapter } from "../../common/adapters/storage.adapter.js";
-import { AuditService } from "../../common/audit/audit.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
 import type {
   FileArchiveRequest,
   FileListQuery,
@@ -49,9 +56,7 @@ import type {
   FileUploadExtended,
   SignedUrlResponse,
 } from "@vetniva/contracts";
-
-import { toFileMetaResponse } from "./dto/file.dto.js";
-import { FileRepository } from "./file.repository.js";
+import type { Readable } from "node:stream";
 
 /**
  * Default soft limit (25 MB). Hard limit 100 MB DB CHECK'te.
@@ -79,7 +84,9 @@ export class FileService {
 
   public constructor(
     private readonly repo: FileRepository,
+    @Inject(STORAGE_ADAPTER)
     private readonly storage: StorageAdapter,
+    @Inject(SCAN_ADAPTER)
     private readonly scan: ScanAdapter,
     private readonly audit: AuditService,
   ) {}
@@ -128,7 +135,10 @@ export class FileService {
         severity: "info",
         ipAddress: actor.ipAddress,
         userAgentHash: actor.userAgentHash,
-        after: { originalName: dup.originalName, sizeBytes: Number(dup.sizeBytes) },
+        after: {
+          originalName: dup.originalName,
+          sizeBytes: Number(dup.sizeBytes),
+        },
         metadata: { source: actor.source, mimeType: dup.mimeType },
       });
       return toFileMetaResponse(dup);
@@ -218,10 +228,7 @@ export class FileService {
    * ID'ye göre dosya getirir. Tenant mismatch → 404.
    * `infected` durumda 404 (karantina).
    */
-  public async findById(
-    id: string,
-    actor: ActorContext,
-  ): Promise<FileMeta> {
+  public async findById(id: string, actor: ActorContext): Promise<FileMeta> {
     this.requireActorContext(actor);
     const tenantId = this.requireTenantId(actor);
     const file = await this.repo.findById(id, tenantId);
@@ -380,8 +387,8 @@ export class FileService {
 
   /**
    * Kısa ömürlü signed URL üretir. Yalnızca `clean` veya `skipped`
-   * durumdaki dosyalar için URL üretilir; `infected` ve `pending`
-   * reddedilir.
+   * durumdaki dosyalar için URL üretilir; `infected`, `pending` ve
+   * tarama hatası durumları reddedilir.
    */
   public async getSignedUrl(
     id: string,
@@ -400,7 +407,7 @@ export class FileService {
         i18nKey: "error.VET-FILE-0001",
       });
     }
-    if (file.scanStatus === "infected" || file.scanStatus === "pending") {
+    if (file.scanStatus !== "clean" && file.scanStatus !== "skipped") {
       throw new DomainError({
         errorCode: "VET-FILE-0006",
         message: "Dosya henüz indirilebilir değil",
@@ -483,7 +490,7 @@ export class FileService {
     if (Buffer.isBuffer(body)) return body;
     const chunks: Buffer[] = [];
     for await (const chunk of body) {
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      chunks.push(this.streamChunkToBuffer(chunk));
     }
     return Buffer.concat(chunks);
   }
@@ -500,9 +507,23 @@ export class FileService {
       return hash.digest("hex");
     }
     for await (const chunk of body) {
-      hash.update(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      hash.update(this.streamChunkToBuffer(chunk));
     }
     return hash.digest("hex");
+  }
+
+  /** Stream parcasi yalnizca desteklenen binary/metin turundeyse Buffer'a cevrilir. */
+  private streamChunkToBuffer(chunk: unknown): Buffer {
+    if (typeof chunk === "string" || chunk instanceof Uint8Array) {
+      return Buffer.from(chunk);
+    }
+    throw new DomainError({
+      errorCode: "VET-FILE-0004",
+      message: "Dosya tarama akisi desteklenmeyen parca iceriyor",
+      httpStatus: 422,
+      severity: "error",
+      i18nKey: "error.VET-FILE-0004",
+    });
   }
 
   /**

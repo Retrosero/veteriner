@@ -27,13 +27,15 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { SurgeryPlansRepository } from "./surgery-plans.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import {
   toSurgeryPlan,
   type SurgeryPlanRecord,
 } from "../../common/surgery-plans/surgery-plan.types.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   SurgeryPlan,
   SurgeryPlanCancelInput,
@@ -42,8 +44,6 @@ import type {
   SurgeryPlanListResponse,
   SurgeryPlanUpdateInput,
 } from "@vetniva/contracts";
-
-import { SurgeryPlansRepository } from "./surgery-plans.repository.js";
 
 @Injectable()
 export class SurgeryPlansService {
@@ -458,7 +458,7 @@ export class SurgeryPlansService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

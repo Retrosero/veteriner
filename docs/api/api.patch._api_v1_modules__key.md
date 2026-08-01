@@ -15,9 +15,9 @@
 
 ## Path parametreleri
 
-| Parametre | Tip   | Zorunlu | Açıklama |
-| --------- | ----- | ------- | -------- |
-| `key`     | enum  | evet    | `clinic` / `appointments` / `vaccinations` / `inventory` / `petshop` / `billing` / `hospitalization` / `laboratory` / `imaging` / `portal` |
+| Parametre | Tip  | Zorunlu | Açıklama                                                                                                                                   |
+| --------- | ---- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `key`     | enum | evet    | `clinic` / `appointments` / `vaccinations` / `inventory` / `petshop` / `billing` / `hospitalization` / `laboratory` / `imaging` / `portal` |
 
 ## Request body
 
@@ -60,12 +60,12 @@ loglanır.
 
 ## Hata kodları
 
-| Kod                 | HTTP | Açıklama                                       |
-| ------------------- | ---- | ---------------------------------------------- |
-| `VET-AUTH-0001`     | 401  | Oturum geçersiz veya süresi dolmuş.            |
-| `VET-AUTHZ-0001`    | 403  | Permission yok (`tenant:tenant:update`).       |
-| `VET-AUTHZ-0006`    | 403  | Aktif tenant bağlamı yok.                      |
-| `VET-VALIDATION-0001` | 422 | Body şeması hatalı (enabled boolean değil).    |
+| Kod                   | HTTP | Açıklama                                    |
+| --------------------- | ---- | ------------------------------------------- |
+| `VET-AUTH-0001`       | 401  | Oturum geçersiz veya süresi dolmuş.         |
+| `VET-AUTHZ-0001`      | 403  | Permission yok (`tenant:tenant:update`).    |
+| `VET-AUTHZ-0006`      | 403  | Aktif tenant bağlamı yok.                   |
+| `VET-VALIDATION-0001` | 422  | Body şeması hatalı (enabled boolean değil). |
 
 ## Örnek
 

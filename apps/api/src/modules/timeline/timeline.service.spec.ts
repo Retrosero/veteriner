@@ -10,23 +10,21 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
-import type { TimelineEventSource } from "../../common/timeline/timeline.types.js";
-import { PatientsRepository } from "../patients/patients.repository.js";
+import { TimelineService } from "./timeline.service.js";
+import {
+  AlertTimelineSource,
+  OwnershipTimelineSource,
+} from "./timeline.sources.js";
 import { AlertsService } from "../alerts/alerts.service.js";
 import {
   OwnershipHistoryRepository,
   type OwnershipRecord,
 } from "../ownership-history/ownership-history.repository.js";
-import { OwnershipHistoryService } from "../ownership-history/ownership-history.service.js";
-import type { OwnersService } from "../owners/owners.service.js";
+import { PatientsRepository } from "../patients/patients.repository.js";
 
-import {
-  AlertTimelineSource,
-  OwnershipTimelineSource,
-} from "./timeline.sources.js";
-import { TimelineService } from "./timeline.service.js";
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { AuditService } from "../../common/audit/audit.service.js";
+import type { TimelineEventSource } from "../../common/timeline/timeline.types.js";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -44,7 +42,7 @@ const STAFF_A: ActorContext = {
   source: "header",
 };
 
-const STAFF_B: ActorContext = {
+const _STAFF_B: ActorContext = {
   actorId: "usr-staff-b",
   actorType: "user",
   role: "STAFF",
@@ -80,10 +78,6 @@ function makeAudit(): AuditService {
   return {
     record: vi.fn().mockResolvedValue({ eventId: "ev-1" }),
   } as unknown as AuditService;
-}
-
-function makeOwnersStub(): OwnersService {
-  return {} as unknown as OwnersService;
 }
 
 function seedOwnership(
@@ -124,12 +118,6 @@ describe("TimelineService", () => {
     const audit = makeAudit();
     alertsService = new AlertsService(patients, audit);
     ownershipRepo = new OwnershipHistoryRepository();
-    const ownershipService = new OwnershipHistoryService(
-      ownershipRepo,
-      patients,
-      makeOwnersStub(),
-      audit,
-    );
     sources = [
       new AlertTimelineSource(alertsService),
       new OwnershipTimelineSource(ownershipRepo),
@@ -154,9 +142,11 @@ describe("TimelineService", () => {
       STAFF_A,
     );
     // Tarihi geriye çek (mockla).
-    const oldAlertRec = (alertsService as unknown as {
-      byId: Map<string, { createdAt: string }>;
-    }).byId.get(oldAlert.id);
+    const oldAlertRec = (
+      alertsService as unknown as {
+        byId: Map<string, { createdAt: string }>;
+      }
+    ).byId.get(oldAlert.id);
     if (oldAlertRec) oldAlertRec.createdAt = "2024-01-01T00:00:00.000Z";
 
     // 1 transfer (yeni) + 1 initial (orta)

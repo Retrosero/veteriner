@@ -113,10 +113,9 @@ describe("docs-check", () => {
   it("alan referansları sözlükte yoksa hata üretir (GOAL-112)", async () => {
     // Geçici olarak fields.yaml'dan tenant.name kaydını çıkar.
     const fieldsPath = path.join(root, "docs/fields/fields.yaml");
-    const original = await (await import("node:fs/promises")).readFile(
-      fieldsPath,
-      "utf8",
-    );
+    const original = await (
+      await import("node:fs/promises")
+    ).readFile(fieldsPath, "utf8");
     const stripped = original.replace(
       /      - id: tenant\.name[\s\S]*?pii: false\n/,
       "",
@@ -138,10 +137,9 @@ describe("docs-check", () => {
   it("sözlükte olup kodda olmayan alanlar için uyarı üretir (orphan)", async () => {
     // Geçici olarak fields.yaml'a kodda olmayan bir alan ekle.
     const fieldsPath = path.join(root, "docs/fields/fields.yaml");
-    const original = await (await import("node:fs/promises")).readFile(
-      fieldsPath,
-      "utf8",
-    );
+    const original = await (
+      await import("node:fs/promises")
+    ).readFile(fieldsPath, "utf8");
     const augmented = original.replace(
       "      - id: tenant.name",
       `      - id: tenant.orphanField
@@ -158,8 +156,7 @@ describe("docs-check", () => {
       const result = await run(root);
       const orphan = result.issues.filter(
         (i) =>
-          i.path === "field:tenant.orphanField" &&
-          i.severity === "warning",
+          i.path === "field:tenant.orphanField" && i.severity === "warning",
       );
       expect(orphan.length).toBeGreaterThan(0);
     } finally {
@@ -173,10 +170,9 @@ describe("docs-check", () => {
       root,
       "apps/api/src/modules/health/health.controller.ts",
     );
-    const original = await (await import("node:fs/promises")).readFile(
-      permFile,
-      "utf8",
-    );
+    const original = await (
+      await import("node:fs/promises")
+    ).readFile(permFile, "utf8");
     const augmented = `${original}
 const FAKE_PERM = "fake:module:action";
 `;
@@ -195,4 +191,3 @@ const FAKE_PERM = "fake:module:action";
     }
   });
 });
-

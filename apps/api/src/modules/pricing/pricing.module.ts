@@ -14,11 +14,13 @@
 
 import { Module } from "@nestjs/common";
 
-import { ProductsModule } from "../products/products.module.js";
-
-import { PricingController, PricingProductController } from "./pricing.controller.js";
+import {
+  PricingController,
+  PricingProductController,
+} from "./pricing.controller.js";
 import { PricingRepository } from "./pricing.repository.js";
 import { PricingService } from "./pricing.service.js";
+import { ProductsModule } from "../products/products.module.js";
 
 @Module({
   imports: [ProductsModule],

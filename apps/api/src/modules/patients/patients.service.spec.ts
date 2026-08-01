@@ -11,16 +11,16 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { PatientsRepository } from "./patients.repository.js";
+import { PatientsService } from "./patients.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
 import type { Owner } from "../../common/owners/owner.types.js";
 import type { Ownership } from "../../common/ownership/ownership.types.js";
+import type { AlertsService } from "../alerts/alerts.service.js";
 import type { OwnersService } from "../owners/owners.service.js";
 import type { OwnershipHistoryService } from "../ownership-history/ownership-history.service.js";
-import type { AlertsService } from "../alerts/alerts.service.js";
-
-import { PatientsService } from "./patients.service.js";
-import { PatientsRepository } from "./patients.repository.js";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -129,18 +129,20 @@ function makeOwnership(): OwnershipHistoryService {
   return stub as OwnershipHistoryService;
 }
 
-function validInput(overrides: Partial<{
-  ownerId: string;
-  name: string;
-  species: "dog" | "cat" | "bird" | "other";
-  breed: string;
-  birthDate: string;
-  gender: "male" | "female" | "unknown";
-  microchip: string;
-  color: string;
-  neutered: boolean;
-  notes: string;
-}> = {}) {
+function validInput(
+  overrides: Partial<{
+    ownerId: string;
+    name: string;
+    species: "dog" | "cat" | "bird" | "other";
+    breed: string;
+    birthDate: string;
+    gender: "male" | "female" | "unknown";
+    microchip: string;
+    color: string;
+    neutered: boolean;
+    notes: string;
+  }> = {},
+) {
   return {
     ownerId: OWNER_ID_A,
     name: "Boncuk",
@@ -297,11 +299,7 @@ describe("PatientsService", () => {
     it("gelecekteki tarih → 422 VET-VALIDATION-0009", async () => {
       const future = "2999-12-31";
       await expect(
-        service.create(
-          TENANT_A,
-          validInput({ birthDate: future }),
-          STAFF_A,
-        ),
+        service.create(TENANT_A, validInput({ birthDate: future }), STAFF_A),
       ).rejects.toMatchObject({
         errorCode: "VET-VALIDATION-0009",
         httpStatus: 422,

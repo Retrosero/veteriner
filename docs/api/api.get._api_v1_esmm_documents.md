@@ -11,7 +11,7 @@ Tenant-scoped e-SMM belge arama. `documentType`/`status`/
 
 - `documentType` (enum: `invoice|dispatch|receipt`) opsiyonel.
 - `status` (enum: `draft|pending|submitted|accepted|
-  rejected|failed|cancelled`) opsiyonel.
+rejected|failed|cancelled`) opsiyonel.
 - `sourceType` (enum: `clinic_sale|petshop_sale|...`)
   opsiyonel.
 - `sourceId` (string) opsiyonel.

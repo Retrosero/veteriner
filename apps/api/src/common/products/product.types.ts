@@ -150,5 +150,15 @@ export function generateSku(kind: ProductKind, counter: number): string {
     service: "r",
     consumable: "c",
   };
-  return `prd-${kindChar[kind]}${String(counter).padStart(6, "0")}`;
+  const prefix =
+    kind === "stock_product"
+      ? kindChar.stock_product
+      : kind === "medicine"
+        ? kindChar.medicine
+        : kind === "vaccine"
+          ? kindChar.vaccine
+          : kind === "service"
+            ? kindChar.service
+            : kindChar.consumable;
+  return `prd-${prefix}${String(counter).padStart(6, "0")}`;
 }

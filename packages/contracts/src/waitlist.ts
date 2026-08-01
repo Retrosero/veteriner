@@ -29,11 +29,7 @@ export const waitlistStatusSchema = z.enum([
 export type WaitlistStatus = z.infer<typeof waitlistStatusSchema>;
 
 /** Bekleme listesi öncelik seviyesi. */
-export const waitlistPrioritySchema = z.enum([
-  "normal",
-  "urgent",
-  "emergency",
-]);
+export const waitlistPrioritySchema = z.enum(["normal", "urgent", "emergency"]);
 export type WaitlistPriority = z.infer<typeof waitlistPrioritySchema>;
 
 /**

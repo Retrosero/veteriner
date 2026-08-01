@@ -1,9 +1,11 @@
 # GOAL-062 — Tedarikçi ve Satın Alma (Completion Report)
 
 ## Faz
+
 FAZ-6 (Klinik + petshop ortak stok/petshop)
 
 ## Özet
+
 Tedarikçi kataloğu (3 tür: clinic/petshop/general) ve satın
 alma siparişi (5 durum: draft/approved/partial/received/
 cancelled) tamamlandı. PO kabul edildiğinde Faz 6
@@ -13,6 +15,7 @@ SKT bilgisi bağlanır.
 ## Çıktılar
 
 ### Core (GOAL-062 core commit `770dec0`)
+
 - `apps/api/src/modules/suppliers/suppliers.controller.ts` —
   5 endpoint (POST/GET list/GET :id/PATCH/POST archive).
 - `apps/api/src/modules/suppliers/suppliers.service.ts` —
@@ -40,22 +43,23 @@ SKT bilgisi bağlanır.
 
 ### Endpoint'ler (12)
 
-| # | Method | Path | Yetki |
-|---|--------|------|-------|
-| 1 | POST | `/api/v1/catalog/suppliers` | `catalog:supplier:create` |
-| 2 | GET | `/api/v1/catalog/suppliers` | `catalog:supplier:read` |
-| 3 | GET | `/api/v1/catalog/suppliers/{id}` | `catalog:supplier:read` |
-| 4 | PATCH | `/api/v1/catalog/suppliers/{id}` | `catalog:supplier:update` |
-| 5 | POST | `/api/v1/catalog/suppliers/{id}/archive` | `catalog:supplier:archive` |
-| 6 | POST | `/api/v1/inventory/purchase-orders` | `inventory:purchase_order:create` |
-| 7 | GET | `/api/v1/inventory/purchase-orders` | `inventory:purchase_order:read` |
-| 8 | GET | `/api/v1/inventory/purchase-orders/{id}` | `inventory:purchase_order:read` |
-| 9 | PATCH | `/api/v1/inventory/purchase-orders/{id}` | `inventory:purchase_order:update` |
-| 10 | POST | `/api/v1/inventory/purchase-orders/{id}/approve` | `inventory:purchase_order:approve` |
-| 11 | POST | `/api/v1/inventory/purchase-orders/{id}/receive` | `inventory:purchase_order:receive` |
-| 12 | POST | `/api/v1/inventory/purchase-orders/{id}/cancel` | `inventory:purchase_order:cancel` |
+| #   | Method | Path                                             | Yetki                              |
+| --- | ------ | ------------------------------------------------ | ---------------------------------- |
+| 1   | POST   | `/api/v1/catalog/suppliers`                      | `catalog:supplier:create`          |
+| 2   | GET    | `/api/v1/catalog/suppliers`                      | `catalog:supplier:read`            |
+| 3   | GET    | `/api/v1/catalog/suppliers/{id}`                 | `catalog:supplier:read`            |
+| 4   | PATCH  | `/api/v1/catalog/suppliers/{id}`                 | `catalog:supplier:update`          |
+| 5   | POST   | `/api/v1/catalog/suppliers/{id}/archive`         | `catalog:supplier:archive`         |
+| 6   | POST   | `/api/v1/inventory/purchase-orders`              | `inventory:purchase_order:create`  |
+| 7   | GET    | `/api/v1/inventory/purchase-orders`              | `inventory:purchase_order:read`    |
+| 8   | GET    | `/api/v1/inventory/purchase-orders/{id}`         | `inventory:purchase_order:read`    |
+| 9   | PATCH  | `/api/v1/inventory/purchase-orders/{id}`         | `inventory:purchase_order:update`  |
+| 10  | POST   | `/api/v1/inventory/purchase-orders/{id}/approve` | `inventory:purchase_order:approve` |
+| 11  | POST   | `/api/v1/inventory/purchase-orders/{id}/receive` | `inventory:purchase_order:receive` |
+| 12  | POST   | `/api/v1/inventory/purchase-orders/{id}/cancel`  | `inventory:purchase_order:cancel`  |
 
 ### Döküman (bu commit)
+
 - 7 API doc (PO controller: create/list/get/update/approve/
   receive/cancel).
 - 5 supplier doc başka bir pencerede daha önce yazılmıştı;
@@ -65,6 +69,7 @@ SKT bilgisi bağlanır.
   `flow-purchase-order`.
 
 ## İş Kuralları
+
 - **Supplier type:** `clinic` | `petshop` | `general`. `code`
   tenant-içi benzersiz.
 - **PO state machine:**
@@ -86,17 +91,20 @@ SKT bilgisi bağlanır.
   StockMovement `type='reversal'` ile düzeltilir.
 
 ## Audit
+
 - `audit:supplier.{create,update,archive}`.
 - `audit:purchase_order.{create,update,approve,receive,
-  cancel}`.
+cancel}`.
 - Update/receive'de before+after; receive'de
   `newMovementIds[]` payload'a eklenir.
 
 ## Tenant İzolasyonu
+
 - Tüm CRUD tenant-scoped; `code` unique tenant-içi.
 - Cross-tenant id → 404. SUPERADMIN bypass'lı.
 
 ## Yapılmayanlar / Bilinçli Atlamalar
+
 - **Stok bakiyesi hesaplama** → GOAL-063 (StockMovement
   atomik bakiye).
 - **PO iptal otomatik ters kayıt** → sonraki refactor; şu an
@@ -107,19 +115,23 @@ SKT bilgisi bağlanır.
 - **Çoklu tedarikçi PO birleştirme** → ayrı goal (Faz 9+).
 
 ## Döküman Uyum
+
 - `pnpm docs:check` → pre-existing hatalar (FAZ-7/8 partial
   docs). **GOAL-062 özgü hata yok.**
 
 ## Testler
+
 - `suppliers.service.spec.ts` → 19 test (core).
 - `purchase-orders.service.spec.ts` → 20 test (core).
 - Toplam: 39 yeni test + 722/722 api testi geçti.
 
 ## Sonraki Adımlar
+
 - GOAL-063 (stok hareketleri + atomik bakiye) docs.
 - GOAL-064+ (petshop POS, iade, otomatik düşüm, uyarılar).
 
 ## Commit
+
 - Core: `770dec0` — `GOAL-062 tedarikçi ve satın alma core`
 - Docs/i18n: (bu commit) — `docs(suppliers,purchase-orders):
-  GOAL-062 tedarikçi + satın alma doküman ve i18n tamamla`
+GOAL-062 tedarikçi + satın alma doküman ve i18n tamamla`

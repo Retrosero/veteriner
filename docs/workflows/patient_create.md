@@ -6,14 +6,17 @@
 **Sayfa:** `/[locale]/clinic/owners/{ownerId}/patients/new`
 
 ## Amaç
+
 Mevcut bir sahibe hayvan kaydı eklemek. Mikroçip, tür, ırk,
 doğum tarihi, cinsiyet ve kısırlaştırma bilgileri girilir.
 
 ## Aktör
+
 - VETERINARIAN
 - STAFF
 
 ## Tetikleyici
+
 - Sahip kliniğe gelir ve yeni hayvanını kayıt ettirmek ister.
 - Sahip sahiplik devri (GOAL-022) ile gelir.
 
@@ -64,25 +67,28 @@ doğum tarihi, cinsiyet ve kısırlaştırma bilgileri girilir.
     - CTA: "Aşı kartı oluştur" → GOAL-051.
 
 ## Tenant izolasyonu
+
 - Owner aynı tenant'ta olmalı; cross-tenant → 404.
 - Mikroçip tenant çapında unique.
 
 ## Audit
+
 - `audit:patient.create` (info).
 - `audit:patient.read` (info; liste/detay).
 - `audit:owner.read` (info; sahip özet bilgisi).
 
 ## Hata senaryoları
 
-| Senaryo | HTTP | Hata kodu |
-|---------|------|-----------|
-| Duplicate microchip | 409 | `VET-CLINIC-0003` |
-| İzin verilmeyen tür | 422 | `VET-CLINIC-0004` |
-| Cross-tenant owner | 404 | `VET-CLINIC-0001` |
-| Geçersiz doğum tarihi | 422 | `VET-VALIDATION-0009` |
-| Yetkisiz | 403 | `VET-AUTHZ-0001` |
+| Senaryo               | HTTP | Hata kodu             |
+| --------------------- | ---- | --------------------- |
+| Duplicate microchip   | 409  | `VET-CLINIC-0003`     |
+| İzin verilmeyen tür   | 422  | `VET-CLINIC-0004`     |
+| Cross-tenant owner    | 404  | `VET-CLINIC-0001`     |
+| Geçersiz doğum tarihi | 422  | `VET-VALIDATION-0009` |
+| Yetkisiz              | 403  | `VET-AUTHZ-0001`      |
 
 ## İlgili dokümanlar
+
 - `docs/api/api.post._api_v1_patient_patients.md`
 - `goals/GOAL-021_COMPLETION_REPORT.md`
 - `docs/permissions/PERMISSION_CATALOG.yaml#clinic:patient:create`

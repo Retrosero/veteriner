@@ -1,7 +1,6 @@
 /**
  * @file Dış laboratuvar mock adapter'ı.
  * @module apps/api/common/lab-adapters/mock-external-lab-adapter
- *
  * @description GOAL-094 (FAZ-9) external_lab mock implementasyonu.
  *   Gerçek provider (Reflab/Ankara Lab/...) entegrasyonu Faz 13+
  *   kapsamında.
@@ -18,31 +17,29 @@
  *   dış lab formatındadır (tenant bilgisi + uzun id); import
  *   genellikle dış lab'ın API'sinden asenkron gelir (mock için
  *   senkron simüle ediyoruz).
- *
  * @since GOAL-094 (FAZ-9) cihaz ve dış laboratuvar adapter altyapısı core
  */
 
 import { Injectable } from "@nestjs/common";
 
+import type { LabAdapter } from "./lab-adapter.types.js";
 import type {
   LabAdapterExportRequest,
   LabAdapterExportResponse,
   LabAdapterImportResult,
 } from "@vetniva/contracts";
 
-import type { LabAdapter } from "./lab-adapter.types.js";
-
 @Injectable()
 export class MockExternalLabAdapter implements LabAdapter {
   public readonly adapterType = "external_lab" as const;
   public readonly providerName = "mock-external-lab";
 
-  /** idempotencyKey → önceki export yanıtı. */
+  /** IdempotencyKey → önceki export yanıtı. */
   private readonly exportResponses = new Map<
     string,
     LabAdapterExportResponse
   >();
-  /** providerReference → result. */
+  /** ProviderReference → result. */
   private readonly results = new Map<string, LabAdapterImportResult>();
   /** Sayaç (tenant bazlı mock lab no). */
   private readonly counters = new Map<string, number>();
@@ -72,7 +69,10 @@ export class MockExternalLabAdapter implements LabAdapter {
       return rejected;
     }
 
-    const tenantKey = String(request.payload["tenantId"] ?? request.labOrderId);
+    const tenantKey = toPrimitiveString(
+      request.payload["tenantId"],
+      request.labOrderId,
+    );
     const n = (this.counters.get(tenantKey) ?? 0) + 1;
     this.counters.set(tenantKey, n);
     const tenantHash = this.simpleHash(tenantKey).toString(16).slice(0, 6);
@@ -110,7 +110,10 @@ export class MockExternalLabAdapter implements LabAdapter {
     return request;
   }
 
-  /** Test yardımcısı. */
+  /**
+   * Test yardımcısı.
+   * @param result
+   */
   public seedResult(result: LabAdapterImportResult): void {
     this.results.set(result.providerReference, result);
   }
@@ -125,7 +128,7 @@ export class MockExternalLabAdapter implements LabAdapter {
   private synthesizeResultPayload(
     request: LabAdapterExportRequest,
   ): Record<string, unknown> {
-    const code = String(request.payload["labTestCode"] ?? "GEN");
+    const code = toPrimitiveString(request.payload["labTestCode"], "GEN");
     return {
       labCode: "MOCK-EXT",
       labOrderId: request.labOrderId,
@@ -157,4 +160,17 @@ export class MockExternalLabAdapter implements LabAdapter {
     const v = (h % 2000) / 10;
     return v.toFixed(2);
   }
+}
+
+/** Adapter payloadundaki primitive degeri guvenli metne donusturur. */
+function toPrimitiveString(value: unknown, fallback: string): string {
+  if (typeof value === "string") return value;
+  if (
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    typeof value === "bigint"
+  ) {
+    return String(value);
+  }
+  return fallback;
 }

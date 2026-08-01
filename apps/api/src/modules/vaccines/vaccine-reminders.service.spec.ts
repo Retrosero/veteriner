@@ -1,17 +1,28 @@
 /**
  * @file VaccineRemindersService unit testleri.
  * @module apps/api/modules/vaccines/vaccine-reminders.service.spec
- *
- * @description schedule (success/no_due_date/past/missing owner/patient),
+ * @description Schedule (success/no_due_date/past/missing owner/patient),
  * cancel idempotency, reschedule (forward/past), processDue
  * (success/failure/skipped-no-snapshot/cancelled-application/opted_out),
  * list filter, tenant config update, tenant izolasyonu ve audit
  * event yayını.
- *
  * @since GOAL-053 (FAZ-5) aşı hatırlatma core
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { VaccineRemindersRepository } from "./vaccine-reminders.repository.js";
+import { VaccineRemindersService } from "./vaccine-reminders.service.js";
+import { ConsentService } from "../../common/notifications/consent.service.js";
+
+import type { VaccineApplicationsService } from "./vaccine-applications.service.js";
+import type { VaccinesService } from "./vaccines.service.js";
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { AuditService } from "../../common/audit/audit.service.js";
+import type { NotificationsService } from "../notifications/notifications.service.js";
+import type { OwnersService } from "../owners/owners.service.js";
+import type { PatientsService } from "../patients/patients.service.js";
+import type { TenantService } from "../tenant/tenant.service.js";
 import type {
   NotificationRecord,
   Owner,
@@ -20,19 +31,6 @@ import type {
   VaccineApplication,
   VaccineProtocol,
 } from "@vetniva/contracts";
-
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
-import { ConsentService } from "../../common/notifications/consent.service.js";
-import type { NotificationsService } from "../notifications/notifications.service.js";
-import type { OwnersService } from "../owners/owners.service.js";
-import type { PatientsService } from "../patients/patients.service.js";
-import type { TenantService } from "../tenant/tenant.service.js";
-import type { VaccineApplicationsService } from "./vaccine-applications.service.js";
-import type { VaccinesService } from "./vaccines.service.js";
-
-import { VaccineRemindersService } from "./vaccine-reminders.service.js";
-import { VaccineRemindersRepository } from "./vaccine-reminders.repository.js";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -55,17 +53,18 @@ const OWNER_ID_A = "own-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const PROTOCOL_ID_A = "prt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const APPLICATION_ID_A = "vap-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 
-/** Days ahead ISO date (YYYY-MM-DD). */
+/**
+ * Days ahead ISO date (YYYY-MM-DD).
+ * @param daysAhead
+ */
 function futureDate(daysAhead: number): string {
   const d = new Date(Date.now() + daysAhead * 86_400_000);
   return d.toISOString().slice(0, 10);
 }
 
-/** Days ahead ISO datetime. */
-function futureIso(daysAhead: number): string {
-  return new Date(Date.now() + daysAhead * 86_400_000).toISOString();
-}
-
+/**
+ *
+ */
 function makeAudit(): AuditService {
   return {
     record: vi.fn().mockResolvedValue({ eventId: "ev-1" }),
@@ -73,6 +72,10 @@ function makeAudit(): AuditService {
   } as unknown as AuditService;
 }
 
+/**
+ *
+ * @param impl
+ */
 function makeNotifications(
   impl?: (req: unknown) => Promise<NotificationRecord>,
 ): { service: NotificationsService; send: ReturnType<typeof vi.fn> } {
@@ -94,6 +97,9 @@ function makeNotifications(
   return { service: { send } as unknown as NotificationsService, send };
 }
 
+/**
+ *
+ */
 function makePatient(): Patient {
   return {
     id: PATIENT_ID_A,
@@ -113,6 +119,10 @@ function makePatient(): Patient {
   };
 }
 
+/**
+ *
+ * @param extra
+ */
 function makeOwner(extra: Partial<Owner> = {}): Owner {
   return {
     id: OWNER_ID_A,
@@ -130,6 +140,10 @@ function makeOwner(extra: Partial<Owner> = {}): Owner {
   };
 }
 
+/**
+ *
+ * @param overrides
+ */
 function makeProtocol(
   overrides: Partial<VaccineProtocol> = {},
 ): VaccineProtocol {
@@ -155,6 +169,10 @@ function makeProtocol(
   };
 }
 
+/**
+ *
+ * @param overrides
+ */
 function makeApplication(
   overrides: Partial<VaccineApplication> = {},
 ): VaccineApplication {
@@ -187,63 +205,88 @@ function makeApplication(
   };
 }
 
+/**
+ *
+ * @param patient
+ * @param owner
+ */
 function makeOwnersSvc(
   patient: Patient | null,
   owner: Owner | null,
 ): OwnersService {
   return {
-    findById: vi.fn().mockImplementation(
-      async (tenantId: string, id: string) =>
+    findById: vi
+      .fn()
+      .mockImplementation(async (tenantId: string, id: string) =>
         owner && tenantId === owner.tenantId && id === owner.id ? owner : null,
-    ),
+      ),
   } as unknown as OwnersService;
 }
 
+/**
+ *
+ * @param patient
+ */
 function makePatientsSvc(patient: Patient | null): PatientsService {
   return {
-    findById: vi.fn().mockImplementation(
-      async (tenantId: string, id: string) =>
+    findById: vi
+      .fn()
+      .mockImplementation(async (tenantId: string, id: string) =>
         patient && tenantId === patient.tenantId && id === patient.id
           ? patient
           : null,
-    ),
+      ),
   } as unknown as PatientsService;
 }
 
+/**
+ *
+ * @param locale
+ */
 function makeTenantsSvc(locale: "tr-TR" | "en-GB" = "tr-TR"): TenantService {
   return {
-    findById: vi.fn().mockImplementation(
-      async (id: string, _actor: ActorContext): Promise<TenantResponse> => ({
-        id,
-        slug: "test",
-        name: "Test Tenant",
-        country: "TR",
-        defaultLocale: locale,
-        timezone: "Europe/Istanbul",
-        status: "active",
-        taxId: null,
-        taxIdType: null,
-        contactEmail: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        archivedAt: null,
-        archivedReason: null,
-      }),
-    ),
+    findById: vi
+      .fn()
+      .mockImplementation(
+        async (id: string, _actor: ActorContext): Promise<TenantResponse> => ({
+          id,
+          slug: "test",
+          name: "Test Tenant",
+          country: "TR",
+          defaultLocale: locale,
+          timezone: "Europe/Istanbul",
+          status: "active",
+          taxId: null,
+          taxIdType: null,
+          contactEmail: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          archivedAt: null,
+          archivedReason: null,
+        }),
+      ),
   } as unknown as TenantService;
 }
 
+/**
+ *
+ * @param protocol
+ */
 function makeVaccinesSvc(protocol: VaccineProtocol | null): VaccinesService {
   return {
-    getProtocol: vi.fn().mockImplementation(
-      async (tenantId: string, id: string) =>
+    getProtocol: vi
+      .fn()
+      .mockImplementation(async (tenantId: string, id: string) =>
         protocol && tenantId === protocol.tenantId && id === protocol.id
           ? protocol
           : null,
-    ),
+      ),
   } as unknown as VaccinesService;
 }
 
+/**
+ *
+ */
 function makeApplicationsSvc(): VaccineApplicationsService {
   // VaccineApplicationsService yalnızca DI için; bu servis hatırlatma
   // service'ında doğrudan çağrılmıyor (snapshot deseni sayesinde).
@@ -266,6 +309,15 @@ interface Harness {
   protocol: VaccineProtocol | null;
 }
 
+/**
+ *
+ * @param opts
+ * @param opts.notificationImpl
+ * @param opts.owner
+ * @param opts.patient
+ * @param opts.protocol
+ * @param opts.locale
+ */
 function makeHarness(opts?: {
   notificationImpl?: (req: unknown) => Promise<NotificationRecord>;
   owner?: Owner | null;
@@ -330,7 +382,11 @@ describe("VaccineRemindersService", () => {
   describe("scheduleForApplication", () => {
     it("default config ile sms+in_app oluşturur, audit yazar", async () => {
       const app = makeApplication();
-      const ids = await h.service.scheduleForApplication(TENANT_A, app, STAFF_A);
+      const ids = await h.service.scheduleForApplication(
+        TENANT_A,
+        app,
+        STAFF_A,
+      );
       expect(ids.length).toBe(2);
       const all = h.repo.listForPatient(TENANT_A, PATIENT_ID_A, {}, 50, 0);
       expect(all.total).toBe(2);
@@ -351,6 +407,8 @@ describe("VaccineRemindersService", () => {
         "info",
         expect.objectContaining({
           applicationId: APPLICATION_ID_A,
+          // Vitest asymmetric matcher tipi `any`; yalnızca assertion verisidir.
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           channel: expect.stringMatching(/sms|in_app/),
         }),
       );
@@ -358,9 +416,15 @@ describe("VaccineRemindersService", () => {
 
     it("nextDueDate geçmiş ise skip (no scheduledFor)", async () => {
       const app = makeApplication({ nextDueDate: futureDate(-1) });
-      const ids = await h.service.scheduleForApplication(TENANT_A, app, STAFF_A);
+      const ids = await h.service.scheduleForApplication(
+        TENANT_A,
+        app,
+        STAFF_A,
+      );
       expect(ids.length).toBe(0);
-      expect(h.repo.listForPatient(TENANT_A, PATIENT_ID_A, {}, 50, 0).total).toBe(0);
+      expect(
+        h.repo.listForPatient(TENANT_A, PATIENT_ID_A, {}, 50, 0).total,
+      ).toBe(0);
     });
 
     it("nextDueDate yok ve step booster yoksa skip", async () => {
@@ -369,17 +433,27 @@ describe("VaccineRemindersService", () => {
       });
       const local = makeHarness({ protocol });
       const app = makeApplication({ nextDueDate: null });
-      const ids = await local.service.scheduleForApplication(TENANT_A, app, STAFF_A);
+      const ids = await local.service.scheduleForApplication(
+        TENANT_A,
+        app,
+        STAFF_A,
+      );
       expect(ids.length).toBe(0);
     });
 
     it("nextDueDate yok ama step boosterIntervalDays varsa, applicationDate+booster üzerinden planlar", async () => {
       const protocol = makeProtocol({
-        steps: [{ ageWeeks: 8, vaccineName: "İlk doz", boosterIntervalDays: 90 }],
+        steps: [
+          { ageWeeks: 8, vaccineName: "İlk doz", boosterIntervalDays: 90 },
+        ],
       });
       const local = makeHarness({ protocol });
       const app = makeApplication({ nextDueDate: null });
-      const ids = await local.service.scheduleForApplication(TENANT_A, app, STAFF_A);
+      const ids = await local.service.scheduleForApplication(
+        TENANT_A,
+        app,
+        STAFF_A,
+      );
       expect(ids.length).toBe(2);
       const all = local.repo.listForPatient(TENANT_A, PATIENT_ID_A, {}, 50, 0);
       for (const r of all.items) {
@@ -395,7 +469,11 @@ describe("VaccineRemindersService", () => {
       });
       const local = makeHarness({ owner });
       const app = makeApplication();
-      const ids = await local.service.scheduleForApplication(TENANT_A, app, STAFF_A);
+      const ids = await local.service.scheduleForApplication(
+        TENANT_A,
+        app,
+        STAFF_A,
+      );
       expect(ids.length).toBe(1);
       const all = local.repo.listForPatient(TENANT_A, PATIENT_ID_A, {}, 50, 0);
       expect(all.items[0]!.channel).toBe("in_app");
@@ -403,13 +481,21 @@ describe("VaccineRemindersService", () => {
 
     it("idempotent: aynı planlama ikinci kez no-op", async () => {
       const app = makeApplication();
-      const ids1 = await h.service.scheduleForApplication(TENANT_A, app, STAFF_A);
-      const ids2 = await h.service.scheduleForApplication(TENANT_A, app, STAFF_A);
+      const ids1 = await h.service.scheduleForApplication(
+        TENANT_A,
+        app,
+        STAFF_A,
+      );
+      const ids2 = await h.service.scheduleForApplication(
+        TENANT_A,
+        app,
+        STAFF_A,
+      );
       expect(ids1.length).toBe(2);
       expect(ids2.length).toBe(2);
       // IDs should be identical to first call (existing returned).
       for (let i = 0; i < ids1.length; i++) {
-        expect(ids2[i]).toBe(ids1[i]);
+        expect(ids2.at(i)).toBe(ids1.at(i));
       }
       const all = h.repo.listForPatient(TENANT_A, PATIENT_ID_A, {}, 50, 0);
       expect(all.total).toBe(2);
@@ -418,7 +504,11 @@ describe("VaccineRemindersService", () => {
     it("patient bulunamadı → boş dizi + no audit", async () => {
       const local = makeHarness({ patient: null });
       const app = makeApplication();
-      const ids = await local.service.scheduleForApplication(TENANT_A, app, STAFF_A);
+      const ids = await local.service.scheduleForApplication(
+        TENANT_A,
+        app,
+        STAFF_A,
+      );
       expect(ids).toEqual([]);
       expect(local.audit.recordSimple).not.toHaveBeenCalled();
     });
@@ -426,14 +516,22 @@ describe("VaccineRemindersService", () => {
     it("owner bulunamadı → boş dizi", async () => {
       const local = makeHarness({ owner: null });
       const app = makeApplication();
-      const ids = await local.service.scheduleForApplication(TENANT_A, app, STAFF_A);
+      const ids = await local.service.scheduleForApplication(
+        TENANT_A,
+        app,
+        STAFF_A,
+      );
       expect(ids).toEqual([]);
     });
 
     it("protocol bulunamadı → boş dizi", async () => {
       const local = makeHarness({ protocol: null });
       const app = makeApplication();
-      const ids = await local.service.scheduleForApplication(TENANT_A, app, STAFF_A);
+      const ids = await local.service.scheduleForApplication(
+        TENANT_A,
+        app,
+        STAFF_A,
+      );
       expect(ids).toEqual([]);
     });
 
@@ -447,7 +545,11 @@ describe("VaccineRemindersService", () => {
       });
       expect(cfg.daysBeforeDue).toBe(14);
       const app = makeApplication({ nextDueDate: futureDate(30) });
-      const ids = await h.service.scheduleForApplication(TENANT_A, app, STAFF_A);
+      const ids = await h.service.scheduleForApplication(
+        TENANT_A,
+        app,
+        STAFF_A,
+      );
       expect(ids.length).toBe(1);
       const all = h.repo.listForPatient(TENANT_A, PATIENT_ID_A, {}, 50, 0);
       expect(all.items[0]!.channel).toBe("email");
@@ -511,7 +613,11 @@ describe("VaccineRemindersService", () => {
       await h.service.scheduleForApplication(TENANT_A, app, STAFF_A);
       const otherTenantStaff: ActorContext = { ...STAFF_A, tenantId: TENANT_B };
       await expect(
-        h.service.cancelForApplication(TENANT_A, APPLICATION_ID_A, otherTenantStaff),
+        h.service.cancelForApplication(
+          TENANT_A,
+          APPLICATION_ID_A,
+          otherTenantStaff,
+        ),
       ).rejects.toMatchObject({ errorCode: "VET-AUTHZ-0001" });
     });
 
@@ -575,7 +681,13 @@ describe("VaccineRemindersService", () => {
     it("delta pozitifse scheduledFor'u offsetler", async () => {
       const app = makeApplication({ nextDueDate: futureDate(60) });
       await h.service.scheduleForApplication(TENANT_A, app, STAFF_A);
-      const allBefore = h.repo.listForPatient(TENANT_A, PATIENT_ID_A, {}, 50, 0);
+      const allBefore = h.repo.listForPatient(
+        TENANT_A,
+        PATIENT_ID_A,
+        {},
+        50,
+        0,
+      );
       const beforeFor = allBefore.items[0]!.scheduledFor;
       const beforeNext = allBefore.items[0]!.nextDueDate;
       // nextDueDate'yi 30 gün ileri al
@@ -591,8 +703,10 @@ describe("VaccineRemindersService", () => {
       for (const r of allAfter.items) {
         expect(r.nextDueDate).toBe(newNext);
         // ScheduledFor = eski scheduledFor + 30 days (yaklaşık)
-        const delta = new Date(r.scheduledFor).getTime() - new Date(beforeFor).getTime();
-        const expectedDelta = new Date(newNext).getTime() - new Date(beforeNext).getTime();
+        const delta =
+          new Date(r.scheduledFor).getTime() - new Date(beforeFor).getTime();
+        const expectedDelta =
+          new Date(newNext).getTime() - new Date(beforeNext).getTime();
         expect(delta).toBe(expectedDelta);
       }
     });
@@ -654,7 +768,7 @@ describe("VaccineRemindersService", () => {
     it("due olmayan scheduled'ları skip eder", async () => {
       const app = makeApplication({ nextDueDate: futureDate(60) });
       await h.service.scheduleForApplication(TENANT_A, app, STAFF_A);
-      (h.notif.send as ReturnType<typeof vi.fn>).mockClear();
+      h.notif.send.mockClear();
       const result = await h.service.processDueReminders();
       expect(result.processed).toBe(0);
       expect(h.notif.send).not.toHaveBeenCalled();
@@ -670,7 +784,7 @@ describe("VaccineRemindersService", () => {
         cancellationReason: "iptal",
       });
       await h.service.scheduleForApplication(TENANT_A, app, STAFF_A);
-      (h.notif.send as ReturnType<typeof vi.fn>).mockClear();
+      h.notif.send.mockClear();
       const now = Date.now() + 25 * 86_400_000;
       const result = await h.service.processDueReminders(now);
       expect(result.sent).toBe(0);

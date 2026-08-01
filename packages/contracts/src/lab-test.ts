@@ -71,6 +71,7 @@ export const labTestCreateInputSchema = z.object({
   unit: z.string().min(1).max(32),
   referenceRange: z.string().max(200).optional(),
   conditionalRanges: z.string().max(8000).optional(),
+  // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden fiyat doğrulamasıdır.
   price: z.string().regex(/^\d+(\.\d{1,4})?$/, {
     message: "price decimal string olmalı (4 ondalık)",
   }),
@@ -88,6 +89,7 @@ export const labTestUpdateInputSchema = z
     conditionalRanges: z.string().max(8000).nullable().optional(),
     price: z
       .string()
+      // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden fiyat doğrulamasıdır.
       .regex(/^\d+(\.\d{1,4})?$/)
       .optional(),
     active: z.boolean().optional(),

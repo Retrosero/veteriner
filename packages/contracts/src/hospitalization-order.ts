@@ -81,9 +81,7 @@ export const hospitalizationOrderCreateInputSchema = z.object({
   orderType: hospitalizationOrderTypeSchema,
   instructions: z.string().min(1).max(4000),
   frequency: z.string().max(200).optional(),
-  priority: hospitalizationOrderPrioritySchema
-    .optional()
-    .default("medium"),
+  priority: hospitalizationOrderPrioritySchema.optional().default("medium"),
   startsAt: z.string().datetime().optional(),
   endsAt: z.string().datetime().optional(),
   notes: z.string().max(2000).optional(),
@@ -136,9 +134,7 @@ export const hospitalizationOrderSchema = z.object({
   createdBy: z.string(),
   updatedAt: z.string().datetime(),
 });
-export type HospitalizationOrder = z.infer<
-  typeof hospitalizationOrderSchema
->;
+export type HospitalizationOrder = z.infer<typeof hospitalizationOrderSchema>;
 
 /* --------------------------------------------------------------------------
  * HospitalizationOrderSchedule

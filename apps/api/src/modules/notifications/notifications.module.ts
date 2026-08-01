@@ -11,19 +11,22 @@
 
 import { Module } from "@nestjs/common";
 
+import { NotificationsController } from "./notifications.controller.js";
+import { NotificationsService } from "./notifications.service.js";
 import { AuditModule } from "../../common/audit/audit.module.js";
 import { ConsentService } from "../../common/notifications/consent.service.js";
 import { IdempotencyService } from "../../common/notifications/idempotency.service.js";
-import { NotificationQueue } from "../../common/notifications/queue.js";
-import { TemplateService } from "../../common/notifications/template.service.js";
 import { IletimerkeziSmsProvider } from "../../common/notifications/providers/iletimerkezi-sms.provider.js";
-import { InAppProvider, InboxStore } from "../../common/notifications/providers/in-app.provider.js";
+import {
+  InAppProvider,
+  InboxStore,
+} from "../../common/notifications/providers/in-app.provider.js";
 import { NoopProvider } from "../../common/notifications/providers/noop-provider.js";
 import { SmtpEmailProvider } from "../../common/notifications/providers/smtp-email.provider.js";
-import type { NotificationProvider } from "../../common/notifications/provider.interface.js";
+import { NotificationQueue } from "../../common/notifications/queue.js";
+import { TemplateService } from "../../common/notifications/template.service.js";
 
-import { NotificationsController } from "./notifications.controller.js";
-import { NotificationsService } from "./notifications.service.js";
+import type { NotificationProvider } from "../../common/notifications/provider.interface.js";
 
 /**
  * FAZ-0 provider seti. Faz 13+'da prod provider'lar env-driven

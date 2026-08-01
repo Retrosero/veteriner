@@ -30,9 +30,19 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import {
+  type VaccineProtocolPatch,
+  VaccinesRepository,
+} from "./vaccines.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
+import {
+  computeTotalDurationMonths,
+  toVaccineProtocol,
+  type VaccineProtocolRecord,
+} from "../../common/vaccines/vaccine.types.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   VaccineProtocol,
   VaccineProtocolCreateInput,
@@ -40,16 +50,6 @@ import type {
   VaccineProtocolListResponse,
   VaccineProtocolUpdateInput,
 } from "@vetniva/contracts";
-
-import {
-  computeTotalDurationMonths,
-  toVaccineProtocol,
-  type VaccineProtocolRecord,
-} from "../../common/vaccines/vaccine.types.js";
-import {
-  type VaccineProtocolPatch,
-  VaccinesRepository,
-} from "./vaccines.repository.js";
 
 @Injectable()
 export class VaccinesService {
@@ -334,7 +334,7 @@ export class VaccinesService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

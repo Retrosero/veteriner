@@ -37,13 +37,14 @@ bcrypt rehash + sayacı sıfırla; token consume; audit
 
 **PortalAuthController** — 5 endpoint (`.controller.ts`), hepsi
 `@Public()`:
+
 - `POST /api/v1/portal-auth/register` — 201, `vetniva_portal_session` cookie yok.
 - `POST /api/v1/portal-auth/login` — 200, `vetniva_portal_session` cookie set (httpOnly, SameSite=Lax, secure prod).
 - `POST /api/v1/portal-auth/logout` — 200, idempotent; cookie clear.
 - `POST /api/v1/portal-auth/forgot-password` — 200, generic message.
 - `POST /api/v1/portal-auth/reset-password` — 200.
-Tenant çözümlemesi: `x-tenant-slug` veya `x-tenant-id` header
-(pilot). `ZodValidationPipe` ile body doğrulama.
+  Tenant çözümlemesi: `x-tenant-slug` veya `x-tenant-id` header
+  (pilot). `ZodValidationPipe` ile body doğrulama.
 
 **Sözleşme** (`packages/contracts/src/portal-auth.ts`) — Zod şemaları:
 `portalRegisterRequestSchema` (consentKvkk zorunlu, passwordPolicySchema),
@@ -55,12 +56,13 @@ Tenant çözümlemesi: `x-tenant-slug` veya `x-tenant-id` header
 `ACCOUNT_LOCK_SECONDS`, `PASSWORD_RESET_TTL_SECONDS`, `BCRYPT_COST`.
 
 **13 yeni test** (`portal-auth.service.spec.ts`): (1) register başarı
-+ audit, (2) duplicate email → 409, (3) consent false → 422, (4)
-login başarı + session, (5) yanlış parola → counter++, (6) 5 yanlış
-→ lock 423, (7) locked hesapla login → 423, (8) valid token → user,
-(9) invalid token → null, (10) logout → session silinir, (11)
-forgot → token + audit, (12) confirm reset → yeni parola, (13)
-invalid reset token → 400.
+
+- audit, (2) duplicate email → 409, (3) consent false → 422, (4)
+  login başarı + session, (5) yanlış parola → counter++, (6) 5 yanlış
+  → lock 423, (7) locked hesapla login → 423, (8) valid token → user,
+  (9) invalid token → null, (10) logout → session silinir, (11)
+  forgot → token + audit, (12) confirm reset → yeni parola, (13)
+  invalid reset token → 400.
 
 ## Tasarım kararları
 
@@ -116,13 +118,13 @@ index'ler.
 
 ## API
 
-| Method | Path | Auth | Kod |
-| ------ | ---- | ---- | --- |
-| POST   | /api/v1/portal-auth/register         | public | 201 |
-| POST   | /api/v1/portal-auth/login            | public | 200 |
-| POST   | /api/v1/portal-auth/logout           | public | 200 |
-| POST   | /api/v1/portal-auth/forgot-password  | public | 200 |
-| POST   | /api/v1/portal-auth/reset-password   | public | 200 |
+| Method | Path                                | Auth   | Kod |
+| ------ | ----------------------------------- | ------ | --- |
+| POST   | /api/v1/portal-auth/register        | public | 201 |
+| POST   | /api/v1/portal-auth/login           | public | 200 |
+| POST   | /api/v1/portal-auth/logout          | public | 200 |
+| POST   | /api/v1/portal-auth/forgot-password | public | 200 |
+| POST   | /api/v1/portal-auth/reset-password  | public | 200 |
 
 Hatalar: 422 `VET-VALIDATION-0003` (KVKK), 409 `VET-AUTH-0003`
 (duplicate email), 401 `VET-AUTH-0002` (login fail), 423

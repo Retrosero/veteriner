@@ -1,10 +1,12 @@
 # Kullanıcı Eğitimi — Randevu Yönetimi
 
 ## Amaç
+
 Klinikte veya petshop'ta randevu oluşturma, değiştirme ve
 iptal etme işlemlerinin nasıl yapılacağını açıklar.
 
 ## Hedef kitle
+
 - VETERINARIAN
 - STAFF (resepsiyon)
 - OWNER (kendi hayvanı için self-service)
@@ -80,14 +82,15 @@ kendi talebini iptal edebilir.
 
 ## Hata durumları
 
-| Hata | Çözüm |
-|------|-------|
-| Slot çakışması | Başka saat seçin. |
-| Geçersiz saat | Çalışma saatleri içinde seçin. |
-| Pasif veteriner | Aktif veterinerlerden birini seçin. |
-| Yetkisiz | Klinik personeli ile iletişime geçin. |
+| Hata            | Çözüm                                 |
+| --------------- | ------------------------------------- |
+| Slot çakışması  | Başka saat seçin.                     |
+| Geçersiz saat   | Çalışma saatleri içinde seçin.        |
+| Pasif veteriner | Aktif veterinerlerden birini seçin.   |
+| Yetkisiz        | Klinik personeli ile iletişime geçin. |
 
 ## İlgili dokümanlar
+
 - `docs/workflows/appointment_create.md` (adım adım)
 - `docs/api/api.get._api_v1_calendar_appointments.md`
 - `docs/api/api.post._api_v1_calendar_appointments.md`

@@ -60,7 +60,10 @@ export class CashRegisterRepository {
     return record;
   }
 
-  public findById(tenantId: string, id: string): CashRegisterSessionRecord | null {
+  public findById(
+    tenantId: string,
+    id: string,
+  ): CashRegisterSessionRecord | null {
     const rec = this.byId.get(id);
     if (!rec) return null;
     if (rec.tenantId !== tenantId) return null;
@@ -84,10 +87,7 @@ export class CashRegisterRepository {
     for (const id of set.values()) {
       const rec = this.byId.get(id);
       if (!rec) continue;
-      if (
-        !latest ||
-        rec.openedAt.localeCompare(latest.openedAt) > 0
-      ) {
+      if (!latest || rec.openedAt.localeCompare(latest.openedAt) > 0) {
         latest = rec;
       }
     }

@@ -8,24 +8,24 @@ kurallarına uyar.
 
 ## Senaryolar (7)
 
-| Anahtar             | Başlık                          | Profil              |
-| ------------------- | ------------------------------- | ------------------- |
-| `patient_search`    | Hasta arama                     | smoke/pilot/first100/stress |
-| `calendar`          | Klinik takvimi                  | smoke/pilot/first100/stress |
-| `patient_timeline`  | Hayvan zaman çizelgesi          | pilot/first100/stress       |
-| `stock_query`       | Stok sorgusu                    | pilot/first100/stress       |
-| `pos`               | Petshop POS                     | pilot/first100              |
-| `report`            | Temel finans raporu             | pilot/first100              |
-| `error_center`      | Hata merkezi (superadmin)       | pilot/first100/stress       |
+| Anahtar            | Başlık                    | Profil                      |
+| ------------------ | ------------------------- | --------------------------- |
+| `patient_search`   | Hasta arama               | smoke/pilot/first100/stress |
+| `calendar`         | Klinik takvimi            | smoke/pilot/first100/stress |
+| `patient_timeline` | Hayvan zaman çizelgesi    | pilot/first100/stress       |
+| `stock_query`      | Stok sorgusu              | pilot/first100/stress       |
+| `pos`              | Petshop POS               | pilot/first100              |
+| `report`           | Temel finans raporu       | pilot/first100              |
+| `error_center`     | Hata merkezi (superadmin) | pilot/first100/stress       |
 
 ## Yük Profilleri
 
-| Profil     | VU | Süre   | Açıklama                  |
-| ---------- | -- | ------ | ------------------------- |
-| `smoke`    | 1  | 30s    | Sağlık kontrolü           |
-| `pilot`    | 10 | 2m     | Pilot doğrulama           |
-| `first_100`| 50 | 5m     | İlk 100 tenant hedefi     |
-| `stress`   | 200| 5m     | Darboğaz tespiti          |
+| Profil      | VU  | Süre | Açıklama              |
+| ----------- | --- | ---- | --------------------- |
+| `smoke`     | 1   | 30s  | Sağlık kontrolü       |
+| `pilot`     | 10  | 2m   | Pilot doğrulama       |
+| `first_100` | 50  | 5m   | İlk 100 tenant hedefi |
+| `stress`    | 200 | 5m   | Darboğaz tespiti      |
 
 ## Komutlar
 
@@ -62,7 +62,7 @@ pnpm --filter @vetniva/load-test report -- \
 - `load-test-report.json` — yapılandırılmış rapor
   (`ScenarioResult[]` + `allPassed`).
 - `load-test-report.md` — insan-okur rapor (PASS/FAIL tablosu
-  + ihlal detayları).
+  - ihlal detayları).
 
 ## Threshold Mantığı
 

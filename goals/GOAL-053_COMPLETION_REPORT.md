@@ -1,9 +1,11 @@
 # GOAL-053 — Aşı Hatırlatma Job'u (Completion Report)
 
 ## Faz
+
 FAZ-5 (Aşı + stok)
 
 ## Özet
+
 Aşı tekrar tarihine (`nextDueAt`) göre otomatik hatırlatma
 planlayan ve tenant config'ine göre dispatch eden iş akışı
 tamamlandı. In-process queue + 3 denemelik exponential backoff
@@ -12,6 +14,7 @@ ile idempotent ve double-send korumalı çalışır.
 ## Çıktılar
 
 ### Core (GOAL-053 core commit `f763f2f`)
+
 - `apps/api/src/modules/vaccines/vaccine-reminders.controller.ts`
   — 4 endpoint (list, config GET/PUT, process).
 - `apps/api/src/modules/vaccines/vaccine-reminders.service.ts` —
@@ -30,14 +33,15 @@ ile idempotent ve double-send korumalı çalışır.
 
 ### Endpoint'ler (4)
 
-| # | Method | Path | Yetki |
-|---|--------|------|-------|
-| 1 | GET | `/api/v1/clinic/vaccines/reminders/patient/{patientId}` | `clinic:vaccination:read` |
-| 2 | GET | `/api/v1/clinic/vaccines/reminders/config` | `clinic:vaccination:read` |
-| 3 | PUT | `/api/v1/clinic/vaccines/reminders/config` | `tenant:tenant:update` |
-| 4 | POST | `/api/v1/clinic/vaccines/reminders/process` | `clinic:vaccination:read` |
+| #   | Method | Path                                                    | Yetki                     |
+| --- | ------ | ------------------------------------------------------- | ------------------------- |
+| 1   | GET    | `/api/v1/clinic/vaccines/reminders/patient/{patientId}` | `clinic:vaccination:read` |
+| 2   | GET    | `/api/v1/clinic/vaccines/reminders/config`              | `clinic:vaccination:read` |
+| 3   | PUT    | `/api/v1/clinic/vaccines/reminders/config`              | `tenant:tenant:update`    |
+| 4   | POST   | `/api/v1/clinic/vaccines/reminders/process`             | `clinic:vaccination:read` |
 
 ### Döküman (bu commit)
+
 - `docs/api/api.get._api_v1_clinic_vaccines_reminders_patient__patientId_.md`
 - `docs/api/api.get._api_v1_clinic_vaccines_reminders_config.md`
 - `docs/api/api.put._api_v1_clinic_vaccines_reminders_config.md`
@@ -48,6 +52,7 @@ ile idempotent ve double-send korumalı çalışır.
   engelini ve audit olaylarını özetler.
 
 ## İş Kuralları
+
 - **Snapshot deseni:** reminder kaydında uygulama + step'in
   snapshot'ı tutulur; circular import koruması (vaccine ↔
   reminders).
@@ -72,6 +77,7 @@ ile idempotent ve double-send korumalı çalışır.
   (`nextDueAt` UTC, hesaplama `Date` ile).
 
 ## Audit
+
 - `audit:vaccine.reminder.schedule` (info) — uygulama
   oluşturulunca hook.
 - `audit:vaccine.reminder.cancel` (warning) — uygulama iptali.
@@ -84,6 +90,7 @@ ile idempotent ve double-send korumalı çalışır.
   değişince.
 
 ## Tenant İzolasyonu
+
 - Tüm sorgular tenant-scoped; UPSERT yapısı
   `actor.tenantId`'ye yazılır.
 - `processDueReminders` tenant-bazlı çalışır; tüm tenant'ları
@@ -91,11 +98,13 @@ ile idempotent ve double-send korumalı çalışır.
 - SUPERADMIN bypass'lı.
 
 ## Queue & Retry (FAZ-0)
+
 - In-process queue (FAZ-0); FAZ-10'da BullMQ'ya taşınacak.
 - Exponential backoff: 60s, 300s, 1800s.
 - 3 deneme sonrası `status='failed'`.
 
 ## Yapılmayanlar / Bilinçli Atlamalar
+
 - **BullMQ geçişi** → FAZ-10 planı.
 - **Tenant timezone UI** → şu an `nextDueAt` UTC, gösterim
   frontend'de dönüştürülecek.
@@ -107,19 +116,23 @@ ile idempotent ve double-send korumalı çalışır.
   çağrı için; otomatik cron FAZ-10'da eklenecek (her 5dk).
 
 ## Döküman Uyum
+
 - `pnpm docs:check` → mevcut pre-existing hatalar (FAZ-6 +
   GOAL-054 vaccine code'ları). **GOAL-053 özgü hata yok.**
 
 ## Testler
+
 - `vaccine-reminders.service.spec.ts` → 30 test (core commit'te).
 - Tam API test suite: 624/624 geçti (core commit'te).
 
 ## Sonraki Adımlar
+
 - GOAL-054 (aşı amendment) docs/i18n.
 - FAZ-5 kapanış: tüm dökümanlar tamam.
 - GOAL-060+ (FAZ-6 stok).
 
 ## Commit
+
 - Core: `f763f2f` — `GOAL-053 aşı hatırlatma job'u (core)`
 - Docs/i18n: (bu commit) — `docs(vaccines): GOAL-053 aşı
-  hatırlatma doküman ve i18n tamamla`
+hatırlatma doküman ve i18n tamamla`

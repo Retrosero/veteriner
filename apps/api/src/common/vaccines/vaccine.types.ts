@@ -57,9 +57,7 @@ export type {
 };
 
 /** Record → public VaccineProtocol (API response). */
-export function toVaccineProtocol(
-  rec: VaccineProtocolRecord,
-): VaccineProtocol {
+export function toVaccineProtocol(rec: VaccineProtocolRecord): VaccineProtocol {
   return {
     id: rec.id,
     tenantId: rec.tenantId,
@@ -89,9 +87,6 @@ export function computeTotalDurationMonths(
   steps: VaccineProtocolStep[],
 ): number {
   if (steps.length === 0) return 0;
-  const maxWeeks = steps.reduce(
-    (m, s) => (s.ageWeeks > m ? s.ageWeeks : m),
-    0,
-  );
+  const maxWeeks = steps.reduce((m, s) => (s.ageWeeks > m ? s.ageWeeks : m), 0);
   return Math.ceil(maxWeeks / 4.345);
 }

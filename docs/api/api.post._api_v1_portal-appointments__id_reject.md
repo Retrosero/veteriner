@@ -50,7 +50,7 @@ talebini** reddeder. `reason` zorunludur (1-500 karakter); talep
   boş/eksik veya 500 karakter üstü).
 - `VET-CLINIC-0001` (404) — Talep bulunamadı / cross-tenant.
 - `VET-PORTAL-0006` (422) — Talep `pending` değil (`approved |
-  rejected | cancelled`).
+rejected | cancelled`).
 
 ## Güvenlik notları
 

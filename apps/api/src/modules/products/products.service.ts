@@ -37,8 +37,11 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import {
+  type ProductPatch,
+  ProductsRepository,
+} from "./products.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import {
   generateSku,
@@ -46,6 +49,8 @@ import {
   toProduct,
   type ProductRecord,
 } from "../../common/products/product.types.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   Product,
   ProductArchiveInput,
@@ -54,11 +59,6 @@ import type {
   ProductListResponse,
   ProductUpdateInput,
 } from "@vetniva/contracts";
-
-import {
-  type ProductPatch,
-  ProductsRepository,
-} from "./products.repository.js";
 
 @Injectable()
 export class ProductsService {
@@ -116,10 +116,7 @@ export class ProductsService {
         tenantId,
         input.barcode,
       );
-      if (
-        existingByBarcode &&
-        existingByBarcode.archivedAt === null
-      ) {
+      if (existingByBarcode && existingByBarcode.archivedAt === null) {
         throw new DomainError({
           errorCode: "VET-PRODUCT-0002",
           message: "Bu barkod zaten kayıtlı",
@@ -156,7 +153,7 @@ export class ProductsService {
       saleAvailable: input.saleAvailable,
       purchaseTracked: input.purchaseTracked,
       vaccineProtocolId:
-        input.kind === "vaccine" ? input.vaccineProtocolId ?? null : null,
+        input.kind === "vaccine" ? (input.vaccineProtocolId ?? null) : null,
       requiresPrescription: input.requiresPrescription,
       controlledDrug: input.controlledDrug,
       lowStockThreshold,
@@ -333,12 +330,10 @@ export class ProductsService {
     if (input.category !== undefined) patch.category = input.category;
     if (input.unit !== undefined) patch.unit = input.unit;
     if (input.taxProfile !== undefined) patch.taxProfile = input.taxProfile;
-    if (input.purchasePrice !== undefined)
-      patch.purchasePrice = purchasePrice;
+    if (input.purchasePrice !== undefined) patch.purchasePrice = purchasePrice;
     if (input.salePrice !== undefined) patch.salePrice = salePrice;
     if (input.currency !== undefined) patch.currency = input.currency;
-    if (input.clinicUsage !== undefined)
-      patch.clinicUsage = input.clinicUsage;
+    if (input.clinicUsage !== undefined) patch.clinicUsage = input.clinicUsage;
     if (input.petshopUsage !== undefined)
       patch.petshopUsage = input.petshopUsage;
     if (input.saleAvailable !== undefined)
@@ -497,7 +492,7 @@ export class ProductsService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

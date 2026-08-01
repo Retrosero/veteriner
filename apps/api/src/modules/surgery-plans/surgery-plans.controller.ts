@@ -31,13 +31,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { CurrentActor } from "../../common/actor/actor.decorator.js";
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   surgeryPlanCancelInputSchema,
   surgeryPlanCreateInputSchema,
@@ -52,14 +45,19 @@ import {
 } from "@vetniva/contracts";
 
 import { SurgeryPlansService } from "./surgery-plans.service.js";
+import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 @ApiTags("clinic/surgery-plans")
 @UseGuards(PermissionsGuard)
 @Controller("api/v1/clinic/surgery-plans")
 export class SurgeryPlansController {
-  public constructor(
-    private readonly service: SurgeryPlansService,
-  ) {}
+  public constructor(private readonly service: SurgeryPlansService) {}
 
   @Post()
   @RequirePermissions("clinic:surgery:create")
@@ -129,8 +127,7 @@ export class SurgeryPlansController {
   @ApiOperation({
     operationId: "surgeryPlanUpdate",
     summary: "Planlanmış ameliyat düzenleme",
-    description:
-      "Yalnızca `scheduled` durumdaki planlar düzenlenebilir.",
+    description: "Yalnızca `scheduled` durumdaki planlar düzenlenebilir.",
   })
   public async update(
     @Param("id", new ParseUUIDPipe()) id: string,

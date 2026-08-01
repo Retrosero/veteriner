@@ -1,20 +1,17 @@
 /**
  * @file [locale] error boundary testleri.
  * @module @vetniva/web/app/[locale]/error.test
- *
  * @description GOAL-101 (FAZ-10) frontend hata yakalama — error
  * sınırının kullanıcıya doğru geri bildirim verdiğini ve reporter'a
  * bildirim gönderdiğini doğrular.
- *
  * @since GOAL-101 (FAZ-10) frontend hata yakalama core
  */
 
 import "@testing-library/jest-dom/vitest";
 
+import { fireEvent, render } from "@testing-library/react";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
-
-import { fireEvent, render } from "@testing-library/react";
 
 vi.mock("@/lib/error-reporter", () => ({
   errorReporter: {
@@ -25,6 +22,7 @@ vi.mock("@/lib/error-reporter", () => ({
 }));
 
 import { errorReporter } from "@/lib/error-reporter";
+
 import LocaleErrorBoundary from "./error";
 
 describe("LocaleErrorBoundary", () => {
@@ -34,10 +32,7 @@ describe("LocaleErrorBoundary", () => {
 
   it("hata mesajı + correlation ID render edilir", () => {
     const { getByTestId, getByRole, getByText } = render(
-      <LocaleErrorBoundary
-        error={sampleError}
-        reset={() => undefined}
-      />,
+      <LocaleErrorBoundary error={sampleError} reset={() => undefined} />,
     );
 
     expect(getByRole("alert")).toBeInTheDocument();
@@ -48,14 +43,11 @@ describe("LocaleErrorBoundary", () => {
   });
 
   it("mount olduğunda errorReporter.captureError çağrılır", () => {
+    // Modül mock'unun spy işlevi burada doğrudan doğrulanır.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const captureError = vi.mocked(errorReporter.captureError);
     captureError.mockClear();
-    render(
-      <LocaleErrorBoundary
-        error={sampleError}
-        reset={() => undefined}
-      />,
-    );
+    render(<LocaleErrorBoundary error={sampleError} reset={() => undefined} />);
     expect(captureError).toHaveBeenCalledTimes(1);
     const [errArg, ctxArg] = captureError.mock.calls[0]!;
     expect(errArg).toBe(sampleError);

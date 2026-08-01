@@ -17,11 +17,11 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { SurgeryPlansRepository } from "./surgery-plans.repository.js";
+import { SurgeryPlansService } from "./surgery-plans.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-
-import { SurgeryPlansService } from "./surgery-plans.service.js";
-import { SurgeryPlansRepository } from "./surgery-plans.repository.js";
 import type {
   SurgeryPlanCancelInput,
   SurgeryPlanCreateInput,
@@ -127,11 +127,7 @@ describe("SurgeryPlansService", () => {
 
   describe("createPlan", () => {
     it("yeni plan oluşturur (scheduled)", async () => {
-      const out = await service.createPlan(
-        TENANT_A,
-        makeCreateInput(),
-        VET_A,
-      );
+      const out = await service.createPlan(TENANT_A, makeCreateInput(), VET_A);
       expect(out.id).toMatch(/^sg-/);
       expect(out.status).toBe("scheduled");
       expect(out.operationType).toBe("ovariohysterectomy");
@@ -187,11 +183,7 @@ describe("SurgeryPlansService", () => {
         makeCreateInput(),
         VET_A,
       );
-      const started = await service.startPlan(
-        TENANT_A,
-        created.id,
-        VET_A,
-      );
+      const started = await service.startPlan(TENANT_A, created.id, VET_A);
       expect(started.status).toBe("in_progress");
       expect(started.startedAt).not.toBeNull();
       expect(started.startedBy).toBe("usr-vet-a");
@@ -221,11 +213,7 @@ describe("SurgeryPlansService", () => {
         VET_A,
       );
       await service.startPlan(TENANT_A, created.id, VET_A);
-      const completed = await service.completePlan(
-        TENANT_A,
-        created.id,
-        VET_A,
-      );
+      const completed = await service.completePlan(TENANT_A, created.id, VET_A);
       expect(completed.status).toBe("completed");
       expect(completed.completedAt).not.toBeNull();
       expect(completed.completedBy).toBe("usr-vet-a");
@@ -420,11 +408,7 @@ describe("SurgeryPlansService", () => {
         makeCreateInput(),
         VET_A,
       );
-      const detail = await service.getPlanDetail(
-        TENANT_B,
-        created.id,
-        STAFF_B,
-      );
+      const detail = await service.getPlanDetail(TENANT_B, created.id, STAFF_B);
       expect(detail).toBeNull();
     });
   });

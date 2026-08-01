@@ -13,14 +13,13 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { OrdersRepository } from "./orders.repository.js";
+import { OrdersService } from "./orders.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-import type { Examination } from "@vetniva/contracts";
-
 import type { ExaminationsService } from "../examinations/examinations.service.js";
-
-import { OrdersService } from "./orders.service.js";
-import { OrdersRepository } from "./orders.repository.js";
+import type { Examination } from "@vetniva/contracts";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -38,7 +37,7 @@ const VET_A: ActorContext = {
   source: "header",
 };
 
-const VET_B: ActorContext = {
+const _VET_B: ActorContext = {
   actorId: "usr-vet-b",
   actorType: "user",
   role: "VETERINARIAN",
@@ -95,13 +94,23 @@ function makeAudit(): AuditService {
   } as unknown as AuditService;
 }
 
-function validInput(overrides: Partial<{
-  examinationId: string;
-  type: "medication" | "application" | "procedure" | "lab" | "imaging" | "vaccination" | "follow_up" | "instruction";
-  description: string;
-  notes?: string;
-  dueDate?: string;
-}> = {}) {
+function validInput(
+  overrides: Partial<{
+    examinationId: string;
+    type:
+      | "medication"
+      | "application"
+      | "procedure"
+      | "lab"
+      | "imaging"
+      | "vaccination"
+      | "follow_up"
+      | "instruction";
+    description: string;
+    notes?: string;
+    dueDate?: string;
+  }> = {},
+) {
   return {
     examinationId: EXAM_ID_A,
     type: "medication" as const,
@@ -309,12 +318,7 @@ describe("OrdersService", () => {
       await service.complete(TENANT_A, created.id, VET_A);
       (audit.recordSimple as ReturnType<typeof vi.fn>).mockClear();
       await expect(
-        service.cancel(
-          TENANT_A,
-          created.id,
-          { reason: "x" },
-          VET_A,
-        ),
+        service.cancel(TENANT_A, created.id, { reason: "x" }, VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-ORDER-0001",
         httpStatus: 409,
@@ -348,12 +352,7 @@ describe("OrdersService", () => {
         validInput({ description: "İlaç C" }),
         VET_A,
       );
-      await service.cancel(
-        TENANT_A,
-        o3.id,
-        { reason: "iptal" },
-        VET_A,
-      );
+      await service.cancel(TENANT_A, o3.id, { reason: "iptal" }, VET_A);
       // 4 in_progress
       const o4 = await service.create(
         TENANT_A,
@@ -389,17 +388,18 @@ describe("OrdersService", () => {
       await service.complete(TENANT_A, o1.id, VET_A);
 
       const o2 = await service.create(TENANT_A, validInput(), VET_A);
-      await service.cancel(
-        TENANT_A,
-        o2.id,
-        { reason: "iptal" },
-        VET_A,
-      );
+      await service.cancel(TENANT_A, o2.id, { reason: "iptal" }, VET_A);
 
       const calls = (audit.recordSimple as ReturnType<typeof vi.fn>).mock
-        .calls;
-      const events = calls.map((c) => c[0]);
-      const actions = calls.map((c) => (c[6] as { action?: string } | undefined)?.action);
+        .calls as unknown[][];
+      const events = calls.map((call) =>
+        typeof call[0] === "string" ? call[0] : null,
+      );
+      const actions = calls.map((call) =>
+        typeof call[6] === "object" && call[6] !== null
+          ? (call[6] as { action?: string }).action
+          : undefined,
+      );
       expect(events).toContain("audit:order.update");
       expect(actions).toContain("start");
       expect(actions).toContain("complete");
@@ -428,7 +428,10 @@ describe("OrdersService", () => {
     it("instruction (genel talimat) order oluşturma + iptal", async () => {
       const o = await service.create(
         TENANT_A,
-        validInput({ type: "instruction", description: "Düşük yağlı diyet 14 gün" }),
+        validInput({
+          type: "instruction",
+          description: "Düşük yağlı diyet 14 gün",
+        }),
         VET_A,
       );
       expect(o.type).toBe("instruction");

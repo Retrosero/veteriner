@@ -1,16 +1,13 @@
 /**
  * @file AI Help controller.
  * @module apps/api/modules/ai/ai.controller
- *
  * @description Context-aware AI help endpoint'i (GOAL-115).
  * Kullanıcının doğal dil sorusunu alır, retrieval yapar,
  * context-aware cevap üretir. LLM çağrısı Faz 12+ ile
  * eklenecek; Faz 11'de template-based answer üretimi.
- *
  * @security Tenant filtresi zorunlu. PII içeren chunk'lar
  *   yalnızca yetkili rollere açık. Cross-tenant retrieval
  *   kapatıldı.
- *
  * @since GOAL-005 (FAZ-0) dokümantasyon ve AI bilgi havuzu
  * @updated GOAL-115 (FAZ-11) context-aware help endpoint
  */
@@ -26,12 +23,13 @@ import {
 import { z } from "zod";
 
 import { CurrentActor } from "../../common/actor/actor.decorator.js";
+import { RetrievalService } from "../../common/ai/retrieval.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   RetrieveRequest,
   RetrieveResponse,
 } from "../../common/ai/chunk.types.js";
-import { RetrievalService } from "../../common/ai/retrieval.service.js";
 
 /** Help request Zod şeması (input validation). */
 const helpRequestSchema = z.object({
@@ -69,6 +67,8 @@ export class AiController {
    * `POST /api/v1/ai/help` — kullanıcı sorusunu context-aware
    * yanıtla (GOAL-115). Retrieval + template-based answer
    * üretimi yapar; LLM entegrasyonu Faz 12+ ile eklenecek.
+   * @param rawBody
+   * @param actor
    */
   @Post("help")
   @HttpCode(HttpStatus.OK)
@@ -93,9 +93,7 @@ export class AiController {
         userId,
         role,
         ...(body.currentPage ? { currentPage: body.currentPage } : {}),
-        ...(body.selectedEntity
-          ? { selectedEntity: body.selectedEntity }
-          : {}),
+        ...(body.selectedEntity ? { selectedEntity: body.selectedEntity } : {}),
       },
       topK: body.topK ?? 5,
     };
@@ -146,6 +144,12 @@ export class AiController {
    * Basit template-based answer üretimi. Retrieval sonuçlarından
    * en yüksek skorlu chunk'ın title + content özetini döner.
    * LLM entegrasyonu Faz 12+'da bu fonksiyonun yerini alır.
+   * @param args
+   * @param args.query
+   * @param args.chunks
+   * @param args.locale
+   * @param args.role
+   * @param args.currentPage
    */
   private composeAnswer(args: {
     query: string;

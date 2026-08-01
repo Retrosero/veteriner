@@ -15,8 +15,8 @@ import { Module } from "@nestjs/common";
 import { OperationNotesController } from "./operation-notes.controller.js";
 import { OperationNotesRepository } from "./operation-notes.repository.js";
 import { OperationNotesService } from "./operation-notes.service.js";
-import { SurgeryPlansModule } from "../surgery-plans/surgery-plans.module.js";
 import { StockMovementsModule } from "../stock-movements/stock-movements.module.js";
+import { SurgeryPlansModule } from "../surgery-plans/surgery-plans.module.js";
 
 @Module({
   imports: [SurgeryPlansModule, StockMovementsModule],

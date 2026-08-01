@@ -11,17 +11,16 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { PortalAppointmentsService } from "./portal-appointments.service.js";
+import { PortalAuthRepository } from "../portal-auth/portal-auth.repository.js";
+import { PortalAuthService } from "../portal-auth/portal-auth.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-import type { Appointment, Patient } from "@vetniva/contracts";
-
 import type { AppointmentsService } from "../appointments/appointments.service.js";
 import type { NotificationsService } from "../notifications/notifications.service.js";
 import type { PatientsService } from "../patients/patients.service.js";
-import { PortalAuthService } from "../portal-auth/portal-auth.service.js";
-import { PortalAuthRepository } from "../portal-auth/portal-auth.repository.js";
-
-import { PortalAppointmentsService } from "./portal-appointments.service.js";
+import type { Appointment, Patient } from "@vetniva/contracts";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -131,28 +130,30 @@ function makeAppointments(): {
   const service = {
     create: vi
       .fn()
-      .mockImplementation(async (tenantId: string, input: { start: string }) => {
-        appointmentCounter += 1;
-        const id = `appt-stub-${appointmentCounter}`;
-        createdIds.push(id);
-        const startMs = new Date(input.start).getTime();
-        const end = new Date(startMs + 30 * 60_000).toISOString();
-        const appt: Appointment = {
-          id,
-          tenantId,
-          patientId: "pat-any",
-          ownerId: OWNER_A,
-          veterinarianId: "vet-stub",
-          type: "consultation",
-          status: "scheduled",
-          start: input.start,
-          end,
-          notes: null,
-          createdAt: new Date().toISOString(),
-          createdBy: "usr-staff",
-        };
-        return appt;
-      }),
+      .mockImplementation(
+        async (tenantId: string, input: { start: string }) => {
+          appointmentCounter += 1;
+          const id = `appt-stub-${appointmentCounter}`;
+          createdIds.push(id);
+          const startMs = new Date(input.start).getTime();
+          const end = new Date(startMs + 30 * 60_000).toISOString();
+          const appt: Appointment = {
+            id,
+            tenantId,
+            patientId: "pat-any",
+            ownerId: OWNER_A,
+            veterinarianId: "vet-stub",
+            type: "consultation",
+            status: "scheduled",
+            start: input.start,
+            end,
+            notes: null,
+            createdAt: new Date().toISOString(),
+            createdBy: "usr-staff",
+          };
+          return appt;
+        },
+      ),
     findById: vi.fn().mockImplementation(async () => null),
   } as unknown as AppointmentsService;
   return { service, createdIds };
@@ -235,7 +236,11 @@ describe("PortalAppointmentsService", () => {
     patientStore.clear();
     appointmentCounter = 0;
     portalAuthRepo = new PortalAuthRepository();
-    portalAuth = new PortalAuthService(portalAuthRepo, makeAudit(), {} as never);
+    portalAuth = new PortalAuthService(
+      portalAuthRepo,
+      makeAudit(),
+      {} as never,
+    );
     patients = makePatients();
     const a = makeAppointments();
     appointments = a.service;

@@ -25,11 +25,7 @@ export type VeterinaryRegistry = "turkveteriner" | "petvet" | "il_tarim";
 
 /** Kayıt türü. */
 export type RegistryRecordType =
-  | "vaccination"
-  | "microchip"
-  | "ownership"
-  | "examination"
-  | "death";
+  "vaccination" | "microchip" | "ownership" | "examination" | "death";
 
 /** Adapter payload (ortak). */
 export interface RegistryRecord {
@@ -72,4 +68,6 @@ export interface VeterinaryRegistryAdapter {
 }
 
 /** DI token. */
-export const VETERINARY_REGISTRY_ADAPTER = Symbol("VETERINARY_REGISTRY_ADAPTER");
+export const VETERINARY_REGISTRY_ADAPTER = Symbol(
+  "VETERINARY_REGISTRY_ADAPTER",
+);

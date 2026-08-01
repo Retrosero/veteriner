@@ -89,12 +89,14 @@ export const clinicalConsumptionLineSchema = z.object({
   lotId: z.string().min(1).max(100).optional(),
   quantity: z
     .string()
+    // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden decimal doğrulamasıdır.
     .regex(/^\d+(\.\d{1,4})?$/, "Geçersiz miktar formatı (ör. 2 veya 0.5)")
     .refine((v) => v !== "0" && v !== "0.0", {
       message: "Tüketim miktarı sıfır olamaz",
     }),
   unitCost: z
     .string()
+    // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden decimal doğrulamasıdır.
     .regex(/^\d+(\.\d{1,4})?$/)
     .optional(),
   notes: z.string().max(500).optional(),

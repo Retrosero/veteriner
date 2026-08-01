@@ -216,7 +216,10 @@ function decimalToScaledBigInt(value: string): bigint | null {
  * günler aşağı yuvarlanır). SKT geçmişse negatif değer.
  * `now` parametresi test için enjekte edilebilir.
  */
-export function daysUntilExpiry(expiryDate: string, now: Date = new Date()): number {
+export function daysUntilExpiry(
+  expiryDate: string,
+  now: Date = new Date(),
+): number {
   const expiryMs = Date.parse(expiryDate);
   if (Number.isNaN(expiryMs)) return Number.MAX_SAFE_INTEGER;
   const diffMs = expiryMs - now.getTime();

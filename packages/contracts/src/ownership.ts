@@ -56,12 +56,11 @@ export const ownershipTransferInputSchema = z.object({
    * Yeni kaydın başlangıç tarihi (ISO 8601). Verilmezse sunucu
    * zamanı kullanılır.
    */
-  startDate: z
-    .string()
-    .datetime({ offset: true })
-    .optional(),
+  startDate: z.string().datetime({ offset: true }).optional(),
 });
-export type OwnershipTransferInput = z.infer<typeof ownershipTransferInputSchema>;
+export type OwnershipTransferInput = z.infer<
+  typeof ownershipTransferInputSchema
+>;
 
 /** API response şeması (sahiplik kaydı). */
 export const ownershipRecordSchema = z.object({

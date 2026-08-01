@@ -14,17 +14,16 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { VaccineApplicationsRepository } from "./vaccine-applications.repository.js";
+import { VaccineApplicationsService } from "./vaccine-applications.service.js";
+import { VaccineStockLedger } from "../../common/vaccines/vaccine-stock-ledger.js";
+
+import type { VaccinesService } from "./vaccines.service.js";
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
 import type { Patient } from "../../common/patients/patient.types.js";
-import type { VaccineProtocol } from "@vetniva/contracts";
 import type { PatientsService } from "../patients/patients.service.js";
-import type { VaccinesService } from "./vaccines.service.js";
-
-import { VaccineStockLedger } from "../../common/vaccines/vaccine-stock-ledger.js";
-import { VaccineApplicationsService } from "./vaccine-applications.service.js";
-import { VaccineApplicationsRepository } from "./vaccine-applications.repository.js";
-import { VaccinesRepository } from "./vaccines.repository.js";
+import type { VaccineProtocol } from "@vetniva/contracts";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const TENANT_B = "tnt-bbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -70,7 +69,11 @@ const SUPERADMIN: ActorContext = {
 
 /** Mock patient store. */
 const patientsStore = new Map<string, Patient>();
-function seedPatient(tenantId: string, id: string, species: Patient["species"]): void {
+function seedPatient(
+  tenantId: string,
+  id: string,
+  species: Patient["species"],
+): void {
   const p: Patient = {
     id,
     tenantId,
@@ -219,11 +222,7 @@ describe("VaccineApplicationsService", () => {
 
   describe("createApplication", () => {
     it("başarı: kayıt oluşur + stok 1 düşer + audit.create (info)", async () => {
-      const a = await service.createApplication(
-        TENANT_A,
-        validInput(),
-        VET_A,
-      );
+      const a = await service.createApplication(TENANT_A, validInput(), VET_A);
       expect(a.id).toMatch(/^vaca-/);
       expect(a.patientId).toBe("pat-dog-1");
       expect(a.protocolId).toBe("vacp-test-1");
@@ -438,11 +437,7 @@ describe("VaccineApplicationsService", () => {
     });
 
     it("administeredBy belirtilmezse actor.actorId kullanılır", async () => {
-      const a = await service.createApplication(
-        TENANT_A,
-        validInput(),
-        VET_A,
-      );
+      const a = await service.createApplication(TENANT_A, validInput(), VET_A);
       expect(a.administeredBy).toBe("usr-vet-a");
     });
   });
@@ -490,11 +485,7 @@ describe("VaccineApplicationsService", () => {
     });
 
     it("cancelled default hariç; status=cancelled ile dahil", async () => {
-      const a = await service.createApplication(
-        TENANT_A,
-        validInput(),
-        VET_A,
-      );
+      const a = await service.createApplication(TENANT_A, validInput(), VET_A);
       await service.cancelApplication(
         TENANT_A,
         a.id,
@@ -532,11 +523,7 @@ describe("VaccineApplicationsService", () => {
 
   describe("getApplication", () => {
     it("cross-tenant → null", async () => {
-      const a = await service.createApplication(
-        TENANT_A,
-        validInput(),
-        VET_A,
-      );
+      const a = await service.createApplication(TENANT_A, validInput(), VET_A);
       const found = await service.getApplication(TENANT_B, a.id, VET_B);
       expect(found).toBeNull();
     });
@@ -558,11 +545,7 @@ describe("VaccineApplicationsService", () => {
         validInput({ applicationDate: "2026-02-10T10:00:00.000Z" }),
         VET_A,
       );
-      const list = await service.listByPatient(
-        TENANT_A,
-        "pat-dog-1",
-        VET_A,
-      );
+      const list = await service.listByPatient(TENANT_A, "pat-dog-1", VET_A);
       expect(list).toHaveLength(2);
       const a0 = list[0];
       const a1 = list[1];
@@ -580,11 +563,7 @@ describe("VaccineApplicationsService", () => {
 
   describe("amendApplication", () => {
     it("active → amended, doz + sonraki tarih güncellenir", async () => {
-      const a = await service.createApplication(
-        TENANT_A,
-        validInput(),
-        VET_A,
-      );
+      const a = await service.createApplication(TENANT_A, validInput(), VET_A);
       (audit.recordSimple as ReturnType<typeof vi.fn>).mockClear();
       const amended = await service.amendApplication(
         TENANT_A,
@@ -624,11 +603,7 @@ describe("VaccineApplicationsService", () => {
     });
 
     it("cancelled kayıt amend edilemez → 409 VET-VACC-0007", async () => {
-      const a = await service.createApplication(
-        TENANT_A,
-        validInput(),
-        VET_A,
-      );
+      const a = await service.createApplication(TENANT_A, validInput(), VET_A);
       await service.cancelApplication(
         TENANT_A,
         a.id,
@@ -636,12 +611,7 @@ describe("VaccineApplicationsService", () => {
         VET_A,
       );
       await expect(
-        service.amendApplication(
-          TENANT_A,
-          a.id,
-          { reason: "tekrar" },
-          VET_A,
-        ),
+        service.amendApplication(TENANT_A, a.id, { reason: "tekrar" }, VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-VACC-0007",
         httpStatus: 409,
@@ -649,11 +619,7 @@ describe("VaccineApplicationsService", () => {
     });
 
     it("zaten amended kayıt → 409 VET-VACC-0007", async () => {
-      const a = await service.createApplication(
-        TENANT_A,
-        validInput(),
-        VET_A,
-      );
+      const a = await service.createApplication(TENANT_A, validInput(), VET_A);
       await service.amendApplication(
         TENANT_A,
         a.id,
@@ -661,12 +627,7 @@ describe("VaccineApplicationsService", () => {
         VET_A,
       );
       await expect(
-        service.amendApplication(
-          TENANT_A,
-          a.id,
-          { reason: "second" },
-          VET_A,
-        ),
+        service.amendApplication(TENANT_A, a.id, { reason: "second" }, VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-VACC-0007",
         httpStatus: 409,
@@ -674,18 +635,9 @@ describe("VaccineApplicationsService", () => {
     });
 
     it("cross-tenant → 404 VET-CLINIC-0001", async () => {
-      const a = await service.createApplication(
-        TENANT_A,
-        validInput(),
-        VET_A,
-      );
+      const a = await service.createApplication(TENANT_A, validInput(), VET_A);
       await expect(
-        service.amendApplication(
-          TENANT_B,
-          a.id,
-          { reason: "x" },
-          VET_B,
-        ),
+        service.amendApplication(TENANT_B, a.id, { reason: "x" }, VET_B),
       ).rejects.toMatchObject({
         errorCode: "VET-CLINIC-0001",
         httpStatus: 404,
@@ -699,11 +651,7 @@ describe("VaccineApplicationsService", () => {
 
   describe("cancelApplication", () => {
     it("stok ters kayıt ile geri gelir + audit.cancel (warning)", async () => {
-      const a = await service.createApplication(
-        TENANT_A,
-        validInput(),
-        VET_A,
-      );
+      const a = await service.createApplication(TENANT_A, validInput(), VET_A);
       expect(
         service.getStockBalance({
           tenantId: TENANT_A,
@@ -744,17 +692,14 @@ describe("VaccineApplicationsService", () => {
         "warning",
         expect.objectContaining({
           reason: "Yanlış hayvana uygulandı",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest asymmetric matcher is intentionally consumed only by the assertion engine.
           reversedStockMovementIds: expect.any(Array),
         }),
       );
     });
 
     it("zaten cancelled → 409 VET-VACC-0008", async () => {
-      const a = await service.createApplication(
-        TENANT_A,
-        validInput(),
-        VET_A,
-      );
+      const a = await service.createApplication(TENANT_A, validInput(), VET_A);
       await service.cancelApplication(
         TENANT_A,
         a.id,
@@ -762,12 +707,7 @@ describe("VaccineApplicationsService", () => {
         VET_A,
       );
       await expect(
-        service.cancelApplication(
-          TENANT_A,
-          a.id,
-          { reason: "tekrar" },
-          VET_A,
-        ),
+        service.cancelApplication(TENANT_A, a.id, { reason: "tekrar" }, VET_A),
       ).rejects.toMatchObject({
         errorCode: "VET-VACC-0008",
         httpStatus: 409,
@@ -805,11 +745,7 @@ describe("VaccineApplicationsService", () => {
         quantity: 3,
       });
 
-      const a = await service.createApplication(
-        TENANT_A,
-        validInput(),
-        VET_A,
-      );
+      const a = await service.createApplication(TENANT_A, validInput(), VET_A);
       // Başlangıç durumu: LOT-2026-A → 4, LOT-2026-B → 3.
       expect(
         service.getStockBalance({
@@ -881,8 +817,11 @@ describe("VaccineApplicationsService", () => {
         "warning",
         expect.objectContaining({
           reason: "Yanlış lot girilmişti, doğrusu LOT-2026-B",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest asymmetric matcher is intentionally consumed only by the assertion engine.
           lotChange: expect.objectContaining({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest asymmetric matcher is intentionally consumed only by the assertion engine.
             before: expect.objectContaining({ lot: "LOT-2026-A" }),
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest asymmetric matcher is intentionally consumed only by the assertion engine.
             after: expect.objectContaining({ lot: "LOT-2026-B" }),
           }),
         }),
@@ -890,11 +829,7 @@ describe("VaccineApplicationsService", () => {
     });
 
     it("yeni lot SKT geçmişse → 422 VET-VACC-0010, eski lot değişmez", async () => {
-      const a = await service.createApplication(
-        TENANT_A,
-        validInput(),
-        VET_A,
-      );
+      const a = await service.createApplication(TENANT_A, validInput(), VET_A);
       // Eski lot 4, hareket 1 adet.
       expect(
         service.getStockBalance({
@@ -950,11 +885,7 @@ describe("VaccineApplicationsService", () => {
         expiryDate: "2027-12-31",
         quantity: 0,
       });
-      const a = await service.createApplication(
-        TENANT_A,
-        validInput(),
-        VET_A,
-      );
+      const a = await service.createApplication(TENANT_A, validInput(), VET_A);
       expect(
         service.getStockBalance({
           tenantId: TENANT_A,
@@ -1009,11 +940,7 @@ describe("VaccineApplicationsService", () => {
     });
 
     it("aynı lot bilgisi gönderilirse stok hareketi oluşmaz, sadece alanlar güncellenir", async () => {
-      const a = await service.createApplication(
-        TENANT_A,
-        validInput(),
-        VET_A,
-      );
+      const a = await service.createApplication(TENANT_A, validInput(), VET_A);
       const oldMovementCount = a.stockMovementIds.length;
 
       const amended = await service.amendApplication(
@@ -1052,11 +979,7 @@ describe("VaccineApplicationsService", () => {
         expiryDate: "2027-12-31",
         quantity: 2,
       });
-      const a = await service.createApplication(
-        TENANT_A,
-        validInput(),
-        VET_A,
-      );
+      const a = await service.createApplication(TENANT_A, validInput(), VET_A);
       (audit.recordSimple as ReturnType<typeof vi.fn>).mockClear();
 
       const amended = await service.amendApplication(
@@ -1089,14 +1012,19 @@ describe("VaccineApplicationsService", () => {
         "warning",
         expect.objectContaining({
           reason: "lot yanlıştı, doz da eksikti",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest asymmetric matcher is intentionally consumed only by the assertion engine.
           before: expect.objectContaining({
             dose: { amount: 1, unit: "ml" },
           }),
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest asymmetric matcher is intentionally consumed only by the assertion engine.
           after: expect.objectContaining({
             dose: { amount: 0.5, unit: "ml" },
           }),
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest asymmetric matcher is intentionally consumed only by the assertion engine.
           lotChange: expect.objectContaining({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest asymmetric matcher is intentionally consumed only by the assertion engine.
             before: expect.objectContaining({ lot: "LOT-2026-A" }),
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest asymmetric matcher is intentionally consumed only by the assertion engine.
             after: expect.objectContaining({ lot: "LOT-2026-D" }),
           }),
         }),

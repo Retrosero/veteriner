@@ -18,10 +18,7 @@
 import { Injectable } from "@nestjs/common";
 
 import type { LabOrderRecord } from "../../common/lab-orders/lab-order.types.js";
-import type {
-  LabOrderSourceType,
-  LabOrderStatus,
-} from "@vetniva/contracts";
+import type { LabOrderSourceType, LabOrderStatus } from "@vetniva/contracts";
 
 /** Patch tipi. */
 export interface LabOrderPatch {
@@ -76,10 +73,7 @@ export class LabOrdersRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): LabOrderRecord | null {
+  public findById(tenantId: string, id: string): LabOrderRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -109,17 +103,10 @@ export class LabOrdersRepository {
     for (const rec of this.byId.values()) {
       if (rec.tenantId !== tenantId) continue;
       if (filters.status && rec.status !== filters.status) continue;
-      if (filters.patientId && rec.patientId !== filters.patientId)
-        continue;
-      if (
-        filters.sourceType &&
-        rec.sourceType !== filters.sourceType
-      )
-        continue;
-      if (filters.sourceId && rec.sourceId !== filters.sourceId)
-        continue;
-      if (filters.dateFrom && rec.createdAt < filters.dateFrom)
-        continue;
+      if (filters.patientId && rec.patientId !== filters.patientId) continue;
+      if (filters.sourceType && rec.sourceType !== filters.sourceType) continue;
+      if (filters.sourceId && rec.sourceId !== filters.sourceId) continue;
+      if (filters.dateFrom && rec.createdAt < filters.dateFrom) continue;
       if (filters.dateTo && rec.createdAt > filters.dateTo) continue;
       all.push(rec);
     }

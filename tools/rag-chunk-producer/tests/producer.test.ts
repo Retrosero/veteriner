@@ -8,6 +8,10 @@
  * @since GOAL-116 (FAZ-11) RAG chunk production pipeline
  */
 
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import {
@@ -17,6 +21,7 @@ import {
   inferType,
   extractKeywords,
   extractApiRefs,
+  mergeChunks,
 } from "../src/index.js";
 
 const config = {
@@ -45,7 +50,9 @@ describe("RAG chunk producer", () => {
       "permission",
     );
     expect(inferType("docs/fields/FIELD_GLOSSARY.md", "x")).toBe("field");
-    expect(inferType("docs/user-education/AUTH.md", "x")).toBe("user_education");
+    expect(inferType("docs/user-education/AUTH.md", "x")).toBe(
+      "user_education",
+    );
     expect(inferType("docs/domain/DOMAIN_GLOSSARY.md", "x")).toBe("glossary");
   });
 
@@ -106,7 +113,11 @@ purpose:
 related_api:
   - "GET /api/v1/test"
 `;
-    const chunks = chunkYaml(yaml, "docs/pages/web.app.locale.test.yaml", config);
+    const chunks = chunkYaml(
+      yaml,
+      "docs/pages/web.app.locale.test.yaml",
+      config,
+    );
     expect(chunks.length).toBe(1);
     expect(chunks[0]!.chunk_id).toBe("web.app.locale.test");
     expect(chunks[0]!.type).toBe("page");
@@ -118,5 +129,33 @@ related_api:
   it("chunkYaml: parse hatası durumunda boş döner", () => {
     const chunks = chunkYaml("not: valid: yaml: [", "test.yaml", config);
     expect(chunks.length).toBe(0);
+  });
+
+  it("mergeChunks: mapping şemasında metadata ve kayıtları korur", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "vetniva-rag-"));
+    const output = path.join(directory, "AI_CHUNKS.yaml");
+    try {
+      await writeFile(
+        output,
+        'version: "1.0.0"\ngenerated_by: "test"\nchunks:\n  - chunk_id: existing\n    type: glossary\n',
+        "utf8",
+      );
+      const [newChunk] = chunkMarkdown(
+        "## Yeni chunk\n\nYeterince uzun test içeriği; RAG kaydı üretmek için kullanılır.",
+        "docs/workflows/test.md",
+        config,
+      );
+      expect(newChunk).toBeDefined();
+
+      const result = await mergeChunks(output, [newChunk!]);
+      const written = await readFile(output, "utf8");
+
+      expect(result).toEqual({ added: 1, skipped: 0 });
+      expect(written).toContain("generated_by: test");
+      expect(written).toContain("chunk_id: existing");
+      expect(written).toContain(`chunk_id: ${newChunk!.chunk_id}`);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
   });
 });

@@ -10,7 +10,10 @@
  * @since GOAL-015 (FAZ-2) bildirim altyapısı temeli
  */
 
-import type { NotificationChannel, NotificationLocale } from "@vetniva/contracts";
+import type {
+  NotificationChannel,
+  NotificationLocale,
+} from "@vetniva/contracts";
 
 /** Provider'a gönderilen yük. */
 export interface ProviderSendPayload {

@@ -221,7 +221,7 @@
   SSS). Tüm personel rolleri için ortak rehber.
 - Sayfa kataloğu: Frontend henüz yok (GOAL-012+).
 - API kataloğu: `docs/api/API_CATALOG.md` (`/auth` + `/me` bölümleri)
-  + 3 yeni endpoint doc sayfası.
+  - 3 yeni endpoint doc sayfası.
 - Alan sözlüğü: `docs/fields/FIELD_GLOSSARY.md` — User (17 alan),
   UserSession (10 alan), UserInvitation (10 alan),
   PasswordResetToken (6 alan).

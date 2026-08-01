@@ -25,17 +25,17 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import { AuditService } from "../../common/audit/audit.service.js";
+import { OwnersRepository, type OwnerRecord } from "./owners.repository.js";
 import { getCountryAdapter } from "../../common/adapters/index.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   Owner,
   OwnerCreateInput,
   OwnerFilters,
 } from "../../common/owners/owner.types.js";
-
-import { OwnersRepository, type OwnerRecord } from "./owners.repository.js";
 
 @Injectable()
 export class OwnersService {

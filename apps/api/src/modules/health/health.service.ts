@@ -1,16 +1,14 @@
 /**
  * @file HealthService.
  * @module apps/api/modules/health
- *
  * @description Liveness ve readiness kontrolleri. Liveness yalnızca
  * sürecin ayakta olduğunu doğrular. Readiness DB bağlantısını test
- * eder ve sonucu latency_ms ile birlikte raporlar.
- *
- * @security Tenant bağlamı yoktur. DB sorgusu `SELECT 1` ile sınırlı;
- * PII içermez.
+ * eder ve sonucu latency_ms ile birlikte raporlar. Güvenlik: tenant
+ * bağlamı yoktur; DB sorgusu `SELECT 1` ile sınırlıdır ve PII içermez.
  */
 
 import { Injectable, Logger } from "@nestjs/common";
+
 import { PrismaService } from "../../prisma/prisma.service.js";
 
 @Injectable()
@@ -21,8 +19,7 @@ export class HealthService {
 
   /**
    * Veritabanı bağlantısını test eder. Hata durumunda `down` döner.
-   *
-   * @returns `db` durumu ve ölçülen gecikme (ms).
+   * @returns {Promise<object>} DB durumu ve ölçülen gecikme (ms).
    */
   public async checkDatabase(): Promise<{
     status: "ok" | "down";

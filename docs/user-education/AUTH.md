@@ -60,7 +60,7 @@ Bir kullanıcı sisteme iki yoldan girebilir:
 ### Çoklu cihaz
 
 - Aynı anda birden fazla cihazda oturum açabilirsiniz (örn. bilgisayar
-  + tablet).
+  - tablet).
 - Aktif oturumlarınızı **Ayarlar → Oturumlar** altından
   yönetebilirsiniz. Şüpheli bir oturum görürseniz uzaktan
   kapatabilirsiniz.
@@ -162,6 +162,7 @@ Bir kullanıcı sisteme iki yoldan girebilir:
   düğmesi.
 
 Şüpheli bir oturum görürseniz (tanımadığınız cihaz/konum):
+
 1. Hemen parolanızı değiştirin (yukarıdaki bölüm 4).
 2. Tüm oturumları kapatın.
 3. Klinik yöneticinize bildirin.
@@ -178,6 +179,7 @@ kilitlenir. Bu süre içinde giriş denerseniz:
 
 Kilit süresi dolduktan sonra tekrar deneyebilirsiniz. Hesabınız
 sürekli kilitleniyorsa:
+
 - Parolanızı sıfırlayın (yukarıdaki bölüm 3).
 - Veya klinik yöneticiniz hesabınızı sıfırlasın.
 
@@ -187,26 +189,26 @@ sürekli kilitleniyorsa:
 
 **S: Parolamı unuttum, e-postam da değişti. Ne yapmalıyım?**
 C: Klinik yöneticinizle iletişime geçin. Yönetici sizin için yeni
-   bir davet oluşturabilir.
+bir davet oluşturabilir.
 
 **S: Davet bağlantımın süresi doldu. Yeni bağlantı alabilir miyim?**
 C: Klinik yöneticinizden yeni bir davet göndermesini isteyin.
 
 **S: Aynı anda iki cihazda oturum açabilir miyim?**
 C: Evet. Aynı anda birden fazla cihazda oturum açabilirsiniz.
-   Yönetmek için **Ayarlar → Oturumlar**'a gidin.
+Yönetmek için **Ayarlar → Oturumlar**'a gidin.
 
 **S: Eski parolamı geri alabilir miyim?**
 C: Hayır. Parolalar bcrypt ile tek yönlü hash'lenir; geri alınamaz.
-   Sıfırlama bağlantısı kullanmanız gerekir.
+Sıfırlama bağlantısı kullanmanız gerekir.
 
 **S: Sistem yöneticisi parolamı görebilir mi?**
 C: Hayır. Sistem yöneticisi dahil hiç kimse parolanızı göremez.
-   Yalnızca sıfırlama yapabilir.
+Yalnızca sıfırlama yapabilir.
 
 **S: Hesabım neden askıya alındı (suspended)?**
 C: Klinik yöneticiniz tarafından geçici olarak devre dışı
-   bırakılmış olabilir. Yöneticiyle iletişime geçin.
+bırakılmış olabilir. Yöneticiyle iletişime geçin.
 
 ---
 

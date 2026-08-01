@@ -45,18 +45,10 @@ export const paymentStatusSchema = z.enum([
 ]);
 export type PaymentStatus = z.infer<typeof paymentStatusSchema>;
 
-export const paymentSourceTypeSchema = z.enum([
-  "clinic_sale",
-  "petshop_sale",
-]);
+export const paymentSourceTypeSchema = z.enum(["clinic_sale", "petshop_sale"]);
 export type PaymentSourceType = z.infer<typeof paymentSourceTypeSchema>;
 
-export const paymentCurrencySchema = z.enum([
-  "TRY",
-  "GBP",
-  "USD",
-  "EUR",
-]);
+export const paymentCurrencySchema = z.enum(["TRY", "GBP", "USD", "EUR"]);
 export type PaymentCurrency = z.infer<typeof paymentCurrencySchema>;
 
 /* --------------------------------------------------------------------------
@@ -78,9 +70,8 @@ export type PaymentCurrency = z.infer<typeof paymentCurrencySchema>;
 export const paymentCreateInputSchema = z.object({
   sourceType: paymentSourceTypeSchema,
   sourceId: z.string().min(1).max(100),
-  amount: z
-    .string()
-    .regex(/^\d+(\.\d{1,4})?$/, "Geçersiz tutar"),
+  // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden para tutarı doğrulamasıdır.
+  amount: z.string().regex(/^\d+(\.\d{1,4})?$/, "Geçersiz tutar"),
   method: paymentMethodSchema,
   currency: paymentCurrencySchema.optional().default("TRY"),
   paidAt: z.string().datetime().optional(),
@@ -104,6 +95,7 @@ export type PaymentCreateInput = z.infer<typeof paymentCreateInputSchema>;
 export const paymentReverseInputSchema = z.object({
   amount: z
     .string()
+    // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden para tutarı doğrulamasıdır.
     .regex(/^\d+(\.\d{1,4})?$/, "Geçersiz tutar")
     .optional(),
   reason: z.string().min(1).max(2000),

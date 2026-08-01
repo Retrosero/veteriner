@@ -12,23 +12,20 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ReportsService } from "./reports.service.js";
+import { ClinicSalesRepository } from "../clinic-sales/clinic-sales.repository.js";
+import { ClinicSalesService } from "../clinic-sales/clinic-sales.service.js";
+import { PetshopSalesRepository } from "../petshop-sales/petshop-sales.repository.js";
+import { PetshopSalesService } from "../petshop-sales/petshop-sales.service.js";
+import { ProductsRepository } from "../products/products.repository.js";
+import { ProductsService } from "../products/products.service.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-
-import { ReportsService } from "./reports.service.js";
-import { ClinicSalesService } from "../clinic-sales/clinic-sales.service.js";
-import { ClinicSalesRepository } from "../clinic-sales/clinic-sales.repository.js";
-import { PetshopSalesService } from "../petshop-sales/petshop-sales.service.js";
-import { PetshopSalesRepository } from "../petshop-sales/petshop-sales.repository.js";
-import { ProductsService } from "../products/products.service.js";
-import { ProductsRepository } from "../products/products.repository.js";
 import type {
-  DailySalesReport,
-  OpenBalancesReport,
   Payment,
   PaymentFilters,
   PaymentListResponse,
-  PaymentMethodsReport,
 } from "@vetniva/contracts";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
@@ -42,19 +39,6 @@ const STAFF_A: ActorContext = {
   branchId: null,
   isSuperadmin: false,
   correlationId: "req-1",
-  ipAddress: null,
-  userAgentHash: null,
-  source: "header",
-};
-
-const STAFF_B: ActorContext = {
-  actorId: "usr-staff-b",
-  actorType: "user",
-  role: "STAFF",
-  tenantId: TENANT_B,
-  branchId: null,
-  isSuperadmin: false,
-  correlationId: "req-2",
   ipAddress: null,
   userAgentHash: null,
   source: "header",
@@ -176,17 +160,11 @@ describe("ReportsService", () => {
           sourceId: "exam-001",
           currency: "TRY",
           globalDiscountPercent: 0,
-          lines: [
-            { productId: p.id, unit: "unit", quantity: "1" },
-          ],
+          lines: [{ productId: p.id, unit: "unit", quantity: "1" }],
         },
         STAFF_A,
       );
-      await clinicSales.completeClinicSale(
-        TENANT_A,
-        created.sale.id,
-        STAFF_A,
-      );
+      await clinicSales.completeClinicSale(TENANT_A, created.sale.id, STAFF_A);
       const today = new Date().toISOString().slice(0, 10);
       const out = await service.getDailySalesReport(
         TENANT_A,
@@ -339,17 +317,11 @@ describe("ReportsService", () => {
           sourceId: "exam-open",
           currency: "TRY",
           globalDiscountPercent: 0,
-          lines: [
-            { productId: p.id, unit: "unit", quantity: "1" },
-          ],
+          lines: [{ productId: p.id, unit: "unit", quantity: "1" }],
         },
         STAFF_A,
       );
-      await clinicSales.completeClinicSale(
-        TENANT_A,
-        created.sale.id,
-        STAFF_A,
-      );
+      await clinicSales.completeClinicSale(TENANT_A, created.sale.id, STAFF_A);
       // Stub payments → hiç ödeme yok.
       payments.listHandler = async () => ({ items: [], total: 0 });
       const out = await service.getOpenBalancesReport(TENANT_A, STAFF_A);

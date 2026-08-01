@@ -79,8 +79,8 @@ Yok. `repo.updateOwner` in-memory `PatientsRepository` üzerinde.
 
 ## API
 
-| Method | Path | Yetki | Kod |
-| --- | --- | --- | --- |
+| Method | Path                                 | Yetki                   | Kod |
+| ------ | ------------------------------------ | ----------------------- | --- |
 | POST   | /api/v1/clinic/patients/:id/transfer | clinic:patient:transfer | 200 |
 
 Hatalar: 404 `VET-CLINIC-0001` (patient yok/cross-tenant), 404

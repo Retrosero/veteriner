@@ -1,10 +1,8 @@
 /**
  * @file Current actor dekoratörü.
  * @module apps/api/common/actor/actor.decorator
- *
  * @description Controller metotlarında actor bilgisine tip-güvenli
  * erişim sağlar. `ActorInterceptor` ile birlikte çalışır.
- *
  * @example
  * ```ts
  * @Get()
@@ -13,14 +11,13 @@
  *   ...
  * }
  * ```
- *
- * @since GOAL-010 (FAZ-1) tenant ve şube altyapısı
+ * GOAL-010 (Faz 1) tenant ve şube altyapısının parçasıdır.
  */
 
-import { ExecutionContext, createParamDecorator } from "@nestjs/common";
-import type { Request } from "express";
+import { type ExecutionContext, createParamDecorator } from "@nestjs/common";
 
 import type { ActorContext } from "./actor-context.service.js";
+import type { Request } from "express";
 
 /**
  * İstekten actor bilgisini alır. `ActorInterceptor` tarafından

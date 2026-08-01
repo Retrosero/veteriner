@@ -10,31 +10,31 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type {
-  NotificationCategory,
-  NotificationChannel,
-  NotificationLocale,
-} from "@vetniva/contracts";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { NotificationsService } from "./notifications.service.js";
 import { ConsentService } from "../../common/notifications/consent.service.js";
 import { IdempotencyService } from "../../common/notifications/idempotency.service.js";
+import { InboxStore } from "../../common/notifications/providers/in-app.provider.js";
 import {
   MAX_ATTEMPTS,
   NotificationQueue,
   type QueueProcessOutcome,
 } from "../../common/notifications/queue.js";
 import { TemplateService } from "../../common/notifications/template.service.js";
-import { InboxStore } from "../../common/notifications/providers/in-app.provider.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
+import type { AuditService } from "../../common/audit/audit.service.js";
 import type { InboxItem } from "../../common/notifications/notification.types.js";
 import type {
   NotificationProvider,
   ProviderSendPayload,
   ProviderSendResult,
 } from "../../common/notifications/provider.interface.js";
-
-import { NotificationsService } from "./notifications.service.js";
+import type {
+  NotificationCategory,
+  NotificationChannel,
+  NotificationLocale,
+} from "@vetniva/contracts";
 
 /** Testlerde başarılı dönen noop provider. İn_app kanalında
  *  ayrıca test InboxStore'una yazar (in-app davranışını simüle
@@ -85,7 +85,9 @@ class FailingProvider implements NotificationProvider {
   constructor(channel: NotificationChannel) {
     this.channel = channel;
   }
-  public async send(_payload: ProviderSendPayload): Promise<ProviderSendResult> {
+  public async send(
+    _payload: ProviderSendPayload,
+  ): Promise<ProviderSendResult> {
     this.callCount += 1;
     throw new Error("provider boom");
   }
@@ -123,7 +125,13 @@ const BASE_REQUEST = {
   category: "appointment_reminder" as NotificationCategory,
   templateKey: "appointment_reminder",
   locale: "tr-TR" as NotificationLocale,
-  data: { ownerName: "Ahmet", petName: "Karabaş", clinicName: "Pati Vet", date: "2026-01-15", time: "10:00" },
+  data: {
+    ownerName: "Ahmet",
+    petName: "Karabaş",
+    clinicName: "Pati Vet",
+    date: "2026-01-15",
+    time: "10:00",
+  },
 };
 
 describe("NotificationsService", () => {
@@ -164,7 +172,16 @@ describe("NotificationsService", () => {
 
   describe("template render", () => {
     it("`{{variable}}` substitution çalışır", async () => {
-      const result = await service.send({ ...BASE_REQUEST, data: { petName: "Karabaş", vaccineName: "Kuduz", dueDate: "2026-01-15" }, category: "vaccination_due", templateKey: "vaccination_due" });
+      const result = await service.send({
+        ...BASE_REQUEST,
+        data: {
+          petName: "Karabaş",
+          vaccineName: "Kuduz",
+          dueDate: "2026-01-15",
+        },
+        category: "vaccination_due",
+        templateKey: "vaccination_due",
+      });
       // sent status + provider çağrıldı
       expect(result.status).toBe("sent");
       // inbox provider çağrıldı, body template render edildi
@@ -230,7 +247,10 @@ describe("NotificationsService", () => {
     it("aynı key ile ikinci çağrıda provider tekrar çağrılmaz", async () => {
       await service.send({ ...BASE_REQUEST, idempotencyKey: "key-abc-123" });
       const beforeCount = inAppProvider.callCount;
-      const second = await service.send({ ...BASE_REQUEST, idempotencyKey: "key-abc-123" });
+      const second = await service.send({
+        ...BASE_REQUEST,
+        idempotencyKey: "key-abc-123",
+      });
       // FAZ-0 stub: lookupRecord() her zaman null döner → service
       // opted_out recordId döner. Önemli olan provider'ın ikinci
       // kez çağrılmadığıdır.
@@ -239,8 +259,14 @@ describe("NotificationsService", () => {
     });
 
     it("farklı key'ler → iki ayrı kayıt", async () => {
-      const first = await service.send({ ...BASE_REQUEST, idempotencyKey: "key-1" });
-      const second = await service.send({ ...BASE_REQUEST, idempotencyKey: "key-2" });
+      const first = await service.send({
+        ...BASE_REQUEST,
+        idempotencyKey: "key-1",
+      });
+      const second = await service.send({
+        ...BASE_REQUEST,
+        idempotencyKey: "key-2",
+      });
       expect(first.id).not.toBe(second.id);
       expect(inAppProvider.callCount).toBe(2);
     });
@@ -274,7 +300,10 @@ describe("NotificationsService", () => {
         inbox,
         audit,
       );
-      const result = await localService.send({ ...BASE_REQUEST, channel: "email" });
+      const result = await localService.send({
+        ...BASE_REQUEST,
+        channel: "email",
+      });
       expect(failing.callCount).toBe(MAX_ATTEMPTS);
       expect(result.status).toBe("failed");
       expect(result.lastError).toMatch(/boom/);

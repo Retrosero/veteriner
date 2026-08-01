@@ -1,7 +1,6 @@
 /**
  * @file Diagnosis (teşhis) service.
  * @module apps/api/modules/diagnoses/diagnoses.service
- *
  * @description GOAL-043 teşhis ve problem listesi iş kuralları.
  * ExaminationsService (GOAL-040) ile entegre: yeni teşhis
  * eklenirken examination aynı tenant'ta mı doğrulanır (cross-tenant
@@ -21,31 +20,28 @@
  *   Audit `audit:diagnosis.ruled_out` (info).
  * - `remove`: soft delete (archivedAt set). Audit
  *   `audit:diagnosis.archive` (warning).
- *
  * @security Tenant bilgisi yalnızca actor.tenantId'den alınır;
  *   request body/query'den güvenilmez.
- *
  * @since GOAL-043 (FAZ-4) teşhis ve problem listesi core
  */
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { DiagnosesRepository } from "./diagnoses.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
+import {
+  type DiagnosisRecord,
+  toDiagnosis,
+} from "../../common/diagnoses/diagnosis.types.js";
 import { DomainError } from "../../common/errors/domain-error.js";
+import { ExaminationsService } from "../examinations/examinations.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   Diagnosis,
   DiagnosisCreateInput,
   DiagnosisPatientListFilters,
 } from "@vetniva/contracts";
-
-import { ExaminationsService } from "../examinations/examinations.service.js";
-
-import {
-  type DiagnosisRecord,
-  toDiagnosis,
-} from "../../common/diagnoses/diagnosis.types.js";
-import { DiagnosesRepository } from "./diagnoses.repository.js";
 
 @Injectable()
 export class DiagnosesService {
@@ -422,7 +418,7 @@ export class DiagnosesService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

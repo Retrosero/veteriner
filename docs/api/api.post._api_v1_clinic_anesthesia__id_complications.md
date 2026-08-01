@@ -26,8 +26,8 @@ POST /api/v1/clinic/anesthesia/an-uuid/complications
 ```
 
 - `type` (enum: `hypotension|hypertension|bradycardia|
-  tachycardia|hypoxia|hypercapnia|airway_obstruction|
-  anaphylaxis|other`) zorunlu.
+tachycardia|hypoxia|hypercapnia|airway_obstruction|
+anaphylaxis|other`) zorunlu.
 - `severity` (enum) zorunlu.
 - `occurredAt` (ISO datetime) zorunlu.
 - `duration` (integer, saniye) opsiyonel.

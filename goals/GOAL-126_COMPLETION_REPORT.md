@@ -1,9 +1,11 @@
 # GOAL-126 — KVKK ve Veri Yaşam Döngüsü (Completion Report)
 
 ## Faz
+
 FAZ-12 (Pilot, güvenlik, üretime hazırlık)
 
 ## Özet
+
 KVKK (Türkiye) ve UK GDPR (İngiltere) uyumlu veri yaşam
 döngüsü: erişim (audit), düzeltme (amendment), dışa
 aktarma (export), silme (erasure/anonimleştirme), arşivleme
@@ -12,6 +14,7 @@ aktarma (export), silme (erasure/anonimleştirme), arşivleme
 ## Çıktılar
 
 ### Core (`apps/api/src/common/kvkk/`)
+
 - `kvkk.service.ts`:
   - `createErasureRequest(args)` — KVKK silme talebi
     oluşturur (status: pending).
@@ -25,14 +28,16 @@ aktarma (export), silme (erasure/anonimleştirme), arşivleme
 - `kvkk.module.ts` — DI provider.
 
 ### Döküman (bu commit)
+
 - `docs/security/KVKK_DATA_LIFECYCLE.md` — kapsamlı KVKK
-  + UK GDPR yaşam döngüsü dokümanı.
+  - UK GDPR yaşam döngüsü dokümanı.
 
 ## İş Kuralları
+
 - **PII alanları:** firstName, lastName, email, phone,
   taxId, address.
 - **Anonimleştirme:** `kvkk-erased-<sha256(userId + field)
-  .slice(0, 8)>` formatı.
+.slice(0, 8)>` formatı.
 - **Tıbbi kayıtlar:** yasal saklama süresince (7 yıl)
   korunur; PII alanları anonimleştirilir.
 - **Tenant export:** JSON format; PII mask'lenmeden
@@ -44,6 +49,7 @@ aktarma (export), silme (erasure/anonimleştirme), arşivleme
   retention süresi dolsa bile silinmez.
 
 ## Yapılmayanlar / Bilinçli Atlamalar
+
 - **API endpoint'ler (kvkk/erasure-requests, export)** →
   FAZ-12+ controller katmanı.
 - **3rd party DPO (Data Protection Officer) atama** →
@@ -57,14 +63,17 @@ aktarma (export), silme (erasure/anonimleştirme), arşivleme
 - **Prisma integration (kvkk.service upsert)** → FAZ-12+.
 
 ## Döküman Uyum
+
 - `pnpm docs:check` → temiz (yeni eklenen özgü).
 - `pnpm i18n:check` → temiz.
 
 ## Testler
+
 - `kvkk.service.spec.ts` (FAZ-12+) — anonimleştirme,
   erasure, export testleri.
 - Full api regresyon: 1439+ yeşil, 9 skipped, 0 hata.
 
 ## Commit
+
 - Core: (bu commit) — `feat(kvkk): GOAL-126 erasure + export service iskeleti`
 - Docs: (bu commit) — `docs(security): GOAL-126 KVKK veri yaşam döngüsü dokümanı`

@@ -149,9 +149,7 @@ describe("scanI18nParity", () => {
         .filter((i) => i.severity === "error")
         .map((i) => i.message)
         .sort();
-      expect(missing).toEqual([
-        "Eksik i18n anahtarı: nav.settings.profile",
-      ]);
+      expect(missing).toEqual(["Eksik i18n anahtarı: nav.settings.profile"]);
     } finally {
       await rm(tmpRoot, { recursive: true, force: true });
     }

@@ -12,11 +12,10 @@
 
 import { Module } from "@nestjs/common";
 
-import { ExaminationsModule } from "../examinations/examinations.module.js";
-
 import { OrdersController } from "./orders.controller.js";
 import { OrdersRepository } from "./orders.repository.js";
 import { OrdersService } from "./orders.service.js";
+import { ExaminationsModule } from "../examinations/examinations.module.js";
 
 @Module({
   imports: [ExaminationsModule],

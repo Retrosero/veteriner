@@ -1,16 +1,14 @@
 /**
  * @file API istemcisi (fetch wrapper).
  * @module @vetniva/web/lib/api-client
- *
  * @description Sunucu tarafında API çağrılarını standart hale getiren
  * ince sarmalayıcı. Her istek:
  *   - `X-Request-Id` başlığı taşır (yoksa UUID üretir),
  *   - 5 saniye timeout uygular,
  *   - hata response'larını `@vetniva/contracts` `errorResponseSchema`
  *     ile doğrular,
- *   - network hatalarını sabit kodlu `TR_COMMON_0001` `ErrorResponse`'a
+ *   - network hatalarını sabit kodlu `VET-COMMON-0001` `ErrorResponse`'a
  *     dönüştürür.
- *
  * @security Hassas içerik taşıyan isteklerde `X-Request-Id` ile
  * correlation sağlanır; bu sayede backend logları frontend logları
  * ile eşleştirilebilir. PII (TC kimlik, telefon vb.) bu fonksiyondan
@@ -30,7 +28,7 @@ const REQUEST_TIMEOUT_MS = 5_000;
  * i18n kataloğundan çözümlenir; koda dayalı karar destek sisteminde
  * alınır.
  */
-const NETWORK_ERROR_CODE = "TR_COMMON_0001";
+const NETWORK_ERROR_CODE = "VET-COMMON-0001";
 
 export type ApiSuccess<T> = {
   ok: true;
@@ -48,7 +46,7 @@ export type ApiFailure = {
 export type ApiResult<T> = ApiSuccess<T> | ApiFailure;
 
 /**
- * Yeni bir request ID üretir. crypto.randomUUID() modern ortamlarda
+ * Yeni bir request ID üretir. Crypto.randomUUID() modern ortamlarda
  * mevcuttur; fallback olarak Math.random tabanlı ID kullanılır.
  */
 function generateRequestId(): string {
@@ -61,6 +59,8 @@ function generateRequestId(): string {
 /**
  * Standart hata response üretir. Network hatası veya parse hatası
  * durumlarında bu fonksiyon çağrılır; hata kodu sabit kalır.
+ * @param message
+ * @param requestId
  */
 function buildNetworkError(
   message: string,
@@ -81,6 +81,8 @@ function buildNetworkError(
  * olarak serialize edilir. Response her zaman iki koldan birine düşer:
  * başarı (T döner) veya hata (ErrorResponse döner). Hiçbir koşulda
  * throw etmez.
+ * @param path
+ * @param init
  */
 export async function apiRequest<T>(
   path: string,
@@ -164,8 +166,9 @@ export async function apiRequest<T>(
 
 /**
  * Hatalı response gövdesini `ErrorResponse` şeması ile doğrular.
- * Şemayla eşleşmezse (ör. backend yanlış formatta döndüyse) null
+ * Şemayla eşleşmezse (ör. Backend yanlış formatta döndüyse) null
  * döner; çağıran taraf network hatasına düşer.
+ * @param response
  */
 async function safeParseError(
   response: Response,
@@ -188,6 +191,7 @@ async function safeParseError(
  * İlk çağrıda gelen headers içinden (varsa) X-Request-Id başlığını
  * çıkarır. Aynı ID upstream ve downstream'de taşınır; bu sayede
  * server logları frontend logları ile eşleşir.
+ * @param headers
  */
 function extractRequestId(headers: HeadersInit): string | null {
   if (headers instanceof Headers) {

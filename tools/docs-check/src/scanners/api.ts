@@ -1,16 +1,16 @@
 /**
  * @file NestJS controller tarayıcısı.
  * @module @vetniva/docs-check/scanners/api
- *
  * @description `@Controller(...)` ve HTTP method dekoratörlerini
  * (`@Get`, `@Post`, ...) regex ile bularak API route'larını çıkarır.
  * Bu, statik analiz temelli bir çıkarımdır; dinamik prefix'ler
  * desteklenmez.
  */
 
-import fg from "fast-glob";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+
+import fg from "fast-glob";
 
 import type { RouteInfo } from "../types.js";
 
@@ -32,8 +32,13 @@ const METHOD_PATTERN =
   "`]*)" +
   "['\"`]" +
   "\\s*\\)";
+// eslint-disable-next-line security/detect-non-literal-regexp -- Pattern yalnızca sabit HTTP_DECORATORS listesinden derlenir.
 const METHOD_RE = new RegExp(METHOD_PATTERN, "g");
 
+/**
+ * API controller kaynaklarından HTTP route envanterini çıkarır.
+ * @param appsApiRoot
+ */
 export async function scanApiRoutes(appsApiRoot: string): Promise<RouteInfo[]> {
   const exists = await pathExists(appsApiRoot);
   if (!exists) return [];
@@ -47,6 +52,7 @@ export async function scanApiRoutes(appsApiRoot: string): Promise<RouteInfo[]> {
   const routes: RouteInfo[] = [];
   for (const rel of files) {
     const abs = path.join(appsApiRoot, rel);
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- Yol repo kökü ve glob sonucu ile sınırlıdır.
     const source = await readFile(abs, "utf8");
     const controllerMatch = source.match(CONTROLLER_RE);
     const controllerPrefix = controllerMatch?.[1] ?? "";
@@ -66,6 +72,11 @@ export async function scanApiRoutes(appsApiRoot: string): Promise<RouteInfo[]> {
   return routes;
 }
 
+/**
+ * Controller ve method yol parçalarını tek normalize route olarak birleştirir.
+ * @param a
+ * @param b
+ */
 function joinPaths(a: string, b: string): string {
   const left = a.replace(/^\/|\/$/g, "");
   const right = b.replace(/^\/|\/$/g, "");
@@ -74,6 +85,10 @@ function joinPaths(a: string, b: string): string {
   return `/${left}/${right}`;
 }
 
+/**
+ * Bir dizinin tarama için erişilebilir olup olmadığını doğrular.
+ * @param p
+ */
 async function pathExists(p: string): Promise<boolean> {
   try {
     return (await fg(["."], { cwd: p, onlyFiles: false, deep: 0 })).length > 0;

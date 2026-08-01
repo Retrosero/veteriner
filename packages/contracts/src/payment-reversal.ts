@@ -82,6 +82,7 @@ export type PaymentReverseReason = z.infer<typeof paymentReverseReasonSchema>;
 export const paymentReversalCreateInputSchema = z.object({
   amount: z
     .string()
+    // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden para tutarı doğrulamasıdır.
     .regex(/^\d+(\.\d{1,4})?$/, "Geçersiz tutar")
     .optional(),
   reason: paymentReverseReasonSchema,

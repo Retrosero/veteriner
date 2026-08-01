@@ -1,15 +1,18 @@
 # GOAL-134 — Resmî Veteriner Adapter (Completion Report)
 
 ## Faz
+
 FAZ-13 (Türkiye uyumluluk ve entegrasyonlar)
 
 ## Özet
+
 Türkiye'deki resmî veteriner sistemlerine (Türkvet, PETVET,
 İl/İlçe Tarım) zorunlu veri aktarımı için adapter sözleşmesi.
 
 ## Çıktılar
 
 ### Core (`apps/api/src/common/integrations/veterinary/`)
+
 - `registry.adapter.ts`:
   - `VeterinaryRegistry` enum (turkveteriner | petvet |
     il_tarim).
@@ -21,6 +24,7 @@ Türkiye'deki resmî veteriner sistemlerine (Türkvet, PETVET,
   - `VETERINARY_REGISTRY_ADAPTER` DI token.
 
 ### Döküman (bu commit)
+
 - `docs/integrations/VETERINARY_REGISTRY.md` — yasal
   dayanak (5996 sayılı Kanun + Kedi/Köpek Kimliklendirme
   Yönetmeliği), sağlayıcı seçimi, veri şeması, iş akışı
@@ -28,6 +32,7 @@ Türkiye'deki resmî veteriner sistemlerine (Türkvet, PETVET,
   key rotation, rate limit), audit.
 
 ## İş Kuralları
+
 - **5 yıl saklama:** KVKK + VUK gereği.
 - **Audit:** `audit:veterinary_registry.submitted` (info),
   `audit:veterinary_registry.rejected` (warning).
@@ -38,6 +43,7 @@ Türkiye'deki resmî veteriner sistemlerine (Türkvet, PETVET,
 - **Rate limit:** 10 req/saat (provider bazında).
 
 ## Yasal Dayanak
+
 - **5996 sayılı Kanun:** Veteriner hizmetleri, bitki
   sağlığı, gıda ve yem.
 - **Kedi ve Köpek Kimliklendirme Yönetmeliği**
@@ -45,6 +51,7 @@ Türkiye'deki resmî veteriner sistemlerine (Türkvet, PETVET,
   içinde).
 
 ## Yapılmayanlar / Bilinçli Atlamalar
+
 - **Real provider implementasyonu** → Faz 14+ (Bakanlık
   onayı + API key).
 - **Hayvan sağlığı sertifikaları (aşı pasaportu PDF)** →
@@ -53,13 +60,16 @@ Türkiye'deki resmî veteriner sistemlerine (Türkvet, PETVET,
 - **İhracat sertifikası** → Faz 14+ (FAZ-9 lab adapter).
 
 ## Döküman Uyum
+
 - `pnpm docs:check` → temiz (yeni eklenen özgü).
 - `pnpm i18n:check` → temiz.
 
 ## Testler
+
 - `registry.adapter.spec.ts` (FAZ-14+) — mock provider.
 - Sandbox: provider'ın test ortamı (varsa).
 
 ## Commit
+
 - Core: (bu commit) — `feat(integrations): GOAL-134 resmî veteriner adapter sözleşmesi`
 - Docs: (bu commit) — `docs(integrations): GOAL-134 resmî veteriner dokümanı`

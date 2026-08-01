@@ -15,7 +15,10 @@
 
 import { Injectable } from "@nestjs/common";
 
-import type { Owner, OwnerCreateInput } from "../../common/owners/owner.types.js";
+import type {
+  Owner,
+  OwnerCreateInput,
+} from "../../common/owners/owner.types.js";
 
 /** Persist edilmiş owner (normalize edilmiş telefon + tenant + id). */
 export interface OwnerRecord {

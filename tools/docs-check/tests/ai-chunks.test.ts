@@ -78,9 +78,9 @@ chunks:
 `,
     );
     const r = await scanAiChunks(root);
-    expect(
-      r.issues.some((i) => i.message.includes("`chunk_id` zorunlu")),
-    ).toBe(true);
+    expect(r.issues.some((i) => i.message.includes("`chunk_id` zorunlu"))).toBe(
+      true,
+    );
   });
 
   it("geçersiz type hatası", async () => {

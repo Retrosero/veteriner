@@ -9,8 +9,8 @@
 
 import { Module } from "@nestjs/common";
 
-import { AuthModule } from "../../common/auth/auth.module.js";
 import { IdentityController } from "./identity.controller.js";
+import { AuthModule } from "../../common/auth/auth.module.js";
 
 @Module({
   imports: [AuthModule],

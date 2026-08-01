@@ -1,7 +1,6 @@
 /**
  * @file ErrorEventsService unit testleri.
  * @module apps/api/modules/error-events/error-events.service.spec
- *
  * @description GOAL-100 (FAZ-10) merkezi backend hata yakalama
  * service testleri.
  *   - recordError: fingerprint üretimi + occurrenceCount.
@@ -12,21 +11,21 @@
  *   - getErrorEventSummary: severity + module + bucket'lar.
  *   - Cross-actor (non-SUPERADMIN) → 403 VET-AUTHZ-0001.
  *   - PII mask context'ten geçer.
- *
  * @since GOAL-100 (FAZ-10) merkezi backend hata yakalama core
  */
 
 import { beforeEach, describe, expect, it } from "vitest";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-
-import { ErrorEventsService } from "./error-events.service.js";
 import { ErrorEventsRepository } from "./error-events.repository.js";
 import {
+  computeFingerprint,
+  ErrorEventsService,
+  isValidTransition,
   moduleFromRoute,
   normalizeMessage,
-  computeFingerprint,
 } from "./error-events.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 
@@ -56,6 +55,9 @@ const STAFF_A: ActorContext = {
   source: "header",
 };
 
+/**
+ *
+ */
 function makeInput(
   overrides: Partial<Parameters<ErrorEventsService["recordError"]>[0]> = {},
 ): Parameters<ErrorEventsService["recordError"]>[0] {
@@ -111,12 +113,8 @@ describe("ErrorEventsService", () => {
     });
 
     it("farklı message normalize sonrası aynı fingerprint", () => {
-      const a = service.recordError(
-        makeInput({ message: "ID 123 not found" }),
-      );
-      const b = service.recordError(
-        makeInput({ message: "ID 456 not found" }),
-      );
+      const a = service.recordError(makeInput({ message: "ID 123 not found" }));
+      const b = service.recordError(makeInput({ message: "ID 456 not found" }));
       // sayılar <n> olur, aynı fingerprint
       expect(a.fingerprint).toBe(b.fingerprint);
       expect(b.occurrenceCount).toBe(2);
@@ -175,12 +173,8 @@ describe("ErrorEventsService", () => {
     });
 
     it("occurredAt verilmediyse now() kullanılır", () => {
-      const out = service.recordError(
-        makeInput({ occurredAt: undefined }),
-      );
-      expect(out.occurredAt).toMatch(
-        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/,
-      );
+      const out = service.recordError(makeInput({ occurredAt: undefined }));
+      expect(out.occurredAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
     });
   });
 
@@ -210,12 +204,8 @@ describe("ErrorEventsService", () => {
     });
 
     it("filtreler: severity + module", async () => {
-      service.recordError(
-        makeInput({ severity: "error", module: "clinic" }),
-      );
-      service.recordError(
-        makeInput({ severity: "warning", module: "auth" }),
-      );
+      service.recordError(makeInput({ severity: "error", module: "clinic" }));
+      service.recordError(makeInput({ severity: "warning", module: "auth" }));
       const result = await service.listErrorEvents(
         { severity: "error", module: "clinic", limit: 50, offset: 0 },
         SUPERADMIN,
@@ -297,12 +287,8 @@ describe("ErrorEventsService", () => {
 
   describe("getErrorEventSummary", () => {
     it("severity + module toplam + bucket'lar", async () => {
-      service.recordError(
-        makeInput({ severity: "error", module: "clinic" }),
-      );
-      service.recordError(
-        makeInput({ severity: "error", module: "clinic" }),
-      );
+      service.recordError(makeInput({ severity: "error", module: "clinic" }));
+      service.recordError(makeInput({ severity: "error", module: "clinic" }));
       service.recordError(
         makeInput({
           severity: "warning",
@@ -311,16 +297,11 @@ describe("ErrorEventsService", () => {
         }),
       );
 
-      const out = await service.getErrorEventSummary(
-        {},
-        SUPERADMIN,
-      );
+      const out = await service.getErrorEventSummary({}, SUPERADMIN);
       expect(out.total).toBe(3);
       // bySeverity: 2 error, 1 warning
       const errorCount = out.bySeverity.find((s) => s.severity === "error");
-      const warningCount = out.bySeverity.find(
-        (s) => s.severity === "warning",
-      );
+      const warningCount = out.bySeverity.find((s) => s.severity === "warning");
       expect(errorCount?.count).toBe(2);
       expect(warningCount?.count).toBe(1);
       // byModule
@@ -479,14 +460,14 @@ describe("ErrorEventsService.recordClientError", () => {
       "req-client-3",
     );
     const rec = repo.findById(out.id);
-    expect(rec?.errorCode).toBe("TR_FE_0001");
+    expect(rec?.errorCode).toBe("VET-COMMON-0001");
   });
 
   it("errorCode verildiyse olduğu gibi kullanılır", () => {
     const out = service.recordClientError(
       {
         severity: "error",
-        errorCode: "TR_FE_0001",
+        errorCode: "VET-COMMON-0001",
         message: "Render hatası",
         route: "GET /tr-TR/dashboard",
       },
@@ -494,7 +475,7 @@ describe("ErrorEventsService.recordClientError", () => {
       "req-client-4",
     );
     const rec = repo.findById(out.id);
-    expect(rec?.errorCode).toBe("TR_FE_0001");
+    expect(rec?.errorCode).toBe("VET-COMMON-0001");
   });
 
   it("actorType portal_user olarak işaretlenir", () => {
@@ -689,8 +670,6 @@ describe("ErrorEventsService.recordError — GOAL-103 status & timestamps", () =
 // GOAL-103 — isValidTransition pure helper
 // -------------------------------------------------------------------------
 
-import { isValidTransition } from "./error-events.service.js";
-
 describe("isValidTransition", () => {
   it("new → investigating geçerli", () => {
     expect(isValidTransition("new", "investigating")).toBe(true);
@@ -822,11 +801,7 @@ describe("ErrorEventsService.updateErrorEventStatus", () => {
   it("aynı duruma geçiş → 422", async () => {
     const ev = service.recordError(makeInput());
     await expect(
-      service.updateErrorEventStatus(
-        ev.id,
-        { toStatus: "new" },
-        SUPERADMIN,
-      ),
+      service.updateErrorEventStatus(ev.id, { toStatus: "new" }, SUPERADMIN),
     ).rejects.toMatchObject({
       errorCode: "VET-ERRSTAT-0001",
       httpStatus: 422,
@@ -928,9 +903,7 @@ describe("ErrorEventsService.listErrorEventTransitions", () => {
       SUPERADMIN,
     );
     // yeni hata (aynı fingerprint)
-    service.recordError(
-      makeInput({ message: "Test hata" }),
-    );
+    service.recordError(makeInput({ message: "Test hata" }));
     const out = await service.listErrorEventTransitions(ev.id, SUPERADMIN);
     // 1 manuel (resolved) + 1 otomatik (reopened)
     expect(out.total).toBe(2);
@@ -1013,10 +986,7 @@ describe("ErrorEventsService.listErrorEventGroups", () => {
 
   it("non-SUPERADMIN → 403", async () => {
     await expect(
-      service.listErrorEventGroups(
-        { limit: 50, offset: 0 },
-        STAFF_A,
-      ),
+      service.listErrorEventGroups({ limit: 50, offset: 0 }, STAFF_A),
     ).rejects.toMatchObject({
       errorCode: "VET-AUTHZ-0001",
       httpStatus: 403,
@@ -1104,7 +1074,11 @@ describe("ErrorEventsService.listErrorEvents — GOAL-103 ek filtreler", () => {
       }),
     );
     const out = await service.listErrorEvents(
-      { branchId: "11111111-1111-1111-1111-111111111111", limit: 50, offset: 0 },
+      {
+        branchId: "11111111-1111-1111-1111-111111111111",
+        limit: 50,
+        offset: 0,
+      },
       SUPERADMIN,
     );
     expect(out.total).toBe(1);
@@ -1204,11 +1178,7 @@ describe("ErrorEventsService.addErrorEventNote — GOAL-104", () => {
 
   it("bulunamayan id → 404", async () => {
     await expect(
-      service.addErrorEventNote(
-        "err-9999999",
-        { body: "x" },
-        SUPERADMIN,
-      ),
+      service.addErrorEventNote("err-9999999", { body: "x" }, SUPERADMIN),
     ).rejects.toMatchObject({
       errorCode: "VET-AUDIT-0001",
       httpStatus: 404,
@@ -1428,21 +1398,13 @@ describe("ErrorEventsService.listErrorEventAuditLog — GOAL-104", () => {
       { toStatus: "investigating", reason: "bakalım" },
       SUPERADMIN,
     );
-    await service.addErrorEventNote(
-      a.id,
-      { body: "DB deadlock" },
-      SUPERADMIN,
-    );
+    await service.addErrorEventNote(a.id, { body: "DB deadlock" }, SUPERADMIN);
     await service.addErrorEventSupportLink(
       a.id,
       { system: "jira", externalId: "VET-9" },
       SUPERADMIN,
     );
-    await service.assignErrorEvent(
-      a.id,
-      { assigneeId: "usr-1" },
-      SUPERADMIN,
-    );
+    await service.assignErrorEvent(a.id, { assigneeId: "usr-1" }, SUPERADMIN);
     const log = await service.listErrorEventAuditLog(a.id, SUPERADMIN);
     expect(log.fingerprint).toBe(a.fingerprint);
     // 4 aksiyon var: status, not, support, atama
@@ -1461,11 +1423,7 @@ describe("ErrorEventsService.listErrorEventAuditLog — GOAL-104", () => {
   it("occurredAt artan sırada döner", async () => {
     const a = service.recordError(makeInput());
     await service.addErrorEventNote(a.id, { body: "not" }, SUPERADMIN);
-    await service.assignErrorEvent(
-      a.id,
-      { assigneeId: "usr-1" },
-      SUPERADMIN,
-    );
+    await service.assignErrorEvent(a.id, { assigneeId: "usr-1" }, SUPERADMIN);
     const log = await service.listErrorEventAuditLog(a.id, SUPERADMIN);
     const times = log.items.map((e) => e.occurredAt);
     const sorted = [...times].sort();
@@ -1500,11 +1458,7 @@ describe("ErrorEventsService.listErrorEventAuditLog — GOAL-104", () => {
       { toStatus: "resolved", reason: "geçici çözüm" },
       SUPERADMIN,
     );
-    await service.addErrorEventNote(
-      a.id,
-      { body: "test" },
-      SUPERADMIN,
-    );
+    await service.addErrorEventNote(a.id, { body: "test" }, SUPERADMIN);
     const log = await service.listErrorEventAuditLog(a.id, SUPERADMIN);
     const statusItem = log.items.find((e) => e.action === "status_transition");
     const noteItem = log.items.find((e) => e.action === "note_added");
@@ -1559,8 +1513,8 @@ describe("PiiMasker.maskString — GOAL-104 not gövdesi için", () => {
   it("IBAN mask'ler", async () => {
     const { PiiMasker } = await import("../../common/logging/pii-masker.js");
     const m = new PiiMasker();
-    expect(
-      m.maskString("IBAN: TR123456789012345678901234 idi"),
-    ).toContain("***");
+    expect(m.maskString("IBAN: TR123456789012345678901234 idi")).toContain(
+      "***",
+    );
   });
 });

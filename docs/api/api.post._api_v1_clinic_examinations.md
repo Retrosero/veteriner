@@ -21,7 +21,7 @@ Yeni muayene başlatır. `appointmentId` üzerinden `patientId` ve
 - `appointmentId` (string, zorunlu) — daha önce oluşturulmuş randevu
   ID'si (`appt-<uuid>`). Aynı tenant'ta olmalı (cross-tenant → 404).
 - `type` (enum, zorunlu) — `consultation | follow_up | emergency |
-  routine_check`.
+routine_check`.
 - `chiefComplaint` (string, 1-2000 karakter, zorunlu) — şikâyet
   özeti.
 

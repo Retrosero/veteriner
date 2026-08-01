@@ -26,8 +26,8 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import { HospitalizationOrdersRepository } from "./hospitalization-orders.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import {
   toHospitalizationOrder,
@@ -36,6 +36,9 @@ import {
   type HospitalizationOrderRecord,
   type HospitalizationOrderScheduleRecord,
 } from "../../common/hospitalization-orders/hospitalization-order.types.js";
+import { HospitalizationService } from "../hospitalization/hospitalization.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   HospitalizationOrder,
   HospitalizationOrderApplyInput,
@@ -50,9 +53,6 @@ import type {
   HospitalizationOrderSkipInput,
   HospitalizationOrderUpdateInput,
 } from "@vetniva/contracts";
-
-import { HospitalizationOrdersRepository } from "./hospitalization-orders.repository.js";
-import { HospitalizationService } from "../hospitalization/hospitalization.service.js";
 
 @Injectable()
 export class HospitalizationOrdersService {
@@ -177,9 +177,9 @@ export class HospitalizationOrdersService {
     if (!rec) return null;
     return {
       order: toHospitalizationOrder(rec),
-      schedules: this.repo.listSchedules(tenantId, id).map(
-        toHospitalizationOrderSchedule,
-      ),
+      schedules: this.repo
+        .listSchedules(tenantId, id)
+        .map(toHospitalizationOrderSchedule),
     };
   }
 
@@ -190,7 +190,7 @@ export class HospitalizationOrdersService {
     actor: ActorContext,
   ): Promise<HospitalizationOrder> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.requireActiveOrder(tenantId, id, "güncelleme");
+    this.requireActiveOrder(tenantId, id, "güncelleme");
     const nowIso = new Date().toISOString();
     this.repo.updateOrder(tenantId, id, {
       instructions: input.instructions,
@@ -292,11 +292,7 @@ export class HospitalizationOrdersService {
     actor: ActorContext,
   ): Promise<HospitalizationOrderSchedule> {
     this.requireTenantScope(actor, tenantId);
-    const order = this.requireActiveOrder(
-      tenantId,
-      orderId,
-      "schedule ekleme",
-    );
+    const order = this.requireActiveOrder(tenantId, orderId, "schedule ekleme");
     const nowIso = new Date().toISOString();
     const id = this.repo.nextId(tenantId, "hrs");
     const rec: HospitalizationOrderScheduleRecord = {
@@ -559,7 +555,7 @@ export class HospitalizationOrdersService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

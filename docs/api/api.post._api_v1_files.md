@@ -17,12 +17,12 @@
 
 ## Request — multipart/form-data
 
-| Alan                | Tip            | Zorunlu | Açıklama                                                              |
-| ------------------- | -------------- | ------- | --------------------------------------------------------------------- |
-| `file`              | binary         | evet    | Yüklenecek dosya. 4 MIME tipinden biri olmalı (aşağıya bakın).       |
-| `category`          | enum           | evet    | `patient_photo` / `lab_report` / `imaging` / `consent` / `invoice` / `other`. |
-| `relatedEntityType` | string         | hayır   | İlişkili entity tipi (ör. `patient`, `encounter`, `consent`).         |
-| `relatedEntityId`   | string (UUID)  | hayır   | İlişkili entity ID.                                                   |
+| Alan                | Tip           | Zorunlu | Açıklama                                                                      |
+| ------------------- | ------------- | ------- | ----------------------------------------------------------------------------- |
+| `file`              | binary        | evet    | Yüklenecek dosya. 4 MIME tipinden biri olmalı (aşağıya bakın).                |
+| `category`          | enum          | evet    | `patient_photo` / `lab_report` / `imaging` / `consent` / `invoice` / `other`. |
+| `relatedEntityType` | string        | hayır   | İlişkili entity tipi (ör. `patient`, `encounter`, `consent`).                 |
+| `relatedEntityId`   | string (UUID) | hayır   | İlişkili entity ID.                                                           |
 
 ### İzin verilen MIME tipleri
 
@@ -73,15 +73,15 @@ döner.
 
 ## Hata kodları
 
-| Kod                 | HTTP | Açıklama                                                |
-| ------------------- | ---- | ------------------------------------------------------- |
-| `VET-AUTH-0001`     | 401  | Oturum geçersiz veya süresi dolmuş.                     |
-| `VET-AUTHZ-0001`    | 403  | Permission yok (`file:file:upload`).                   |
-| `VET-AUTHZ-0006`    | 403  | Aktif tenant bağlamı yok.                               |
-| `VET-FILE-0001`     | 413  | Dosya 10 MB sınırını aşıyor.                            |
-| `VET-FILE-0002`     | 415  | MIME tipi whitelist dışı.                               |
-| `VET-FILE-0004`     | 422  | Antivirus temiz değil.                                  |
-| `VET-VALIDATION-0001` | 422 | multipart alanları eksik veya `category` enum dışı.     |
+| Kod                   | HTTP | Açıklama                                            |
+| --------------------- | ---- | --------------------------------------------------- |
+| `VET-AUTH-0001`       | 401  | Oturum geçersiz veya süresi dolmuş.                 |
+| `VET-AUTHZ-0001`      | 403  | Permission yok (`file:file:upload`).                |
+| `VET-AUTHZ-0006`      | 403  | Aktif tenant bağlamı yok.                           |
+| `VET-FILE-0001`       | 413  | Dosya 10 MB sınırını aşıyor.                        |
+| `VET-FILE-0002`       | 415  | MIME tipi whitelist dışı.                           |
+| `VET-FILE-0004`       | 422  | Antivirus temiz değil.                              |
+| `VET-VALIDATION-0001` | 422  | multipart alanları eksik veya `category` enum dışı. |
 
 ## Örnek
 

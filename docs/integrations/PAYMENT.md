@@ -1,9 +1,11 @@
 # Ödeme Entegrasyonu (GOAL-133)
 
 ## Faz
+
 FAZ-13 (Türkiye uyumluluk ve entegrasyonlar)
 
 ## Amaç
+
 FAZ-7'deki manual ödeme akışına ek olarak gerçek ödeme
 sağlayıcısı entegrasyonu. Pilot için **iyzico** (TR
 lideri, BDDK lisanslı, PCI-DSS uyumlu) önerilir.
@@ -25,12 +27,12 @@ interface PaymentAdapter {
 
 ## Sağlayıcı Seçimi
 
-| Sağlayıcı | TR | Maliyet | Özellik |
-|-----------|----|---------|---------|
-| **iyzico** | ✓ | %1.99 + 0.25₺ | PCI-DSS, 3D Secure, BDDK lisanslı |
-| PayTR | ✓ | %1.99 | Kolay entegrasyon |
-| Stripe | global | %2.9 + 0.30₺ | Detaylı dashboard |
-| Manual | - | ücretsiz | Nakit / havale (FAZ-7) |
+| Sağlayıcı  | TR     | Maliyet       | Özellik                           |
+| ---------- | ------ | ------------- | --------------------------------- |
+| **iyzico** | ✓      | %1.99 + 0.25₺ | PCI-DSS, 3D Secure, BDDK lisanslı |
+| PayTR      | ✓      | %1.99         | Kolay entegrasyon                 |
+| Stripe     | global | %2.9 + 0.30₺  | Detaylı dashboard                 |
+| Manual     | -      | ücretsiz      | Nakit / havale (FAZ-7)            |
 
 **Pilot için: iyzico.**
 
@@ -66,16 +68,19 @@ IYZICO_CALLBACK_URL=https://app.vetniva.local/payment/callback
 ```
 
 ## Testler
+
 - **NoOp adapter:** development + test.
 - **Sandbox (iyzico test):** staging.
 - **Production:** pilot onayından sonra.
 
 ## Yapılmayanlar / Bilinçli Atlamalar
+
 - **3D Secure olmadan ödeme** → yok (BDDK zorunlu).
 - **Kripto ödeme** → Faz 15+ (TR regülasyonu).
 - **Çoklu sağlayıcı yük dengeleme** → Faz 14+.
 - **Otomatik fatura kesimi (e-Fatura)** → Faz 14+.
 
 ## Commit
+
 - Core: (bu commit) — `apps/api/src/common/integrations/payment/payment.adapter.ts`
 - Real: Faz 14+ (iyzico implementasyonu).

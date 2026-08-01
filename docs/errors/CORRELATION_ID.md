@@ -1,16 +1,29 @@
 # @file Correlation / Request ID Standardı.
+
 # @module docs/errors/CORRELATION_ID
+
 #
+
 # @description VetNiva'da isteklerin uçtan uca izlenebilmesi için
+
 # kullanılan correlation/request ID'nin üretimi, iletimi, log
+
 # ilişkilendirmesi ve UI'da gösterimi. Tüm log, audit ve
+
 # hata kayıtları bu ID ile ilişkilendirilir.
+
 #
+
 # @author GOAL-004 (FAZ-0) audit + log + hata standardı
+
 # @since 2026-07-30
+
 # @security ID formatı tahmin edilemez olmalı (UUID v4).
-#   Kullanıcı tarafından değiştirilebilir, fakat uzunluk
-#   sınırı uygulanır.
+
+# Kullanıcı tarafından değiştirilebilir, fakat uzunluk
+
+# sınırı uygulanır.
+
 # =============================================================================
 
 # Correlation / Request ID Standardı
@@ -52,12 +65,12 @@ req-<32-hex>
 
 **Türler:**
 
-| Tür     | Prefix   | Üretici                | Ömür             |
-| ------- | -------- | ---------------------- | ---------------- |
-| HTTP    | `req-`   | `RequestIdInterceptor` | Tek HTTP isteği  |
-| Job     | `job-`   | BullMQ `jobId`         | Background job   |
-| Cron    | `cron-`  | Cron self-reminder     | Bir cron tick'i  |
-| Entegr. | `int-`   | Integration adapter    | Tek API call     |
+| Tür     | Prefix  | Üretici                | Ömür            |
+| ------- | ------- | ---------------------- | --------------- |
+| HTTP    | `req-`  | `RequestIdInterceptor` | Tek HTTP isteği |
+| Job     | `job-`  | BullMQ `jobId`         | Background job  |
+| Cron    | `cron-` | Cron self-reminder     | Bir cron tick'i |
+| Entegr. | `int-`  | Integration adapter    | Tek API call    |
 
 ## 3. Üretim Kuralları
 
@@ -119,12 +132,12 @@ const response = await soap.call({
 
 ### 4.1 HTTP header
 
-| Yön         | Header             | Değer örneği                              |
-| ----------- | ------------------ | ----------------------------------------- |
-| İstemci → API | `X-Request-Id`     | `req-7c9e6679b7425a8d8c0b8d8e0e0e0e0e`    |
-| API → DB log | (logger context)   | (NestJS AsyncLocalStorage üzerinden)     |
-| API → Job    | (job payload)      | `{ correlationId: "req-..." }`            |
-| API → Client | `X-Request-Id`     | (response header'ında yankılanır)         |
+| Yön           | Header           | Değer örneği                           |
+| ------------- | ---------------- | -------------------------------------- |
+| İstemci → API | `X-Request-Id`   | `req-7c9e6679b7425a8d8c0b8d8e0e0e0e0e` |
+| API → DB log  | (logger context) | (NestJS AsyncLocalStorage üzerinden)   |
+| API → Job     | (job payload)    | `{ correlationId: "req-..." }`         |
+| API → Client  | `X-Request-Id`   | (response header'ında yankılanır)      |
 
 ### 4.2 AsyncLocalStorage (Node)
 

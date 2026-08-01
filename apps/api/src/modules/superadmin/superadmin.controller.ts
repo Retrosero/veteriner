@@ -27,10 +27,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-
-import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
-import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 import {
   listSuperadminTenantsQuerySchema,
   type AuditEventSummary,
@@ -39,6 +35,9 @@ import {
 } from "@vetniva/contracts";
 
 import { SuperadminService } from "./superadmin.service.js";
+import { RequirePermissions } from "../../common/decorators/require-permissions.decorator.js";
+import { PermissionsGuard } from "../../common/guards/permissions.guard.js";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe.js";
 
 @ApiTags("superadmin")
 @UseGuards(PermissionsGuard)
@@ -64,15 +63,11 @@ export class SuperadminController {
     @Query(new ZodValidationPipe(listSuperadminTenantsQuerySchema))
     query: ReturnType<typeof listSuperadminTenantsQuerySchema.parse>,
   ): Promise<ListSuperadminTenantsResponse> {
-    return this.service.listTenants(
-      query.page,
-      query.pageSize,
-      {
-        ...(query.status !== undefined ? { status: query.status } : {}),
-        ...(query.country !== undefined ? { country: query.country } : {}),
-        ...(query.search !== undefined ? { search: query.search } : {}),
-      },
-    );
+    return this.service.listTenants(query.page, query.pageSize, {
+      ...(query.status !== undefined ? { status: query.status } : {}),
+      ...(query.country !== undefined ? { country: query.country } : {}),
+      ...(query.search !== undefined ? { search: query.search } : {}),
+    });
   }
 
   /**

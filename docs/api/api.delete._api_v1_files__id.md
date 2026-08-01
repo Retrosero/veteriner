@@ -16,9 +16,9 @@
 
 ## Path parametreleri
 
-| Parametre | Tip  | Zorunlu | Açıklama              |
-| --------- | ---- | ------- | --------------------- |
-| `id`      | UUID | evet    | Dosya ID.             |
+| Parametre | Tip  | Zorunlu | Açıklama  |
+| --------- | ---- | ------- | --------- |
+| `id`      | UUID | evet    | Dosya ID. |
 
 ## Request body
 
@@ -45,13 +45,13 @@ Kısmi. Aynı dosya art arda DELETE edilirse ilk çağrı 204, sonrakiler
 
 ## Hata kodları
 
-| Kod                 | HTTP | Açıklama                                              |
-| ------------------- | ---- | ----------------------------------------------------- |
-| `VET-AUTH-0001`     | 401  | Oturum geçersiz veya süresi dolmuş.                   |
-| `VET-AUTHZ-0001`    | 403  | Permission yok (`file:file:delete`).                  |
-| `VET-AUTHZ-0006`    | 403  | Aktif tenant bağlamı yok.                             |
-| `VET-FILE-0003`     | 404  | Dosya bulunamadı, zaten arşivlenmiş veya farklı tenant. |
-| `VET-VALIDATION-0001` | 422 | `id` UUID formatında değil.                           |
+| Kod                   | HTTP | Açıklama                                                |
+| --------------------- | ---- | ------------------------------------------------------- |
+| `VET-AUTH-0001`       | 401  | Oturum geçersiz veya süresi dolmuş.                     |
+| `VET-AUTHZ-0001`      | 403  | Permission yok (`file:file:delete`).                    |
+| `VET-AUTHZ-0006`      | 403  | Aktif tenant bağlamı yok.                               |
+| `VET-FILE-0003`       | 404  | Dosya bulunamadı, zaten arşivlenmiş veya farklı tenant. |
+| `VET-VALIDATION-0001` | 422  | `id` UUID formatında değil.                             |
 
 ## Örnek
 

@@ -44,8 +44,11 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import {
+  PricingRepository,
+  type PriceListPatch,
+} from "./pricing.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import {
   normalizePricingDecimal,
@@ -54,6 +57,9 @@ import {
   type PriceListItemRecord,
   type PriceListRecord,
 } from "../../common/pricing/pricing.types.js";
+import { ProductsService } from "../products/products.service.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   PriceList,
   PriceListArchiveInput,
@@ -68,12 +74,6 @@ import type {
   PriceListUpdateInput,
   ProductPriceResolution,
 } from "@vetniva/contracts";
-
-import { ProductsService } from "../products/products.service.js";
-import {
-  PricingRepository,
-  type PriceListPatch,
-} from "./pricing.repository.js";
 
 @Injectable()
 export class PricingService {
@@ -103,18 +103,14 @@ export class PricingService {
     if (input.type === "customer_specific" && !input.customerId) {
       throw new DomainError({
         errorCode: "VET-PRICING-0005",
-        message:
-          "type='customer_specific' için customerId zorunludur",
+        message: "type='customer_specific' için customerId zorunludur",
         httpStatus: 422,
         severity: "warning",
         i18nKey: "error.VET-PRICING-0005",
         details: { type: input.type },
       });
     }
-    if (
-      input.type !== "customer_specific" &&
-      input.customerId !== undefined
-    ) {
+    if (input.type !== "customer_specific" && input.customerId !== undefined) {
       throw new DomainError({
         errorCode: "VET-PRICING-0005",
         message:
@@ -130,8 +126,7 @@ export class PricingService {
     if (
       input.validFrom !== undefined &&
       input.validUntil !== undefined &&
-      new Date(input.validFrom).getTime() >
-        new Date(input.validUntil).getTime()
+      new Date(input.validFrom).getTime() > new Date(input.validUntil).getTime()
     ) {
       throw new DomainError({
         errorCode: "VET-PRICING-0004",
@@ -270,8 +265,7 @@ export class PricingService {
     if (existing.status !== "draft") {
       throw new DomainError({
         errorCode: "VET-PRICING-0006",
-        message:
-          "Yalnızca taslak (draft) fiyat listesi güncellenebilir",
+        message: "Yalnızca taslak (draft) fiyat listesi güncellenebilir",
         httpStatus: 409,
         severity: "warning",
         i18nKey: "error.VET-PRICING-0006",
@@ -281,12 +275,10 @@ export class PricingService {
 
     const patch: PriceListPatch = {};
     if (input.name !== undefined) patch.name = input.name;
-    if (input.description !== undefined)
-      patch.description = input.description;
+    if (input.description !== undefined) patch.description = input.description;
     if (input.taxProfile !== undefined) patch.taxProfile = input.taxProfile;
     if (input.validFrom !== undefined) patch.validFrom = input.validFrom;
-    if (input.validUntil !== undefined)
-      patch.validUntil = input.validUntil;
+    if (input.validUntil !== undefined) patch.validUntil = input.validUntil;
     patch.updatedAt = new Date().toISOString();
 
     const updated = this.repo.updateList(tenantId, id, patch);
@@ -326,10 +318,7 @@ export class PricingService {
       },
     );
 
-    return toPriceList(
-      updated,
-      this.repo.countActiveItemsForList(updated.id),
-    );
+    return toPriceList(updated, this.repo.countActiveItemsForList(updated.id));
   }
 
   // ===========================================================================
@@ -373,8 +362,7 @@ export class PricingService {
     if (existing.status !== "draft") {
       throw new DomainError({
         errorCode: "VET-PRICING-0006",
-        message:
-          "Yalnızca taslak (draft) fiyat listesi aktifleştirilebilir",
+        message: "Yalnızca taslak (draft) fiyat listesi aktifleştirilebilir",
         httpStatus: 409,
         severity: "warning",
         i18nKey: "error.VET-PRICING-0006",
@@ -384,8 +372,7 @@ export class PricingService {
     if (this.repo.countItemsForList(id) === 0) {
       throw new DomainError({
         errorCode: "VET-PRICING-0010",
-        message:
-          "Aktifleştirmek için en az bir fiyat satırı gerekli",
+        message: "Aktifleştirmek için en az bir fiyat satırı gerekli",
         httpStatus: 422,
         severity: "warning",
         i18nKey: "error.VET-PRICING-0010",
@@ -419,10 +406,7 @@ export class PricingService {
       { name: updated.name, type: updated.type, action: "activate" },
     );
 
-    return toPriceList(
-      updated,
-      this.repo.countActiveItemsForList(updated.id),
-    );
+    return toPriceList(updated, this.repo.countActiveItemsForList(updated.id));
   }
 
   // ===========================================================================
@@ -487,10 +471,7 @@ export class PricingService {
       { name: existing.name, reason: input.reason },
     );
 
-    return toPriceList(
-      updated,
-      this.repo.countActiveItemsForList(updated.id),
-    );
+    return toPriceList(updated, this.repo.countActiveItemsForList(updated.id));
   }
 
   // ===========================================================================
@@ -529,8 +510,7 @@ export class PricingService {
     if (list.status !== "draft" && list.status !== "active") {
       throw new DomainError({
         errorCode: "VET-PRICING-0006",
-        message:
-          "Yalnızca draft veya aktif listeye satır eklenebilir",
+        message: "Yalnızca draft veya aktif listeye satır eklenebilir",
         httpStatus: 409,
         severity: "warning",
         i18nKey: "error.VET-PRICING-0006",
@@ -572,8 +552,7 @@ export class PricingService {
     if (
       input.validFrom !== undefined &&
       input.validUntil !== undefined &&
-      new Date(input.validFrom).getTime() >
-        new Date(input.validUntil).getTime()
+      new Date(input.validFrom).getTime() > new Date(input.validUntil).getTime()
     ) {
       throw new DomainError({
         errorCode: "VET-PRICING-0004",
@@ -753,14 +732,11 @@ export class PricingService {
     const newValidFrom =
       input.validFrom !== undefined ? input.validFrom : existing.validFrom;
     const newValidUntil =
-      input.validUntil !== undefined
-        ? input.validUntil
-        : existing.validUntil;
+      input.validUntil !== undefined ? input.validUntil : existing.validUntil;
     if (
       newValidFrom !== null &&
       newValidUntil !== null &&
-      new Date(newValidFrom).getTime() >
-        new Date(newValidUntil).getTime()
+      new Date(newValidFrom).getTime() > new Date(newValidUntil).getTime()
     ) {
       throw new DomainError({
         errorCode: "VET-PRICING-0004",
@@ -796,9 +772,7 @@ export class PricingService {
       productId: existing.productId,
       price,
       taxProfile:
-        input.taxProfile !== undefined
-          ? input.taxProfile
-          : existing.taxProfile,
+        input.taxProfile !== undefined ? input.taxProfile : existing.taxProfile,
       validFrom: newValidFrom,
       validUntil: newValidUntil,
       status: "active",
@@ -1018,7 +992,7 @@ export class PricingService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,

@@ -11,8 +11,8 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { FeatureFlagService } from "../feature-flag/feature-flag.service.js";
 import { SuperadminService } from "./superadmin.service.js";
+import { type FeatureFlagService } from "../feature-flag/feature-flag.service.js";
 
 const T1 = "11111111-1111-1111-1111-111111111111";
 const T2 = "22222222-2222-2222-2222-222222222222";
@@ -59,22 +59,23 @@ function makePrisma(overrides: {
 }) {
   const tenantFindMany =
     overrides.tenants?.shift?.() ??
-    vi.fn().mockResolvedValue([
-      makeTenant(T1, "Alpha"),
-      makeTenant(T2, "Beta"),
-      makeTenant(T3, "Gamma"),
-    ]);
+    vi
+      .fn()
+      .mockResolvedValue([
+        makeTenant(T1, "Alpha"),
+        makeTenant(T2, "Beta"),
+        makeTenant(T3, "Gamma"),
+      ]);
 
   return {
     tenant: {
       findMany: tenantFindMany,
       count: overrides.tenantCount ?? vi.fn().mockResolvedValue(3),
       findUnique:
-        overrides.tenantFindUnique ?? vi.fn().mockImplementation(({ where }) => {
+        overrides.tenantFindUnique ??
+        vi.fn().mockImplementation(({ where }: { where: { id: string } }) => {
           return Promise.resolve(
-            [T1, T2, T3].includes(where.id)
-              ? makeTenant(where.id, "X")
-              : null,
+            [T1, T2, T3].includes(where.id) ? makeTenant(where.id, "X") : null,
           );
         }),
     },
@@ -87,7 +88,9 @@ function makePrisma(overrides: {
     user: {
       findFirst:
         overrides.userFindFirst ??
-        vi.fn().mockResolvedValue({ lastLoginAt: new Date("2025-02-01T12:00:00Z") }),
+        vi
+          .fn()
+          .mockResolvedValue({ lastLoginAt: new Date("2025-02-01T12:00:00Z") }),
     },
     fileMeta: {
       aggregate:
@@ -151,18 +154,27 @@ describe("SuperadminService", () => {
     });
 
     it("status filtresi Prisma where'a aktarılır", async () => {
-      const findMany = vi.fn().mockResolvedValue([makeTenant(T1, "Alpha", { status: "active" })]);
+      const findMany = vi
+        .fn()
+        .mockResolvedValue([makeTenant(T1, "Alpha", { status: "active" })]);
       const customPrisma = makePrisma({
         tenants: [findMany],
         tenantCount: vi.fn().mockResolvedValue(1),
       });
       const customService = new SuperadminService(
-        customPrisma as unknown as ConstructorParameters<typeof SuperadminService>[0],
+        customPrisma as unknown as ConstructorParameters<
+          typeof SuperadminService
+        >[0],
         featureFlag,
       );
       await customService.listTenants(1, 20, { status: "active" });
       expect(findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ status: "active" }) }),
+        expect.objectContaining({
+          // Vitest asymmetric matcher API'si `any` dondurur; bu test yalnizca
+          // Prisma `where.status` iletimini dogrular.
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          where: expect.objectContaining({ status: "active" }),
+        }),
       );
     });
   });
@@ -180,7 +192,9 @@ describe("SuperadminService", () => {
 
     it("bilinmeyen tenant → 404 VET-TENANT-0001", async () => {
       prisma.tenant.findUnique = vi.fn().mockResolvedValue(null);
-      await expect(service.getTenantDetail("00000000-0000-0000-0000-000000000000")).rejects.toMatchObject({
+      await expect(
+        service.getTenantDetail("00000000-0000-0000-0000-000000000000"),
+      ).rejects.toMatchObject({
         errorCode: "VET-TENANT-0001",
       });
     });
@@ -203,7 +217,9 @@ describe("SuperadminService", () => {
   describe("cross-tenant guard (bilgi sızdırmaz)", () => {
     it("bilinmeyen tenant ID → 404 VET-TENANT-0001", async () => {
       prisma.tenant.findUnique = vi.fn().mockResolvedValue(null);
-      await expect(service.getTenantDetail("99999999-9999-9999-9999-999999999999")).rejects.toMatchObject({
+      await expect(
+        service.getTenantDetail("99999999-9999-9999-9999-999999999999"),
+      ).rejects.toMatchObject({
         errorCode: "VET-TENANT-0001",
         httpStatus: 404,
       });
@@ -218,7 +234,9 @@ describe("SuperadminService", () => {
         actorId: `usr-${i}`,
         targetType: "tenant",
         targetId: T1,
-        createdAt: new Date(`2025-02-${String(i + 1).padStart(2, "0")}T10:00:00Z`),
+        createdAt: new Date(
+          `2025-02-${String(i + 1).padStart(2, "0")}T10:00:00Z`,
+        ),
       }));
       prisma.auditEvent.findMany = vi.fn().mockResolvedValue(events);
       const result = await service.getRecentEvents(T1, 10);
@@ -231,7 +249,9 @@ describe("SuperadminService", () => {
 
   describe("storage usage", () => {
     it("boş tenant için 0 MB döner", async () => {
-      prisma.fileMeta.aggregate = vi.fn().mockResolvedValue({ _sum: { sizeBytes: null } });
+      prisma.fileMeta.aggregate = vi
+        .fn()
+        .mockResolvedValue({ _sum: { sizeBytes: null } });
       const detail = await service.getTenantDetail(T1);
       expect(detail.storageUsedMb).toBe(0);
     });

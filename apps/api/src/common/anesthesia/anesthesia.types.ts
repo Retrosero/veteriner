@@ -163,9 +163,7 @@ export function toAnesthesiaMedication(
   };
 }
 
-export function toAnesthesiaVital(
-  rec: AnesthesiaVitalRecord,
-): AnesthesiaVital {
+export function toAnesthesiaVital(rec: AnesthesiaVitalRecord): AnesthesiaVital {
   return {
     id: rec.id,
     tenantId: rec.tenantId,
@@ -197,9 +195,7 @@ export function toAnesthesiaComplication(
   };
 }
 
-export function toAnesthesiaStaff(
-  rec: AnesthesiaStaffRecord,
-): AnesthesiaStaff {
+export function toAnesthesiaStaff(rec: AnesthesiaStaffRecord): AnesthesiaStaff {
   return {
     id: rec.id,
     tenantId: rec.tenantId,

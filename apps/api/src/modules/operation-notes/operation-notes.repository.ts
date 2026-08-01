@@ -89,10 +89,7 @@ export class OperationNotesRepository {
     return record;
   }
 
-  public findById(
-    tenantId: string,
-    id: string,
-  ): OperationNoteRecord | null {
+  public findById(tenantId: string, id: string): OperationNoteRecord | null {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
     return rec;
@@ -131,12 +128,8 @@ export class OperationNotesRepository {
     for (const rec of this.byId.values()) {
       if (rec.tenantId !== tenantId) continue;
       if (filters.status && rec.status !== filters.status) continue;
-      if (filters.patientId && rec.patientId !== filters.patientId)
-        continue;
-      if (
-        filters.surgeryPlanId &&
-        rec.surgeryPlanId !== filters.surgeryPlanId
-      )
+      if (filters.patientId && rec.patientId !== filters.patientId) continue;
+      if (filters.surgeryPlanId && rec.surgeryPlanId !== filters.surgeryPlanId)
         continue;
       all.push(rec);
     }
@@ -154,9 +147,7 @@ export class OperationNotesRepository {
   // Team
   // -------------------------------------------------------------------------
 
-  public insertTeam(
-    rec: OperationNoteTeamRecord,
-  ): OperationNoteTeamRecord {
+  public insertTeam(rec: OperationNoteTeamRecord): OperationNoteTeamRecord {
     this.team.set(rec.id, rec);
     return rec;
   }

@@ -77,8 +77,6 @@ export type AlertListResponse = z.infer<typeof alertListResponseSchema>;
  *  tip uyumsuzluğu nedeniyle transform burada yapılmaz). */
 export const alertListQuerySchema = z.object({
   severity: alertSeveritySchema.optional(),
-  activeOnly: z
-    .union([z.literal("true"), z.literal("false")])
-    .optional(),
+  activeOnly: z.union([z.literal("true"), z.literal("false")]).optional(),
 });
 export type AlertListQuery = z.infer<typeof alertListQuerySchema>;

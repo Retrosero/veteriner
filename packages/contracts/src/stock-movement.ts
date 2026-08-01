@@ -69,6 +69,7 @@ export const REASON_REQUIRED_MOVEMENT_TYPES: ReadonlySet<StockMovementType> =
  */
 export const stockMovementQuantitySchema = z
   .string()
+  // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, isteğe bağlı eksi işareti ve en çok dört ondalık basamak kabul eden miktar doğrulamasıdır.
   .regex(/^-?\d+(\.\d{1,4})?$/, "Geçersiz miktar formatı (ör. 5 veya -3.5)")
   .refine((v) => v !== "0" && v !== "-0" && v !== "0.0" && v !== "-0.0", {
     message: "Stok hareketi sıfır olamaz",
@@ -97,34 +98,27 @@ export type StockMovementQuantity = z.infer<typeof stockMovementQuantitySchema>;
  * - `occurredAt` opsiyonel (default: now).
  * - `notes` opsiyonel.
  */
-export const stockMovementCreateInputSchema = z
-  .object({
-    type: stockMovementTypeSchema,
-    productId: z.string().min(1).max(100),
-    lotId: z.string().min(1).max(100).optional(),
-    quantity: stockMovementQuantitySchema,
-    unitCost: z
-      .string()
-      .regex(/^\d+(\.\d{1,4})?$/)
-      .optional(),
-    unitPrice: z
-      .string()
-      .regex(/^\d+(\.\d{1,4})?$/)
-      .optional(),
-    sourceType: z.string().min(1).max(64).optional(),
-    sourceId: z.string().min(1).max(100).optional(),
-    reason: z.string().min(1).max(2000).optional(),
-    occurredAt: z.string().datetime().optional(),
-    notes: z.string().max(2000).optional(),
-  })
-  .refine(
-    (v) => {
-      // Üretim negatif quantity (giriş) + unitPrice anlamlı;
-      // çıkışlar için unitCost takip edilir. Bu kural MVP
-      // dışı: şimdilik serbest bırakıldı (GOAL-070+).
-      return true;
-    },
-  );
+export const stockMovementCreateInputSchema = z.object({
+  type: stockMovementTypeSchema,
+  productId: z.string().min(1).max(100),
+  lotId: z.string().min(1).max(100).optional(),
+  quantity: stockMovementQuantitySchema,
+  unitCost: z
+    .string()
+    // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden maliyet doğrulamasıdır.
+    .regex(/^\d+(\.\d{1,4})?$/)
+    .optional(),
+  unitPrice: z
+    .string()
+    // eslint-disable-next-line security/detect-unsafe-regex -- Tam ankora sahip, en çok dört ondalık basamak kabul eden fiyat doğrulamasıdır.
+    .regex(/^\d+(\.\d{1,4})?$/)
+    .optional(),
+  sourceType: z.string().min(1).max(64).optional(),
+  sourceId: z.string().min(1).max(100).optional(),
+  reason: z.string().min(1).max(2000).optional(),
+  occurredAt: z.string().datetime().optional(),
+  notes: z.string().max(2000).optional(),
+});
 export type StockMovementCreateInput = z.infer<
   typeof stockMovementCreateInputSchema
 >;
@@ -199,7 +193,10 @@ export const stockMovementFiltersSchema = z.object({
   types: z.preprocess(
     (v) =>
       typeof v === "string"
-        ? v.split(",").map((s) => s.trim()).filter((s) => s.length > 0)
+        ? v
+            .split(",")
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0)
         : Array.isArray(v)
           ? v
           : undefined,

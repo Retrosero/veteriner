@@ -117,7 +117,7 @@ SUPERADMIN bypass'lı.
 - Audit olayında `before` snapshot + `lotChange` before/after
   payload'a eklenir; KVKK denetiminde kanıt olarak kullanılır.
 - Stok hareketleri de append-only: ters kayıt (`type='reversal'`)
-  + yeni düşüm atomik; mevcut bakiye bozulmaz.
+  - yeni düşüm atomik; mevcut bakiye bozulmaz.
 
 **İlgili dokümanlar:**
 

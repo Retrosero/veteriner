@@ -25,14 +25,13 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { StockMovementsRepository } from "./stock-movements.repository.js";
+import { StockMovementsService } from "./stock-movements.service.js";
+import { DomainError } from "../../common/errors/domain-error.js";
+
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
-import { DomainError } from "../../common/errors/domain-error.js";
-import type { Product } from "@vetniva/contracts";
-import type { StockLot } from "@vetniva/contracts";
-
-import { StockMovementsService } from "./stock-movements.service.js";
-import { StockMovementsRepository } from "./stock-movements.repository.js";
+import type { Product, StockLot } from "@vetniva/contracts";
 
 /* --------------------------------------------------------------------------
  * Test sabitleri
@@ -322,8 +321,7 @@ describe("StockMovementsService — GOAL-063", () => {
   // ---------- 9: Arşivli lot ----------
   it("arşivlenmiş lot için 409 VET-STOCK-0006 fırlatır", async () => {
     const { svc } = makeSvc({
-      lotsById: () =>
-        makeLot({ archivedAt: "2026-07-30T00:00:00.000Z" }),
+      lotsById: () => makeLot({ archivedAt: "2026-07-30T00:00:00.000Z" }),
     });
     await expect(
       svc.createMovement(
@@ -462,12 +460,7 @@ describe("StockMovementsService — GOAL-063", () => {
       OWNER_A,
     );
     await expect(
-      svc.reverseMovement(
-        TENANT_A,
-        original.id,
-        { reason: "Test" },
-        STAFF_B,
-      ),
+      svc.reverseMovement(TENANT_A, original.id, { reason: "Test" }, STAFF_B),
     ).rejects.toMatchObject({ errorCode: "VET-AUTHZ-0001" });
   });
 
@@ -527,12 +520,7 @@ describe("StockMovementsService — GOAL-063", () => {
       { type: "sale", productId: "prd-1", quantity: "-1" },
       OWNER_A,
     );
-    await svc.reverseMovement(
-      TENANT_A,
-      buy.id,
-      { reason: "İptal" },
-      OWNER_A,
-    );
+    await svc.reverseMovement(TENANT_A, buy.id, { reason: "İptal" }, OWNER_A);
     const balances = svc.listBalances(TENANT_A, OWNER_A, {
       productId: "prd-1",
     });

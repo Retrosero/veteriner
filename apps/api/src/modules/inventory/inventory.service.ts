@@ -45,8 +45,13 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 
-import type { ActorContext } from "../../common/actor/actor-context.service.js";
-import type { AuditService } from "../../common/audit/audit.service.js";
+import {
+  type ShelfPatch,
+  type StockLotPatch,
+  type WarehousePatch,
+  InventoryRepository,
+} from "./inventory.repository.js";
+import { AuditService } from "../../common/audit/audit.service.js";
 import { DomainError } from "../../common/errors/domain-error.js";
 import {
   isExpired,
@@ -58,6 +63,8 @@ import {
   type StockLotRecord,
   type WarehouseRecord,
 } from "../../common/inventory/inventory.types.js";
+
+import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
   Shelf,
   ShelfArchiveInput,
@@ -78,13 +85,6 @@ import type {
   WarehouseListResponse,
   WarehouseUpdateInput,
 } from "@vetniva/contracts";
-
-import {
-  type ShelfPatch,
-  type StockLotPatch,
-  type WarehousePatch,
-  InventoryRepository,
-} from "./inventory.repository.js";
 
 @Injectable()
 export class InventoryService {
@@ -264,7 +264,8 @@ export class InventoryService {
     this.requireTenantScope(actor, tenantId);
     const existing = this.repo.findWarehouseById(tenantId, id);
     if (!existing) throw this.notFoundWarehouseError(id);
-    if (existing.archivedAt !== null) throw this.archivedCannotArchiveError("depo");
+    if (existing.archivedAt !== null)
+      throw this.archivedCannotArchiveError("depo");
 
     // Aktif raf varsa arşivlenemez.
     const activeShelves = this.repo.countActiveShelvesForWarehouse(
@@ -432,7 +433,8 @@ export class InventoryService {
     this.requireTenantScope(actor, tenantId);
     const existing = this.repo.findShelfById(tenantId, id);
     if (!existing) throw this.notFoundShelfError(id);
-    if (existing.archivedAt !== null) throw this.archivedCannotUpdateError("raf");
+    if (existing.archivedAt !== null)
+      throw this.archivedCannotUpdateError("raf");
 
     if (input.code !== undefined && input.code !== existing.code) {
       if (input.code !== null) {
@@ -501,7 +503,8 @@ export class InventoryService {
     this.requireTenantScope(actor, tenantId);
     const existing = this.repo.findShelfById(tenantId, id);
     if (!existing) throw this.notFoundShelfError(id);
-    if (existing.archivedAt !== null) throw this.archivedCannotArchiveError("raf");
+    if (existing.archivedAt !== null)
+      throw this.archivedCannotArchiveError("raf");
 
     // Aktif lot varsa arşivlenemez.
     const activeLots = this.repo.countActiveLotsForShelf(tenantId, id);
@@ -605,9 +608,10 @@ export class InventoryService {
       }
     }
 
-    const quantity = input.quantity !== undefined
-      ? normalizeLotQuantity(input.quantity)
-      : null;
+    const quantity =
+      input.quantity !== undefined
+        ? normalizeLotQuantity(input.quantity)
+        : null;
     if (input.quantity !== undefined && quantity === null) {
       throw new DomainError({
         errorCode: "VET-VALIDATION-0010",
@@ -710,7 +714,8 @@ export class InventoryService {
     this.requireTenantScope(actor, tenantId);
     const existing = this.repo.findLotById(tenantId, id);
     if (!existing) throw this.notFoundLotError(id);
-    if (existing.archivedAt !== null) throw this.archivedCannotUpdateError("lot");
+    if (existing.archivedAt !== null)
+      throw this.archivedCannotUpdateError("lot");
 
     // SKT değişirse yine geçmiş kontrolü.
     if (input.expiryDate !== undefined && isExpired(input.expiryDate)) {
@@ -834,7 +839,8 @@ export class InventoryService {
     this.requireTenantScope(actor, tenantId);
     const existing = this.repo.findLotById(tenantId, id);
     if (!existing) throw this.notFoundLotError(id);
-    if (existing.archivedAt !== null) throw this.archivedCannotArchiveError("lot");
+    if (existing.archivedAt !== null)
+      throw this.archivedCannotArchiveError("lot");
 
     const nowIso = new Date().toISOString();
     const updated = this.repo.updateLot(tenantId, id, {
@@ -890,7 +896,7 @@ export class InventoryService {
   } {
     return {
       actorId: actor.actorId,
-      actorType: actor.actorType as "user" | "system",
+      actorType: actor.actorType,
       tenantId: actor.tenantId,
       branchId: actor.branchId,
       correlationId: actor.correlationId,
