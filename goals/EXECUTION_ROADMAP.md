@@ -36,6 +36,12 @@
 > Dort modul/adapter dosyasi uzerinde 34 test, API lint/type-check ve
 > docs:check (0 hata) basarili.
 
+> 1 Agustos 2026 aktif dosya modulu birlestirmesi: AppModule ve Timeline
+> artik eski fail-open `FilesModule` yerine sertlestirilmis `FileModule`
+> kullanir. Timeline dosya olaylari in-memory snapshot yerine tenant-scoped
+> `FileService.list` ile okunur. Timeline, dosya ve modul testleri (34), API
+> lint/type-check basarili.
+
 > 1 Agustos 2026 guncellemesi: Reports modulundeki kullanilmayan OpenAPI ve
 > test sembolleri kaldirildi. CSV exportu bilinmeyen degerleri acik
 > primitive/JSON normalizasyonundan geciriyor. Modul lintinde hata kalmadi

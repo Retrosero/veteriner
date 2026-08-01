@@ -23,12 +23,12 @@ import {
   TIMELINE_EVENT_SOURCES,
 } from "./timeline.sources.js";
 import { AlertsModule } from "../alerts/alerts.module.js";
-import { FilesModule } from "../files/files.module.js";
+import { FileModule } from "../file/file.module.js";
 import { OwnershipHistoryModule } from "../ownership-history/ownership-history.module.js";
 import { PatientsModule } from "../patients/patients.module.js";
 
 @Module({
-  imports: [PatientsModule, AlertsModule, OwnershipHistoryModule, FilesModule],
+  imports: [PatientsModule, AlertsModule, OwnershipHistoryModule, FileModule],
   controllers: [TimelineController],
   providers: [
     TimelineService,

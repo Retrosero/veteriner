@@ -16,12 +16,11 @@
  */
 
 import { type AlertsService } from "../alerts/alerts.service.js";
-import { type FilesService } from "../files/files.service.js";
+import { type FileService } from "../file/file.service.js";
 import { type OwnershipHistoryRepository } from "../ownership-history/ownership-history.repository.js";
 
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AlertRecord } from "../../common/alerts/alert.types.js";
-import type { FileMeta } from "../../common/files/file.types.js";
 import type { Ownership } from "../../common/ownership/ownership.types.js";
 import type {
   TimelineEvent,
@@ -129,7 +128,7 @@ export class OwnershipTimelineSource implements TimelineEventSource {
 
 /**
  * Hayvana bağlı (relatedEntityType=patient) dosyaları timeline'a
- * ekler. Kaynak: `FilesService` (in-memory store, FAZ-0).
+ * ekler. Kaynak: tenant-scoped `FileService.list` sorgusu.
  *
  * Title: `Dosya yüklendi` + kategori.
  * Summary: `originalName (mime, size)`.
@@ -138,7 +137,7 @@ export class FileTimelineSource implements TimelineEventSource {
   public readonly eventType = "file" as const;
   public readonly relatedEntityType = "file" as const;
 
-  public constructor(private readonly files: FilesService) {}
+  public constructor(private readonly files: FileService) {}
 
   public async fetchForPatient(args: {
     tenantId: string;
@@ -147,28 +146,27 @@ export class FileTimelineSource implements TimelineEventSource {
     to?: string;
     actor: ActorContext;
   }): Promise<TimelineEvent[]> {
-    // FilesService'te until FAZ-0 list endpoint yok; service'in
-    // public accessor'ları ile meta'lara tek tek bakılır. Burada
-    // service'in tüm meta'larını iterate ederek patient'a bağlı
-    // olanları filtreliyoruz (in-memory olduğu için O(n) kabul
-    // edilebilir; production'da query ile değiştirilecek).
-    const all = this.files.snapshot(args.tenantId, args.actor);
-    return all
-      .filter(
-        (m: FileMeta) =>
-          m.relatedEntityType === "patient" &&
-          m.relatedEntityId === args.patientId &&
-          m.archivedAt === null,
-      )
-      .map((m: FileMeta) => ({
-        id: `tln-file-${m.id}`,
-        type: "file" as const,
-        occurredAt: m.uploadedAt,
-        title: `Dosya yüklendi (${m.category})`,
-        summary: `${m.originalName} — ${m.mimeType}, ${m.sizeBytes} bayt`,
-        relatedEntityType: "file" as const,
-        relatedEntityId: m.id,
-        actorName: m.uploadedBy ?? "system",
-      }));
+    // Sorgu repository'ye tenant context ile iner; yalnızca hedef hastaya
+    // bağlı, arşivlenmemiş dosyalar alınır.
+    const result = await this.files.list(
+      {
+        page: 1,
+        pageSize: 100,
+        relatedEntityType: "patient",
+        relatedEntityId: args.patientId,
+        includeArchived: false,
+      },
+      args.actor,
+    );
+    return result.items.map((m) => ({
+      id: `tln-file-${m.id}`,
+      type: "file" as const,
+      occurredAt: m.uploadedAt,
+      title: `Dosya yüklendi (${m.category})`,
+      summary: `${m.originalName} — ${m.mimeType}, ${m.sizeBytes} bayt`,
+      relatedEntityType: "file" as const,
+      relatedEntityId: m.id,
+      actorName: m.uploadedBy ?? "system",
+    }));
   }
 }

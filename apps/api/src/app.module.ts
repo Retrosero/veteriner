@@ -49,7 +49,7 @@ import { ErrorEventsModule } from "./modules/error-events/error-events.module.js
 import { EsmmModule } from "./modules/esmm/esmm.module.js";
 import { ExaminationsModule } from "./modules/examinations/examinations.module.js";
 import { FeatureFlagModule } from "./modules/feature-flag/feature-flag.module.js";
-import { FilesModule } from "./modules/files/files.module.js";
+import { FileModule } from "./modules/file/file.module.js";
 import { FollowupsModule } from "./modules/followups/followups.module.js";
 import { HealthModule } from "./modules/health/health.module.js";
 import { HospitalizationModule } from "./modules/hospitalization/hospitalization.module.js";
@@ -111,7 +111,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     BranchModule,
     IdentityModule,
     FeatureFlagModule,
-    FilesModule,
+    FileModule,
     NotificationsModule,
     OwnersModule,
     PatientsModule,
