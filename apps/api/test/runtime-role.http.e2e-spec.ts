@@ -9,6 +9,8 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 import { PrismaClient } from "@prisma/client";
 import { hash } from "bcryptjs";
@@ -98,8 +100,12 @@ describe("Non-superuser runtime HTTP", () => {
 
     // HTTP E2E, Nest decorator metadata'sını Vitest transformuna değil CI'nin
     // çalıştırdığı derlenmiş CommonJS çıktısına dayandırır.
-    const compiledMain =
-      (await import("../dist/main.js")) as unknown as CompiledMainModule;
+    const compiledMainUrl = pathToFileURL(
+      resolve(process.cwd(), "dist", "main.js"),
+    ).href;
+    const compiledMain = (await import(
+      compiledMainUrl
+    )) as unknown as CompiledMainModule;
     app = await compiledMain.createApiApplication();
     await app.listen(httpPort, "127.0.0.1");
     baseUrl = `http://127.0.0.1:${httpPort}`;

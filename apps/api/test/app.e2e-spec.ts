@@ -10,6 +10,8 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 import { PrismaClient } from "@prisma/client";
 import { hash } from "bcryptjs";
@@ -98,8 +100,15 @@ function sessionToken(body: unknown): string {
 describe("API smoke (e2e)", () => {
   beforeAll(async () => {
     if (!baseUrl) {
-      const compiledModule =
-        (await import("../dist/main.js")) as CompiledApiModule;
+      // `dist` E2E iÅŸinde Ã¼retilir; lint/type-check iÅŸleri ise temiz aÄŸaÃ§ta
+      // bu dosyaya sahip olmaz. Mutlak dosya URL'si, derlenmiÅŸ runtime
+      // sÃ¶zleÅŸmesini korurken statik modÃ¼l Ã§Ã¶zÃ¼mlemesinden kaÃ§Ä±nÄ±r.
+      const compiledMainUrl = pathToFileURL(
+        resolve(process.cwd(), "dist", "main.js"),
+      ).href;
+      const compiledModule = (await import(
+        compiledMainUrl
+      )) as CompiledApiModule;
       managedApplication = await compiledModule.createApiApplication();
       await managedApplication.listen(0, "127.0.0.1");
 
