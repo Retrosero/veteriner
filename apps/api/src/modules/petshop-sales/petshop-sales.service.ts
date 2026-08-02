@@ -131,6 +131,9 @@ export class PetshopSalesService {
       netAmount,
       updatedAt: nowIso,
     });
+    const persistedHeader = this.repo.findById(tenantId, saleId);
+    if (!persistedHeader) throw new Error("Petshop satış oluşturulamadı");
+    await this.repo.persistSaleWithLines(persistedHeader, lineRecords);
 
     // 4) Audit.
     await this.audit.recordSimple(
@@ -172,7 +175,7 @@ export class PetshopSalesService {
     actor: ActorContext,
   ): Promise<PetshopSaleListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.search(tenantId, {
+    const result = await this.repo.persistedSearch(tenantId, {
       status: filters.status,
       customerOwnerId: filters.customerOwnerId,
       customerPatientId: filters.customerPatientId,
@@ -198,9 +201,9 @@ export class PetshopSalesService {
     actor: ActorContext,
   ): Promise<PetshopSaleDetail | null> {
     this.requireTenantScope(actor, tenantId);
-    const header = this.repo.findById(tenantId, id);
+    const header = await this.repo.persistedById(tenantId, id);
     if (!header) return null;
-    const lines = this.repo.listLinesBySale(tenantId, id);
+    const lines = await this.repo.persistedLines(tenantId, id);
     return {
       sale: toPetshopSale(header),
       lines: lines.map((l) => toPetshopSaleLine(l)),
@@ -218,7 +221,7 @@ export class PetshopSalesService {
     actor: ActorContext,
   ): Promise<PetshopSaleDetail> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-SALE-0001",
@@ -245,7 +248,7 @@ export class PetshopSalesService {
       // Mevcut satırları updatedAt set edip listede bırakıyoruz
       // (draft senaryosunda henüz stok hareketi yok; ileride
       // GOAL-065 refund ile bu davranış netleşecek).
-      const oldLines = this.repo.listLinesBySale(tenantId, id);
+      const oldLines = await this.repo.persistedLines(tenantId, id);
       const nowIso = new Date().toISOString();
       for (const old of oldLines) {
         this.repo.updateLine(tenantId, old.id, { updatedAt: nowIso });
@@ -261,7 +264,8 @@ export class PetshopSalesService {
         totalAmount,
         input.globalDiscountPercent ?? existing.globalDiscountPercent,
       );
-      this.repo.update(tenantId, id, {
+      await this.repo.persistedReplaceLines(tenantId, id, newLines);
+      await this.repo.persistedUpdate(tenantId, id, {
         totalAmount,
         netAmount,
         updatedAt: nowIso,
@@ -269,37 +273,37 @@ export class PetshopSalesService {
     }
 
     if (input.customerOwnerId !== undefined) {
-      this.repo.update(tenantId, id, {
+      await this.repo.persistedUpdate(tenantId, id, {
         customerOwnerId: input.customerOwnerId,
         updatedAt: new Date().toISOString(),
       });
     }
     if (input.customerPatientId !== undefined) {
-      this.repo.update(tenantId, id, {
+      await this.repo.persistedUpdate(tenantId, id, {
         customerPatientId: input.customerPatientId,
         updatedAt: new Date().toISOString(),
       });
     }
     if (input.paymentMethod !== undefined) {
-      this.repo.update(tenantId, id, {
+      await this.repo.persistedUpdate(tenantId, id, {
         paymentMethod: input.paymentMethod,
         updatedAt: new Date().toISOString(),
       });
     }
     if (input.paidAmount !== undefined) {
-      this.repo.update(tenantId, id, {
+      await this.repo.persistedUpdate(tenantId, id, {
         paidAmount: input.paidAmount,
         updatedAt: new Date().toISOString(),
       });
     }
     if (input.globalDiscountPercent !== undefined) {
-      const t = this.repo.findById(tenantId, id);
+      const t = await this.repo.persistedById(tenantId, id);
       if (t) {
         const netAmount = this.applyGlobalDiscount(
           t.totalAmount,
           input.globalDiscountPercent,
         );
-        this.repo.update(tenantId, id, {
+        await this.repo.persistedUpdate(tenantId, id, {
           globalDiscountPercent: input.globalDiscountPercent,
           netAmount,
           updatedAt: new Date().toISOString(),
@@ -307,13 +311,13 @@ export class PetshopSalesService {
       }
     }
     if (input.notes !== undefined) {
-      this.repo.update(tenantId, id, {
+      await this.repo.persistedUpdate(tenantId, id, {
         notes: input.notes,
         updatedAt: new Date().toISOString(),
       });
     }
 
-    const updated = this.repo.findById(tenantId, id);
+    const updated = await this.repo.persistedById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-SALE-0001",
@@ -333,9 +337,9 @@ export class PetshopSalesService {
 
     return {
       sale: toPetshopSale(updated),
-      lines: this.repo
-        .listLinesBySale(tenantId, id)
-        .map((l) => toPetshopSaleLine(l)),
+      lines: (await this.repo.persistedLines(tenantId, id)).map((line) =>
+        toPetshopSaleLine(line),
+      ),
     };
   }
 
@@ -370,7 +374,7 @@ export class PetshopSalesService {
     }
 
     const nowIso = new Date().toISOString();
-    const lines = this.repo.listLinesBySale(tenantId, id);
+    const lines = await this.repo.persistedLines(tenantId, id);
 
     // Her satır için stok düşümü.
     for (const line of lines) {
@@ -413,7 +417,7 @@ export class PetshopSalesService {
     const paymentMethod = input.paymentMethod ?? existing.paymentMethod;
     const paidAmount = input.paidAmount ?? existing.paidAmount;
 
-    this.repo.update(tenantId, id, {
+    await this.repo.persistedUpdate(tenantId, id, {
       status: "completed",
       paymentMethod,
       paidAmount,
@@ -438,7 +442,7 @@ export class PetshopSalesService {
       },
     );
 
-    const updated = this.repo.findById(tenantId, id);
+    const updated = await this.repo.persistedById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-SALE-0001",
@@ -448,9 +452,9 @@ export class PetshopSalesService {
     }
     return {
       sale: toPetshopSale(updated),
-      lines: this.repo
-        .listLinesBySale(tenantId, id)
-        .map((l) => toPetshopSaleLine(l)),
+      lines: (await this.repo.persistedLines(tenantId, id)).map((line) =>
+        toPetshopSaleLine(line),
+      ),
     };
   }
 
@@ -465,7 +469,7 @@ export class PetshopSalesService {
     actor: ActorContext,
   ): Promise<PetshopSaleDetail> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-SALE-0001",
@@ -487,7 +491,7 @@ export class PetshopSalesService {
     const nowIso = new Date().toISOString();
     // Tamamlanmış satışlarda ters kayıt (stok iade).
     if (existing.status === "completed") {
-      const lines = this.repo.listLinesBySale(tenantId, id);
+      const lines = await this.repo.persistedLines(tenantId, id);
       for (const line of lines) {
         const product = await this.products.getProduct(
           tenantId,
@@ -516,7 +520,7 @@ export class PetshopSalesService {
       }
     }
 
-    this.repo.update(tenantId, id, {
+    await this.repo.persistedUpdate(tenantId, id, {
       status: "cancelled",
       cancelledAt: nowIso,
       cancelledBy: actor.actorId ?? "system",
@@ -537,7 +541,7 @@ export class PetshopSalesService {
       },
     );
 
-    const updated = this.repo.findById(tenantId, id);
+    const updated = await this.repo.persistedById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-SALE-0001",
@@ -547,9 +551,9 @@ export class PetshopSalesService {
     }
     return {
       sale: toPetshopSale(updated),
-      lines: this.repo
-        .listLinesBySale(tenantId, id)
-        .map((l) => toPetshopSaleLine(l)),
+      lines: (await this.repo.persistedLines(tenantId, id)).map((line) =>
+        toPetshopSaleLine(line),
+      ),
     };
   }
 

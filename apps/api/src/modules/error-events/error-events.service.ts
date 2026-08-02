@@ -267,7 +267,7 @@ export class ErrorEventsService {
       const occurredAt = input.occurredAt ?? new Date().toISOString();
 
       // Mevcut kayıt resolved ise otomatik reopened'a terfi.
-      const existing = this.repo.findByFingerprint(fingerprint);
+      const existing = this.repo.findByFingerprint(fingerprint, input.tenantId);
       const willReopen = existing !== null && existing.status === "resolved";
 
       const rec = this.repo.upsertByFingerprint({
@@ -300,8 +300,11 @@ export class ErrorEventsService {
           actorType: "system",
           reason: "Yeni hata oluştu — otomatik reopened terfisi",
         });
-        return toErrorEvent(autoUpdate?.record ?? rec);
+        const reopened = autoUpdate?.record ?? rec;
+        void this.persistBestEffort(reopened);
+        return toErrorEvent(reopened);
       }
+      void this.persistBestEffort(rec);
       return toErrorEvent(rec);
     } catch (err) {
       this.logger.error(
@@ -622,7 +625,7 @@ export class ErrorEventsService {
       });
     }
     const items = this.repo
-      .listTransitionsByFingerprint(rec.fingerprint)
+      .listTransitionsByFingerprint(rec.fingerprint, rec.tenantId)
       .map(toErrorEventStatusTransition);
     return {
       fingerprint: rec.fingerprint,
@@ -752,6 +755,22 @@ export class ErrorEventsService {
   }
 
   /**
+   * Hata kaydının PostgreSQL snapshot'ını ana hata yanıtını geciktirmeden
+   * yazar. Kalıcılık sorunu yalnız loglanır; exception filter hiçbir zaman
+   * ikinci bir hata üretmez.
+   */
+  private async persistBestEffort(record: ErrorEventRecord): Promise<void> {
+    try {
+      await this.repo.persistSnapshot(record);
+    } catch (error) {
+      this.logger.error(
+        `ErrorEvent kalıcı kaydı başarısız: ${(error as Error).message}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
+  }
+
+  /**
    * Context payload'ı PII mask'ler. Null/undefined korunur.
    */
   private maskContext(
@@ -868,7 +887,7 @@ export class ErrorEventsService {
       authorType: actor.actorType,
       body: safeBody,
       visibility: input.visibility ?? "internal",
-    });
+    }, rec.tenantId);
   }
 
   /**
@@ -894,7 +913,7 @@ export class ErrorEventsService {
       });
     }
     const items = this.repo
-      .listNotesByFingerprint(rec.fingerprint)
+      .listNotesByFingerprint(rec.fingerprint, rec.tenantId)
       .map(toErrorEventNote);
     return {
       fingerprint: rec.fingerprint,
@@ -939,7 +958,7 @@ export class ErrorEventsService {
       title: input.title ?? null,
       createdById: actor.actorId ?? "system",
       createdByType: actor.actorType,
-    });
+    }, rec.tenantId);
   }
 
   /**
@@ -965,7 +984,7 @@ export class ErrorEventsService {
       });
     }
     const items = this.repo
-      .listSupportLinksByFingerprint(rec.fingerprint)
+      .listSupportLinksByFingerprint(rec.fingerprint, rec.tenantId)
       .map(toErrorEventSupportLink);
     return {
       fingerprint: rec.fingerprint,
@@ -1024,7 +1043,7 @@ export class ErrorEventsService {
       assignedById: actor.actorId ?? "system",
       assignedByType: actor.actorType,
       reason: input.reason ?? null,
-    });
+    }, rec.tenantId);
     // Güncellenmiş event'i tekrar oku (assignedToUserId değişmiş olabilir).
     const updated = this.repo.findById(id);
     return {
@@ -1056,7 +1075,7 @@ export class ErrorEventsService {
       });
     }
     const items = this.repo
-      .listAssignmentsByFingerprint(rec.fingerprint)
+      .listAssignmentsByFingerprint(rec.fingerprint, rec.tenantId)
       .map(toErrorEventAssignment);
     return {
       fingerprint: rec.fingerprint,
@@ -1098,7 +1117,7 @@ export class ErrorEventsService {
     }
     const entries: ErrorEventAuditEntry[] = [];
     // Status transitions.
-    for (const t of this.repo.listTransitionsByFingerprint(rec.fingerprint)) {
+    for (const t of this.repo.listTransitionsByFingerprint(rec.fingerprint, rec.tenantId)) {
       entries.push({
         id: t.id,
         fingerprint: t.fingerprint,
@@ -1114,7 +1133,7 @@ export class ErrorEventsService {
       });
     }
     // Notlar.
-    for (const n of this.repo.listNotesByFingerprint(rec.fingerprint)) {
+    for (const n of this.repo.listNotesByFingerprint(rec.fingerprint, rec.tenantId)) {
       entries.push({
         id: n.id,
         fingerprint: n.fingerprint,
@@ -1130,7 +1149,7 @@ export class ErrorEventsService {
       });
     }
     // Destek bağlantıları.
-    for (const s of this.repo.listSupportLinksByFingerprint(rec.fingerprint)) {
+    for (const s of this.repo.listSupportLinksByFingerprint(rec.fingerprint, rec.tenantId)) {
       entries.push({
         id: s.id,
         fingerprint: s.fingerprint,
@@ -1148,7 +1167,7 @@ export class ErrorEventsService {
       });
     }
     // Atamalar.
-    for (const a of this.repo.listAssignmentsByFingerprint(rec.fingerprint)) {
+    for (const a of this.repo.listAssignmentsByFingerprint(rec.fingerprint, rec.tenantId)) {
       const unassigned = a.assigneeId === UNASSIGNED;
       entries.push({
         id: a.id,
@@ -1167,7 +1186,7 @@ export class ErrorEventsService {
     }
     // resolved → reopened otomatik terfiler (resolved-status görünce
     // occurrence_recorded olarak yeniden yazılır).
-    for (const t of this.repo.listTransitionsByFingerprint(rec.fingerprint)) {
+    for (const t of this.repo.listTransitionsByFingerprint(rec.fingerprint, rec.tenantId)) {
       if (t.toStatus === "reopened" && t.actorId === "system") {
         entries.push({
           id: `${t.id}-occ`,

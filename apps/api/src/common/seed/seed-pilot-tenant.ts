@@ -18,6 +18,7 @@
  */
 
 import { Injectable, Logger } from "@nestjs/common";
+import { PrismaClient } from "@prisma/client";
 
 import { hashPassword } from "../auth/password.js";
 
@@ -61,7 +62,7 @@ export interface PilotSeed {
 /** Standart pilot tenant. */
 export const PILOT_SEED: PilotSeed = {
   tenant: {
-    id: "tnt-pilot-kadikoy",
+    id: "11c6beec-7c64-4cf6-9cb7-d9ea6fd5c8a1",
     slug: "pilot-vet-kadikoy",
     name: "Pilot Veteriner Kliniği (Kadıköy)",
     country: "TR",
@@ -69,35 +70,35 @@ export const PILOT_SEED: PilotSeed = {
     timezone: "Europe/Istanbul",
   },
   branch: {
-    id: "brc-pilot-merkez",
+    id: "b203d16a-91e2-49c0-b9d7-9bdc55fdf60d",
     name: "Merkez Şube",
     address: "Caferağa Mah. Test Sk. No:1 Kadıköy/İstanbul",
     phone: "+902160000000",
   },
   users: [
     {
-      id: "usr-pilot-owner-1",
+      id: "92a2c09a-d719-4a9a-b247-94a0e5d25848",
       email: "owner@pilot.vetniva.local",
       fullName: "Pilot İşletme Sahibi",
       role: "OWNER",
       passwordEnv: "PILOT_OWNER_PASSWORD",
     },
     {
-      id: "usr-pilot-owner-2",
+      id: "128183c1-9adf-4783-981f-9487019fc7b2",
       email: "owner2@pilot.vetniva.local",
       fullName: "Pilot İşletme Sahibi 2",
       role: "OWNER",
       passwordEnv: "PILOT_OWNER2_PASSWORD",
     },
     {
-      id: "usr-pilot-vet-1",
+      id: "9c0a2f2a-697e-4bf0-a1bd-b965bdb171b9",
       email: "vet@pilot.vetniva.local",
       fullName: "Pilot Veteriner Hekim",
       role: "VETERINARIAN",
       passwordEnv: "PILOT_VET_PASSWORD",
     },
     {
-      id: "usr-pilot-staff-1",
+      id: "e3591932-4c98-45b9-a085-b1df0f4ec606",
       email: "staff@pilot.vetniva.local",
       fullName: "Pilot Resepsiyon",
       role: "STAFF",
@@ -131,6 +132,7 @@ export const PILOT_SEED: PilotSeed = {
 @Injectable()
 export class PilotSeedService {
   private readonly logger = new Logger(PilotSeedService.name);
+  private readonly prisma = new PrismaClient();
 
   /**
    * Pilot tenant'ı kurar. Production'da hata fırlatır.
@@ -169,22 +171,16 @@ export class PilotSeedService {
       usersCreated += 1;
     }
 
-    // 3. Demo veri (kimlik bilgisi YOK).
-    let ownersCreated = 0;
-    for (const owner of PILOT_SEED.owners) {
-      await this.upsertOwner(owner);
-      ownersCreated += 1;
-    }
-    let patientsCreated = 0;
-    for (const patient of PILOT_SEED.patients) {
-      await this.upsertPatient(patient);
-      patientsCreated += 1;
-    }
+    // Sahip/hasta modülleri henüz bellek-içi repository kullanıyor.
+    // Kalıcıymış gibi demo veri yazmayız; kabul senaryosu bunları API ile oluşturur.
+    const ownersCreated = 0;
+    const patientsCreated = 0;
 
     this.logger.log(
       `Pilot seed complete: users=${usersCreated} owners=${ownersCreated} patients=${patientsCreated}`,
     );
 
+    await this.prisma.$disconnect();
     return { usersCreated, ownersCreated, patientsCreated };
   }
 
@@ -194,22 +190,45 @@ export class PilotSeedService {
    * ----------------------------------------------------------------
    */
 
-  private async upsertTenant(_t: PilotSeed["tenant"]): Promise<void> {
-    // TenantRepository.upsert() implementasyonu FAZ-12+ ile bağlanır.
+  private async upsertTenant(t: PilotSeed["tenant"]): Promise<void> {
+    await this.prisma.tenant.upsert({
+      where: { slug: t.slug },
+      create: { ...t },
+      update: { name: t.name, country: t.country, defaultLocale: t.defaultLocale, timezone: t.timezone, status: "active" },
+    });
   }
 
-  private async upsertBranch(_b: PilotSeed["branch"]): Promise<void> {
-    // BranchRepository.upsert() implementasyonu FAZ-12+ ile bağlanır.
+  private async upsertBranch(b: PilotSeed["branch"]): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'true', true)`;
+      await tx.branch.upsert({
+        where: { tenantId_code: { tenantId: PILOT_SEED.tenant.id, code: "merkez" } },
+        create: { id: b.id, tenantId: PILOT_SEED.tenant.id, code: "merkez", name: b.name, city: "İstanbul", addressJson: { formatted: b.address }, phone: b.phone },
+        update: { name: b.name, city: "İstanbul", addressJson: { formatted: b.address }, phone: b.phone, status: "active" },
+      });
+    });
   }
 
-  private async upsertUser(_u: {
+  private async upsertUser(u: {
     id: string;
     email: string;
     fullName: string;
     role: "OWNER" | "VETERINARIAN" | "STAFF";
     passwordHash: string;
   }): Promise<void> {
-    // UserRepository.upsert() implementasyonu FAZ-12+ ile bağlanır.
+    const user = await this.prisma.user.upsert({
+      where: { email: u.email },
+      create: { id: u.id, email: u.email, displayName: u.fullName, passwordHash: u.passwordHash, passwordChangedAt: new Date() },
+      update: { displayName: u.fullName, passwordHash: u.passwordHash, passwordChangedAt: new Date(), status: "active" },
+    });
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'true', true)`;
+      await tx.userTenantMembership.upsert({
+        where: { userId_tenantId: { userId: user.id, tenantId: PILOT_SEED.tenant.id } },
+        create: { userId: user.id, tenantId: PILOT_SEED.tenant.id, role: u.role },
+        update: { role: u.role, status: "active", revokedAt: null },
+      });
+    });
   }
 
   private async upsertOwner(_o: PilotSeed["owners"][number]): Promise<void> {

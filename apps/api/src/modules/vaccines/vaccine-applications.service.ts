@@ -48,7 +48,7 @@
  *   (lot değişikliği + atomik stok ters/yeni hareket)
  */
 
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, Optional } from "@nestjs/common";
 
 import {
   VaccineApplicationsRepository,
@@ -68,6 +68,8 @@ import {
   type StockMovement,
 } from "../../common/vaccines/vaccine-stock-ledger.js";
 import { PatientsService } from "../patients/patients.service.js";
+import { InventoryService } from "../inventory/inventory.service.js";
+import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
 
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
@@ -89,6 +91,8 @@ export class VaccineApplicationsService {
     private readonly vaccines: VaccinesService,
     private readonly patients: PatientsService,
     private readonly audit: AuditService,
+    @Optional() private readonly stockMovements?: StockMovementsService,
+    @Optional() private readonly inventory?: InventoryService,
   ) {}
 
   // -------------------------------------------------------------------------
@@ -182,7 +186,7 @@ export class VaccineApplicationsService {
     // 6) Stok düşümünü dene. Yeterli değilse 422.
     const id = this.repo.nextId(tenantId);
     const administeredBy = input.administeredBy ?? actor.actorId ?? "system";
-    const movement = this.stock.decrement({
+    const movement = await this.decrementVaccineStock({
       tenantId,
       stockProductId: input.lot.stockProductId,
       lot: input.lot.lot,
@@ -190,10 +194,11 @@ export class VaccineApplicationsService {
       quantity: 1, // her uygulama 1 birim stok düşürür
       applicationId: id,
       createdBy: administeredBy,
+      actor,
     });
     if (!movement) {
       // Yetersiz stok veya lot yok.
-      const balance = this.stock.getBalance({
+      const balance = await this.vaccineStockBalance({
         tenantId,
         stockProductId: input.lot.stockProductId,
         lot: input.lot.lot,
@@ -236,7 +241,7 @@ export class VaccineApplicationsService {
       cancellationReason: null,
       stockMovementIds: [movement.id],
     });
-    this.repo.insert(record);
+    await this.repo.persist(record);
 
     // 8) Audit.
     await this.audit.recordSimple(
@@ -274,7 +279,7 @@ export class VaccineApplicationsService {
     actor: ActorContext,
   ): Promise<VaccineApplicationListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.search(tenantId, {
+    const result = await this.repo.persistedSearch(tenantId, {
       patientId: filters.patientId,
       protocolId: filters.protocolId,
       status: filters.status,
@@ -300,7 +305,7 @@ export class VaccineApplicationsService {
     actor: ActorContext,
   ): Promise<VaccineApplication | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findById(tenantId, id);
+    const rec = await this.repo.persistedById(tenantId, id);
     return rec ? toVaccineApplication(rec) : null;
   }
 
@@ -315,7 +320,7 @@ export class VaccineApplicationsService {
     limit: number = 50,
   ): Promise<VaccineApplication[]> {
     this.requireTenantScope(actor, tenantId);
-    const recs = this.repo.listByPatient(tenantId, patientId, limit);
+    const recs = await this.repo.persistedByPatient(tenantId, patientId, limit);
     return recs.map((r) => toVaccineApplication(r));
   }
 
@@ -330,7 +335,7 @@ export class VaccineApplicationsService {
     actor: ActorContext,
   ): Promise<VaccineApplication> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",
@@ -395,7 +400,7 @@ export class VaccineApplicationsService {
       // 2) Yeni lot'tan düşüm dene. Yeterli değilse 422 — eski
       //    lot'a dokunulmamış olur (atomik).
       const administeredBy = existing.administeredBy;
-      const provisionalNewMovement = this.stock.decrement({
+      const provisionalNewMovement = await this.decrementVaccineStock({
         tenantId,
         stockProductId: input.lot.stockProductId,
         lot: input.lot.lot,
@@ -403,9 +408,10 @@ export class VaccineApplicationsService {
         quantity: 1,
         applicationId: existing.id,
         createdBy: administeredBy,
+        actor,
       });
       if (!provisionalNewMovement) {
-        const balance = this.stock.getBalance({
+        const balance = await this.vaccineStockBalance({
           tenantId,
           stockProductId: input.lot.stockProductId,
           lot: input.lot.lot,
@@ -433,7 +439,13 @@ export class VaccineApplicationsService {
       //    hareketi tersine çevirmiyoruz.
       const reversedMovementIds: string[] = [];
       for (const movementId of existing.stockMovementIds) {
-        const reversed = this.stock.reverse(tenantId, movementId, amendedBy);
+        const reversed = await this.reverseVaccineStock(
+          tenantId,
+          movementId,
+          amendedBy,
+          "Aşı uygulama lot düzeltmesi",
+          actor,
+        );
         if (!reversed) {
           // Reverse başarısız: yeni lot'tan düşülen hareketi
           // geri almak için iade (negative) hareketi oluştur.
@@ -497,7 +509,7 @@ export class VaccineApplicationsService {
         ...newMovementIds,
       ];
     }
-    const updated = this.repo.update(tenantId, id, patch);
+    const updated = await this.repo.persistedUpdate(tenantId, id, patch);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",
@@ -555,7 +567,7 @@ export class VaccineApplicationsService {
     actor: ActorContext,
   ): Promise<VaccineApplication> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",
@@ -580,10 +592,12 @@ export class VaccineApplicationsService {
     // Stok hareketlerini tersine çevir. Hata olursa domain error.
     const newMovementIds: string[] = [];
     for (const movementId of existing.stockMovementIds) {
-      const reversed = this.stock.reverse(
+      const reversed = await this.reverseVaccineStock(
         tenantId,
         movementId,
         actor.actorId ?? "system",
+        "Aşı uygulama iptali",
+        actor,
       );
       if (!reversed) {
         throw new DomainError({
@@ -599,7 +613,7 @@ export class VaccineApplicationsService {
     }
 
     const nowIso = new Date().toISOString();
-    const updated = this.repo.update(tenantId, id, {
+    const updated = await this.repo.persistedUpdate(tenantId, id, {
       status: "cancelled",
       updatedAt: nowIso,
       cancelledAt: nowIso,
@@ -668,6 +682,58 @@ export class VaccineApplicationsService {
     applicationId?: string,
   ): StockMovement[] {
     return this.stock.listMovements(tenantId, applicationId);
+  }
+
+  /**
+   * Production'da kalıcı stok defterinden vaccination hareketi yazar;
+   * unit testlerinin kurduğu eski minimal defter ise fallback'tir.
+   */
+  private async decrementVaccineStock(args: {
+    tenantId: string;
+    stockProductId: string;
+    lot: string;
+    expiryDate: string;
+    quantity: number;
+    applicationId: string;
+    createdBy: string;
+    actor?: ActorContext;
+  }): Promise<{ id: string } | null> {
+    if (!this.stockMovements || !this.inventory) {
+      return this.stock.decrement(args);
+    }
+    const actor = args.actor ?? this.systemActor(args.tenantId, args.createdBy);
+    const lot = await this.inventory.getLotByProductAndNumber(
+      args.tenantId,
+      args.stockProductId,
+      args.lot,
+      actor,
+    );
+    if (!lot || lot.expiryDate.slice(0, 10) !== args.expiryDate.slice(0, 10)) return null;
+    const balance = await this.vaccineStockBalance(args, lot.id, actor);
+    if (balance < args.quantity) return null;
+    return this.stockMovements.createSystemMovement(
+      args.tenantId,
+      { type: "vaccination", productId: args.stockProductId, lotId: lot.id, quantity: `-${args.quantity}`, occurredAt: new Date().toISOString() },
+      actor,
+      { systemSourceType: "vaccine_application", systemSourceId: args.applicationId },
+    );
+  }
+
+  private async reverseVaccineStock(tenantId: string, movementId: string, createdBy: string, reason: string, actor: ActorContext): Promise<{ id: string } | null> {
+    if (!this.stockMovements) return this.stock.reverse(tenantId, movementId, createdBy);
+    return this.stockMovements.reverseMovement(tenantId, movementId, { reason }, actor);
+  }
+
+  private async vaccineStockBalance(args: { tenantId: string; stockProductId: string; lot: string; expiryDate: string }, lotId?: string, actor?: ActorContext): Promise<number> {
+    if (!this.stockMovements || !this.inventory) return this.stock.getBalance(args);
+    const resolvedLot = lotId ? { id: lotId } : await this.inventory.getLotByProductAndNumber(args.tenantId, args.stockProductId, args.lot, actor ?? this.systemActor(args.tenantId, "system"));
+    if (!resolvedLot) return 0;
+    const balances = await this.stockMovements.listPersistentBalances(args.tenantId, actor ?? this.systemActor(args.tenantId, "system"), { productId: args.stockProductId, lotId: resolvedLot.id });
+    return Number(balances.items[0]?.netQuantity ?? "0");
+  }
+
+  private systemActor(tenantId: string, actorId: string): ActorContext {
+    return { actorId, actorType: "system", role: "STAFF", tenantId, branchId: null, isSuperadmin: false, correlationId: "vaccine-stock", ipAddress: null, userAgentHash: null, source: "system" };
   }
 
   // -------------------------------------------------------------------------

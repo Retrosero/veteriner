@@ -43,6 +43,8 @@ import { OwnersModule } from "../owners/owners.module.js";
 import { PatientsModule } from "../patients/patients.module.js";
 import { PortalAuthModule } from "../portal-auth/portal-auth.module.js";
 import { TenantModule } from "../tenant/tenant.module.js";
+import { StockMovementsModule } from "../stock-movements/stock-movements.module.js";
+import { InventoryModule } from "../inventory/inventory.module.js";
 
 @Module({
   imports: [
@@ -52,6 +54,8 @@ import { TenantModule } from "../tenant/tenant.module.js";
     OwnersModule,
     TenantModule,
     PortalAuthModule,
+    StockMovementsModule,
+    InventoryModule,
   ],
   controllers: [
     VaccinesController,

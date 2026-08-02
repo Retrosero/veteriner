@@ -20,7 +20,9 @@
  * @since GOAL-022 (FAZ-2) sahiplik geçmişi core
  */
 
-import { Injectable } from "@nestjs/common";
+import { Injectable, Optional } from "@nestjs/common";
+import { PrismaService } from "../../prisma/prisma.service.js";
+import type { OwnershipHistory as PrismaOwnershipHistory, Prisma } from "@prisma/client";
 
 import type {
   Ownership,
@@ -54,6 +56,20 @@ export class OwnershipHistoryRepository {
   private readonly activeByPatient = new Map<string, string>();
   /** Her tenant için id counter. */
   private readonly counters = new Map<string, number>();
+  public constructor(@Optional() private readonly prisma?: PrismaService) {}
+
+  /** RLS transaction içindeki kalıcı erişim; Prisma'sız unit testlerde Map sürer. */
+  public async persist(record: OwnershipRecord): Promise<OwnershipRecord> {
+    if (!this.prisma) return this.insert(record);
+    this.insert(record);
+    const row = await this.withTenant(record.tenantId, (tx) => tx.ownershipHistory.create({ data: { id: record.id, tenantId: record.tenantId, patientId: record.patientId, ownerId: record.ownerId, startDate: new Date(record.startDate), endDate: record.endDate ? new Date(record.endDate) : null, reason: record.reason, otherNote: record.otherNote, createdBy: record.createdBy, createdAt: new Date(record.createdAt) } }));
+    return this.fromPrisma(row);
+  }
+  public async findPersistedActive(tenantId: string, patientId: string): Promise<OwnershipRecord | null> { if (!this.prisma) return this.findActiveByPatient(tenantId, patientId); const row = await this.withTenant(tenantId, (tx) => tx.ownershipHistory.findFirst({ where: { tenantId, patientId, endDate: null } })); return row ? this.fromPrisma(row) : null; }
+  public async closePersistedActive(tenantId: string, patientId: string, endDate: string): Promise<OwnershipRecord | null> { if (!this.prisma) return this.closeActive(tenantId, patientId, endDate); const active = await this.findPersistedActive(tenantId, patientId); if (!active) return null; const row = await this.withTenant(tenantId, (tx) => tx.ownershipHistory.update({ where: { id: active.id }, data: { endDate: new Date(endDate) } })); return this.fromPrisma(row); }
+  public async searchPersisted(tenantId: string, args: OwnershipFilters): Promise<{items: OwnershipRecord[]; total: number}> { if (!this.prisma) return this.search(tenantId,args); const where: Prisma.OwnershipHistoryWhereInput={tenantId,...(args.patientId?{patientId:args.patientId}:{}),...(args.ownerId?{ownerId:args.ownerId}:{}),...(args.activeOnly?{endDate:null}:{})}; const result=await this.withTenant(tenantId,async tx=>Promise.all([tx.ownershipHistory.findMany({where,orderBy:[{endDate:'asc'},{startDate:'desc'},{createdAt:'desc'}],skip:args.offset,take:args.limit}),tx.ownershipHistory.count({where})])); return {items:result[0].map(r=>this.fromPrisma(r)),total:result[1]}; }
+  private async withTenant<T>(tenantId:string, fn:(tx:Prisma.TransactionClient)=>Promise<T>):Promise<T>{if(!this.prisma) throw new Error('Prisma bağlantısı bulunamadı');return this.prisma.$transaction(async tx=>{await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'false', true)`;await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, true)`;return fn(tx);});}
+  private fromPrisma(row:PrismaOwnershipHistory):OwnershipRecord{return {id:row.id,tenantId:row.tenantId,patientId:row.patientId,ownerId:row.ownerId,startDate:row.startDate.toISOString(),endDate:row.endDate?.toISOString()??null,reason:row.reason as Ownership['reason'],otherNote:row.otherNote,createdBy:row.createdBy,createdAt:row.createdAt.toISOString()};}
 
   public nextId(tenantId: string): string {
     const n = (this.counters.get(tenantId) ?? 0) + 1;

@@ -97,7 +97,7 @@ export class ProductsService {
     // 2) SKU: verildiyse unique kontrolü; yoksa otomatik üret.
     const sku = input.sku ?? null;
     if (sku !== null) {
-      const existingBySku = this.repo.findBySku(tenantId, sku);
+      const existingBySku = await this.repo.persistedFindBySku(tenantId, sku);
       if (existingBySku && existingBySku.archivedAt === null) {
         throw new DomainError({
           errorCode: "VET-PRODUCT-0002",
@@ -112,7 +112,7 @@ export class ProductsService {
 
     // 3) Barkod unique kontrolü.
     if (input.barcode !== undefined) {
-      const existingByBarcode = this.repo.findByBarcode(
+      const existingByBarcode = await this.repo.persistedFindByBarcode(
         tenantId,
         input.barcode,
       );
@@ -166,7 +166,7 @@ export class ProductsService {
       archivedBy: null,
       archiveReason: null,
     });
-    this.repo.insert(record);
+    await this.repo.persist(record);
 
     // 6) Audit.
     await this.audit.recordSimple(
@@ -210,7 +210,7 @@ export class ProductsService {
     actor: ActorContext,
   ): Promise<ProductListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.search(tenantId, {
+    const result = await this.repo.persistedSearch(tenantId, {
       kind: filters.kind,
       kinds: filters.kinds,
       clinicUsage: filters.clinicUsage,
@@ -238,7 +238,7 @@ export class ProductsService {
     actor: ActorContext,
   ): Promise<Product | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findById(tenantId, id);
+    const rec = await this.repo.persistedFindById(tenantId, id);
     return rec ? toProduct(rec) : null;
   }
 
@@ -253,7 +253,7 @@ export class ProductsService {
     actor: ActorContext,
   ): Promise<Product> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedFindById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-PRODUCT-0001",
@@ -291,7 +291,7 @@ export class ProductsService {
 
     // SKU unique kontrolü.
     if (input.sku !== undefined && input.sku !== existing.sku) {
-      const dupe = this.repo.findBySku(tenantId, input.sku);
+      const dupe = await this.repo.persistedFindBySku(tenantId, input.sku);
       if (dupe && dupe.id !== id && dupe.archivedAt === null) {
         throw new DomainError({
           errorCode: "VET-PRODUCT-0002",
@@ -309,7 +309,7 @@ export class ProductsService {
       input.barcode !== null &&
       input.barcode !== existing.barcode
     ) {
-      const dupe = this.repo.findByBarcode(tenantId, input.barcode);
+      const dupe = await this.repo.persistedFindByBarcode(tenantId, input.barcode);
       if (dupe && dupe.id !== id && dupe.archivedAt === null) {
         throw new DomainError({
           errorCode: "VET-PRODUCT-0002",
@@ -351,7 +351,7 @@ export class ProductsService {
     const nowIso = new Date().toISOString();
     patch.updatedAt = nowIso;
 
-    const updated = this.repo.update(tenantId, id, patch);
+    const updated = await this.repo.persistedUpdate(tenantId, id, patch);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-PRODUCT-0001",
@@ -406,7 +406,7 @@ export class ProductsService {
     actor: ActorContext,
   ): Promise<Product> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedFindById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-PRODUCT-0001",
@@ -430,7 +430,7 @@ export class ProductsService {
 
     const nowIso = new Date().toISOString();
     const archivedBy = actor.actorId ?? "system";
-    const updated = this.repo.update(tenantId, id, {
+    const updated = await this.repo.persistedUpdate(tenantId, id, {
       archivedAt: nowIso,
       archivedBy,
       archiveReason: input.reason,

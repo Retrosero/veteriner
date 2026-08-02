@@ -160,7 +160,7 @@ export class StockAlertsService {
     this.requireTenantScope(actor, tenantId);
 
     if (input?.resetAcknowledgements === true) {
-      this.acks.clearForTenant(tenantId);
+      await this.acks.persistedClearForTenant(tenantId);
     }
 
     const lowStock = await this.computeLowStock(tenantId);
@@ -238,10 +238,10 @@ export class StockAlertsService {
 
     // Idempotent: mevcut ack varsa orijinal acknowledgedAt
     // korunur; yoksa yeni timestamp üretilir.
-    const existingAck = this.acks.find(tenantId, "lowStock", productId);
+    const existingAck = await this.acks.persistedFind(tenantId, "lowStock", productId);
     const acknowledgedAt =
       existingAck?.acknowledgedAt ?? new Date().toISOString();
-    this.acks.upsert({
+    await this.acks.persistedUpsert({
       tenantId,
       alertKey: stockAlertAckKey("lowStock", productId),
       alertType: "lowStock",
@@ -318,10 +318,10 @@ export class StockAlertsService {
 
     // Idempotent: mevcut ack varsa orijinal acknowledgedAt
     // korunur; yoksa yeni timestamp üretilir.
-    const existingAck = this.acks.find(tenantId, "expiring", lotId);
+    const existingAck = await this.acks.persistedFind(tenantId, "expiring", lotId);
     const acknowledgedAt =
       existingAck?.acknowledgedAt ?? new Date().toISOString();
-    this.acks.upsert({
+    await this.acks.persistedUpsert({
       tenantId,
       alertKey: stockAlertAckKey("expiring", lotId),
       alertType: "expiring",
@@ -439,7 +439,7 @@ export class StockAlertsService {
         continue;
       }
       const severity = computeLowStockSeverity(currentQuantity);
-      const acked = this.acks.find(tenantId, "lowStock", p.id);
+      const acked = await this.acks.persistedFind(tenantId, "lowStock", p.id);
       let status: LowStockAlertStatus = "active";
       if (acked) status = "acknowledged";
       out.push({
@@ -530,7 +530,7 @@ export class StockAlertsService {
       const days = daysUntilExpiry(lot.expiryDate);
       if (days > daysAhead) continue;
       const severity = computeExpirySeverity(days);
-      const acked = this.acks.find(tenantId, "expiring", lot.id);
+      const acked = await this.acks.persistedFind(tenantId, "expiring", lot.id);
       let status: ExpiringLotAlertStatus = "active";
       if (acked) status = "acknowledged";
       const currentQuantity = balanceByLot.get(lot.id) ?? "0";

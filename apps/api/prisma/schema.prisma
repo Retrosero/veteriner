@@ -61,30 +61,30 @@ model Tenant {
   /// (ülke adaptörü seçimi bu alana göre yapılır).
   country        String       @db.Char(2)
   /// Tenant varsayılan dili.
-  defaultLocale  String       @default("tr-TR") @db.VarChar(10) @map("default_locale")
+  defaultLocale  String       @default("tr-TR") @map("default_locale") @db.VarChar(10)
   /// IANA saat dilimi (örn. Europe/Istanbul).
   timezone       String       @default("Europe/Istanbul") @db.VarChar(64)
   /// Tenant durumu.
   status         TenantStatus @default(active)
   /// Vergi/VKN numarası (opsiyonel).
-  taxId          String?      @db.VarChar(20) @map("tax_id")
+  taxId          String?      @map("tax_id") @db.VarChar(20)
   /// VKN/TCKN sahip tipi (`company` veya `personal`).
-  taxIdType      String?      @db.VarChar(20) @map("tax_id_type")
+  taxIdType      String?      @map("tax_id_type") @db.VarChar(20)
   /// İletişim e-posta (tenant düzeyinde).
-  contactEmail   String?      @db.VarChar(200) @map("contact_email")
+  contactEmail   String?      @map("contact_email") @db.VarChar(200)
   /// Tenant oluşturulma zamanı.
-  createdAt      DateTime     @default(now()) @db.Timestamptz(6) @map("created_at")
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   /// Son güncelleme zamanı.
-  updatedAt      DateTime     @updatedAt @db.Timestamptz(6) @map("updated_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
   /// Kapatma/arsivleme zamanı (soft delete).
-  archivedAt     DateTime?    @db.Timestamptz(6) @map("archived_at")
+  archivedAt     DateTime?    @map("archived_at") @db.Timestamptz(6)
   /// Kapatma sebebi (operasyonel not).
-  archivedReason String?      @db.VarChar(500) @map("archived_reason")
+  archivedReason String?      @map("archived_reason") @db.VarChar(500)
 
-  branches      Branch[]
-  memberships   UserTenantMembership[]
-  invitations   UserInvitation[]
-  files         FileMeta[]
+  branches              Branch[]
+  memberships           UserTenantMembership[]
+  invitations           UserInvitation[]
+  files                 FileMeta[]
   controlledDrugEntries ControlledDrugEntry[]
 
   @@index([status, createdAt])
@@ -114,7 +114,7 @@ enum BranchStatus {
 model Branch {
   id          String       @id @default(uuid()) @db.Uuid
   /// Ait olduğu tenant.
-  tenantId    String       @db.Uuid @map("tenant_id")
+  tenantId    String       @map("tenant_id") @db.Uuid
   /// Şube kodu (tenant içinde benzersiz; URL-dostu).
   code        String       @db.VarChar(64)
   /// Şube görünen adı.
@@ -128,13 +128,13 @@ model Branch {
   /// Şube durumu.
   status      BranchStatus @default(active)
   /// Şube oluşturulma zamanı.
-  createdAt   DateTime     @default(now()) @db.Timestamptz(6) @map("created_at")
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   /// Son güncelleme zamanı.
-  updatedAt   DateTime     @updatedAt @db.Timestamptz(6) @map("updated_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
   /// Kapatma/arsivleme zamanı.
-  archivedAt  DateTime?    @db.Timestamptz(6) @map("archived_at")
+  archivedAt  DateTime?    @map("archived_at") @db.Timestamptz(6)
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  tenant Tenant     @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   files  FileMeta[]
 
   /// Tenant içinde şube kodu benzersizdir.
@@ -164,18 +164,18 @@ enum MembershipStatus {
 model UserTenantMembership {
   id         String           @id @default(uuid()) @db.Uuid
   /// Kullanıcı ID (`User.id` FK).
-  userId     String           @db.Uuid @map("user_id")
+  userId     String           @map("user_id") @db.Uuid
   /// Ait olduğu tenant.
-  tenantId   String           @db.Uuid @map("tenant_id")
+  tenantId   String           @map("tenant_id") @db.Uuid
   /// Kullanıcının bu tenant'taki rolü (OWNER, VETERINARIAN, STAFF).
   /// SUPERADMIN için bu tablo kullanılmaz (sistem genelinde).
   role       String           @db.VarChar(32)
   /// Üyelik durumu.
   status     MembershipStatus @default(active)
   /// Atama zamanı.
-  assignedAt DateTime         @default(now()) @db.Timestamptz(6) @map("assigned_at")
+  assignedAt DateTime         @default(now()) @map("assigned_at") @db.Timestamptz(6)
   /// Üyelik sona erme zamanı (null = aktif).
-  revokedAt  DateTime?        @db.Timestamptz(6) @map("revoked_at")
+  revokedAt  DateTime?        @map("revoked_at") @db.Timestamptz(6)
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -208,46 +208,46 @@ enum UserStatus {
 /// `UserTenantMembership` üzerinden sağlanır. Bir kullanıcı birden
 /// fazla tenant'a üye olabilir (örn. SUPERADMIN, danışman).
 model User {
-  id                 String    @id @default(uuid()) @db.Uuid
+  id                String     @id @default(uuid()) @db.Uuid
   /// Benzersiz e-posta (giriş anahtarı). Sistem genelinde unique;
   /// tenant bazlı değil (cross-tenant davet için de aynı email
   /// kullanılabilir).
-  email              String    @unique @db.VarChar(200)
+  email             String     @unique @db.VarChar(200)
   /// bcrypt parola hash (cost 12). Asla plain text loglanmaz.
-  passwordHash       String    @db.VarChar(200) @map("password_hash")
+  passwordHash      String     @map("password_hash") @db.VarChar(200)
   /// Hesap durumu.
-  status             UserStatus @default(active)
+  status            UserStatus @default(active)
   /// Görünen ad (operatör panelinde). PII; mask'leme uygulanır.
-  displayName        String    @db.VarChar(200) @map("display_name")
+  displayName       String     @map("display_name") @db.VarChar(200)
   /// Kullanıcının tercih ettiği locale.
-  locale             String    @default("tr-TR") @db.VarChar(10)
+  locale            String     @default("tr-TR") @db.VarChar(10)
   /// Parolanın son değiştirilme zamanı. Eski parolaların süresi
   /// politika ile takip edilir.
-  passwordChangedAt  DateTime? @db.Timestamptz(6) @map("password_changed_at")
+  passwordChangedAt DateTime?  @map("password_changed_at") @db.Timestamptz(6)
   /// Başarısız login denemesi sayacı. Brute-force koruması için.
-  failedLoginCount   Int       @default(0) @map("failed_login_count")
+  failedLoginCount  Int        @default(0) @map("failed_login_count")
   /// Hesap kilit bitiş zamanı. Bu tarihe kadar giriş reddedilir.
-  lockedUntil        DateTime? @db.Timestamptz(6) @map("locked_until")
+  lockedUntil       DateTime?  @map("locked_until") @db.Timestamptz(6)
   /// Son başarılı login zamanı.
-  lastLoginAt        DateTime? @db.Timestamptz(6) @map("last_login_at")
+  lastLoginAt       DateTime?  @map("last_login_at") @db.Timestamptz(6)
   /// Hesap oluşturulma zamanı.
-  createdAt          DateTime  @default(now()) @db.Timestamptz(6) @map("created_at")
+  createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
   /// Son güncelleme zamanı.
-  updatedAt          DateTime  @updatedAt @db.Timestamptz(6) @map("updated_at")
+  updatedAt         DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
   /// Soft delete zamanı (kullanıcı pasif edildi; veri korunur).
-  archivedAt         DateTime? @db.Timestamptz(6) @map("archived_at")
+  archivedAt        DateTime?  @map("archived_at") @db.Timestamptz(6)
   /// SUPERADMIN bayrağı (GOAL-012 RBAC). Sistem düzeyinde tenant
   /// dışı görünüm ve platform yönetimi için ayrıcalıklı erişim
   /// tanımlar. Tenant üyeliği olmadan çalışır. Bu bayrak yalnızca
   /// veritabanı seeder/admin tarafından set edilir; normal API'den
   /// değiştirilemez (audit iziyle birlikte GOAL-016 superadmin
   /// paneliyle yönetilecek).
-  isSuperadmin       Boolean   @default(false) @map("is_superadmin")
+  isSuperadmin      Boolean    @default(false) @map("is_superadmin")
 
-  sessions           UserSession[]
-  passwordResets     PasswordResetToken[]
-  memberships        UserTenantMembership[]
-  uploadedFiles      FileMeta[] @relation("FileUploader")
+  sessions       UserSession[]
+  passwordResets PasswordResetToken[]
+  memberships    UserTenantMembership[]
+  uploadedFiles  FileMeta[]             @relation("FileUploader")
 
   @@index([status])
   @@index([lockedUntil])
@@ -263,33 +263,33 @@ model User {
 
 /// Kullanıcı oturumu.
 model UserSession {
-  id              String   @id @default(uuid()) @db.Uuid
+  id             String    @id @default(uuid()) @db.Uuid
   /// Ait olduğu kullanıcı.
-  userId          String   @db.Uuid @map("user_id")
+  userId         String    @map("user_id") @db.Uuid
   /// SHA-256 hash'lenmiş bearer token. Plain token sadece login/logout
   /// response'unda döner; DB'de asla plain yok.
-  tokenHash       String   @unique @db.VarChar(128) @map("token_hash")
+  tokenHash      String    @unique @map("token_hash") @db.VarChar(128)
   /// Oturumun son kullanma zamanı. Default 30 gün.
-  expiresAt       DateTime @db.Timestamptz(6) @map("expires_at")
+  expiresAt      DateTime  @map("expires_at") @db.Timestamptz(6)
   /// Son kullanım zamanı (idle timeout hesabı).
-  lastUsedAt      DateTime @default(now()) @db.Timestamptz(6) @map("last_used_at")
+  lastUsedAt     DateTime  @default(now()) @map("last_used_at") @db.Timestamptz(6)
   /// Mask'li IP (son oktet `***`).
-  ipAddress       String?  @db.VarChar(50) @map("ip_address")
+  ipAddress      String?   @map("ip_address") @db.VarChar(50)
   /// User agent SHA-256 hash (PII koruması).
-  userAgentHash   String?  @db.VarChar(64) @map("user_agent_hash")
+  userAgentHash  String?   @map("user_agent_hash") @db.VarChar(64)
   /// Oluşturulma zamanı.
-  createdAt       DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   /// Rotation sırasında set edilir: eski session'ın yerini alan session.
-  replacedById    String?  @db.Uuid @map("replaced_by_id")
+  replacedById   String?   @map("replaced_by_id") @db.Uuid
   /// Manuel/logout ile sona erme zamanı.
-  revokedAt       DateTime? @db.Timestamptz(6) @map("revoked_at")
+  revokedAt      DateTime? @map("revoked_at") @db.Timestamptz(6)
   /// Revoke sebebi (logout, rotation, admin_action).
-  revokedReason   String?  @db.VarChar(50) @map("revoked_reason")
+  revokedReason  String?   @map("revoked_reason") @db.VarChar(50)
   /// Aktif branch (GOAL-012 RBAC — branch scope). Login sırasında
   /// tenant'ın varsayılan branch'ı set edilir; kullanıcı daha sonra
   /// branch değiştirirse bu alan güncellenir (multi-branch tenant
   /// senaryosu). Null ise branch context yoktur (sistem düzeyi).
-  activeBranchId  String?  @db.Uuid @map("active_branch_id")
+  activeBranchId String?   @map("active_branch_id") @db.Uuid
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
@@ -321,25 +321,25 @@ enum InvitationStatus {
 
 /// Tenant'a kullanıcı davet kaydı. Token tek kullanımlık ve süreli.
 model UserInvitation {
-  id            String           @id @default(uuid()) @db.Uuid
+  id         String           @id @default(uuid()) @db.Uuid
   /// Davet edilen tenant.
-  tenantId      String           @db.Uuid @map("tenant_id")
+  tenantId   String           @map("tenant_id") @db.Uuid
   /// Davet edilen e-posta.
-  email         String           @db.VarChar(200)
+  email      String           @db.VarChar(200)
   /// Davet sonrası atanacak tenant rolü.
-  role          String           @db.VarChar(32)
+  role       String           @db.VarChar(32)
   /// SHA-256 hash'lenmiş davet token.
-  tokenHash     String           @unique @db.VarChar(128) @map("token_hash")
+  tokenHash  String           @unique @map("token_hash") @db.VarChar(128)
   /// Daveti gönderen kullanıcı (audit için).
-  invitedBy     String?          @db.Uuid @map("invited_by")
+  invitedBy  String?          @map("invited_by") @db.Uuid
   /// Davet durumu.
-  status        InvitationStatus @default(pending)
+  status     InvitationStatus @default(pending)
   /// Davet son kullanma zamanı (7 gün).
-  expiresAt     DateTime         @db.Timestamptz(6) @map("expires_at")
+  expiresAt  DateTime         @map("expires_at") @db.Timestamptz(6)
   /// Kabul zamanı (başarılı davet).
-  acceptedAt    DateTime?        @db.Timestamptz(6) @map("accepted_at")
+  acceptedAt DateTime?        @map("accepted_at") @db.Timestamptz(6)
   /// Oluşturulma zamanı.
-  createdAt     DateTime         @default(now()) @db.Timestamptz(6) @map("created_at")
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
@@ -358,17 +358,17 @@ model UserInvitation {
 
 /// Parola sıfırlama token'ı. Tek kullanımlık; 1 saat geçerli.
 model PasswordResetToken {
-  id          String    @id @default(uuid()) @db.Uuid
+  id        String    @id @default(uuid()) @db.Uuid
   /// Token talep eden kullanıcı.
-  userId      String    @db.Uuid @map("user_id")
+  userId    String    @map("user_id") @db.Uuid
   /// SHA-256 hash'lenmiş token.
-  tokenHash   String    @unique @db.VarChar(128) @map("token_hash")
+  tokenHash String    @unique @map("token_hash") @db.VarChar(128)
   /// Token son kullanma zamanı (1 saat).
-  expiresAt   DateTime  @db.Timestamptz(6) @map("expires_at")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
   /// Kullanım zamanı (null = henüz kullanılmadı).
-  usedAt      DateTime? @db.Timestamptz(6) @map("used_at")
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
   /// Oluşturulma zamanı.
-  createdAt   DateTime  @default(now()) @db.Timestamptz(6) @map("created_at")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
@@ -385,43 +385,43 @@ model PasswordResetToken {
 /// Audit event kaydı. Insert-only. DB trigger'lar UPDATE/DELETE'i
 /// engeller. 7 yıl retention (TR ticari kayıt gereği).
 model AuditEvent {
-  id             String   @id @default(uuid()) @db.Uuid
+  id            String   @id @default(uuid()) @db.Uuid
   /// Event adı (`audit:owner.create` formatında).
-  eventName      String   @db.VarChar(100) @map("event_name")
+  eventName     String   @map("event_name") @db.VarChar(100)
   /// Tenant context. Sistem olaylarında null.
-  tenantId       String?  @db.Uuid @map("tenant_id")
+  tenantId      String?  @map("tenant_id") @db.Uuid
   /// Şube (multi-branch). Null olabilir (tenant-düzey event'ler).
-  branchId       String?  @db.Uuid @map("branch_id")
+  branchId      String?  @map("branch_id") @db.Uuid
   /// İşlemi yapan kullanıcı. SYSTEM/JOB event'lerde null.
-  actorId        String?  @db.Uuid @map("actor_id")
+  actorId       String?  @map("actor_id") @db.Uuid
   /// Aktör tipi.
-  actorType      String   @db.VarChar(20) @map("actor_type")
+  actorType     String   @map("actor_type") @db.VarChar(20)
   /// Etkilenen varlık tipi (örn. `tenant`, `branch`).
-  targetType     String   @db.VarChar(50) @map("target_type")
+  targetType    String   @map("target_type") @db.VarChar(50)
   /// Varlık ID (string; UUID veya başka tip).
-  targetId       String   @db.VarChar(100) @map("target_id")
+  targetId      String   @map("target_id") @db.VarChar(100)
   /// İşlem tipi (create, update, archive, vb.).
-  action         String   @db.VarChar(30)
+  action        String   @db.VarChar(30)
   /// Değişiklik öncesi (mask'li).
-  before         Json?    @map("before")
+  before        Json?    @map("before")
   /// Değişiklik sonrası (mask'li).
-  after          Json?    @map("after")
+  after         Json?    @map("after")
   /// Alan-bazlı fark.
-  diff           Json?
+  diff          Json?
   /// Correlation/request/job ID.
-  correlationId  String   @db.VarChar(100) @map("correlation_id")
+  correlationId String   @map("correlation_id") @db.VarChar(100)
   /// Mask'li IP (örn. `192.168.1.***`).
-  ipAddress      String?  @db.VarChar(50) @map("ip_address")
+  ipAddress     String?  @map("ip_address") @db.VarChar(50)
   /// User agent SHA-256 hash (16 hex).
-  userAgentHash  String?  @db.VarChar(64) @map("user_agent_hash")
+  userAgentHash String?  @map("user_agent_hash") @db.VarChar(64)
   /// Tenant ülkesi (TR/GB).
-  country        String   @db.Char(2)
+  country       String   @db.Char(2)
   /// Event severity.
-  severity       String   @db.VarChar(10)
+  severity      String   @db.VarChar(10)
   /// Ek bağlam (idempotency_key, reason, vb.).
-  metadata       Json?
+  metadata      Json?
   /// Event zamanı.
-  createdAt      DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@index([tenantId, createdAt])
   @@index([branchId, createdAt])
@@ -459,27 +459,27 @@ enum FileVisibility {
 }
 
 model FileMeta {
-  id                String          @id @default(uuid()) @db.Uuid
-  tenantId          String          @db.Uuid @map("tenant_id")
-  branchId          String?         @db.Uuid @map("branch_id")
-  uploaderId        String          @db.Uuid @map("uploader_id")
-  storageKey        String          @unique @db.VarChar(512) @map("storage_key")
-  originalName      String          @db.VarChar(255) @map("original_name")
-  mimeType          String          @db.VarChar(100) @map("mime_type")
-  sizeBytes         BigInt          @map("size_bytes")
-  checksumSha256    String          @db.VarChar(64) @map("checksum_sha256")
-  scanStatus        FileScanStatus  @default(pending) @map("scan_status")
-  scanResult        String?         @db.VarChar(255) @map("scan_result")
-  scannedAt         DateTime?       @db.Timestamptz(6) @map("scanned_at")
-  visibility        FileVisibility  @default(branch)
-  relatedEntityType String?         @db.VarChar(50) @map("related_entity_type")
-  relatedEntityId   String?         @db.VarChar(100) @map("related_entity_id")
-  description       String?         @db.VarChar(500)
-  archivedAt        DateTime?       @db.Timestamptz(6) @map("archived_at")
-  archivedBy        String?         @db.Uuid @map("archived_by")
-  archiveReason     String?         @db.VarChar(500) @map("archive_reason")
-  createdAt         DateTime        @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt         DateTime        @updatedAt @db.Timestamptz(6) @map("updated_at")
+  id                String         @id @default(uuid()) @db.Uuid
+  tenantId          String         @map("tenant_id") @db.Uuid
+  branchId          String?        @map("branch_id") @db.Uuid
+  uploaderId        String         @map("uploader_id") @db.Uuid
+  storageKey        String         @unique @map("storage_key") @db.VarChar(512)
+  originalName      String         @map("original_name") @db.VarChar(255)
+  mimeType          String         @map("mime_type") @db.VarChar(100)
+  sizeBytes         BigInt         @map("size_bytes")
+  checksumSha256    String         @map("checksum_sha256") @db.VarChar(64)
+  scanStatus        FileScanStatus @default(pending) @map("scan_status")
+  scanResult        String?        @map("scan_result") @db.VarChar(255)
+  scannedAt         DateTime?      @map("scanned_at") @db.Timestamptz(6)
+  visibility        FileVisibility @default(branch)
+  relatedEntityType String?        @map("related_entity_type") @db.VarChar(50)
+  relatedEntityId   String?        @map("related_entity_id") @db.VarChar(100)
+  description       String?        @db.VarChar(500)
+  archivedAt        DateTime?      @map("archived_at") @db.Timestamptz(6)
+  archivedBy        String?        @map("archived_by") @db.Uuid
+  archiveReason     String?        @map("archive_reason") @db.VarChar(500)
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   tenant   Tenant  @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   branch   Branch? @relation(fields: [branchId], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -533,35 +533,35 @@ enum ControlledDrugUnit {
 /// Kayıtlar düzeltilemez veya silinemez; hata için yeni `correction` satırı eklenir.
 model ControlledDrugEntry {
   id                         String                  @id @default(uuid()) @db.Uuid
-  tenantId                   String                  @db.Uuid @map("tenant_id")
+  tenantId                   String                  @map("tenant_id") @db.Uuid
   entryType                  ControlledDrugEntryType @map("entry_type")
-  drugName                   String                  @db.VarChar(200) @map("drug_name")
+  drugName                   String                  @map("drug_name") @db.VarChar(200)
   schedule                   ControlledDrugSchedule
   unit                       ControlledDrugUnit
-  quantityDelta              Decimal                 @db.Decimal(18, 4) @map("quantity_delta")
-  branchId                   String                  @db.Uuid @map("branch_id")
-  storageAreaId              String                  @db.VarChar(100) @map("storage_area_id")
-  occurredAt                 DateTime                @db.Timestamptz(6) @map("occurred_at")
-  recordedAt                 DateTime                @default(now()) @db.Timestamptz(6) @map("recorded_at")
-  recordedBy                 String                  @db.VarChar(100) @map("recorded_by")
+  quantityDelta              Decimal                 @map("quantity_delta") @db.Decimal(18, 4)
+  branchId                   String                  @map("branch_id") @db.Uuid
+  storageAreaId              String                  @map("storage_area_id") @db.VarChar(100)
+  occurredAt                 DateTime                @map("occurred_at") @db.Timestamptz(6)
+  recordedAt                 DateTime                @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  recordedBy                 String                  @map("recorded_by") @db.VarChar(100)
   supplier                   String?                 @db.VarChar(200)
-  lotNumber                  String?                 @db.VarChar(100) @map("lot_number")
-  expiryDate                 DateTime?               @db.Date @map("expiry_date")
-  ownerId                    String?                 @db.VarChar(100) @map("owner_id")
-  patientId                  String?                 @db.VarChar(100) @map("patient_id")
-  prescribedByVeterinarianId String?                 @db.VarChar(100) @map("prescribed_by_veterinarian_id")
-  prescriptionNumber         String?                 @db.VarChar(100) @map("prescription_number")
+  lotNumber                  String?                 @map("lot_number") @db.VarChar(100)
+  expiryDate                 DateTime?               @map("expiry_date") @db.Date
+  ownerId                    String?                 @map("owner_id") @db.VarChar(100)
+  patientId                  String?                 @map("patient_id") @db.VarChar(100)
+  prescribedByVeterinarianId String?                 @map("prescribed_by_veterinarian_id") @db.VarChar(100)
+  prescriptionNumber         String?                 @map("prescription_number") @db.VarChar(100)
   emergencyUse               Boolean?                @map("emergency_use")
   reason                     String?                 @db.VarChar(2000)
-  witnessUserId              String?                 @db.VarChar(100) @map("witness_user_id")
-  targetBranchId             String?                 @db.Uuid @map("target_branch_id")
-  targetStorageAreaId        String?                 @db.VarChar(100) @map("target_storage_area_id")
-  transferGroupId            String?                 @db.VarChar(100) @map("transfer_group_id")
-  physicalQuantity           Decimal?                @db.Decimal(18, 4) @map("physical_quantity")
-  bookQuantity               Decimal?                @db.Decimal(18, 4) @map("book_quantity")
+  witnessUserId              String?                 @map("witness_user_id") @db.VarChar(100)
+  targetBranchId             String?                 @map("target_branch_id") @db.Uuid
+  targetStorageAreaId        String?                 @map("target_storage_area_id") @db.VarChar(100)
+  transferGroupId            String?                 @map("transfer_group_id") @db.VarChar(100)
+  physicalQuantity           Decimal?                @map("physical_quantity") @db.Decimal(18, 4)
+  bookQuantity               Decimal?                @map("book_quantity") @db.Decimal(18, 4)
   discrepancy                Decimal?                @db.Decimal(18, 4)
-  countDate                  DateTime?               @db.Date @map("count_date")
-  correctsEntryId            String?                 @db.Uuid @map("corrects_entry_id")
+  countDate                  DateTime?               @map("count_date") @db.Date
+  correctsEntryId            String?                 @map("corrects_entry_id") @db.Uuid
   notes                      String?                 @db.VarChar(2000)
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -572,4 +572,985 @@ model ControlledDrugEntry {
   @@index([tenantId, transferGroupId])
   @@index([tenantId, correctsEntryId])
   @@map("controlled_drug_entries")
+}
+
+// -----------------------------------------------------------------------------
+// CLINIC CORE IDENTITY — tenant kapsamındaki owner ve patient kimlik kayıtları.
+// Klinik/finansal olaylar bu kayıtlara referans verir; fiziksel silme yapılmaz.
+// -----------------------------------------------------------------------------
+
+model Owner {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  firstName  String    @map("first_name") @db.VarChar(100)
+  lastName   String    @map("last_name") @db.VarChar(100)
+  phone      String    @db.VarChar(32)
+  email      String?   @db.VarChar(200)
+  taxId      String?   @map("tax_id") @db.VarChar(20)
+  address    Json?
+  consents   Json      @default("{}")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  archivedAt DateTime? @map("archived_at") @db.Timestamptz(6)
+  patients   Patient[]
+
+  @@unique([tenantId, phone])
+  @@index([tenantId, createdAt])
+  @@map("owners")
+}
+
+model Patient {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  ownerId    String    @map("owner_id") @db.Uuid
+  name       String    @db.VarChar(100)
+  species    String    @db.VarChar(20)
+  breed      String?   @db.VarChar(100)
+  birthDate  DateTime? @map("birth_date") @db.Date
+  gender     String    @db.VarChar(20)
+  microchip  String?   @db.VarChar(15)
+  color      String?   @db.VarChar(100)
+  neutered   Boolean
+  notes      String?   @db.VarChar(2000)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  archivedAt DateTime? @map("archived_at") @db.Timestamptz(6)
+  owner      Owner     @relation(fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([tenantId, microchip])
+  @@index([tenantId, ownerId, createdAt])
+  @@map("patients")
+}
+
+/// Hasta sahipliği append-only geçmişidir. Aynı hasta için tek açık kayıt
+/// PostgreSQL partial unique index'iyle migration seviyesinde korunur.
+model OwnershipHistory {
+  id        String    @id @db.VarChar(80)
+  tenantId  String    @map("tenant_id") @db.Uuid
+  patientId String    @map("patient_id") @db.Uuid
+  ownerId   String    @map("owner_id") @db.Uuid
+  startDate DateTime  @map("start_date") @db.Timestamptz(6)
+  endDate   DateTime? @map("end_date") @db.Timestamptz(6)
+  reason    String    @db.VarChar(30)
+  otherNote String?   @map("other_note") @db.VarChar(1000)
+  createdBy String?   @map("created_by") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([tenantId, patientId, startDate])
+  @@index([tenantId, ownerId, startDate])
+  @@map("ownership_history")
+}
+
+/// Randevu klinik kimliğe bağlıdır; iptal/tamamlama fiziksel silme değil
+/// durum geçişidir. Takvim görünümü bu kalıcı kayıttan yeniden kurulabilir.
+model Appointment {
+  id             String   @id @db.VarChar(80)
+  tenantId       String   @map("tenant_id") @db.Uuid
+  patientId      String   @map("patient_id") @db.Uuid
+  ownerId        String   @map("owner_id") @db.Uuid
+  veterinarianId String   @map("veterinarian_id") @db.VarChar(100)
+  branchId       String?  @map("branch_id") @db.Uuid
+  type           String   @db.VarChar(40)
+  status         String   @db.VarChar(30)
+  start          DateTime @db.Timestamptz(6)
+  end            DateTime @db.Timestamptz(6)
+  notes          String?  @db.VarChar(2000)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy      String?  @map("created_by") @db.Uuid
+
+  @@index([tenantId, veterinarianId, start, end])
+  @@index([tenantId, patientId, start])
+  @@map("appointments")
+}
+
+/// Muayene ana kaydı; imzalı kayıtta değişiklik amendment ile izlenir.
+model Examination {
+  id             String    @id @db.VarChar(80)
+  tenantId       String    @map("tenant_id") @db.Uuid
+  patientId      String    @map("patient_id") @db.Uuid
+  veterinarianId String    @map("veterinarian_id") @db.VarChar(100)
+  appointmentId  String?   @map("appointment_id") @db.VarChar(80)
+  status         String    @db.VarChar(30)
+  type           String    @db.VarChar(40)
+  chiefComplaint String    @map("chief_complaint") @db.VarChar(2000)
+  startedAt      DateTime  @map("started_at") @db.Timestamptz(6)
+  completedAt    DateTime? @map("completed_at") @db.Timestamptz(6)
+  signedAt       DateTime? @map("signed_at") @db.Timestamptz(6)
+  signedBy       String?   @map("signed_by") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @map("updated_at") @db.Timestamptz(6)
+
+  @@index([tenantId, patientId, startedAt])
+  @@index([tenantId, appointmentId])
+  @@map("examinations")
+}
+
+model ExaminationAmend {
+  id               String    @id @db.VarChar(80)
+  tenantId         String    @map("tenant_id") @db.Uuid
+  examinationId    String    @map("examination_id") @db.VarChar(80)
+  reason           String    @db.VarChar(2000)
+  amendedBy        String    @map("amended_by") @db.Uuid
+  amendedAt        DateTime  @map("amended_at") @db.Timestamptz(6)
+  previousSignedAt DateTime? @map("previous_signed_at") @db.Timestamptz(6)
+  previousSignedBy String?   @map("previous_signed_by") @db.Uuid
+
+  @@index([tenantId, examinationId, amendedAt])
+  @@map("examination_amends")
+}
+
+model SoapNote {
+  id            String    @id @db.VarChar(80)
+  tenantId      String    @map("tenant_id") @db.Uuid
+  examinationId String    @map("examination_id") @db.VarChar(80)
+  subjective    String    @db.Text
+  objective     String    @db.Text
+  assessment    String    @db.Text
+  plan          String    @db.Text
+  status        String    @db.VarChar(30)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy     String    @map("created_by") @db.Uuid
+  signedAt      DateTime? @map("signed_at") @db.Timestamptz(6)
+  signedBy      String?   @map("signed_by") @db.Uuid
+  amendedAt     DateTime? @map("amended_at") @db.Timestamptz(6)
+
+  @@unique([tenantId, examinationId])
+  @@map("soap_notes")
+}
+
+model SoapAmend {
+  id               String    @id @db.VarChar(80)
+  tenantId         String    @map("tenant_id") @db.Uuid
+  originalSoapId   String    @map("original_soap_id") @db.VarChar(80)
+  examinationId    String    @map("examination_id") @db.VarChar(80)
+  reason           String    @db.Text
+  subjective       String    @db.Text
+  objective        String    @db.Text
+  assessment       String    @db.Text
+  plan             String    @db.Text
+  amendedBy        String    @map("amended_by") @db.Uuid
+  amendedAt        DateTime  @map("amended_at") @db.Timestamptz(6)
+  previousSignedAt DateTime? @map("previous_signed_at") @db.Timestamptz(6)
+  previousSignedBy String?   @map("previous_signed_by") @db.Uuid
+
+  @@index([tenantId, examinationId, amendedAt])
+  @@map("soap_amends")
+}
+
+/// Muayene sırasında alınan vital ölçümler append-only zaman serisidir.
+model VitalRecord {
+  id             String   @id @db.VarChar(80)
+  tenantId       String   @map("tenant_id") @db.Uuid
+  examinationId  String   @map("examination_id") @db.VarChar(80)
+  patientId      String   @map("patient_id") @db.Uuid
+  veterinarianId String   @map("veterinarian_id") @db.VarChar(100)
+  vitalSigns     Json     @map("vital_signs")
+  takenAt        DateTime @map("taken_at") @db.Timestamptz(6)
+  recordedBy     String   @map("recorded_by") @db.Uuid
+
+  @@index([tenantId, examinationId, takenAt])
+  @@index([tenantId, patientId, takenAt])
+  @@map("vital_records")
+}
+
+model DiagnosisRecord {
+  id            String    @id @db.VarChar(80)
+  tenantId      String    @map("tenant_id") @db.Uuid
+  examinationId String    @map("examination_id") @db.VarChar(80)
+  patientId     String    @map("patient_id") @db.Uuid
+  code          String?   @db.VarChar(100)
+  name          String    @db.VarChar(500)
+  category      String    @db.VarChar(40)
+  status        String    @db.VarChar(30)
+  notes         String?   @db.Text
+  createdAt     DateTime  @map("created_at") @db.Timestamptz(6)
+  createdBy     String    @map("created_by") @db.Uuid
+  resolvedAt    DateTime? @map("resolved_at") @db.Timestamptz(6)
+  archivedAt    DateTime? @map("archived_at") @db.Timestamptz(6)
+
+  @@index([tenantId, examinationId, createdAt])
+  @@index([tenantId, patientId, createdAt])
+  @@map("diagnoses")
+}
+
+model PrescriptionRecord {
+  id             String                   @id @db.VarChar(80)
+  tenantId       String                   @map("tenant_id") @db.Uuid
+  examinationId  String                   @map("examination_id") @db.VarChar(80)
+  patientId      String                   @map("patient_id") @db.Uuid
+  veterinarianId String                   @map("veterinarian_id") @db.VarChar(100)
+  notes          String?                  @db.Text
+  status         String                   @db.VarChar(30)
+  prescribedAt   DateTime                 @map("prescribed_at") @db.Timestamptz(6)
+  expiresAt      DateTime                 @map("expires_at") @db.Timestamptz(6)
+  dispensedAt    DateTime?                @map("dispensed_at") @db.Timestamptz(6)
+  dispensedBy    String?                  @map("dispensed_by") @db.Uuid
+  cancelReason   String?                  @map("cancel_reason") @db.Text
+  createdAt      DateTime                 @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime                 @map("updated_at") @db.Timestamptz(6)
+  items          PrescriptionItemRecord[]
+
+  @@index([tenantId, patientId, prescribedAt])
+  @@map("prescriptions")
+}
+
+model PrescriptionItemRecord {
+  id                BigInt             @id @default(autoincrement())
+  prescriptionId    String             @map("prescription_id") @db.VarChar(80)
+  drugName          String             @map("drug_name") @db.VarChar(200)
+  dosage            String             @db.VarChar(100)
+  frequency         String             @db.VarChar(30)
+  customFrequency   String?            @map("custom_frequency") @db.VarChar(200)
+  durationDays      Int                @map("duration_days")
+  route             String             @db.VarChar(30)
+  instructions      String?            @db.Text
+  productId         String?            @map("product_id") @db.VarChar(100)
+  dispensedQuantity String?            @map("dispensed_quantity") @db.VarChar(30)
+  dispensedLotId    String?            @map("dispensed_lot_id") @db.VarChar(100)
+  prescription      PrescriptionRecord @relation(fields: [prescriptionId], references: [id], onDelete: Restrict)
+
+  @@index([prescriptionId])
+  @@map("prescription_items")
+}
+
+// -----------------------------------------------------------------------------
+// INVENTORY LEDGER — Klinik reçete/tüketim ve stok hareketlerinin kalıcı,
+// append-only kaynağı. Stok miktarı StockMovementRecord toplamından türetilir.
+// -----------------------------------------------------------------------------
+
+model ProductRecord {
+  id                   String                @id @db.VarChar(100)
+  tenantId             String                @map("tenant_id") @db.Uuid
+  kind                 String                @db.VarChar(30)
+  sku                  String?               @db.VarChar(100)
+  barcode              String?               @db.VarChar(100)
+  name                 String                @db.VarChar(300)
+  category             String?               @db.VarChar(150)
+  unit                 String                @db.VarChar(30)
+  taxProfile           String                @map("tax_profile") @db.VarChar(30)
+  purchasePrice        String?               @map("purchase_price") @db.VarChar(30)
+  salePrice            String?               @map("sale_price") @db.VarChar(30)
+  currency             String                @db.VarChar(10)
+  clinicUsage          Boolean               @map("clinic_usage")
+  petshopUsage         Boolean               @map("petshop_usage")
+  saleAvailable        Boolean               @map("sale_available")
+  purchaseTracked      Boolean               @map("purchase_tracked")
+  vaccineProtocolId    String?               @map("vaccine_protocol_id") @db.VarChar(100)
+  requiresPrescription Boolean               @map("requires_prescription")
+  controlledDrug       Boolean               @map("controlled_drug")
+  lowStockThreshold    String?               @map("low_stock_threshold") @db.VarChar(30)
+  notes                String?               @db.Text
+  active               Boolean
+  createdAt            DateTime              @map("created_at") @db.Timestamptz(6)
+  createdBy            String                @map("created_by") @db.VarChar(100)
+  updatedAt            DateTime              @map("updated_at") @db.Timestamptz(6)
+  archivedAt           DateTime?             @map("archived_at") @db.Timestamptz(6)
+  archivedBy           String?               @map("archived_by") @db.VarChar(100)
+  archiveReason        String?               @map("archive_reason") @db.Text
+  lots                 StockLotRecord[]
+  movements            StockMovementRecord[]
+
+  @@unique([tenantId, sku])
+  @@unique([tenantId, barcode])
+  @@index([tenantId, createdAt])
+  @@map("products")
+}
+
+model WarehouseRecord {
+  id            String        @id @db.VarChar(100)
+  tenantId      String        @map("tenant_id") @db.Uuid
+  name          String        @db.VarChar(300)
+  code          String        @db.VarChar(100)
+  type          String        @db.VarChar(30)
+  address       String?       @db.Text
+  notes         String?       @db.Text
+  active        Boolean
+  createdAt     DateTime      @map("created_at") @db.Timestamptz(6)
+  createdBy     String        @map("created_by") @db.VarChar(100)
+  updatedAt     DateTime      @map("updated_at") @db.Timestamptz(6)
+  archivedAt    DateTime?     @map("archived_at") @db.Timestamptz(6)
+  archivedBy    String?       @map("archived_by") @db.VarChar(100)
+  archiveReason String?       @map("archive_reason") @db.Text
+  shelves       ShelfRecord[]
+
+  @@unique([tenantId, code])
+  @@map("warehouses")
+}
+
+model ShelfRecord {
+  id              String           @id @db.VarChar(100)
+  tenantId        String           @map("tenant_id") @db.Uuid
+  warehouseId     String           @map("warehouse_id") @db.VarChar(100)
+  name            String           @db.VarChar(300)
+  code            String?          @db.VarChar(100)
+  temperatureZone String           @map("temperature_zone") @db.VarChar(30)
+  notes           String?          @db.Text
+  active          Boolean
+  createdAt       DateTime         @map("created_at") @db.Timestamptz(6)
+  createdBy       String           @map("created_by") @db.VarChar(100)
+  updatedAt       DateTime         @map("updated_at") @db.Timestamptz(6)
+  archivedAt      DateTime?        @map("archived_at") @db.Timestamptz(6)
+  archivedBy      String?          @map("archived_by") @db.VarChar(100)
+  archiveReason   String?          @map("archive_reason") @db.Text
+  warehouse       WarehouseRecord  @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  lots            StockLotRecord[]
+
+  @@unique([warehouseId, code])
+  @@index([tenantId, warehouseId])
+  @@map("shelves")
+}
+
+model StockLotRecord {
+  id             String                @id @db.VarChar(100)
+  tenantId       String                @map("tenant_id") @db.Uuid
+  productId      String                @map("product_id") @db.VarChar(100)
+  lotNumber      String                @map("lot_number") @db.VarChar(150)
+  expiryDate     DateTime              @map("expiry_date") @db.Timestamptz(6)
+  manufacturedAt DateTime?             @map("manufactured_at") @db.Timestamptz(6)
+  receivedAt     DateTime              @map("received_at") @db.Timestamptz(6)
+  supplierName   String?               @map("supplier_name") @db.VarChar(300)
+  shelfId        String?               @map("shelf_id") @db.VarChar(100)
+  quantity       String?               @db.VarChar(30)
+  notes          String?               @db.Text
+  active         Boolean
+  createdAt      DateTime              @map("created_at") @db.Timestamptz(6)
+  createdBy      String                @map("created_by") @db.VarChar(100)
+  updatedAt      DateTime              @map("updated_at") @db.Timestamptz(6)
+  archivedAt     DateTime?             @map("archived_at") @db.Timestamptz(6)
+  archivedBy     String?               @map("archived_by") @db.VarChar(100)
+  archiveReason  String?               @map("archive_reason") @db.Text
+  product        ProductRecord         @relation(fields: [productId], references: [id], onDelete: Restrict)
+  shelf          ShelfRecord?          @relation(fields: [shelfId], references: [id], onDelete: Restrict)
+  movements      StockMovementRecord[]
+
+  @@unique([productId, lotNumber])
+  @@index([tenantId, productId])
+  @@map("stock_lots")
+}
+
+model StockMovementRecord {
+  id                 String          @id @db.VarChar(100)
+  tenantId           String          @map("tenant_id") @db.Uuid
+  type               String          @db.VarChar(30)
+  productId          String          @map("product_id") @db.VarChar(100)
+  lotId              String?         @map("lot_id") @db.VarChar(100)
+  quantity           String          @db.VarChar(30)
+  unitCost           String?         @map("unit_cost") @db.VarChar(30)
+  unitPrice          String?         @map("unit_price") @db.VarChar(30)
+  sourceType         String?         @map("source_type") @db.VarChar(80)
+  sourceId           String?         @map("source_id") @db.VarChar(100)
+  reversesMovementId String?         @map("reverses_movement_id") @db.VarChar(100)
+  reason             String?         @db.Text
+  occurredAt         DateTime        @map("occurred_at") @db.Timestamptz(6)
+  notes              String?         @db.Text
+  createdAt          DateTime        @map("created_at") @db.Timestamptz(6)
+  createdBy          String          @map("created_by") @db.VarChar(100)
+  product            ProductRecord   @relation(fields: [productId], references: [id], onDelete: Restrict)
+  lot                StockLotRecord? @relation(fields: [lotId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, productId, occurredAt])
+  @@index([tenantId, lotId, occurredAt])
+  @@index([tenantId, sourceType, sourceId])
+  @@index([tenantId, reversesMovementId])
+  @@map("stock_movements")
+}
+
+model ClinicalConsumptionRecord {
+  id               String    @id @db.VarChar(100)
+  tenantId         String    @map("tenant_id") @db.Uuid
+  context          String    @db.VarChar(40)
+  contextRefId     String    @map("context_ref_id") @db.VarChar(100)
+  patientId        String?   @map("patient_id") @db.Uuid
+  lines            Json
+  notes            String?   @db.Text
+  status           String    @db.VarChar(30)
+  occurredAt       DateTime  @map("occurred_at") @db.Timestamptz(6)
+  createdAt        DateTime  @map("created_at") @db.Timestamptz(6)
+  createdBy        String    @map("created_by") @db.VarChar(100)
+  cancelledAt      DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  cancelledBy      String?   @map("cancelled_by") @db.VarChar(100)
+  cancelReason     String?   @map("cancel_reason") @db.Text
+  stockMovementIds Json      @map("stock_movement_ids")
+
+  @@index([tenantId, contextRefId, occurredAt])
+  @@index([tenantId, patientId, occurredAt])
+  @@map("clinical_consumptions")
+}
+
+// -----------------------------------------------------------------------------
+// SUPPLIERS — Faz 6 tedarikçi kartları. Kod tenant içinde benzersizdir;
+// kayıtlar geçmiş satın alma bağları için fiziksel olarak silinmez.
+// -----------------------------------------------------------------------------
+
+model SupplierRecord {
+  id            String    @id @db.VarChar(100)
+  tenantId      String    @map("tenant_id") @db.Uuid
+  name          String    @db.VarChar(300)
+  code          String    @db.VarChar(100)
+  type          String    @db.VarChar(30)
+  taxId         String?   @map("tax_id") @db.VarChar(100)
+  contactName   String?   @map("contact_name") @db.VarChar(300)
+  email         String?   @db.VarChar(320)
+  phone         String?   @db.VarChar(100)
+  address       String?   @db.Text
+  notes         String?   @db.Text
+  active        Boolean
+  createdAt     DateTime  @map("created_at") @db.Timestamptz(6)
+  createdBy     String    @map("created_by") @db.VarChar(100)
+  updatedAt     DateTime  @map("updated_at") @db.Timestamptz(6)
+  archivedAt    DateTime? @map("archived_at") @db.Timestamptz(6)
+  archivedBy    String?   @map("archived_by") @db.VarChar(100)
+  archiveReason String?   @map("archive_reason") @db.Text
+
+  @@unique([tenantId, code])
+  @@index([tenantId, createdAt])
+  @@map("suppliers")
+}
+
+model PurchaseOrderRecord {
+  id           String                    @id @db.VarChar(100)
+  tenantId     String                    @map("tenant_id") @db.Uuid
+  supplierId   String                    @map("supplier_id") @db.VarChar(100)
+  branchId     String?                   @map("branch_id") @db.Uuid
+  status       String                    @db.VarChar(30)
+  currency     String                    @db.VarChar(10)
+  expectedAt   DateTime?                 @map("expected_at") @db.Timestamptz(6)
+  totalAmount  String                    @map("total_amount") @db.VarChar(30)
+  notes        String?                   @db.Text
+  approvedAt   DateTime?                 @map("approved_at") @db.Timestamptz(6)
+  approvedBy   String?                   @map("approved_by") @db.VarChar(100)
+  receivedAt   DateTime?                 @map("received_at") @db.Timestamptz(6)
+  receivedBy   String?                   @map("received_by") @db.VarChar(100)
+  cancelledAt  DateTime?                 @map("cancelled_at") @db.Timestamptz(6)
+  cancelledBy  String?                   @map("cancelled_by") @db.VarChar(100)
+  cancelReason String?                   @map("cancel_reason") @db.Text
+  createdAt    DateTime                  @map("created_at") @db.Timestamptz(6)
+  createdBy    String                    @map("created_by") @db.VarChar(100)
+  updatedAt    DateTime                  @map("updated_at") @db.Timestamptz(6)
+  lines        PurchaseOrderLineRecord[]
+
+  @@index([tenantId, supplierId, createdAt])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderLineRecord {
+  id               String              @id @db.VarChar(100)
+  tenantId         String              @map("tenant_id") @db.Uuid
+  purchaseOrderId  String              @map("purchase_order_id") @db.VarChar(100)
+  productId        String              @map("product_id") @db.VarChar(100)
+  unit             String              @db.VarChar(30)
+  orderedQuantity  String              @map("ordered_quantity") @db.VarChar(30)
+  unitPrice        String              @map("unit_price") @db.VarChar(30)
+  lineTotal        String              @map("line_total") @db.VarChar(30)
+  receivedQuantity String              @map("received_quantity") @db.VarChar(30)
+  unitCost         String?             @map("unit_cost") @db.VarChar(30)
+  notes            String?             @db.Text
+  createdAt        DateTime            @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime            @map("updated_at") @db.Timestamptz(6)
+  order            PurchaseOrderRecord @relation(fields: [purchaseOrderId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, purchaseOrderId])
+  @@map("purchase_order_lines")
+}
+
+model StockAlertAckRecord {
+  id             String   @id @db.VarChar(100)
+  tenantId       String   @map("tenant_id") @db.Uuid
+  alertKey       String   @map("alert_key") @db.VarChar(200)
+  alertType      String   @map("alert_type") @db.VarChar(30)
+  targetId       String   @map("target_id") @db.VarChar(100)
+  acknowledgedAt DateTime @map("acknowledged_at") @db.Timestamptz(6)
+  acknowledgedBy String   @map("acknowledged_by") @db.VarChar(100)
+  note           String?  @db.Text
+
+  @@unique([tenantId, alertKey])
+  @@index([tenantId, alertType, targetId])
+  @@map("stock_alert_acks")
+}
+
+model PetshopSaleRecord {
+  id                    String                  @id @db.VarChar(100)
+  tenantId              String                  @map("tenant_id") @db.Uuid
+  status                String                  @db.VarChar(30)
+  customerOwnerId       String?                 @map("customer_owner_id") @db.Uuid
+  customerPatientId     String?                 @map("customer_patient_id") @db.Uuid
+  paymentMethod         String                  @map("payment_method") @db.VarChar(30)
+  paidAmount            String                  @map("paid_amount") @db.VarChar(30)
+  totalAmount           String                  @map("total_amount") @db.VarChar(30)
+  globalDiscountPercent Float                   @map("global_discount_percent")
+  netAmount             String                  @map("net_amount") @db.VarChar(30)
+  notes                 String?                 @db.Text
+  completedAt           DateTime?               @map("completed_at") @db.Timestamptz(6)
+  completedBy           String?                 @map("completed_by") @db.VarChar(100)
+  cancelledAt           DateTime?               @map("cancelled_at") @db.Timestamptz(6)
+  cancelledBy           String?                 @map("cancelled_by") @db.VarChar(100)
+  cancelReason          String?                 @map("cancel_reason") @db.Text
+  createdAt             DateTime                @map("created_at") @db.Timestamptz(6)
+  createdBy             String                  @map("created_by") @db.VarChar(100)
+  updatedAt             DateTime                @map("updated_at") @db.Timestamptz(6)
+  lines                 PetshopSaleLineRecord[]
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, customerOwnerId, createdAt])
+  @@map("petshop_sales")
+}
+
+model PetshopSaleLineRecord {
+  id              String            @id @db.VarChar(100)
+  tenantId        String            @map("tenant_id") @db.Uuid
+  saleId          String            @map("sale_id") @db.VarChar(100)
+  productId       String            @map("product_id") @db.VarChar(100)
+  unit            String            @db.VarChar(30)
+  quantity        String            @db.VarChar(30)
+  unitPrice       String            @map("unit_price") @db.VarChar(30)
+  discountPercent Float             @map("discount_percent")
+  lineTotal       String            @map("line_total") @db.VarChar(30)
+  notes           String?           @db.Text
+  createdAt       DateTime          @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime          @map("updated_at") @db.Timestamptz(6)
+  sale            PetshopSaleRecord @relation(fields: [saleId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, saleId])
+  @@map("petshop_sale_lines")
+}
+
+model PetshopSaleReturnRecord {
+  id                    String                        @id @db.VarChar(100)
+  tenantId              String                        @map("tenant_id") @db.Uuid
+  status                String                        @db.VarChar(30)
+  originalSaleId        String                        @map("original_sale_id") @db.VarChar(100)
+  customerOwnerId       String?                       @map("customer_owner_id") @db.Uuid
+  customerPatientId     String?                       @map("customer_patient_id") @db.Uuid
+  refundMethod          String                        @map("refund_method") @db.VarChar(30)
+  totalAmount           String                        @map("total_amount") @db.VarChar(30)
+  globalDiscountPercent Float                         @map("global_discount_percent")
+  refundAmount          String                        @map("refund_amount") @db.VarChar(30)
+  reason                String                        @db.Text
+  notes                 String?                       @db.Text
+  completedAt           DateTime?                     @map("completed_at") @db.Timestamptz(6)
+  completedBy           String?                       @map("completed_by") @db.VarChar(100)
+  cancelledAt           DateTime?                     @map("cancelled_at") @db.Timestamptz(6)
+  cancelledBy           String?                       @map("cancelled_by") @db.VarChar(100)
+  cancelReason          String?                       @map("cancel_reason") @db.Text
+  createdAt             DateTime                      @map("created_at") @db.Timestamptz(6)
+  createdBy             String                        @map("created_by") @db.VarChar(100)
+  updatedAt             DateTime                      @map("updated_at") @db.Timestamptz(6)
+  lines                 PetshopSaleReturnLineRecord[]
+
+  @@index([tenantId, originalSaleId, createdAt])
+  @@map("petshop_sale_returns")
+}
+
+model PetshopSaleReturnLineRecord {
+  id              String                  @id @db.VarChar(100)
+  tenantId        String                  @map("tenant_id") @db.Uuid
+  returnId        String                  @map("return_id") @db.VarChar(100)
+  originalLineId  String                  @map("original_line_id") @db.VarChar(100)
+  productId       String                  @map("product_id") @db.VarChar(100)
+  lotId           String?                 @map("lot_id") @db.VarChar(100)
+  unit            String                  @db.VarChar(30)
+  quantity        String                  @db.VarChar(30)
+  unitPrice       String                  @map("unit_price") @db.VarChar(30)
+  discountPercent Float                   @map("discount_percent")
+  lineTotal       String                  @map("line_total") @db.VarChar(30)
+  reason          String?                 @db.Text
+  createdAt       DateTime                @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime                @map("updated_at") @db.Timestamptz(6)
+  saleReturn      PetshopSaleReturnRecord @relation(fields: [returnId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, returnId])
+  @@index([tenantId, originalLineId])
+  @@map("petshop_sale_return_lines")
+}
+
+model PriceListRecord {
+  id            String                @id @db.VarChar(100)
+  tenantId      String                @map("tenant_id") @db.Uuid
+  name          String                @db.VarChar(300)
+  description   String?               @db.Text
+  type          String                @db.VarChar(30)
+  customerId    String?               @map("customer_id") @db.Uuid
+  currency      String                @db.VarChar(10)
+  taxProfile    String?               @map("tax_profile") @db.VarChar(30)
+  validFrom     DateTime?             @map("valid_from") @db.Timestamptz(6)
+  validUntil    DateTime?             @map("valid_until") @db.Timestamptz(6)
+  status        String                @db.VarChar(30)
+  createdAt     DateTime              @map("created_at") @db.Timestamptz(6)
+  createdBy     String                @map("created_by") @db.VarChar(100)
+  updatedAt     DateTime              @map("updated_at") @db.Timestamptz(6)
+  archivedAt    DateTime?             @map("archived_at") @db.Timestamptz(6)
+  archivedBy    String?               @map("archived_by") @db.VarChar(100)
+  archiveReason String?               @map("archive_reason") @db.Text
+  items         PriceListItemRecord[]
+
+  @@index([tenantId, status, validFrom, validUntil])
+  @@map("price_lists")
+}
+
+model PriceListItemRecord {
+  id           String          @id @db.VarChar(100)
+  tenantId     String          @map("tenant_id") @db.Uuid
+  priceListId  String          @map("price_list_id") @db.VarChar(100)
+  productId    String          @map("product_id") @db.VarChar(100)
+  price        String          @db.VarChar(30)
+  taxProfile   String?         @map("tax_profile") @db.VarChar(30)
+  validFrom    DateTime?       @map("valid_from") @db.Timestamptz(6)
+  validUntil   DateTime?       @map("valid_until") @db.Timestamptz(6)
+  status       String          @db.VarChar(30)
+  supersedesId String?         @map("supersedes_id") @db.VarChar(100)
+  notes        String?         @db.Text
+  createdAt    DateTime        @map("created_at") @db.Timestamptz(6)
+  createdBy    String          @map("created_by") @db.VarChar(100)
+  priceList    PriceListRecord @relation(fields: [priceListId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, productId, status])
+  @@index([tenantId, priceListId, status])
+  @@map("price_list_items")
+}
+
+model ClinicSaleRecord {
+  id                    String                 @id @db.VarChar(100)
+  tenantId              String                 @map("tenant_id") @db.Uuid
+  status                String                 @db.VarChar(30)
+  customerOwnerId       String                 @map("customer_owner_id") @db.Uuid
+  customerPatientId     String                 @map("customer_patient_id") @db.Uuid
+  sourceType            String                 @map("source_type") @db.VarChar(50)
+  sourceId              String                 @map("source_id") @db.VarChar(100)
+  currency              String                 @db.VarChar(10)
+  totalAmount           String                 @map("total_amount") @db.VarChar(30)
+  globalDiscountPercent Float                  @map("global_discount_percent")
+  netAmount             String                 @map("net_amount") @db.VarChar(30)
+  notes                 String?                @db.Text
+  completedAt           DateTime?              @map("completed_at") @db.Timestamptz(6)
+  completedBy           String?                @map("completed_by") @db.VarChar(100)
+  cancelledAt           DateTime?              @map("cancelled_at") @db.Timestamptz(6)
+  cancelledBy           String?                @map("cancelled_by") @db.VarChar(100)
+  cancelReason          String?                @map("cancel_reason") @db.Text
+  createdAt             DateTime               @map("created_at") @db.Timestamptz(6)
+  createdBy             String                 @map("created_by") @db.VarChar(100)
+  updatedAt             DateTime               @map("updated_at") @db.Timestamptz(6)
+  lines                 ClinicSaleLineRecord[]
+
+  @@index([tenantId, sourceType, sourceId])
+  @@index([tenantId, customerOwnerId, createdAt])
+  @@map("clinic_sales")
+}
+
+model ClinicSaleLineRecord {
+  id              String           @id @db.VarChar(100)
+  tenantId        String           @map("tenant_id") @db.Uuid
+  saleId          String           @map("sale_id") @db.VarChar(100)
+  productId       String           @map("product_id") @db.VarChar(100)
+  unit            String           @db.VarChar(30)
+  quantity        String           @db.VarChar(30)
+  unitPrice       String           @map("unit_price") @db.VarChar(30)
+  discountPercent Float            @map("discount_percent")
+  lineTotal       String           @map("line_total") @db.VarChar(30)
+  notes           String?          @db.Text
+  createdAt       DateTime         @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @map("updated_at") @db.Timestamptz(6)
+  sale            ClinicSaleRecord @relation(fields: [saleId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, saleId])
+  @@map("clinic_sale_lines")
+}
+
+model PaymentRecord {
+  id              String                  @id @db.VarChar(100)
+  tenantId        String                  @map("tenant_id") @db.Uuid
+  sourceType      String                  @map("source_type") @db.VarChar(50)
+  sourceId        String                  @map("source_id") @db.VarChar(100)
+  amount          Decimal                 @db.Decimal(18, 4)
+  method          String                  @db.VarChar(30)
+  currency        String                  @db.VarChar(10)
+  paidAt          DateTime                @map("paid_at") @db.Timestamptz(6)
+  idempotencyKey  String?                 @map("idempotency_key") @db.VarChar(200)
+  reference       String?                 @db.VarChar(300)
+  notes           String?                 @db.Text
+  status          String                  @db.VarChar(30)
+  reversedAmount  Decimal                 @map("reversed_amount") @db.Decimal(18, 4)
+  effectiveAmount Decimal                 @map("effective_amount") @db.Decimal(18, 4)
+  reversedAt      DateTime?               @map("reversed_at") @db.Timestamptz(6)
+  reversedBy      String?                 @map("reversed_by") @db.VarChar(100)
+  reverseReason   String?                 @map("reverse_reason") @db.Text
+  createdAt       DateTime                @map("created_at") @db.Timestamptz(6)
+  createdBy       String                  @map("created_by") @db.VarChar(100)
+  reversals       PaymentReversalRecord[]
+
+  @@index([tenantId, sourceType, sourceId, paidAt])
+  @@map("payments")
+}
+
+model PaymentReversalRecord {
+  id                 String        @id @db.VarChar(100)
+  tenantId           String        @map("tenant_id") @db.Uuid
+  paymentId          String        @map("payment_id") @db.VarChar(100)
+  sourceType         String        @map("source_type") @db.VarChar(50)
+  sourceId           String        @map("source_id") @db.VarChar(100)
+  amount             Decimal       @db.Decimal(18, 4)
+  method             String        @db.VarChar(30)
+  currency           String        @db.VarChar(10)
+  reason             String        @db.VarChar(50)
+  note               String?       @db.Text
+  cashRegisterEffect Boolean       @map("cash_register_effect")
+  reversedAt         DateTime      @map("reversed_at") @db.Timestamptz(6)
+  reversedBy         String        @map("reversed_by") @db.VarChar(100)
+  createdAt          DateTime      @map("created_at") @db.Timestamptz(6)
+  payment            PaymentRecord @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, paymentId, reversedAt])
+  @@index([tenantId, sourceType, sourceId, reversedAt])
+  @@map("payment_reversals")
+}
+
+model KasaEntryRecord {
+  id            String   @id @db.VarChar(100)
+  tenantId      String   @map("tenant_id") @db.Uuid
+  account       String   @db.VarChar(30)
+  amountSigned  Decimal  @map("amount_signed") @db.Decimal(18, 4)
+  direction     String   @db.VarChar(10)
+  source        String   @db.VarChar(50)
+  referenceId   String   @map("reference_id") @db.VarChar(100)
+  referenceType String   @map("reference_type") @db.VarChar(30)
+  method        String   @db.VarChar(30)
+  currency      String   @db.VarChar(10)
+  occurredAt    DateTime @map("occurred_at") @db.Timestamptz(6)
+  actorId       String   @map("actor_id") @db.VarChar(100)
+  note          String?  @db.Text
+
+  @@index([tenantId, account, occurredAt])
+  @@index([tenantId, referenceType, referenceId])
+  @@map("kasa_entries")
+}
+
+model SurgeryPlanRecord {
+  id                String    @id @db.VarChar(100)
+  tenantId          String    @map("tenant_id") @db.Uuid
+  patientId         String    @map("patient_id") @db.Uuid
+  leadSurgeonUserId String    @map("lead_surgeon_user_id") @db.VarChar(100)
+  operationType     String    @map("operation_type") @db.VarChar(300)
+  scheduledAt       DateTime  @map("scheduled_at") @db.Timestamptz(6)
+  appointmentId     String?   @map("appointment_id") @db.VarChar(100)
+  status            String    @db.VarChar(30)
+  notes             String?   @db.Text
+  startedAt         DateTime? @map("started_at") @db.Timestamptz(6)
+  startedBy         String?   @map("started_by") @db.VarChar(100)
+  completedAt       DateTime? @map("completed_at") @db.Timestamptz(6)
+  completedBy       String?   @map("completed_by") @db.VarChar(100)
+  cancelledAt       DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  cancelledBy       String?   @map("cancelled_by") @db.VarChar(100)
+  cancelReason      String?   @map("cancel_reason") @db.Text
+  createdAt         DateTime  @map("created_at") @db.Timestamptz(6)
+  createdBy         String    @map("created_by") @db.VarChar(100)
+  updatedAt         DateTime  @map("updated_at") @db.Timestamptz(6)
+
+  @@index([tenantId, patientId, scheduledAt])
+  @@index([tenantId, leadSurgeonUserId, scheduledAt])
+  @@map("surgery_plans")
+}
+
+model ConsentRecord {
+  id                 String    @id @db.VarChar(100)
+  tenantId           String    @map("tenant_id") @db.Uuid
+  templateType       String    @map("template_type") @db.VarChar(100)
+  templateVersion    String    @map("template_version") @db.VarChar(100)
+  patientId          String    @map("patient_id") @db.Uuid
+  ownerId            String    @map("owner_id") @db.Uuid
+  sourceType         String?   @map("source_type") @db.VarChar(100)
+  sourceId           String?   @map("source_id") @db.VarChar(100)
+  locale             String    @db.VarChar(20)
+  status             String    @db.VarChar(30)
+  signatureMethod    String?   @map("signature_method") @db.VarChar(50)
+  signatureProvider  String?   @map("signature_provider") @db.VarChar(200)
+  signatureReference String?   @map("signature_reference") @db.VarChar(300)
+  signedAt           DateTime? @map("signed_at") @db.Timestamptz(6)
+  notes              String?   @db.Text
+  revokedAt          DateTime? @map("revoked_at") @db.Timestamptz(6)
+  revokedBy          String?   @map("revoked_by") @db.VarChar(100)
+  revokeReason       String?   @map("revoke_reason") @db.Text
+  createdAt          DateTime  @map("created_at") @db.Timestamptz(6)
+  createdBy          String    @map("created_by") @db.VarChar(100)
+  updatedAt          DateTime  @map("updated_at") @db.Timestamptz(6)
+
+  @@index([tenantId, patientId, createdAt])
+  @@index([tenantId, ownerId, createdAt])
+  @@map("consents")
+}
+
+// -----------------------------------------------------------------------------
+// VACCINATION — Faz 5 protokol, uygulama, portal kartı ve hatırlatmalar.
+// Uygulama düzeltme/iptal bilgisi saklanır; stok hareketi bağlantısı JSON
+// kimlik listesiyle append-only deftere işaret eder.
+// -----------------------------------------------------------------------------
+
+model VaccineProtocolRecord {
+  id                  String                     @id @db.VarChar(100)
+  tenantId            String                     @map("tenant_id") @db.Uuid
+  name                String                     @db.VarChar(300)
+  species             String                     @db.VarChar(30)
+  category            String                     @db.VarChar(30)
+  manufacturer        String?                    @db.VarChar(300)
+  defaultDose         Json?                      @map("default_dose")
+  steps               Json
+  totalDurationMonths Int                        @map("total_duration_months")
+  isCore              Boolean                    @map("is_core")
+  createdAt           DateTime                   @map("created_at") @db.Timestamptz(6)
+  createdBy           String?                    @map("created_by") @db.VarChar(100)
+  updatedAt           DateTime                   @map("updated_at") @db.Timestamptz(6)
+  archivedAt          DateTime?                  @map("archived_at") @db.Timestamptz(6)
+  applications        VaccineApplicationRecord[]
+
+  @@index([tenantId, species, archivedAt])
+  @@map("vaccine_protocols")
+}
+
+model VaccineApplicationRecord {
+  id                 String                @id @db.VarChar(100)
+  tenantId           String                @map("tenant_id") @db.Uuid
+  patientId          String                @map("patient_id") @db.Uuid
+  protocolId         String                @map("protocol_id") @db.VarChar(100)
+  lot                Json
+  dose               Json?
+  administeredBy     String                @map("administered_by") @db.VarChar(100)
+  applicationDate    DateTime              @map("application_date") @db.Timestamptz(6)
+  nextDueDate        String?               @map("next_due_date") @db.VarChar(30)
+  notes              String?               @db.Text
+  status             String                @db.VarChar(30)
+  createdAt          DateTime              @map("created_at") @db.Timestamptz(6)
+  createdBy          String                @map("created_by") @db.VarChar(100)
+  updatedAt          DateTime              @map("updated_at") @db.Timestamptz(6)
+  amendedAt          DateTime?             @map("amended_at") @db.Timestamptz(6)
+  amendedBy          String?               @map("amended_by") @db.VarChar(100)
+  amendedReason      String?               @map("amended_reason") @db.Text
+  cancelledAt        DateTime?             @map("cancelled_at") @db.Timestamptz(6)
+  cancellationReason String?               @map("cancellation_reason") @db.Text
+  stockMovementIds   Json                  @map("stock_movement_ids")
+  protocol           VaccineProtocolRecord @relation(fields: [protocolId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, patientId, applicationDate])
+  @@index([tenantId, protocolId, applicationDate])
+  @@map("vaccine_applications")
+}
+
+model VaccineReminderRecord {
+  id                  String    @id @db.VarChar(100)
+  tenantId            String    @map("tenant_id") @db.Uuid
+  applicationId       String    @map("application_id") @db.VarChar(100)
+  patientId           String    @map("patient_id") @db.Uuid
+  protocolId          String    @map("protocol_id") @db.VarChar(100)
+  channel             String    @db.VarChar(30)
+  scheduledFor        DateTime  @map("scheduled_for") @db.Timestamptz(6)
+  nextDueDate         String    @map("next_due_date") @db.VarChar(30)
+  status              String    @db.VarChar(30)
+  attempts            Int
+  lastError           String?   @map("last_error") @db.Text
+  sentAt              DateTime? @map("sent_at") @db.Timestamptz(6)
+  createdAt           DateTime  @map("created_at") @db.Timestamptz(6)
+  dedupeKey           String    @map("dedupe_key") @db.VarChar(300)
+  applicationSnapshot Json?     @map("application_snapshot")
+  stepSnapshot        Json?     @map("step_snapshot")
+
+  @@unique([tenantId, dedupeKey])
+  @@index([tenantId, status, scheduledFor])
+  @@map("vaccine_reminders")
+}
+
+model TenantVaccineCardSettingRecord {
+  tenantId                 String   @id @map("tenant_id") @db.Uuid
+  portalVaccineCardEnabled Boolean  @map("portal_vaccine_card_enabled")
+  updatedAt                DateTime @map("updated_at") @db.Timestamptz(6)
+
+  @@map("tenant_vaccine_card_settings")
+}
+
+model VaccineReminderTenantConfigRecord {
+  tenantId      String   @id @map("tenant_id") @db.Uuid
+  daysBeforeDue Int      @map("days_before_due")
+  channels      Json
+  updatedAt     DateTime @map("updated_at") @db.Timestamptz(6)
+
+  @@map("vaccine_reminder_tenant_configs")
+}
+
+// -----------------------------------------------------------------------------
+// ERROR_EVENTS — GOAL-100 merkezi backend hata olayları.
+// Hata olayları tenant kapsamını ve PII maskelenmiş bağlamı kalıcı tutar.
+// Aynı tenant + fingerprint için tek aggregate satırı kullanılır; tekrarlar
+// occurrenceCount/lastSeenAt ile izlenir. Status alanı GOAL-103 tarafından
+// güncellenir; çözüm notları ve atama geçmişi ayrı append-only tablolarda
+// tutulacaktır.
+// -----------------------------------------------------------------------------
+
+model ErrorEvent {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId         String?  @map("tenant_id") @db.Uuid
+  branchId         String?  @map("branch_id") @db.Uuid
+  userId           String?  @map("user_id") @db.Uuid
+  requestId        String   @map("request_id") @db.VarChar(100)
+  actorType        String   @map("actor_type") @db.VarChar(20)
+  module           String   @db.VarChar(50)
+  route            String   @db.VarChar(500)
+  release          String   @db.VarChar(100)
+  severity         String   @db.VarChar(10)
+  fingerprint      String   @db.Char(16)
+  errorCode        String   @map("error_code") @db.VarChar(64)
+  message          String   @db.VarChar(2000)
+  statusCode       Int      @map("status_code")
+  stack            String?  @db.Text
+  context          Json     @default("{}")
+  country          String   @db.VarChar(10)
+  occurredAt       DateTime @map("occurred_at") @db.Timestamptz(6)
+  firstSeenAt      DateTime @map("first_seen_at") @db.Timestamptz(6)
+  lastSeenAt       DateTime @map("last_seen_at") @db.Timestamptz(6)
+  occurrenceCount  Int      @default(1) @map("occurrence_count")
+  status           String   @default("new") @db.VarChar(20)
+  assignedToUserId String?  @map("assigned_to_user_id") @db.Uuid
+
+  @@index([tenantId, lastSeenAt])
+  @@index([branchId, lastSeenAt])
+  @@index([fingerprint, lastSeenAt])
+  @@index([severity, lastSeenAt])
+  @@index([status, lastSeenAt])
+  @@map("error_events")
+}
+
+// -----------------------------------------------------------------------------
+// JOB_RUNS — GOAL-102 background job ve entegrasyon denemeleri.
+// Her satır tek denemedir; retry zinciri parentRunId ile korunur. Payloadlar
+// uygulama katmanında PII maskeli olarak yazılır ve tenant satırları RLS ile
+// ayrılır. Tenant'sız sistem jobları explicit system-write bağlamı gerektirir.
+// -----------------------------------------------------------------------------
+
+model JobRun {
+  id            String    @id @default(uuid()) @db.Uuid
+  queueName     String    @map("queue_name") @db.VarChar(128)
+  jobName       String    @map("job_name") @db.VarChar(128)
+  jobKey        String    @map("job_key") @db.VarChar(256)
+  source        String    @db.VarChar(20)
+  status        String    @db.VarChar(20)
+  attempt       Int
+  maxAttempts   Int       @map("max_attempts")
+  tenantId      String?   @map("tenant_id") @db.Uuid
+  branchId      String?   @map("branch_id") @db.Uuid
+  correlationId String    @map("correlation_id") @db.VarChar(128)
+  requestId     String?   @map("request_id") @db.VarChar(128)
+  actorId       String?   @map("actor_id") @db.VarChar(100)
+  actorType     String    @map("actor_type") @db.VarChar(20)
+  input         Json      @default("{}")
+  output        Json      @default("{}")
+  errorCode     String?   @map("error_code") @db.VarChar(64)
+  errorMessage  String?   @map("error_message") @db.VarChar(2000)
+  errorStack    String?   @map("error_stack") @db.Text
+  startedAt     DateTime  @map("started_at") @db.Timestamptz(6)
+  finishedAt    DateTime? @map("finished_at") @db.Timestamptz(6)
+  durationMs    Int?      @map("duration_ms")
+  parentRunId   String?   @map("parent_run_id") @db.Uuid
+  triggeredBy   String    @map("triggered_by") @db.VarChar(20)
+  country       String    @db.VarChar(10)
+  release       String    @db.VarChar(64)
+
+  @@index([tenantId, startedAt])
+  @@index([jobKey, startedAt])
+  @@index([status, startedAt])
+  @@index([queueName, status, startedAt])
+  @@index([correlationId])
+  @@map("job_runs")
 }

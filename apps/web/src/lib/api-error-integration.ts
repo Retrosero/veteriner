@@ -54,7 +54,8 @@ export function severityForApiFailure(failure: ApiFailure): ErrorSeverity {
 
 /**
  * Tek bir `ApiFailure`'ı reporter'a gönderir. `requestId` varsa
- * context'e eklenir (backend correlation).
+ * merkezi hata kaydına `X-Request-Id` header'ı ile aktarılır; context'te de
+ * tanısal görünürlük için tutulur.
  * @param failure
  */
 export function reportApiFailure(failure: ApiFailure): void {
@@ -70,6 +71,7 @@ export function reportApiFailure(failure: ApiFailure): void {
         correlationId: failure.requestId,
         source: failure.error.source,
       },
+      failure.requestId,
     );
   } catch {
     // sessiz

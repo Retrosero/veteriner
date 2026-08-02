@@ -82,7 +82,7 @@ export class OwnersService {
 
     const normalizedTaxId = this.validateAndNormalizeTaxId(input.taxId);
 
-    const dup = this.repo.findByPhone(tenantId, normalizedPhone);
+    const dup = await this.repo.findPersistedByPhone(tenantId, normalizedPhone);
     if (dup) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0002",
@@ -99,7 +99,7 @@ export class OwnersService {
       phone: normalizedPhone,
       taxId: normalizedTaxId,
     });
-    this.repo.insert(record);
+    await this.repo.persist(record);
 
     await this.audit.record({
       eventName: "audit:owner.create",
@@ -139,7 +139,7 @@ export class OwnersService {
     actor: ActorContext,
   ): Promise<Owner | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findById(tenantId, id);
+    const rec = await this.repo.findPersistedById(tenantId, id);
     return rec ? this.toOwner(rec) : null;
   }
 
@@ -153,7 +153,7 @@ export class OwnersService {
     actor: ActorContext,
   ): Promise<{ items: Owner[]; total: number }> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.search(tenantId, filters);
+    const result = await this.repo.searchPersisted(tenantId, filters);
     return {
       items: result.items.map((r) => this.toOwner(r)),
       total: result.total,
@@ -169,7 +169,7 @@ export class OwnersService {
     actor: ActorContext,
   ): Promise<Owner> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.findPersistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",
@@ -184,7 +184,7 @@ export class OwnersService {
       return this.toOwner(existing);
     }
     const at = new Date().toISOString();
-    const archived = this.repo.archive(tenantId, id, at);
+    const archived = await this.repo.archivePersisted(tenantId, id, at);
     if (!archived) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",

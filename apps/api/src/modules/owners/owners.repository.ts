@@ -13,7 +13,12 @@
  * @since GOAL-020 (FAZ-2) hasta sahibi core
  */
 
-import { Injectable } from "@nestjs/common";
+import { randomUUID } from "node:crypto";
+
+import { Injectable, Optional } from "@nestjs/common";
+
+import { PrismaService } from "../../prisma/prisma.service.js";
+import { Prisma, type Owner as PrismaOwner } from "@prisma/client";
 
 import type {
   Owner,
@@ -41,13 +46,75 @@ export class OwnersRepository {
   private readonly byPhone = new Map<string, string>();
   /** key: record id → record. */
   private readonly byId = new Map<string, OwnerRecord>();
-  /** Her tenant için id counter. */
-  private readonly counters = new Map<string, number>();
+  public constructor(@Optional() private readonly prisma?: PrismaService) {}
 
-  public nextId(tenantId: string): string {
-    const n = (this.counters.get(tenantId) ?? 0) + 1;
-    this.counters.set(tenantId, n);
-    return `own-${tenantId.slice(0, 8)}-${String(n).padStart(6, "0")}`;
+  /**
+   * Uygulama çalışma zamanındaki kalıcı yol. Unit testlerde Prisma verilmezse
+   * aynı sözleşme in-memory yardımcılarıyla korunur.
+   */
+  public async persist(record: OwnerRecord): Promise<OwnerRecord> {
+    if (!this.prisma) return this.insert(record);
+    // Geçiş döneminde owner'ı kullanan eski bellek tabanlı modüller için
+    // aynı süreçte okunabilir kopya tutulur; yetkili kaynak PostgreSQL'dir.
+    this.insert(record);
+    const saved = await this.withTenant(record.tenantId, (tx) => tx.owner.create({ data: {
+      id: record.id, tenantId: record.tenantId, firstName: record.firstName,
+      lastName: record.lastName, phone: record.phone, email: record.email,
+      taxId: record.taxId, address: record.address ? (record.address as unknown as Prisma.InputJsonValue) : Prisma.DbNull,
+      consents: record.consents as unknown as Prisma.InputJsonValue, createdAt: new Date(record.createdAt),
+    }}));
+    return this.fromPrisma(saved);
+  }
+
+  public async findPersistedById(tenantId: string, id: string): Promise<OwnerRecord | null> {
+    if (!this.prisma) return this.findById(tenantId, id);
+    const row = await this.withTenant(tenantId, (tx) => tx.owner.findUnique({ where: { id } }));
+    return row ? this.fromPrisma(row) : null;
+  }
+
+  public async findPersistedByPhone(tenantId: string, phone: string): Promise<OwnerRecord | null> {
+    if (!this.prisma) return this.findByPhone(tenantId, phone);
+    const row = await this.withTenant(tenantId, (tx) => tx.owner.findFirst({ where: { tenantId, phone, archivedAt: null } }));
+    return row ? this.fromPrisma(row) : null;
+  }
+
+  public async searchPersisted(tenantId: string, args: Parameters<OwnersRepository["search"]>[1]): Promise<{ items: OwnerRecord[]; total: number }> {
+    if (!this.prisma) return this.search(tenantId, args);
+    const term = args.search?.trim(); const city = args.city?.trim();
+    const where: Prisma.OwnerWhereInput = {
+      tenantId, ...(args.includeArchived ? {} : { archivedAt: null }),
+      ...(args.phone ? { phone: { contains: args.phone.replace(/\s/g, "") } } : {}),
+      ...(term ? { OR: ["firstName", "lastName", "phone", "email", "taxId"].map((field) => ({ [field]: { contains: term, mode: "insensitive" } })) } : {}),
+      ...(city ? { address: { path: ["city"], string_contains: city } } : {}),
+    };
+    const result = await this.withTenant(tenantId, async (tx) => Promise.all([
+      tx.owner.findMany({ where, orderBy: { createdAt: "desc" }, skip: args.offset, take: args.limit }), tx.owner.count({ where }),
+    ]));
+    return { items: result[0].map((row) => this.fromPrisma(row)), total: result[1] };
+  }
+
+  public async archivePersisted(tenantId: string, id: string, at: string): Promise<OwnerRecord | null> {
+    if (!this.prisma) return this.archive(tenantId, id, at);
+    const row = await this.withTenant(tenantId, (tx) => tx.owner.updateMany({ where: { id, tenantId }, data: { archivedAt: new Date(at) } }));
+    return row.count ? this.findPersistedById(tenantId, id) : null;
+  }
+
+  private async withTenant<T>(tenantId: string, fn: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
+    if (!this.prisma) throw new Error("Prisma bağlantısı bulunamadı");
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'false', true)`;
+      await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
+      return fn(tx);
+    });
+  }
+
+  private fromPrisma(row: PrismaOwner): OwnerRecord {
+    const address = row.address as Owner["address"];
+    const consents = row.consents as unknown as Owner["consents"];
+    return { id: row.id, tenantId: row.tenantId, firstName: row.firstName, lastName: row.lastName, phone: row.phone, email: row.email, taxId: row.taxId, address, consents, createdAt: row.createdAt.toISOString(), archivedAt: row.archivedAt?.toISOString() ?? null };
+  }
+  public nextId(_tenantId: string): string {
+    return randomUUID();
   }
 
   public insert(record: OwnerRecord): OwnerRecord {
@@ -144,7 +211,6 @@ export class OwnersRepository {
   public clear(): void {
     this.byId.clear();
     this.byPhone.clear();
-    this.counters.clear();
   }
 
   /** Record oluşturmak için yardımcı (service kullanır). */

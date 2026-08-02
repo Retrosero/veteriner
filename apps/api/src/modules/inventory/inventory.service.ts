@@ -107,7 +107,7 @@ export class InventoryService {
     this.requireTenantScope(actor, tenantId);
 
     // Code unique kontrolü.
-    const existing = this.repo.findWarehouseByCode(tenantId, input.code);
+    const existing = await this.repo.persistedWarehouseByCode(tenantId, input.code);
     if (existing && existing.archivedAt === null) {
       throw new DomainError({
         errorCode: "VET-INV-0004",
@@ -137,7 +137,7 @@ export class InventoryService {
       archivedBy: null,
       archiveReason: null,
     };
-    this.repo.insertWarehouse(record);
+    await this.repo.persistWarehouse(record);
 
     await this.audit.recordSimple(
       "audit:inventory.warehouse.create",
@@ -164,7 +164,7 @@ export class InventoryService {
     actor: ActorContext,
   ): Promise<WarehouseListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.searchWarehouses(tenantId, {
+    const result = await this.repo.persistedWarehouseSearch(tenantId, {
       type: filters.type,
       active: filters.active,
       search: filters.search,
@@ -184,7 +184,7 @@ export class InventoryService {
     actor: ActorContext,
   ): Promise<Warehouse | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findWarehouseById(tenantId, id);
+    const rec = await this.repo.persistedWarehouseById(tenantId, id);
     return rec ? toWarehouse(rec) : null;
   }
 
@@ -195,7 +195,7 @@ export class InventoryService {
     actor: ActorContext,
   ): Promise<Warehouse> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findWarehouseById(tenantId, id);
+    const existing = await this.repo.persistedWarehouseById(tenantId, id);
     if (!existing) {
       throw this.notFoundWarehouseError(id);
     }
@@ -204,7 +204,7 @@ export class InventoryService {
     }
 
     if (input.code !== undefined && input.code !== existing.code) {
-      const dupe = this.repo.findWarehouseByCode(tenantId, input.code);
+      const dupe = await this.repo.persistedWarehouseByCode(tenantId, input.code);
       if (dupe && dupe.id !== id && dupe.archivedAt === null) {
         throw new DomainError({
           errorCode: "VET-INV-0004",
@@ -226,7 +226,7 @@ export class InventoryService {
     if (input.active !== undefined) patch.active = input.active;
     patch.updatedAt = new Date().toISOString();
 
-    const updated = this.repo.updateWarehouse(tenantId, id, patch);
+    const updated = await this.repo.persistedWarehouseUpdate(tenantId, id, patch);
     if (!updated) throw this.notFoundWarehouseError(id);
 
     await this.audit.recordSimple(
@@ -262,13 +262,13 @@ export class InventoryService {
     actor: ActorContext,
   ): Promise<Warehouse> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findWarehouseById(tenantId, id);
+    const existing = await this.repo.persistedWarehouseById(tenantId, id);
     if (!existing) throw this.notFoundWarehouseError(id);
     if (existing.archivedAt !== null)
       throw this.archivedCannotArchiveError("depo");
 
     // Aktif raf varsa arşivlenemez.
-    const activeShelves = this.repo.countActiveShelvesForWarehouse(
+    const activeShelves = await this.repo.persistedActiveShelvesForWarehouse(
       tenantId,
       id,
     );
@@ -284,7 +284,7 @@ export class InventoryService {
     }
 
     const nowIso = new Date().toISOString();
-    const updated = this.repo.updateWarehouse(tenantId, id, {
+    const updated = await this.repo.persistedWarehouseUpdate(tenantId, id, {
       archivedAt: nowIso,
       archivedBy: actor.actorId ?? "system",
       archiveReason: input.reason,
@@ -322,7 +322,7 @@ export class InventoryService {
   ): Promise<Shelf> {
     this.requireTenantScope(actor, tenantId);
 
-    const warehouse = this.repo.findWarehouseById(tenantId, input.warehouseId);
+    const warehouse = await this.repo.persistedWarehouseById(tenantId, input.warehouseId);
     if (!warehouse) {
       throw this.notFoundWarehouseError(input.warehouseId);
     }
@@ -338,7 +338,7 @@ export class InventoryService {
     }
 
     if (input.code !== undefined) {
-      const dupe = this.repo.findShelfByCode(
+      const dupe = await this.repo.persistedShelfByCode(
         tenantId,
         input.warehouseId,
         input.code,
@@ -373,7 +373,7 @@ export class InventoryService {
       archivedBy: null,
       archiveReason: null,
     };
-    this.repo.insertShelf(record);
+    await this.repo.persistShelf(record);
 
     await this.audit.recordSimple(
       "audit:inventory.shelf.create",
@@ -399,7 +399,7 @@ export class InventoryService {
     actor: ActorContext,
   ): Promise<ShelfListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.searchShelves(tenantId, {
+    const result = await this.repo.persistedShelfSearch(tenantId, {
       warehouseId: filters.warehouseId,
       temperatureZone: filters.temperatureZone,
       active: filters.active,
@@ -420,7 +420,7 @@ export class InventoryService {
     actor: ActorContext,
   ): Promise<Shelf | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findShelfById(tenantId, id);
+    const rec = await this.repo.persistedShelfById(tenantId, id);
     return rec ? toShelf(rec) : null;
   }
 
@@ -431,14 +431,14 @@ export class InventoryService {
     actor: ActorContext,
   ): Promise<Shelf> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findShelfById(tenantId, id);
+    const existing = await this.repo.persistedShelfById(tenantId, id);
     if (!existing) throw this.notFoundShelfError(id);
     if (existing.archivedAt !== null)
       throw this.archivedCannotUpdateError("raf");
 
     if (input.code !== undefined && input.code !== existing.code) {
       if (input.code !== null) {
-        const dupe = this.repo.findShelfByCode(
+        const dupe = await this.repo.persistedShelfByCode(
           tenantId,
           existing.warehouseId,
           input.code,
@@ -465,7 +465,7 @@ export class InventoryService {
     if (input.active !== undefined) patch.active = input.active;
     patch.updatedAt = new Date().toISOString();
 
-    const updated = this.repo.updateShelf(tenantId, id, patch);
+    const updated = await this.repo.persistedShelfUpdate(tenantId, id, patch);
     if (!updated) throw this.notFoundShelfError(id);
 
     await this.audit.recordSimple(
@@ -501,13 +501,13 @@ export class InventoryService {
     actor: ActorContext,
   ): Promise<Shelf> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findShelfById(tenantId, id);
+    const existing = await this.repo.persistedShelfById(tenantId, id);
     if (!existing) throw this.notFoundShelfError(id);
     if (existing.archivedAt !== null)
       throw this.archivedCannotArchiveError("raf");
 
     // Aktif lot varsa arşivlenemez.
-    const activeLots = this.repo.countActiveLotsForShelf(tenantId, id);
+    const activeLots = await this.repo.persistedActiveLotsForShelf(tenantId, id);
     if (activeLots > 0) {
       throw new DomainError({
         errorCode: "VET-INV-0010",
@@ -520,7 +520,7 @@ export class InventoryService {
     }
 
     const nowIso = new Date().toISOString();
-    const updated = this.repo.updateShelf(tenantId, id, {
+    const updated = await this.repo.persistedShelfUpdate(tenantId, id, {
       archivedAt: nowIso,
       archivedBy: actor.actorId ?? "system",
       archiveReason: input.reason,
@@ -571,7 +571,7 @@ export class InventoryService {
     }
 
     // Lot numarası unique per product.
-    const dupe = this.repo.findLotByProductAndNumber(
+    const dupe = await this.repo.persistedLotByProductAndNumber(
       tenantId,
       input.productId,
       input.lotNumber,
@@ -592,7 +592,7 @@ export class InventoryService {
 
     // Raf opsiyonel; verildiyse kontrol.
     if (input.shelfId !== undefined && input.shelfId !== null) {
-      const shelf = this.repo.findShelfById(tenantId, input.shelfId);
+      const shelf = await this.repo.persistedShelfById(tenantId, input.shelfId);
       if (!shelf) {
         throw this.notFoundShelfError(input.shelfId);
       }
@@ -645,7 +645,7 @@ export class InventoryService {
       archivedBy: null,
       archiveReason: null,
     };
-    this.repo.insertLot(record);
+    await this.repo.persistLot(record);
 
     await this.audit.recordSimple(
       "audit:inventory.lot.create",
@@ -674,7 +674,7 @@ export class InventoryService {
     actor: ActorContext,
   ): Promise<StockLotListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.searchLots(tenantId, {
+    const result = await this.repo.persistedLotSearch(tenantId, {
       productId: filters.productId,
       shelfId: filters.shelfId,
       warehouseId: filters.warehouseId,
@@ -701,7 +701,28 @@ export class InventoryService {
     actor: ActorContext,
   ): Promise<StockLot | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findLotById(tenantId, id);
+    const rec = await this.repo.persistedLotById(tenantId, id);
+    return rec ? toStockLot(rec) : null;
+  }
+
+  /**
+   * Ürün + lot numarasıyla tenant-scoped lot çözümlemesi yapar.
+   * Sistem akışları (ör. aşı uygulaması) istemciden lot kimliği
+   * almadan, klinik kayıttaki doğal lot bilgisini kalıcı stok
+   * defterindeki gerçek lot kaydına güvenle bağlamak için kullanır.
+   */
+  public async getLotByProductAndNumber(
+    tenantId: string,
+    productId: string,
+    lotNumber: string,
+    actor: ActorContext,
+  ): Promise<StockLot | null> {
+    this.requireTenantScope(actor, tenantId);
+    const rec = await this.repo.persistedLotByProductAndNumber(
+      tenantId,
+      productId,
+      lotNumber,
+    );
     return rec ? toStockLot(rec) : null;
   }
 
@@ -712,7 +733,7 @@ export class InventoryService {
     actor: ActorContext,
   ): Promise<StockLot> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findLotById(tenantId, id);
+    const existing = await this.repo.persistedLotById(tenantId, id);
     if (!existing) throw this.notFoundLotError(id);
     if (existing.archivedAt !== null)
       throw this.archivedCannotUpdateError("lot");
@@ -734,7 +755,7 @@ export class InventoryService {
       input.lotNumber !== undefined &&
       input.lotNumber !== existing.lotNumber
     ) {
-      const dupe = this.repo.findLotByProductAndNumber(
+      const dupe = await this.repo.persistedLotByProductAndNumber(
         tenantId,
         existing.productId,
         input.lotNumber,
@@ -757,7 +778,7 @@ export class InventoryService {
     // shelfId değişirse mevcut kontrolü.
     if (input.shelfId !== undefined && input.shelfId !== existing.shelfId) {
       if (input.shelfId !== null) {
-        const shelf = this.repo.findShelfById(tenantId, input.shelfId);
+        const shelf = await this.repo.persistedShelfById(tenantId, input.shelfId);
         if (!shelf) throw this.notFoundShelfError(input.shelfId);
         if (shelf.archivedAt !== null) {
           throw new DomainError({
@@ -801,7 +822,7 @@ export class InventoryService {
     if (input.active !== undefined) patch.active = input.active;
     patch.updatedAt = new Date().toISOString();
 
-    const updated = this.repo.updateLot(tenantId, id, patch);
+    const updated = await this.repo.persistedLotUpdate(tenantId, id, patch);
     if (!updated) throw this.notFoundLotError(id);
 
     await this.audit.recordSimple(
@@ -837,13 +858,13 @@ export class InventoryService {
     actor: ActorContext,
   ): Promise<StockLot> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findLotById(tenantId, id);
+    const existing = await this.repo.persistedLotById(tenantId, id);
     if (!existing) throw this.notFoundLotError(id);
     if (existing.archivedAt !== null)
       throw this.archivedCannotArchiveError("lot");
 
     const nowIso = new Date().toISOString();
-    const updated = this.repo.updateLot(tenantId, id, {
+    const updated = await this.repo.persistedLotUpdate(tenantId, id, {
       archivedAt: nowIso,
       archivedBy: actor.actorId ?? "system",
       archiveReason: input.reason,

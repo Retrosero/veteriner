@@ -142,7 +142,7 @@ export class PrescriptionsService {
       createdAt: nowIso,
       updatedAt: nowIso,
     });
-    this.repo.insert(record);
+    await this.repo.persist(record);
 
     // 5) Audit.
     await this.audit.recordSimple(
@@ -176,7 +176,7 @@ export class PrescriptionsService {
     actor: ActorContext,
   ): Promise<Prescription | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findById(tenantId, id);
+    const rec = await this.repo.persistedFindById(tenantId, id);
     return rec ? toPrescription(rec) : null;
   }
 
@@ -190,7 +190,7 @@ export class PrescriptionsService {
     actor: ActorContext,
   ): Promise<PrescriptionListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.search(tenantId, {
+    const result = await this.repo.persistedSearch(tenantId, {
       patientId: filters.patientId,
       status: filters.status,
       from: filters.from,
@@ -214,7 +214,7 @@ export class PrescriptionsService {
     actor: ActorContext,
   ): Promise<Prescription> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedFindById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",
@@ -237,54 +237,35 @@ export class PrescriptionsService {
     }
 
     const now = new Date().toISOString();
-    const updated = this.repo.update(tenantId, id, {
-      status: "dispensed",
-      dispensedAt: now,
-      dispensedBy: actor.actorId,
-      updatedAt: now,
-    });
-    if (!updated) {
-      throw new DomainError({
-        errorCode: "VET-CLINIC-0001",
-        message: "Reçete bulunamadı",
-        httpStatus: 404,
-        severity: "warning",
-        i18nKey: "error.VET-CLINIC-0001",
-        details: { id },
-      });
-    }
-
-    // GOAL-066: Reçete dispans anında ürün referansı taşıyan
+    // Reçete dispans anında ürün referansı taşıyan
     // kalemler için otomatik klinik tüketim kaydı oluştur
     // (stoktan düşüm). Ürün referansı olmayan kalemler (serbest
     // metin ilaç talimatı) için no-op.
     const consumptionLines: ClinicalConsumptionLine[] = [];
-    for (const item of updated.items) {
+    for (const item of existing.items) {
       if (item.productId && item.dispensedQuantity) {
-        consumptionLines.push({
-          productId: item.productId,
-          lotId: item.dispensedLotId,
-          quantity: item.dispensedQuantity,
-        });
+        consumptionLines.push({ productId: item.productId, quantity: item.dispensedQuantity, ...(item.dispensedLotId ? { lotId: item.dispensedLotId } : {}) });
       }
     }
-    if (consumptionLines.length > 0) {
-      try {
-        await this.clinicalConsumption.recordForPrescription(
-          tenantId,
-          updated.id,
-          updated.patientId,
-          consumptionLines,
-          actor,
-        );
-      } catch (err) {
-        // Tüketim oluşturulamazsa dispans yine de başarılı sayılır
-        // (reçete dağıtıldı; stok düşümü sonra düzeltilebilir).
-        // Hata loglanır; operatör UI'da uyarı görür.
-        this.logger.warn(
-          `Prescription ${updated.id} dispans klinik tüketim oluşturulamadı: ` +
-            (err instanceof Error ? err.message : String(err)),
-        );
+    let updated = await this.repo.dispenseWithConsumption(
+      tenantId,
+      id,
+      actor.actorId ?? "system",
+      consumptionLines,
+      now,
+    );
+    if (!updated) {
+      // Unit test/uyumluluk modunda Prisma yoktur; eski bellek içi akışı
+      // sözleşme testleri için korunur. Çalışma zamanında yukarıdaki
+      // transaction yolu kullanılır.
+      updated = await this.repo.persistedUpdate(tenantId, id, {
+        status: "dispensed", dispensedAt: now, dispensedBy: actor.actorId, updatedAt: now,
+      });
+      if (!updated) {
+        throw new DomainError({ errorCode: "VET-CLINIC-0001", message: "Reçete bulunamadı veya dağıtıma uygun değil", httpStatus: 409, severity: "warning", i18nKey: "error.VET-CLINIC-0001", details: { id } });
+      }
+      if (consumptionLines.length > 0) {
+        await this.clinicalConsumption.recordForPrescription(tenantId, updated.id, updated.patientId, consumptionLines, actor);
       }
     }
 
@@ -317,7 +298,7 @@ export class PrescriptionsService {
     actor: ActorContext,
   ): Promise<Prescription> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedFindById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",
@@ -354,7 +335,7 @@ export class PrescriptionsService {
     }
 
     const now = new Date().toISOString();
-    const updated = this.repo.update(tenantId, id, {
+    const updated = await this.repo.persistedUpdate(tenantId, id, {
       status: "cancelled",
       cancelReason: input.reason,
       updatedAt: now,
@@ -401,11 +382,11 @@ export class PrescriptionsService {
    */
   public async expireOverdue(): Promise<number> {
     const now = new Date().toISOString();
-    const overdue = this.repo.findOverdueActive(now);
+    const overdue = await this.repo.persistedOverdueActive(now);
     if (overdue.length === 0) return 0;
     const nowPatch: string = now;
     for (const rec of overdue) {
-      this.repo.update(rec.tenantId, rec.id, {
+      await this.repo.persistedUpdate(rec.tenantId, rec.id, {
         status: "expired",
         updatedAt: nowPatch,
       });
@@ -433,7 +414,7 @@ export class PrescriptionsService {
     actor: ActorContext,
   ): Promise<Buffer> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findById(tenantId, id);
+    const rec = await this.repo.persistedFindById(tenantId, id);
     if (!rec) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",

@@ -73,7 +73,13 @@ export class DiagnosesController {
   @ApiResponse({ status: 422, description: "Geçersiz input." })
   public async add(
     @Param("id") examinationId: string,
-    @Body(new ZodValidationPipe(diagnosisCreateInputSchema))
+    // Muayene kimliği URL'den gelir; body'deki tenant/scope belirleyici
+    // tekrarına güvenilmez ve isteğin gereksiz yere kırılmasına izin verilmez.
+    @Body(
+      new ZodValidationPipe(
+        diagnosisCreateInputSchema.omit({ examinationId: true }),
+      ),
+    )
     body: Omit<DiagnosisCreateInput, "examinationId">,
     @CurrentActor() actor: ActorContext,
   ): Promise<Diagnosis> {

@@ -56,6 +56,7 @@ docker run --env-file .env vetniva-worker
 | ------------- | ------- | ------------------------------------------- |
 | `NODE_ENV`    | evet    | `development` / `test` / `production`       |
 | `REDIS_URL`   | evet    | BullMQ bağlantı URI'si                      |
+| `DATABASE_URL` | evet | Yalnız NOBYPASSRLS runtime rolüne ait PostgreSQL URI'si; JobRun kayıtları için kullanılır |
 | `LOG_LEVEL`   | hayır   | Pino seviyesi (default: `info`)             |
 | `APP_VERSION` | evet    | Log ve tag için sürüm bilgisi               |
 | `PORT_WORKER` | hayır   | Rezerve; worker HTTP endpoint'i yok (queue) |

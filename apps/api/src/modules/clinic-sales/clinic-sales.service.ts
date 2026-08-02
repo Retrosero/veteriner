@@ -134,6 +134,9 @@ export class ClinicSalesService {
       netAmount,
       updatedAt: nowIso,
     });
+    const persistedHeader = this.repo.findById(tenantId, saleId);
+    if (!persistedHeader) throw new Error("Klinik satış oluşturulamadı");
+    await this.repo.persistSaleWithLines(persistedHeader, lineRecords);
 
     // 5) Audit.
     await this.audit.recordSimple(
@@ -178,7 +181,7 @@ export class ClinicSalesService {
     actor: ActorContext,
   ): Promise<ClinicSaleListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.search(tenantId, {
+    const result = await this.repo.persistedSearch(tenantId, {
       status: filters.status,
       customerOwnerId: filters.customerOwnerId,
       customerPatientId: filters.customerPatientId,
@@ -205,9 +208,9 @@ export class ClinicSalesService {
     actor: ActorContext,
   ): Promise<ClinicSaleDetail | null> {
     this.requireTenantScope(actor, tenantId);
-    const header = this.repo.findById(tenantId, id);
+    const header = await this.repo.persistedById(tenantId, id);
     if (!header) return null;
-    const lines = this.repo.listLinesBySale(tenantId, id);
+    const lines = await this.repo.persistedLines(tenantId, id);
     return {
       sale: toClinicSale(header),
       lines: lines.map((l) => toClinicSaleLine(l)),
@@ -225,7 +228,7 @@ export class ClinicSalesService {
     actor: ActorContext,
   ): Promise<ClinicSaleDetail> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-CLINIC_SALE-0001",
@@ -247,6 +250,9 @@ export class ClinicSalesService {
       });
     }
 
+    let replacementLines: ClinicSaleLineRecord[] | undefined;
+    let totalAmount = existing.totalAmount;
+    let globalDiscountPercent = existing.globalDiscountPercent;
     if (input.lines !== undefined) {
       this.assertDiscountAllowed(
         input.globalDiscountPercent ?? existing.globalDiscountPercent,
@@ -256,31 +262,14 @@ export class ClinicSalesService {
       await this.assertProductsAvailable(tenantId, input.lines, actor);
 
       const nowIso = new Date().toISOString();
-      // Eski satırları updatedAt set edip bırakıyoruz (draft'ta
-      // henüz stok/ödeme etkisi yok).
-      const oldLines = this.repo.listLinesBySale(tenantId, id);
-      for (const _old of oldLines) {
-        // Şu an için satır delete API'si yok; updatedAt set
-        // edilir. Faz 8'de cancelLine eklenecek.
-        this.repo.update(tenantId, id, { updatedAt: nowIso });
-      }
-      const newLines = await this.buildAndInsertLines(
+      replacementLines = await this.buildAndInsertLines(
         tenantId,
         id,
         input.lines,
         nowIso,
         actor,
       );
-      const totalAmount = this.sumLineTotals(newLines);
-      const netAmount = this.applyGlobalDiscount(
-        totalAmount,
-        input.globalDiscountPercent ?? existing.globalDiscountPercent,
-      );
-      this.repo.update(tenantId, id, {
-        totalAmount,
-        netAmount,
-        updatedAt: nowIso,
-      });
+      totalAmount = this.sumLineTotals(replacementLines);
     }
 
     if (input.globalDiscountPercent !== undefined) {
@@ -289,27 +278,11 @@ export class ClinicSalesService {
         input.lines ?? [],
         actor,
       );
-      const t = this.repo.findById(tenantId, id);
-      if (t) {
-        const netAmount = this.applyGlobalDiscount(
-          t.totalAmount,
-          input.globalDiscountPercent,
-        );
-        this.repo.update(tenantId, id, {
-          globalDiscountPercent: input.globalDiscountPercent,
-          netAmount,
-          updatedAt: new Date().toISOString(),
-        });
-      }
+      globalDiscountPercent = input.globalDiscountPercent;
     }
-    if (input.notes !== undefined) {
-      this.repo.update(tenantId, id, {
-        notes: input.notes,
-        updatedAt: new Date().toISOString(),
-      });
-    }
-
-    const updated = this.repo.findById(tenantId, id);
+    const updated = replacementLines !== undefined
+      ? await this.repo.persistedUpdateWithLines(tenantId, id, { totalAmount, globalDiscountPercent, netAmount: this.applyGlobalDiscount(totalAmount, globalDiscountPercent), ...(input.notes !== undefined ? { notes: input.notes } : {}), updatedAt: new Date().toISOString() }, replacementLines)
+      : await this.repo.persistedUpdate(tenantId, id, { ...(input.globalDiscountPercent !== undefined ? { globalDiscountPercent, netAmount: this.applyGlobalDiscount(totalAmount, globalDiscountPercent) } : {}), ...(input.notes !== undefined ? { notes: input.notes } : {}), updatedAt: new Date().toISOString() });
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-CLINIC_SALE-0001",
@@ -329,9 +302,7 @@ export class ClinicSalesService {
 
     return {
       sale: toClinicSale(updated),
-      lines: this.repo
-        .listLinesBySale(tenantId, id)
-        .map((l) => toClinicSaleLine(l)),
+      lines: (await this.repo.persistedLines(tenantId, id)).map((l) => toClinicSaleLine(l)),
     };
   }
 
@@ -345,7 +316,7 @@ export class ClinicSalesService {
     actor: ActorContext,
   ): Promise<ClinicSaleDetail> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-CLINIC_SALE-0001",
@@ -365,7 +336,7 @@ export class ClinicSalesService {
     }
 
     const nowIso = new Date().toISOString();
-    this.repo.update(tenantId, id, {
+    await this.repo.persistedUpdate(tenantId, id, {
       status: "completed",
       completedAt: nowIso,
       completedBy: actor.actorId ?? "system",
@@ -387,7 +358,7 @@ export class ClinicSalesService {
       },
     );
 
-    const updated = this.repo.findById(tenantId, id);
+    const updated = await this.repo.persistedById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-CLINIC_SALE-0001",
@@ -397,9 +368,9 @@ export class ClinicSalesService {
     }
     return {
       sale: toClinicSale(updated),
-      lines: this.repo
-        .listLinesBySale(tenantId, id)
-        .map((l) => toClinicSaleLine(l)),
+      lines: (await this.repo.persistedLines(tenantId, id)).map((line) =>
+        toClinicSaleLine(line),
+      ),
     };
   }
 
@@ -414,7 +385,7 @@ export class ClinicSalesService {
     actor: ActorContext,
   ): Promise<ClinicSaleDetail> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-CLINIC_SALE-0001",
@@ -434,7 +405,7 @@ export class ClinicSalesService {
     }
 
     const nowIso = new Date().toISOString();
-    this.repo.update(tenantId, id, {
+    await this.repo.persistedUpdate(tenantId, id, {
       status: "cancelled",
       cancelledAt: nowIso,
       cancelledBy: actor.actorId ?? "system",
@@ -455,7 +426,7 @@ export class ClinicSalesService {
       },
     );
 
-    const updated = this.repo.findById(tenantId, id);
+    const updated = await this.repo.persistedById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-CLINIC_SALE-0001",
@@ -465,9 +436,9 @@ export class ClinicSalesService {
     }
     return {
       sale: toClinicSale(updated),
-      lines: this.repo
-        .listLinesBySale(tenantId, id)
-        .map((l) => toClinicSaleLine(l)),
+      lines: (await this.repo.persistedLines(tenantId, id)).map((line) =>
+        toClinicSaleLine(line),
+      ),
     };
   }
 

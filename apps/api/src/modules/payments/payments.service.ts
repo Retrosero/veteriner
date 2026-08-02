@@ -127,7 +127,7 @@ export class PaymentsService {
 
     // 2) Idempotency kontrolü.
     if (input.idempotencyKey) {
-      const existing = this.repo.findByIdempotencyKey(
+      const existing = await this.repo.persistedByIdempotencyKey(
         tenantId,
         input.idempotencyKey,
       );
@@ -176,10 +176,7 @@ export class PaymentsService {
       createdAt: nowIso,
       createdBy: actor.actorId ?? "system",
     };
-    this.repo.insert(record);
-
-    // 4) Kasa etkisi: credit.
-    this.recordKasaEntry(
+    const kasaEntry = this.makeKasaEntry(
       tenantId,
       record,
       "credit",
@@ -189,6 +186,12 @@ export class PaymentsService {
       "payment",
       nowIso,
     );
+    if (this.repo.usesPersistence()) {
+      await this.repo.persistPaymentWithKasa(record, kasaEntry);
+    } else {
+      await this.repo.persist(record);
+      if (kasaEntry) await this.kasa.persist(kasaEntry);
+    }
 
     // 5) Audit.
     await this.audit.recordSimple(
@@ -221,7 +224,7 @@ export class PaymentsService {
     actor: ActorContext,
   ): Promise<PaymentListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.search(tenantId, {
+    const result = await this.repo.persistedSearch(tenantId, {
       status: filters.status,
       sourceType: filters.sourceType,
       sourceId: filters.sourceId,
@@ -247,7 +250,7 @@ export class PaymentsService {
     actor: ActorContext,
   ): Promise<Payment | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findById(tenantId, id);
+    const rec = await this.repo.persistedById(tenantId, id);
     return rec ? toPayment(rec) : null;
   }
 
@@ -276,7 +279,7 @@ export class PaymentsService {
     this.requireTenantScope(actor, tenantId);
 
     // 1) Orijinal payment kontrolü.
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-PAYMENT-0001",
@@ -299,7 +302,7 @@ export class PaymentsService {
     }
 
     // 2) Tutar hesapla (kalan tutar = amount - reversedAmount).
-    const currentReversed = this.reversals.sumReversedForPayment(tenantId, id);
+    const currentReversed = await this.reversals.persistedSumReversedForPayment(tenantId, id);
     const remaining = this.subtractAmounts(existing.amount, currentReversed);
     const reverseAmount = input.amount ?? remaining;
 
@@ -355,8 +358,6 @@ export class PaymentsService {
       reversedBy: actor.actorId ?? "system",
       createdAt: nowIso,
     };
-    this.reversals.insert(reversal);
-
     // 6) Payment'ı güncelle.
     const newReversedTotal = this.addAmounts(
       currentReversed,
@@ -369,18 +370,18 @@ export class PaymentsService {
     const newStatus: PaymentRecord["status"] =
       newEffective === "0" ? "reversed" : "partially_reversed";
 
-    this.repo.update(tenantId, id, {
+    const paymentPatch = {
       status: newStatus,
       reversedAmount: newReversedTotal,
       effectiveAmount: newEffective,
       reversedAt: nowIso,
       reversedBy: actor.actorId ?? "system",
       reverseReason: input.reason,
-    });
+    } as const;
 
     // 7) Kasa etkisi: debit.
-    if (input.cashRegisterEffect ?? true) {
-      this.recordKasaEntry(
+    const reversalKasaEntry = input.cashRegisterEffect ?? true
+      ? this.makeKasaEntry(
         tenantId,
         existing,
         "debit",
@@ -392,7 +393,14 @@ export class PaymentsService {
         "payment_reversal",
         nowIso,
         amountCheck.value,
-      );
+      )
+      : null;
+    if (this.repo.usesPersistence()) {
+      await this.repo.persistReversalWithPaymentAndKasa(reversal, paymentPatch, reversalKasaEntry);
+    } else {
+      await this.reversals.persist(reversal);
+      await this.repo.persistedUpdate(tenantId, id, paymentPatch);
+      if (reversalKasaEntry) await this.kasa.persist(reversalKasaEntry);
     }
 
     // 8) Audit.
@@ -420,7 +428,7 @@ export class PaymentsService {
       },
     );
 
-    const updated = this.repo.findById(tenantId, id);
+    const updated = await this.repo.persistedById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-PAYMENT-0001",
@@ -441,7 +449,7 @@ export class PaymentsService {
     actor: ActorContext,
   ): Promise<PaymentReversalListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.reversals.search(tenantId, {
+    const result = await this.reversals.persistedSearch(tenantId, {
       paymentId: filters.paymentId,
       sourceType: filters.sourceType,
       sourceId: filters.sourceId,
@@ -468,7 +476,7 @@ export class PaymentsService {
     actor: ActorContext,
   ): Promise<PaymentReversalRecord | null> {
     this.requireTenantScope(actor, tenantId);
-    return this.reversals.findById(tenantId, reversalId);
+    return this.reversals.persistedById(tenantId, reversalId);
   }
 
   // -------------------------------------------------------------------------
@@ -481,19 +489,19 @@ export class PaymentsService {
     actor: ActorContext,
   ): Promise<PaymentReversalSummary | null> {
     this.requireTenantScope(actor, tenantId);
-    const payment = this.repo.findById(tenantId, paymentId);
+    const payment = await this.repo.persistedById(tenantId, paymentId);
     if (!payment) return null;
-    const totalReversed = this.reversals.sumReversedForPayment(
+    const totalReversed = await this.reversals.persistedSumReversedForPayment(
       tenantId,
       paymentId,
     );
     const remaining = this.subtractAmounts(payment.amount, totalReversed);
-    const items = this.reversals.search(tenantId, {
+    const items = (await this.reversals.persistedSearch(tenantId, {
       paymentId,
       limit: 1000,
       offset: 0,
       sort: "desc",
-    }).items;
+    })).items;
     const lastReversalAt = items[0]?.reversedAt ?? null;
     return {
       paymentId,
@@ -560,7 +568,7 @@ export class PaymentsService {
     return match ?? "other";
   }
 
-  private recordKasaEntry(
+  private makeKasaEntry(
     tenantId: string,
     payment: PaymentRecord,
     direction: "credit" | "debit",
@@ -570,14 +578,14 @@ export class PaymentsService {
     referenceType: KasaEntryRecord["referenceType"],
     occurredAt: string,
     overrideAmount?: string,
-  ): void {
+  ): KasaEntryRecord | null {
     const account = paymentMethodToKasaAccount(payment.method);
     const rawAmount = overrideAmount ?? payment.amount;
     const signed = this.toScaledBigInt(rawAmount);
-    if (signed === null) return;
+    if (signed === null) return null;
     const finalScaled = direction === "credit" ? signed : -signed;
     const id = this.kasa.nextId(tenantId);
-    this.kasa.insert({
+    return {
       id,
       tenantId,
       account,
@@ -591,7 +599,7 @@ export class PaymentsService {
       occurredAt,
       actorId,
       note: null,
-    });
+    };
   }
 
   private toScaledBigInt(value: string): bigint | null {

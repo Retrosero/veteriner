@@ -112,7 +112,7 @@ export class VaccineCardsService {
   ): Promise<VaccineCard> {
     this.requireTenantScope(actor, tenantId);
 
-    const setting = this.settings.getOrDefault(tenantId, true);
+    const setting = await this.settings.persistedGetOrDefault(tenantId, true);
     if (!setting.portalVaccineCardEnabled) {
       throw new DomainError({
         errorCode: "VET-AUTHZ-0002",
@@ -153,7 +153,7 @@ export class VaccineCardsService {
     actor: ActorContext,
   ): Promise<TenantVaccineCardPortalSetting> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.settings.getOrDefault(tenantId, true);
+    const rec = await this.settings.persistedGetOrDefault(tenantId, true);
     return this.settings.toPublic(rec);
   }
 
@@ -163,7 +163,7 @@ export class VaccineCardsService {
     actor: ActorContext,
   ): Promise<TenantVaccineCardPortalSetting> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.settings.upsert({
+    const rec = await this.settings.persistedUpsert({
       tenantId,
       portalVaccineCardEnabled: input.portalVaccineCardEnabled,
     });
@@ -260,7 +260,7 @@ export class VaccineCardsService {
       notStarted: entries.filter((e) => e.status === "not_started").length,
     };
 
-    const setting = this.settings.getOrDefault(tenantId, true);
+    const setting = await this.settings.persistedGetOrDefault(tenantId, true);
 
     return {
       patientId: patient.id,

@@ -70,7 +70,7 @@ export class OwnershipHistoryService {
   ): Promise<Ownership> {
     this.requireTenantScope(actor, tenantId);
 
-    const patient = this.requirePatient(tenantId, patientId);
+    const patient = await this.requirePatient(tenantId, patientId);
     if (patient.ownerId !== ownerId) {
       // Patient oluşturulurken farklı bir ownerId verildiyse
       // bütünlük hatası; çağıran taraf (PatientsService) bunu
@@ -80,7 +80,7 @@ export class OwnershipHistoryService {
       );
     }
 
-    const existing = this.repo.findActiveByPatient(tenantId, patientId);
+    const existing = await this.repo.findPersistedActive(tenantId, patientId);
     if (existing) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0006",
@@ -105,7 +105,7 @@ export class OwnershipHistoryService {
       reason: "initial",
       createdBy: actor.actorId,
     });
-    this.repo.insert(record);
+    await this.repo.persist(record);
 
     await this.audit.record({
       eventName: "audit:ownership.create",
@@ -150,7 +150,7 @@ export class OwnershipHistoryService {
   ): Promise<{ closed: Ownership | null; opened: Ownership }> {
     this.requireTenantScope(actor, tenantId);
 
-    const patient = this.requirePatient(tenantId, patientId);
+    const patient = await this.requirePatient(tenantId, patientId);
 
     // Yeni owner aynı tenant'ta mı?
     const newOwner = await this.owners.findById(
@@ -169,7 +169,7 @@ export class OwnershipHistoryService {
       });
     }
 
-    const current = this.repo.findActiveByPatient(tenantId, patientId);
+    const current = await this.repo.findPersistedActive(tenantId, patientId);
     if (!current) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0005",
@@ -248,7 +248,7 @@ export class OwnershipHistoryService {
     }
 
     // 1) Eski aktif kaydı kapat.
-    const closedRecord = this.repo.closeActive(tenantId, patientId, newStart);
+    const closedRecord = await this.repo.closePersistedActive(tenantId, patientId, newStart);
 
     // 2) Yeni kayıt aç.
     const newId = this.repo.nextId(tenantId);
@@ -261,11 +261,11 @@ export class OwnershipHistoryService {
       ...(input.otherNote !== undefined && { otherNote: input.otherNote }),
       createdBy: actor.actorId,
     });
-    this.repo.insert(newRecord);
+    await this.repo.persist(newRecord);
 
     // 3) Patient.ownerId güncellenir (kimlik seviyesi).
     patient.ownerId = input.newOwnerId;
-    this.patients.updateOwner(tenantId, patientId, input.newOwnerId);
+    await this.patients.updatePersistedOwner(tenantId, patientId, input.newOwnerId);
 
     await this.audit.record({
       eventName: "audit:ownership.transfer",
@@ -321,7 +321,7 @@ export class OwnershipHistoryService {
     actor: ActorContext,
   ): Promise<{ items: Ownership[]; total: number }> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.search(tenantId, filters);
+    const result = await this.repo.searchPersisted(tenantId, filters);
     return {
       items: result.items.map((r) => this.toOwnership(r)),
       total: result.total,
@@ -338,12 +338,12 @@ export class OwnershipHistoryService {
     actor: ActorContext,
   ): Promise<Ownership | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findActiveByPatient(tenantId, patientId);
+    const rec = await this.repo.findPersistedActive(tenantId, patientId);
     return rec ? this.toOwnership(rec) : null;
   }
 
-  private requirePatient(tenantId: string, patientId: string): PatientRecord {
-    const patient = this.patients.findById(tenantId, patientId);
+  private async requirePatient(tenantId: string, patientId: string): Promise<PatientRecord> {
+    const patient = await this.patients.findPersistedById(tenantId, patientId);
     if (!patient) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",

@@ -187,7 +187,7 @@ describe("LabOrdersService", () => {
         makeCreateInput(),
         STAFF_A,
       );
-      expect(out.id).toMatch(/^lo-/);
+      expect(out.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
       expect(out.status).toBe("ordered");
       expect(out.labTestCode).toBe("CBC");
       expect(out.labTestName).toBe("Tam kan sayımı");

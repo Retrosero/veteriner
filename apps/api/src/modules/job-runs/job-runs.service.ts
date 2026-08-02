@@ -3,7 +3,9 @@
  * @module apps/api/modules/job-runs/job-runs.service
  *
  * @description GOAL-102 (FAZ-10) background job ve entegrasyon
- * logları iş kuralları.
+ * logları iş kuralları. Worker kayıtları kalıcı Prisma `JobRun`
+ * tablosundan uygulama başlangıcında okunur; API'nin yönetim aksiyonları
+ * için kalıcı yazma adaptörü sonraki uygulama adımında tamamlanacaktır.
  *
  * - `startRun`: yeni bir JobRun kaydı açar. `attempt=1` ve
  *   `status='running'` ile başlar. `correlationId` zorunludur;

@@ -147,9 +147,10 @@ describe("wrapApiRequest", () => {
     expect(out).toBe(SERVER_FAILURE);
     // captureMessage en az 1 kez çağrılmış olmalı.
     expect(captureSpy).toHaveBeenCalled();
-    const [msg, severity] = captureSpy.mock.calls[0]!;
+    const [msg, severity, _context, requestId] = captureSpy.mock.calls[0]!;
     expect(msg).toContain("VET-CLINIC-0001");
     expect(severity).toBe("error");
+    expect(requestId).toBe("req-500-1");
     captureSpy.mockRestore();
   });
 });

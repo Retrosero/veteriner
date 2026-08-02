@@ -77,7 +77,7 @@ describe("OwnersService", () => {
         STAFF_A,
       );
 
-      expect(owner.id).toMatch(/^own-/);
+      expect(owner.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
       expect(owner.tenantId).toBe(TENANT_A);
       expect(owner.phone).toBe("+905321234567");
       expect(owner.firstName).toBe("Ayşe");

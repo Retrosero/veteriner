@@ -20,6 +20,7 @@ import { processHealthJob, type HealthJobPayload } from "../jobs/health-job.js";
 import { logger } from "../logger.js";
 import { getRedisConnection } from "../queues/connection.js";
 import { HEALTH_QUEUE_NAME } from "../queues/health.queue.js";
+import { finishJobRun, startJobRun } from "../observability/job-run-reporter.js";
 
 /**
  * Worker seçenekleri. Sabit kodlanmış: orchestrator bu değerleri
@@ -45,6 +46,16 @@ export function getHealthWorker(): Worker {
       HEALTH_QUEUE_NAME,
       async (job: Job<HealthJobPayload>) => {
         const correlationId = job.id ?? `unknown-${Date.now()}`;
+        const attempt = job.attemptsMade + 1;
+        const maxAttempts = job.opts.attempts ?? 1;
+        const jobRunId = await startJobRun({
+          queueName: HEALTH_QUEUE_NAME,
+          jobName: job.name,
+          jobKey: correlationId,
+          attempt,
+          maxAttempts,
+          input: job.data,
+        });
         const childLogger = logger.child({
           module: "worker",
           action: "health-worker",
@@ -57,9 +68,23 @@ export function getHealthWorker(): Worker {
         );
         try {
           const result = await processHealthJob(job.data);
+          await finishJobRun({
+            id: jobRunId,
+            succeeded: true,
+            attempt,
+            maxAttempts,
+            output: result as unknown as Record<string, unknown>,
+          });
           childLogger.info({ result }, "health job başarılı");
           return result;
         } catch (error) {
+          await finishJobRun({
+            id: jobRunId,
+            succeeded: false,
+            attempt,
+            maxAttempts,
+            error,
+          });
           const reason =
             error instanceof Error ? error.message : "Bilinmeyen hata";
           childLogger.error(

@@ -152,7 +152,7 @@ export class VaccineRemindersService {
     const step = pickStepForApplication(protocol, application.applicationDate);
 
     // 3) Config (tenant override > default).
-    const config = this.resolveConfig(tenantId);
+    const config = await this.resolveConfig(tenantId);
     const scheduledFor = computeScheduledFor({
       application,
       step,
@@ -235,7 +235,7 @@ export class VaccineRemindersService {
     );
     const id = this.repo.nextId(tenantId);
     const now = new Date().toISOString();
-    const result = this.repo.insert({
+    const result = await this.repo.persist({
       id,
       tenantId,
       applicationId: application.id,
@@ -273,7 +273,7 @@ export class VaccineRemindersService {
         scheduledFor,
         nextDueDate,
         locale,
-        daysBeforeDue: this.resolveConfig(tenantId).daysBeforeDue,
+        daysBeforeDue: (await this.resolveConfig(tenantId)).daysBeforeDue,
       },
     );
     return result.record.id;
@@ -294,7 +294,7 @@ export class VaccineRemindersService {
     actor: ActorContext,
   ): Promise<number> {
     this.requireTenantScope(actor, tenantId);
-    const cancelled = this.repo.cancelForApplication(tenantId, applicationId);
+    const cancelled = await this.repo.persistedCancelForApplication(tenantId, applicationId);
     if (cancelled > 0) {
       await this.audit.recordSimple(
         "audit:vaccine.reminder.cancel",
@@ -323,7 +323,7 @@ export class VaccineRemindersService {
     actor: ActorContext,
   ): Promise<number> {
     this.requireTenantScope(actor, tenantId);
-    const cancelled = this.repo.cancelForPatient(tenantId, patientId);
+    const cancelled = await this.repo.persistedCancelForPatient(tenantId, patientId);
     if (cancelled > 0) {
       await this.audit.recordSimple(
         "audit:vaccine.reminder.cancel_patient",
@@ -354,7 +354,7 @@ export class VaccineRemindersService {
     actor: ActorContext,
   ): Promise<number> {
     this.requireTenantScope(actor, tenantId);
-    const moved = this.repo.rescheduleForApplication({
+    const moved = await this.repo.persistedRescheduleForApplication({
       tenantId,
       applicationId,
       newNextDueDate,
@@ -389,7 +389,7 @@ export class VaccineRemindersService {
     failed: number;
     skipped: number;
   }> {
-    const due = this.repo.listDue(now, DUE_BATCH_SIZE);
+    const due = await this.repo.persistedDue(now, DUE_BATCH_SIZE);
     if (due.length === 0) {
       return { processed: 0, sent: 0, failed: 0, skipped: 0 };
     }
@@ -404,7 +404,7 @@ export class VaccineRemindersService {
       // 1) Snapshot'tan uygulama durumunu kontrol et.
       const app = rec.applicationSnapshot;
       if (!app) {
-        this.repo.update(rec.tenantId, rec.id, {
+        await this.repo.persistedUpdate(rec.tenantId, rec.id, {
           attempts: rec.attempts + 1,
           lastError: "missing_snapshot",
         });
@@ -413,7 +413,7 @@ export class VaccineRemindersService {
       }
       if (app.status === "cancelled" || app.status === "amended") {
         // İptal/amend edilmiş uygulamaya hatırlatma gitmez.
-        this.repo.update(rec.tenantId, rec.id, {
+        await this.repo.persistedUpdate(rec.tenantId, rec.id, {
           status: "cancelled",
           lastError: `application_status_${app.status}`,
         });
@@ -428,7 +428,7 @@ export class VaccineRemindersService {
         systemActor,
       );
       if (!patient) {
-        this.repo.update(rec.tenantId, rec.id, {
+        await this.repo.persistedUpdate(rec.tenantId, rec.id, {
           status: "failed",
           lastError: "patient_not_found",
           attempts: rec.attempts + 1,
@@ -442,7 +442,7 @@ export class VaccineRemindersService {
         systemActor,
       );
       if (!owner) {
-        this.repo.update(rec.tenantId, rec.id, {
+        await this.repo.persistedUpdate(rec.tenantId, rec.id, {
           status: "failed",
           lastError: "owner_not_found",
           attempts: rec.attempts + 1,
@@ -456,7 +456,7 @@ export class VaccineRemindersService {
       const notifChannel: NotificationChannel =
         rec.channel === "in_app" ? "in_app" : rec.channel;
       if (!this.consent.canSend(owner.id, notifChannel, "vaccine_reminder")) {
-        this.repo.update(rec.tenantId, rec.id, {
+        await this.repo.persistedUpdate(rec.tenantId, rec.id, {
           status: "cancelled",
           lastError: "opted_out",
           attempts: rec.attempts + 1,
@@ -498,7 +498,7 @@ export class VaccineRemindersService {
           systemActor,
         );
         if (notification.status === "sent") {
-          this.repo.update(rec.tenantId, rec.id, {
+          await this.repo.persistedUpdate(rec.tenantId, rec.id, {
             status: "sent",
             attempts: rec.attempts + 1,
             sentAt: notification.sentAt ?? new Date().toISOString(),
@@ -506,14 +506,14 @@ export class VaccineRemindersService {
           });
           sent += 1;
         } else if (notification.status === "failed") {
-          this.repo.update(rec.tenantId, rec.id, {
+          await this.repo.persistedUpdate(rec.tenantId, rec.id, {
             status: "failed",
             attempts: rec.attempts + 1,
             lastError: notification.lastError ?? "send_failed",
           });
           failed += 1;
         } else if (notification.status === "opted_out") {
-          this.repo.update(rec.tenantId, rec.id, {
+          await this.repo.persistedUpdate(rec.tenantId, rec.id, {
             status: "cancelled",
             attempts: rec.attempts + 1,
             lastError: "opted_out",
@@ -521,7 +521,7 @@ export class VaccineRemindersService {
           skipped += 1;
         } else {
           // queued / sending → schedule'a bırak (job tekrar çalışacak).
-          this.repo.update(rec.tenantId, rec.id, {
+          await this.repo.persistedUpdate(rec.tenantId, rec.id, {
             attempts: rec.attempts + 1,
             lastError: `notification_${notification.status}`,
           });
@@ -529,7 +529,7 @@ export class VaccineRemindersService {
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        this.repo.update(rec.tenantId, rec.id, {
+        await this.repo.persistedUpdate(rec.tenantId, rec.id, {
           status: "failed",
           attempts: rec.attempts + 1,
           lastError: message,
@@ -576,13 +576,13 @@ export class VaccineRemindersService {
     actor: ActorContext,
   ): Promise<{ items: VaccineReminder[]; total: number }> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.listForPatient(
+    const result = await this.repo.persistedListForPatient(
       tenantId,
       patientId,
       {
-        protocolId: query.protocolId,
-        applicationId: query.applicationId,
-        status: query.status,
+        ...(query.protocolId ? { protocolId: query.protocolId } : {}),
+        ...(query.applicationId ? { applicationId: query.applicationId } : {}),
+        ...(query.status ? { status: query.status } : {}),
       },
       query.limit,
       query.offset,
@@ -640,7 +640,7 @@ export class VaccineRemindersService {
       });
     }
     const now = new Date().toISOString();
-    this.repo.upsertTenantConfig({
+    await this.repo.persistedUpsertTenantConfig({
       tenantId,
       daysBeforeDue: input.daysBeforeDue,
       channels: input.channels,
@@ -669,8 +669,8 @@ export class VaccineRemindersService {
    * Tenant config'ini çözer. Override varsa onu, yoksa default'u
    * döner.
    */
-  private resolveConfig(tenantId: string): VaccineReminderConfig {
-    const cfg = this.repo.getTenantConfig(tenantId);
+  private async resolveConfig(tenantId: string): Promise<VaccineReminderConfig> {
+    const cfg = await this.repo.persistedGetTenantConfig(tenantId);
     if (cfg) {
       return {
         daysBeforeDue: cfg.daysBeforeDue,

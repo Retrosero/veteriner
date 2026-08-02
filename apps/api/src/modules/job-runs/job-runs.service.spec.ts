@@ -111,7 +111,9 @@ describe("JobRunsService", () => {
   describe("startRun", () => {
     it("yeni run oluşturur", () => {
       const out = service.startRun(makeStartInput());
-      expect(out.id).toMatch(/^jr-\d{10}$/);
+      expect(out.id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+      );
       expect(out.status).toBe("running");
       expect(out.attempt).toBe(1);
       expect(out.finishedAt).toBeNull();

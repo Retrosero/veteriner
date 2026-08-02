@@ -191,6 +191,9 @@ export class PurchaseOrdersService {
 
     // 4) Total amount'u header'a yaz.
     this.repo.update(tenantId, orderId, { totalAmount, updatedAt: nowIso });
+    const persistedHeader = this.repo.findById(tenantId, orderId);
+    if (!persistedHeader) throw new Error("Purchase order oluşturulamadı");
+    await this.repo.persistOrderWithLines(persistedHeader, lineRecords);
 
     // 5) Audit.
     await this.audit.recordSimple(
@@ -234,7 +237,7 @@ export class PurchaseOrdersService {
     actor: ActorContext,
   ): Promise<PurchaseOrderListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.search(tenantId, {
+    const result = await this.repo.persistedSearch(tenantId, {
       status: filters.status,
       supplierId: filters.supplierId,
       branchId: filters.branchId,
@@ -259,9 +262,9 @@ export class PurchaseOrdersService {
     actor: ActorContext,
   ): Promise<PurchaseOrderDetail | null> {
     this.requireTenantScope(actor, tenantId);
-    const header = this.repo.findById(tenantId, id);
+    const header = await this.repo.persistedById(tenantId, id);
     if (!header) return null;
-    const lines = this.repo.listLinesByOrder(tenantId, id);
+    const lines = await this.repo.persistedLines(tenantId, id);
     return {
       order: toPurchaseOrder(header),
       lines: lines.map((l) => toPurchaseOrderLine(l)),
@@ -279,7 +282,7 @@ export class PurchaseOrdersService {
     actor: ActorContext,
   ): Promise<PurchaseOrderDetail> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-PURCHASE_ORDER-0001",
@@ -324,11 +327,13 @@ export class PurchaseOrdersService {
     }
 
     const nowIso = new Date().toISOString();
+    let replacementLines: PurchaseOrderLineRecord[] | null = null;
 
     // Satırlar değişiyorsa mevcut satırları silip yeniden oluştur.
     if (input.lines !== undefined) {
+      replacementLines = [];
       // Eski satırları temizle.
-      const oldLines = this.repo.listLinesByOrder(tenantId, id);
+      const oldLines = await this.repo.persistedLines(tenantId, id);
       for (const old of oldLines) {
         // Repo'da deleteLine yok; service reset için yeni bir
         // helper yok. Burada basitçe listeleri sıfırlıyoruz:
@@ -346,7 +351,7 @@ export class PurchaseOrdersService {
         // bağlandığında değişecek (lot/SKT girişi sonrası
         // satır silinemez; ondan önce draft'ta satır silme
         // serbest).
-        this.repo.updateLine(tenantId, old.id, {
+        await this.repo.persistedUpdateLine(tenantId, old.id, {
           updatedAt: nowIso,
         });
       }
@@ -381,6 +386,7 @@ export class PurchaseOrdersService {
           updatedAt: nowIso,
         };
         this.repo.insertLine(lineRec);
+        replacementLines.push(lineRec);
         const sum = addDecimalString(totalAmount, lineTotal);
         if (sum === null) {
           throw new DomainError({
@@ -391,42 +397,43 @@ export class PurchaseOrdersService {
         }
         totalAmount = sum;
       }
-      this.repo.update(tenantId, id, { totalAmount, updatedAt: nowIso });
+      await this.repo.persistedUpdate(tenantId, id, { totalAmount, updatedAt: nowIso });
+      await this.repo.persistedReplaceLines(tenantId, id, replacementLines);
     }
 
     // Header alanları.
     if (input.supplierId !== undefined) {
-      this.repo.update(tenantId, id, {
+      await this.repo.persistedUpdate(tenantId, id, {
         supplierId: input.supplierId,
         updatedAt: nowIso,
       });
     }
     if (input.branchId !== undefined) {
-      this.repo.update(tenantId, id, {
+      await this.repo.persistedUpdate(tenantId, id, {
         branchId: input.branchId,
         updatedAt: nowIso,
       });
     }
     if (input.currency !== undefined) {
-      this.repo.update(tenantId, id, {
+      await this.repo.persistedUpdate(tenantId, id, {
         currency: input.currency,
         updatedAt: nowIso,
       });
     }
     if (input.expectedAt !== undefined) {
-      this.repo.update(tenantId, id, {
+      await this.repo.persistedUpdate(tenantId, id, {
         expectedAt: input.expectedAt,
         updatedAt: nowIso,
       });
     }
     if (input.notes !== undefined) {
-      this.repo.update(tenantId, id, {
+      await this.repo.persistedUpdate(tenantId, id, {
         notes: input.notes,
         updatedAt: nowIso,
       });
     }
 
-    const updated = this.repo.findById(tenantId, id);
+    const updated = await this.repo.persistedById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-PURCHASE_ORDER-0001",
@@ -449,9 +456,9 @@ export class PurchaseOrdersService {
 
     return {
       order: toPurchaseOrder(updated),
-      lines: this.repo
-        .listLinesByOrder(tenantId, id)
-        .map((l) => toPurchaseOrderLine(l)),
+      lines: (await this.repo.persistedLines(tenantId, id)).map((l) =>
+        toPurchaseOrderLine(l),
+      ),
     };
   }
 
@@ -465,7 +472,7 @@ export class PurchaseOrdersService {
     actor: ActorContext,
   ): Promise<PurchaseOrderDetail> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-PURCHASE_ORDER-0001",
@@ -485,7 +492,7 @@ export class PurchaseOrdersService {
     }
 
     const nowIso = new Date().toISOString();
-    this.repo.update(tenantId, id, {
+    await this.repo.persistedUpdate(tenantId, id, {
       status: "approved",
       approvedAt: nowIso,
       approvedBy: actor.actorId ?? "system",
@@ -505,7 +512,7 @@ export class PurchaseOrdersService {
       },
     );
 
-    const updated = this.repo.findById(tenantId, id);
+    const updated = await this.repo.persistedById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-PURCHASE_ORDER-0001",
@@ -515,9 +522,9 @@ export class PurchaseOrdersService {
     }
     return {
       order: toPurchaseOrder(updated),
-      lines: this.repo
-        .listLinesByOrder(tenantId, id)
-        .map((l) => toPurchaseOrderLine(l)),
+      lines: (await this.repo.persistedLines(tenantId, id)).map((l) =>
+        toPurchaseOrderLine(l),
+      ),
     };
   }
 
@@ -532,7 +539,7 @@ export class PurchaseOrdersService {
     actor: ActorContext,
   ): Promise<PurchaseOrderDetail> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-PURCHASE_ORDER-0001",
@@ -552,7 +559,7 @@ export class PurchaseOrdersService {
     }
 
     const nowIso = new Date().toISOString();
-    const lines = this.repo.listLinesByOrder(tenantId, id);
+    const lines = await this.repo.persistedLines(tenantId, id);
     const lineById = new Map<string, PurchaseOrderLineRecord>();
     for (const l of lines) lineById.set(l.id, l);
 
@@ -606,7 +613,7 @@ export class PurchaseOrdersService {
         });
       }
 
-      this.repo.updateLine(tenantId, line.id, {
+      await this.repo.persistedUpdateLine(tenantId, line.id, {
         receivedQuantity: newReceived,
         unitCost: recv.unitCost,
         notes: recv.notes ?? line.notes,
@@ -618,7 +625,7 @@ export class PurchaseOrdersService {
 
     // Tüm satırları kontrol et (yalnızca input'ta olmayanlar da
     // dahil); herhangi biri hâlâ eksikse `partial` olur.
-    const finalLines = this.repo.listLinesByOrder(tenantId, id);
+    const finalLines = await this.repo.persistedLines(tenantId, id);
     for (const l of finalLines) {
       const c = compareDecimalString(l.receivedQuantity, l.orderedQuantity);
       if (c === null || c < 0) {
@@ -628,7 +635,7 @@ export class PurchaseOrdersService {
     }
 
     const newStatus = allFullyReceived ? "received" : "partial";
-    this.repo.update(tenantId, id, {
+    await this.repo.persistedUpdate(tenantId, id, {
       status: newStatus,
       receivedAt: nowIso,
       receivedBy: actor.actorId ?? "system",
@@ -648,7 +655,7 @@ export class PurchaseOrdersService {
       },
     );
 
-    const updated = this.repo.findById(tenantId, id);
+    const updated = await this.repo.persistedById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-PURCHASE_ORDER-0001",
@@ -673,7 +680,7 @@ export class PurchaseOrdersService {
     actor: ActorContext,
   ): Promise<PurchaseOrderDetail> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-PURCHASE_ORDER-0001",
@@ -697,7 +704,7 @@ export class PurchaseOrdersService {
     }
 
     const nowIso = new Date().toISOString();
-    this.repo.update(tenantId, id, {
+    await this.repo.persistedUpdate(tenantId, id, {
       status: "cancelled",
       cancelledAt: nowIso,
       cancelledBy: actor.actorId ?? "system",
@@ -718,7 +725,7 @@ export class PurchaseOrdersService {
       },
     );
 
-    const updated = this.repo.findById(tenantId, id);
+    const updated = await this.repo.persistedById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-PURCHASE_ORDER-0001",
@@ -728,9 +735,9 @@ export class PurchaseOrdersService {
     }
     return {
       order: toPurchaseOrder(updated),
-      lines: this.repo
-        .listLinesByOrder(tenantId, id)
-        .map((l) => toPurchaseOrderLine(l)),
+      lines: (await this.repo.persistedLines(tenantId, id)).map((l) =>
+        toPurchaseOrderLine(l),
+      ),
     };
   }
 

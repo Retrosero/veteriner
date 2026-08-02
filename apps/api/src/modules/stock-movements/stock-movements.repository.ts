@@ -23,7 +23,10 @@
  * @since GOAL-063 (FAZ-6) stok hareketleri ve sayım core
  */
 
-import { Injectable } from "@nestjs/common";
+import { Injectable, Optional } from "@nestjs/common";
+import type { Prisma, StockMovementRecord as DbMovement } from "@prisma/client";
+import { randomUUID } from "node:crypto";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
 import type { StockMovementRecord } from "../../common/stock-movements/stock-movement.types.js";
 import type { StockMovementType } from "@vetniva/contracts";
@@ -75,14 +78,23 @@ export class StockMovementsRepository {
   private readonly byReversal = new Map<string, Set<string>>();
   /** tenantId → next sequence. */
   private readonly counters = new Map<string, number>();
+  public constructor(@Optional() private readonly prisma?: PrismaService) {}
 
   /* ---------- ID üretimi ---------- */
 
   public nextId(tenantId: string): string {
+    if (this.prisma) return `stmv-${tenantId.slice(0, 8)}-${randomUUID()}`;
     const n = (this.counters.get(tenantId) ?? 0) + 1;
     this.counters.set(tenantId, n);
     return `stmv-${tenantId.slice(0, 8)}-${String(n).padStart(8, "0")}`;
   }
+
+  /** Append-only hareketi tenant RLS bağlamında kaydeder. */
+  public async persist(rec: StockMovementRecord): Promise<StockMovementRecord> { if(!this.prisma)return this.insert(rec);const row=await this.inTenant(rec.tenantId,(tx)=>tx.stockMovementRecord.create({data:{...rec,occurredAt:new Date(rec.occurredAt),createdAt:new Date(rec.createdAt)}}));this.insert(rec);return this.map(row); }
+  public async persistedById(tenantId:string,id:string):Promise<StockMovementRecord|null>{if(!this.prisma)return this.findById(tenantId,id);const row=await this.inTenant(tenantId,(tx)=>tx.stockMovementRecord.findFirst({where:{tenantId,id}}));return row?this.map(row):null;}
+  public async persistedByReversal(tenantId:string,reversesMovementId:string):Promise<StockMovementRecord[]>{if(!this.prisma)return this.listByReversal(tenantId,reversesMovementId);const rows=await this.inTenant(tenantId,(tx)=>tx.stockMovementRecord.findMany({where:{tenantId,reversesMovementId}}));return rows.map(r=>this.map(r));}
+  public async persistedSearch(tenantId:string,f:StockMovementSearchFilters):Promise<{items:StockMovementRecord[];total:number}>{if(!this.prisma)return this.search(tenantId,f);const where:Prisma.StockMovementRecordWhereInput={tenantId,...(f.productId?{productId:f.productId}:{}),...(f.lotId?{lotId:f.lotId}:{}),...(f.type?{type:f.type}:{}),...(f.types?.length?{type:{in:f.types}}:{}),...(f.sourceType?{sourceType:f.sourceType}:{}),...(f.sourceId?{sourceId:f.sourceId}:{}),...(f.occurredFrom||f.occurredTo?{occurredAt:{...(f.occurredFrom?{gte:new Date(f.occurredFrom)}:{}),...(f.occurredTo?{lte:new Date(f.occurredTo)}:{})}}:{}),...(f.search?{OR:[{notes:{contains:f.search,mode:"insensitive"}},{reason:{contains:f.search,mode:"insensitive"}}]}:{})};const [rows,total]=await this.inTenant(tenantId,(tx)=>Promise.all([tx.stockMovementRecord.findMany({where,orderBy:{occurredAt:"desc"},skip:f.offset,take:f.limit}),tx.stockMovementRecord.count({where})]));return{items:rows.map(r=>this.map(r)),total};}
+  public async persistedUpdate(tenantId:string,id:string,p:StockMovementPatch):Promise<StockMovementRecord|null>{if(!this.prisma)return this.update(tenantId,id,p);const data:Prisma.StockMovementRecordUpdateManyMutationInput={...(p.notes!==undefined?{notes:p.notes}:{}),...(p.reason!==undefined?{reason:p.reason}:{}),...(p.unitCost!==undefined?{unitCost:p.unitCost}:{}),...(p.unitPrice!==undefined?{unitPrice:p.unitPrice}:{})};const out=await this.inTenant(tenantId,(tx)=>tx.stockMovementRecord.updateMany({where:{tenantId,id},data}));return out.count?this.persistedById(tenantId,id):null;}
 
   /* ---------- Insert ---------- */
 
@@ -219,4 +231,6 @@ export class StockMovementsRepository {
     }
     set.add(id);
   }
+  private map(row:DbMovement):StockMovementRecord{return{...row,type:row.type as StockMovementRecord["type"],occurredAt:row.occurredAt.toISOString(),createdAt:row.createdAt.toISOString()};}
+  private async inTenant<T>(tenantId:string,callback:(tx:Prisma.TransactionClient)=>Promise<T>):Promise<T>{if(!this.prisma)throw new Error("Prisma bağlantısı bulunamadı");return this.prisma.$transaction(async tx=>{await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;return callback(tx);});}
 }

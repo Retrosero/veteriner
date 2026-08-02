@@ -1,10 +1,10 @@
 /**
  * @file ErrorEvent repository (in-memory).
  * @module apps/api/modules/error-events/error-events.repository
- * @description GOAL-100 (FAZ-10) merkezi backend hata kayıt
- * deposu. In-memory Map'te tutulur; DB migration sonraya
- * bırakıldı. Tenant izolasyonu YOKTUR (SUPERADMIN cross-tenant
- * görür); ancak tenant filtresi ile sorgulanabilir.
+ * @description GOAL-100 (FAZ-10) merkezi backend hata kayıt deposu.
+ * İzole birim testleri için in-memory Map sözleşmesi korunur; uygulama
+ * çalışma zamanında aggregate kayıtlar ayrıca Prisma üzerinden kalıcı,
+ * RLS korumalı PostgreSQL tablosuna yazılır.
  *
  * Davranış:
  * - `recordError` aynı `fingerprint` için mevcut kayıt varsa
@@ -12,8 +12,10 @@
  *   `context` günceller; `firstSeenAt` ilk oluşturulduğunda
  *   sabitlenir. `status` ve `assignedToUserId` mevcut değerleri
  *   korunur (otomatik terfi sadece `resolved → reopened`).
- * - `fingerprint` repo tarafından hesaplanmaz; servis
- *   katmanında üretilir.
+ * - `fingerprint` repo tarafından hesaplanmaz; servis katmanında üretilir.
+ * - `persistSnapshot` tenant kayıtlarını transaction-yerel tenant RLS
+ *   bağlamında, tenant'sız sistem kayıtlarını daraltılmış system-write
+ *   bağlamında yazar.
  *
  * GOAL-103 ile birlikte eklenen yapı:
  * - Status geçiş logu: `transitionsByFingerprint` Map'i
@@ -35,9 +37,12 @@
  * @updated GOAL-104 (FAZ-10) hata atama ve çözüm notları core
  */
 
-import { Injectable } from "@nestjs/common";
+import { randomUUID } from "node:crypto";
+
+import { Injectable, OnModuleInit } from "@nestjs/common";
 
 import { UNASSIGNED } from "../../common/error-events/error-event.types.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
 import type {
   ErrorEventAssignmentRecordInternal,
@@ -47,6 +52,7 @@ import type {
   ErrorEventStatusTransitionRecord,
   ErrorEventSupportLinkRecord,
 } from "../../common/error-events/error-event.types.js";
+import type { ErrorEvent as PrismaErrorEvent, Prisma } from "@prisma/client";
 import type {
   ErrorEventCountry,
   ErrorEventModule,
@@ -119,10 +125,10 @@ export interface ErrorEventAssignmentCreate {
 }
 
 @Injectable()
-export class ErrorEventsRepository {
+export class ErrorEventsRepository implements OnModuleInit {
   /** Key: id → error event. */
   private readonly byId = new Map<string, ErrorEventRecord>();
-  /** Fingerprint → id (sık karşılaşılan hataların hızlı tespiti). */
+  /** Tenant kapsamı + fingerprint → id (cross-tenant birleşmeyi engeller). */
   private readonly byFingerprint = new Map<string, string>();
   /** Fingerprint → status transition listesi (append-only). */
   private readonly transitionsByFingerprint = new Map<
@@ -151,9 +157,37 @@ export class ErrorEventsRepository {
   private readonly supportLinkCounter = { n: 0 };
   private readonly assignmentCounter = { n: 0 };
 
+  /**
+   * Prisma yalnız uygulama çalışma zamanında enjekte edilir. Bellek içi
+   * adapter, izole birim testlerinin mevcut sözleşmesini korur; production
+   * kayıtları ayrıca RLS korumalı PostgreSQL'e yazılır.
+   */
+  public constructor(private readonly prisma?: PrismaService) {}
+
+  /**
+   * Uygulama yeniden başlatıldığında kalıcı aggregate'leri bellekteki hızlı
+   * sorgu indeksine alır. Bu global teknik servis yalnızca SUPERADMIN
+   * görünümünün kullandığı hata merkezini hydrate eder; tenant endpoint'ine
+   * doğrudan veri açmaz.
+   */
+  public async onModuleInit(): Promise<void> {
+    if (!this.prisma) return;
+    const rows = await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'true', true)`;
+      return tx.errorEvent.findMany({ orderBy: { lastSeenAt: "asc" } });
+    });
+    for (const row of rows) {
+      const record = this.fromPersistenceRecord(row);
+      this.byId.set(record.id, record);
+      this.byFingerprint.set(
+        this.fingerprintScopeKey(record.tenantId, record.fingerprint),
+        record.id,
+      );
+    }
+  }
+
   public nextId(): string {
-    this.counter.n += 1;
-    return `err-${String(this.counter.n).padStart(10, "0")}`;
+    return randomUUID();
   }
 
   public nextTransitionId(): string {
@@ -204,7 +238,11 @@ export class ErrorEventsRepository {
       | "assignedToUserId"
     >;
   }): ErrorEventRecord {
-    const existingId = this.byFingerprint.get(args.fingerprint);
+    const scopeKey = this.fingerprintScopeKey(
+      args.record.tenantId,
+      args.fingerprint,
+    );
+    const existingId = this.byFingerprint.get(scopeKey);
     if (existingId) {
       const existing = this.byId.get(existingId);
       if (existing) {
@@ -238,18 +276,163 @@ export class ErrorEventsRepository {
       assignedToUserId: null,
     };
     this.byId.set(id, rec);
-    this.byFingerprint.set(args.fingerprint, id);
+    this.byFingerprint.set(scopeKey, id);
     return rec;
+  }
+
+  /**
+   * Bellek içi aggregate'in kalıcı kopyasını yazar. Exception filter ana
+   * yanıt akışını engellememek için çağıran taraf bu Promise'i best-effort
+   * olarak ele alır. Tenant kayıtlarında tenant-local RLS, sistem
+   * kayıtlarında daraltılmış `app.system_write` bağlamı kurulur.
+   *
+   * @param record PII maskelenmiş ErrorEvent aggregate kaydı.
+   */
+  public async persistSnapshot(record: ErrorEventRecord): Promise<void> {
+    if (!this.prisma) return;
+    const write = async (tx: Prisma.TransactionClient): Promise<void> => {
+      const existing = await tx.errorEvent.findFirst({
+        where: {
+          tenantId: record.tenantId,
+          fingerprint: record.fingerprint,
+        },
+        select: { id: true },
+      });
+      const data = this.toPersistenceData(record);
+      if (existing) {
+        await tx.errorEvent.update({ where: { id: existing.id }, data });
+        return;
+      }
+      try {
+        await tx.errorEvent.create({ data: { id: record.id, ...data } });
+      } catch (error) {
+        // Aynı fingerprint için paralel iki exception geldiğinde ilk create
+        // unique index'i kazanır. İkinci yazıcı yalnız gerçekten oluşmuş
+        // aggregate'i güncelleyebilir; başka DB hataları aynen yükseltilir.
+        const concurrent = await tx.errorEvent.findFirst({
+          where: {
+            tenantId: record.tenantId,
+            fingerprint: record.fingerprint,
+          },
+          select: { id: true },
+        });
+        if (!concurrent) throw error;
+        await tx.errorEvent.update({ where: { id: concurrent.id }, data });
+      }
+    };
+
+    if (record.tenantId) {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT set_config('app.tenant_id', ${record.tenantId}, true)`;
+        await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'false', true)`;
+        await write(tx);
+      });
+      return;
+    }
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'false', true)`;
+      await tx.$executeRaw`SELECT set_config('app.system_write', 'true', true)`;
+      await write(tx);
+    });
+  }
+
+  /** ErrorEventRecord'u Prisma create/update payload'ına dönüştürür. */
+  private toPersistenceData(
+    record: ErrorEventRecord,
+  ): Prisma.ErrorEventUncheckedCreateInput {
+    return {
+      tenantId: record.tenantId,
+      branchId: record.branchId,
+      userId: record.userId,
+      requestId: record.requestId,
+      actorType: record.actorType,
+      module: record.module,
+      route: record.route,
+      release: record.release,
+      severity: record.severity,
+      fingerprint: record.fingerprint,
+      errorCode: record.errorCode,
+      message: record.message,
+      statusCode: record.statusCode,
+      stack: record.stack,
+      context: record.context as Prisma.InputJsonValue,
+      country: record.country,
+      occurredAt: new Date(record.occurredAt),
+      firstSeenAt: new Date(record.firstSeenAt),
+      lastSeenAt: new Date(record.lastSeenAt),
+      occurrenceCount: record.occurrenceCount,
+      status: record.status,
+      assignedToUserId: record.assignedToUserId,
+    };
+  }
+
+  /** PostgreSQL satırını in-memory aggregate sözleşmesine dönüştürür. */
+  private fromPersistenceRecord(row: PrismaErrorEvent): ErrorEventRecord {
+    return {
+      id: row.id,
+      requestId: row.requestId,
+      tenantId: row.tenantId,
+      branchId: row.branchId,
+      userId: row.userId,
+      actorType: row.actorType as ErrorEventActorType,
+      module: row.module as ErrorEventModule,
+      route: row.route,
+      release: row.release,
+      severity: row.severity as ErrorSeverity,
+      fingerprint: row.fingerprint,
+      errorCode: row.errorCode,
+      message: row.message,
+      statusCode: row.statusCode,
+      stack: row.stack,
+      context: this.toContextRecord(row.context),
+      country: row.country as ErrorEventCountry,
+      occurredAt: row.occurredAt.toISOString(),
+      firstSeenAt: row.firstSeenAt.toISOString(),
+      lastSeenAt: row.lastSeenAt.toISOString(),
+      occurrenceCount: row.occurrenceCount,
+      status: row.status as ErrorEventStatus,
+      assignedToUserId: row.assignedToUserId,
+    };
+  }
+
+  /** JSON context'in yalnız düz nesne biçimindeki değerini kabul eder. */
+  private toContextRecord(value: Prisma.JsonValue): Record<string, unknown> {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      return value;
+    }
+    return {};
   }
 
   public findById(id: string): ErrorEventRecord | null {
     return this.byId.get(id) ?? null;
   }
 
-  public findByFingerprint(fingerprint: string): ErrorEventRecord | null {
-    const id = this.byFingerprint.get(fingerprint);
-    if (!id) return null;
-    return this.byId.get(id) ?? null;
+  public findByFingerprint(
+    fingerprint: string,
+    tenantId?: string | null,
+  ): ErrorEventRecord | null {
+    if (tenantId !== undefined) {
+      const id = this.byFingerprint.get(
+        this.fingerprintScopeKey(tenantId, fingerprint),
+      );
+      return id ? (this.byId.get(id) ?? null) : null;
+    }
+    // SUPERADMIN fingerprint görünümü tüm tenant'ları kapsayabilir. Bu eski
+    // imza için deterministik ilk aggregate'i döndürür; tenant bazlı yazma
+    // yolları mutlaka yukarıdaki tenantId argümanını kullanır.
+    return (
+      [...this.byId.values()].find(
+        (record) => record.fingerprint === fingerprint,
+      ) ?? null
+    );
+  }
+
+  /** Null sistem tenant'ı da dahil olmak üzere güvenli Map anahtarı üretir. */
+  private fingerprintScopeKey(
+    tenantId: string | null,
+    fingerprint: string,
+  ): string {
+    return `${tenantId ?? "system"}:${fingerprint}`;
   }
 
   /**
@@ -380,9 +563,10 @@ export class ErrorEventsRepository {
       reason: update.reason,
       occurredAt: new Date().toISOString(),
     };
-    const list = this.transitionsByFingerprint.get(rec.fingerprint) ?? [];
+    const scopeKey = this.fingerprintScopeKey(rec.tenantId, rec.fingerprint);
+    const list = this.transitionsByFingerprint.get(scopeKey) ?? [];
     list.push(transition);
-    this.transitionsByFingerprint.set(rec.fingerprint, list);
+    this.transitionsByFingerprint.set(scopeKey, list);
     this.byId.set(rec.id, rec);
     return { record: rec, transition };
   }
@@ -394,8 +578,13 @@ export class ErrorEventsRepository {
    */
   public listTransitionsByFingerprint(
     fingerprint: string,
+    tenantId: string | null,
   ): ErrorEventStatusTransitionRecord[] {
-    return [...(this.transitionsByFingerprint.get(fingerprint) ?? [])];
+    return [
+      ...(this.transitionsByFingerprint.get(
+        this.fingerprintScopeKey(tenantId, fingerprint),
+      ) ?? []),
+    ];
   }
 
   /* ------------------------------------------------------------------------
@@ -408,7 +597,10 @@ export class ErrorEventsRepository {
    * Sıralama: createdAt artan. UI tarafı desc ile gösterir.
    * @param input
    */
-  public addNote(input: ErrorEventNoteCreate): ErrorEventNoteRecord {
+  public addNote(
+    input: ErrorEventNoteCreate,
+    tenantId: string | null,
+  ): ErrorEventNoteRecord {
     const rec: ErrorEventNoteRecord = {
       id: this.nextNoteId(),
       fingerprint: input.fingerprint,
@@ -418,9 +610,10 @@ export class ErrorEventsRepository {
       visibility: input.visibility,
       createdAt: new Date().toISOString(),
     };
-    const list = this.notesByFingerprint.get(input.fingerprint) ?? [];
+    const scopeKey = this.fingerprintScopeKey(tenantId, input.fingerprint);
+    const list = this.notesByFingerprint.get(scopeKey) ?? [];
     list.push(rec);
-    this.notesByFingerprint.set(input.fingerprint, list);
+    this.notesByFingerprint.set(scopeKey, list);
     return rec;
   }
 
@@ -428,8 +621,15 @@ export class ErrorEventsRepository {
    * Bir fingerprint'in tüm notlarını createdAt artan sırada döner.
    * @param fingerprint
    */
-  public listNotesByFingerprint(fingerprint: string): ErrorEventNoteRecord[] {
-    return [...(this.notesByFingerprint.get(fingerprint) ?? [])];
+  public listNotesByFingerprint(
+    fingerprint: string,
+    tenantId: string | null,
+  ): ErrorEventNoteRecord[] {
+    return [
+      ...(this.notesByFingerprint.get(
+        this.fingerprintScopeKey(tenantId, fingerprint),
+      ) ?? []),
+    ];
   }
 
   /**
@@ -456,6 +656,7 @@ export class ErrorEventsRepository {
    */
   public addSupportLink(
     input: ErrorEventSupportLinkCreate,
+    tenantId: string | null,
   ): ErrorEventSupportLinkRecord {
     const rec: ErrorEventSupportLinkRecord = {
       id: this.nextSupportLinkId(),
@@ -468,9 +669,10 @@ export class ErrorEventsRepository {
       createdByType: input.createdByType,
       createdAt: new Date().toISOString(),
     };
-    const list = this.supportLinksByFingerprint.get(input.fingerprint) ?? [];
+    const scopeKey = this.fingerprintScopeKey(tenantId, input.fingerprint);
+    const list = this.supportLinksByFingerprint.get(scopeKey) ?? [];
     list.push(rec);
-    this.supportLinksByFingerprint.set(input.fingerprint, list);
+    this.supportLinksByFingerprint.set(scopeKey, list);
     return rec;
   }
 
@@ -480,8 +682,13 @@ export class ErrorEventsRepository {
    */
   public listSupportLinksByFingerprint(
     fingerprint: string,
+    tenantId: string | null,
   ): ErrorEventSupportLinkRecord[] {
-    return [...(this.supportLinksByFingerprint.get(fingerprint) ?? [])];
+    return [
+      ...(this.supportLinksByFingerprint.get(
+        this.fingerprintScopeKey(tenantId, fingerprint),
+      ) ?? []),
+    ];
   }
 
   /* ------------------------------------------------------------------------
@@ -500,6 +707,7 @@ export class ErrorEventsRepository {
    */
   public addAssignment(
     input: ErrorEventAssignmentCreate,
+    tenantId: string | null,
   ): ErrorEventAssignmentRecordInternal {
     const rec: ErrorEventAssignmentRecordInternal = {
       id: this.nextAssignmentId(),
@@ -510,19 +718,17 @@ export class ErrorEventsRepository {
       reason: input.reason,
       assignedAt: new Date().toISOString(),
     };
-    const list = this.assignmentsByFingerprint.get(input.fingerprint) ?? [];
+    const scopeKey = this.fingerprintScopeKey(tenantId, input.fingerprint);
+    const list = this.assignmentsByFingerprint.get(scopeKey) ?? [];
     list.push(rec);
-    this.assignmentsByFingerprint.set(input.fingerprint, list);
+    this.assignmentsByFingerprint.set(scopeKey, list);
 
     // İlgili ErrorEvent'in assignedToUserId alanını güncelle.
-    const eventId = this.byFingerprint.get(input.fingerprint);
-    if (eventId) {
-      const ev = this.byId.get(eventId);
-      if (ev) {
-        ev.assignedToUserId =
-          input.assigneeId === UNASSIGNED ? null : input.assigneeId;
-        this.byId.set(eventId, ev);
-      }
+    const ev = this.findByFingerprint(input.fingerprint, tenantId);
+    if (ev) {
+      ev.assignedToUserId =
+        input.assigneeId === UNASSIGNED ? null : input.assigneeId;
+      this.byId.set(ev.id, ev);
     }
     return rec;
   }
@@ -533,8 +739,13 @@ export class ErrorEventsRepository {
    */
   public listAssignmentsByFingerprint(
     fingerprint: string,
+    tenantId: string | null,
   ): ErrorEventAssignmentRecordInternal[] {
-    return [...(this.assignmentsByFingerprint.get(fingerprint) ?? [])];
+    return [
+      ...(this.assignmentsByFingerprint.get(
+        this.fingerprintScopeKey(tenantId, fingerprint),
+      ) ?? []),
+    ];
   }
 
   /**
@@ -591,11 +802,14 @@ export class ErrorEventsRepository {
       const rec = this.byId.get(id);
       if (!rec) continue;
       this.byId.delete(id);
-      this.byFingerprint.delete(rec.fingerprint);
-      this.transitionsByFingerprint.delete(rec.fingerprint);
-      this.notesByFingerprint.delete(rec.fingerprint);
-      this.supportLinksByFingerprint.delete(rec.fingerprint);
-      this.assignmentsByFingerprint.delete(rec.fingerprint);
+      this.byFingerprint.delete(
+        this.fingerprintScopeKey(rec.tenantId, rec.fingerprint),
+      );
+      const scopeKey = this.fingerprintScopeKey(rec.tenantId, rec.fingerprint);
+      this.transitionsByFingerprint.delete(scopeKey);
+      this.notesByFingerprint.delete(scopeKey);
+      this.supportLinksByFingerprint.delete(scopeKey);
+      this.assignmentsByFingerprint.delete(scopeKey);
     }
     return idsToDelete.length;
   }

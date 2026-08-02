@@ -13,7 +13,10 @@
  * @since GOAL-051 (FAZ-5) aşı uygulama kaydı core
  */
 
-import { Injectable } from "@nestjs/common";
+import { Injectable, Optional } from "@nestjs/common";
+import type { Prisma, VaccineApplicationRecord as DbApplication } from "@prisma/client";
+import { randomUUID } from "node:crypto";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
 import {
   toVaccineApplication,
@@ -48,12 +51,20 @@ export class VaccineApplicationsRepository {
   private readonly byId = new Map<string, VaccineApplicationRecord>();
   /** Her tenant için id counter. */
   private readonly counters = new Map<string, number>();
+  public constructor(@Optional() private readonly prisma?: PrismaService) {}
 
   public nextId(tenantId: string): string {
+    if (this.prisma) return `vaca-${tenantId.slice(0, 8)}-${randomUUID()}`;
     const n = (this.counters.get(tenantId) ?? 0) + 1;
     this.counters.set(tenantId, n);
     return `vaca-${tenantId.slice(0, 8)}-${String(n).padStart(6, "0")}`;
   }
+
+  public async persist(r:VaccineApplicationRecord):Promise<VaccineApplicationRecord>{if(!this.prisma)return this.insert(r);const row=await this.inTenant(r.tenantId,tx=>tx.vaccineApplicationRecord.create({data:{...r,lot:r.lot as Prisma.InputJsonValue,dose:r.dose as Prisma.InputJsonValue,stockMovementIds:r.stockMovementIds as Prisma.InputJsonValue,applicationDate:new Date(r.applicationDate),createdAt:new Date(r.createdAt),updatedAt:new Date(r.updatedAt),amendedAt:r.amendedAt?new Date(r.amendedAt):null,cancelledAt:r.cancelledAt?new Date(r.cancelledAt):null}}));this.insert(r);return this.map(row);}
+  public async persistedById(tenantId:string,id:string):Promise<VaccineApplicationRecord|null>{if(!this.prisma)return this.findById(tenantId,id);const row=await this.inTenant(tenantId,tx=>tx.vaccineApplicationRecord.findFirst({where:{tenantId,id}}));return row?this.map(row):null;}
+  public async persistedSearch(tenantId:string,f:Parameters<VaccineApplicationsRepository["search"]>[1]):Promise<{items:VaccineApplicationRecord[];total:number}>{if(!this.prisma)return this.search(tenantId,f);const where:Prisma.VaccineApplicationRecordWhereInput={tenantId,...(f.patientId?{patientId:f.patientId}:{}),...(f.protocolId?{protocolId:f.protocolId}:{}),...(f.status?{status:f.status}:{}),...(!f.includeCancelled&&!f.status?{NOT:{status:"cancelled"}}:{}),...(f.from||f.to?{applicationDate:{...(f.from?{gte:new Date(f.from)}:{}),...(f.to?{lte:new Date(f.to)}:{})}}:{})};const[rows,total]=await this.inTenant(tenantId,tx=>Promise.all([tx.vaccineApplicationRecord.findMany({where,orderBy:{applicationDate:"desc"},skip:f.offset,take:f.limit}),tx.vaccineApplicationRecord.count({where})]));return{items:rows.map(r=>this.map(r)),total};}
+  public async persistedByPatient(tenantId:string,patientId:string,limit=50):Promise<VaccineApplicationRecord[]>{if(!this.prisma)return this.listByPatient(tenantId,patientId,limit);const rows=await this.inTenant(tenantId,tx=>tx.vaccineApplicationRecord.findMany({where:{tenantId,patientId},orderBy:{applicationDate:"desc"},take:limit}));return rows.map(r=>this.map(r));}
+  public async persistedUpdate(tenantId:string,id:string,p:VaccineApplicationPatch):Promise<VaccineApplicationRecord|null>{if(!this.prisma)return this.update(tenantId,id,p);const data:Prisma.VaccineApplicationRecordUpdateManyMutationInput={...(p.dose!==undefined?{dose:p.dose as Prisma.InputJsonValue}:{}),...(p.nextDueDate!==undefined?{nextDueDate:p.nextDueDate}:{}),...(p.notes!==undefined?{notes:p.notes}:{}),...(p.lot!==undefined?{lot:p.lot as Prisma.InputJsonValue}:{}),...(p.status!==undefined?{status:p.status}:{}),...(p.updatedAt!==undefined?{updatedAt:new Date(p.updatedAt)}:{}),...(p.amendedAt!==undefined?{amendedAt:p.amendedAt?new Date(p.amendedAt):null}:{}),...(p.amendedBy!==undefined?{amendedBy:p.amendedBy}:{}),...(p.amendedReason!==undefined?{amendedReason:p.amendedReason}:{}),...(p.cancelledAt!==undefined?{cancelledAt:p.cancelledAt?new Date(p.cancelledAt):null}:{}),...(p.cancellationReason!==undefined?{cancellationReason:p.cancellationReason}:{}),...(p.stockMovementIds!==undefined?{stockMovementIds:p.stockMovementIds as Prisma.InputJsonValue}:{})};const out=await this.inTenant(tenantId,tx=>tx.vaccineApplicationRecord.updateMany({where:{tenantId,id},data}));return out.count?this.persistedById(tenantId,id):null;}
 
   public insert(record: VaccineApplicationRecord): VaccineApplicationRecord {
     this.byId.set(record.id, record);
@@ -177,6 +188,8 @@ export class VaccineApplicationsRepository {
       a.expiryDate === b.expiryDate
     );
   }
+  private map(row:DbApplication):VaccineApplicationRecord{return{...row,lot:row.lot as VaccineApplicationRecord["lot"],dose:row.dose as VaccineApplicationRecord["dose"],status:row.status as VaccineApplicationRecord["status"],applicationDate:row.applicationDate.toISOString(),createdAt:row.createdAt.toISOString(),updatedAt:row.updatedAt.toISOString(),amendedAt:row.amendedAt?.toISOString()??null,cancelledAt:row.cancelledAt?.toISOString()??null,stockMovementIds:row.stockMovementIds as unknown as string[]};}
+  private async inTenant<T>(tenantId:string,callback:(tx:Prisma.TransactionClient)=>Promise<T>):Promise<T>{if(!this.prisma)throw new Error("Prisma bağlantısı bulunamadı");return this.prisma.$transaction(async tx=>{await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;return callback(tx);});}
 }
 
 /** Record → public VaccineApplication. */

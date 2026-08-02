@@ -17,6 +17,7 @@ import { z } from "zod";
  * Zod şeması: zorunlu ve opsiyonel alanlar, format doğrulaması.
  * - `NODE_ENV`: standart üç değer.
  * - `REDIS_URL`: redis:// veya rediss:// şeması.
+ * - `DATABASE_URL`: yalnız runtime uygulama rolüne ait PostgreSQL URL'si.
  * - `LOG_LEVEL`: pino'nun kabul ettiği seviyeler.
  * - `APP_VERSION`: semver benzeri string.
  * - `PORT_WORKER`: opsiyonel; ileride health endpoint için.
@@ -31,6 +32,13 @@ const envSchema = z.object({
     .refine(
       (value) => value.startsWith("redis://") || value.startsWith("rediss://"),
       "REDIS_URL redis:// veya rediss:// şeması ile başlamalıdır",
+    ),
+  DATABASE_URL: z
+    .string()
+    .min(1, "DATABASE_URL boş olamaz")
+    .refine(
+      (value) => value.startsWith("postgresql://") || value.startsWith("postgres://"),
+      "DATABASE_URL postgresql:// veya postgres:// şeması ile başlamalıdır",
     ),
   LOG_LEVEL: z
     .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])

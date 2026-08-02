@@ -210,7 +210,7 @@ export function extractIds(
   // URL'den ek parent baglami: create response'taki id,
   // sonraki adimin parent placeholder'i olarak kullanilir.
   if (url && typeof body === "object") {
-    const idField = readField(body, "id");
+    const idField = readField(body, "id") ?? readField(body, "sale.id");
     if (typeof idField === "string" && idField.length > 0) {
       for (const [pattern, key] of URL_TO_CONTEXT) {
         if (pattern.test(url)) {

@@ -69,7 +69,7 @@ export class SuppliersService {
     this.requireTenantScope(actor, tenantId);
 
     // 1) Code unique kontrolü.
-    const existingByCode = this.repo.findByCode(tenantId, input.code);
+    const existingByCode = await this.repo.persistedByCode(tenantId, input.code);
     if (existingByCode && existingByCode.archivedAt === null) {
       throw new DomainError({
         errorCode: "VET-SUPPLIER-0002",
@@ -106,7 +106,7 @@ export class SuppliersService {
       archivedBy: null,
       archiveReason: null,
     });
-    this.repo.insert(record);
+    await this.repo.persist(record);
 
     // 4) Audit.
     await this.audit.recordSimple(
@@ -139,7 +139,7 @@ export class SuppliersService {
     actor: ActorContext,
   ): Promise<SupplierListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.search(tenantId, {
+    const result = await this.repo.persistedSearch(tenantId, {
       type: filters.type,
       active: filters.active,
       search: filters.search,
@@ -163,7 +163,7 @@ export class SuppliersService {
     actor: ActorContext,
   ): Promise<Supplier | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findById(tenantId, id);
+    const rec = await this.repo.persistedById(tenantId, id);
     return rec ? toSupplier(rec) : null;
   }
 
@@ -178,7 +178,7 @@ export class SuppliersService {
     actor: ActorContext,
   ): Promise<Supplier> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-SUPPLIER-0001",
@@ -202,7 +202,7 @@ export class SuppliersService {
 
     // Code unique kontrolü.
     if (input.code !== undefined && input.code !== existing.code) {
-      const dupe = this.repo.findByCode(tenantId, input.code);
+      const dupe = await this.repo.persistedByCode(tenantId, input.code);
       if (dupe && dupe.id !== id && dupe.archivedAt === null) {
         throw new DomainError({
           errorCode: "VET-SUPPLIER-0002",
@@ -231,7 +231,7 @@ export class SuppliersService {
     const nowIso = new Date().toISOString();
     patch.updatedAt = nowIso;
 
-    const updated = this.repo.update(tenantId, id, patch);
+    const updated = await this.repo.persistedUpdate(tenantId, id, patch);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-SUPPLIER-0001",
@@ -282,7 +282,7 @@ export class SuppliersService {
     actor: ActorContext,
   ): Promise<Supplier> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-SUPPLIER-0001",
@@ -306,7 +306,7 @@ export class SuppliersService {
 
     const nowIso = new Date().toISOString();
     const archivedBy = actor.actorId ?? "system";
-    const updated = this.repo.update(tenantId, id, {
+    const updated = await this.repo.persistedUpdate(tenantId, id, {
       archivedAt: nowIso,
       archivedBy,
       archiveReason: input.reason,

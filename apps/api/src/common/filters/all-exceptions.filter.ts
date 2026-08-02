@@ -39,6 +39,7 @@ import { ZodError } from "zod";
 import { ErrorEventsService } from "../../modules/error-events/error-events.service.js";
 import { DomainError } from "../errors/domain-error.js";
 
+import type { ActorContext } from "../actor/actor-context.service.js";
 import type {
   ErrorCode,
   ErrorResponse,
@@ -74,7 +75,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
   public catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request & { requestId?: string }>();
+    const request = ctx.getRequest<
+      Request & { requestId?: string; actor?: ActorContext }
+    >();
     const correlationId = request.requestId ?? "req-unknown";
 
     const reqCtx = this.extractRequestContext(request, correlationId);
@@ -161,24 +164,16 @@ export class AllExceptionsFilter implements ExceptionFilter {
       request.ip ??
       null;
     const userAgent = request.headers["user-agent"] ?? null;
-    // Header'lar (GOAL-011 öncesi placeholder) — AuthGuard sonrası
-    // session'dan taşınır. Burada yalnızca header varsa al.
-    const tenantId =
-      (request.headers["x-tenant-id"] as string | undefined) ?? null;
-    const branchId =
-      (request.headers["x-branch-id"] as string | undefined) ?? null;
-    const userId =
-      (request.headers["x-actor-id"] as string | undefined) ?? null;
-    const roleHeader = request.headers["x-actor-role"] as string | undefined;
-    const actorType: "user" | "system" | "portal_user" | null =
-      roleHeader === "PET_OWNER_PORTAL"
-        ? "portal_user"
-        : userId
-          ? "user"
-          : roleHeader
-            ? "user"
-            : null;
-    // Country adapter header'ı yoksa default TR.
+    // Güvenlik: tenant/user bağlamı yalnız AuthGuard'ın doğruladığı
+    // `request.actor` değerinden alınır. İstemcinin gönderebildiği
+    // x-tenant-id / x-actor-* başlıkları hata kayıtlarını zehirleyemez.
+    const actor = request.actor;
+    const tenantId = actor?.tenantId ?? null;
+    const branchId = actor?.branchId ?? null;
+    const userId = actor?.actorId ?? null;
+    const actorType = actor?.actorType ?? null;
+    // Country henüz actor bağlamında taşınmadığından yalnız country adapter
+    // için kullanılan header okunur; kimlik/tenant yetkisi türetmez.
     const countryHeader = request.headers["x-country"] as string | undefined;
     const country: "TR" | "GB" | "SYSTEM" =
       countryHeader === "GB"

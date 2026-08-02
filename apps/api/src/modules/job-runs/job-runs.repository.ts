@@ -1,11 +1,12 @@
 /**
- * @file JobRun repository (in-memory).
+ * @file JobRun repository (kalıcı kaynaklı hızlı indeks).
  * @module apps/api/modules/job-runs/job-runs.repository
  *
  * @description GOAL-102 (FAZ-10) background job ve entegrasyon
- * logları için in-memory kayıt deposu. Production'a geçişte
- * Prisma `JobRun` tablosu ile değiştirilecek (API sözleşmesi
- * sabit kalır).
+ * logları için API'nin hızlı okuma indeksi. Worker tarafından Prisma
+ * `JobRun` tablosuna yazılan kalıcı kayıtlar uygulama açılışında ve
+ * düzenli yenilemeyle indekse alınır; API'nin mevcut senkron sözleşmesi
+ * korunur.
  *
  * Davranış:
  * - `insert`: yeni JobRun ekler; id repository tarafından üretilir.
@@ -19,7 +20,16 @@
  * @since GOAL-102 (FAZ-10) background job ve entegrasyon logları core
  */
 
-import { Injectable } from "@nestjs/common";
+import { randomUUID } from "node:crypto";
+
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from "@nestjs/common";
+
+import { PrismaService } from "../../prisma/prisma.service.js";
 
 import type { JobRunRecord } from "../../common/job-runs/job-run.types.js";
 import type {
@@ -61,15 +71,77 @@ export interface JobRunDeadLetterFilters {
 }
 
 @Injectable()
-export class JobRunsRepository {
+export class JobRunsRepository implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(JobRunsRepository.name);
   /** key: id → record. */
   private readonly byId = new Map<string, JobRunRecord>();
-  /** Global id counter. */
-  private readonly counter = { n: 0 };
+  private refreshTimer: ReturnType<typeof setInterval> | null = null;
+
+  /** Runtime'da kalıcı worker kayıtlarını Superadmin indeksine yükler. */
+  public constructor(private readonly prisma?: PrismaService) {}
+
+  public async onModuleInit(): Promise<void> {
+    await this.refreshFromDatabase();
+    if (!this.prisma) return;
+    this.refreshTimer = setInterval(() => {
+      void this.refreshFromDatabase();
+    }, 5_000);
+    this.refreshTimer.unref?.();
+  }
+
+  /** Worker'ın yeni kalıcı kayıtlarını superadmin RLS bağlamıyla indekse alır. */
+  public async refreshFromDatabase(): Promise<void> {
+    if (!this.prisma) return;
+    try {
+      const rows = await this.prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'true', true)`;
+        return tx.jobRun.findMany({ orderBy: { startedAt: "asc" } });
+      });
+      for (const row of rows) {
+        this.byId.set(row.id, {
+          id: row.id,
+          queueName: row.queueName,
+          jobName: row.jobName,
+          jobKey: row.jobKey,
+          source: row.source as JobRunSource,
+          status: row.status as JobRunStatus,
+          attempt: row.attempt,
+          maxAttempts: row.maxAttempts,
+          tenantId: row.tenantId,
+          branchId: row.branchId,
+          correlationId: row.correlationId,
+          requestId: row.requestId,
+          actorId: row.actorId,
+          actorType: row.actorType as JobRunRecord["actorType"],
+          input: row.input as Record<string, unknown>,
+          output: row.output as Record<string, unknown>,
+          errorCode: row.errorCode,
+          errorMessage: row.errorMessage,
+          errorStack: row.errorStack,
+          startedAt: row.startedAt.toISOString(),
+          finishedAt: row.finishedAt?.toISOString() ?? null,
+          durationMs: row.durationMs,
+          parentRunId: row.parentRunId,
+          triggeredBy: row.triggeredBy as JobRunTriggeredBy,
+          country: row.country as ErrorEventCountry,
+          release: row.release,
+        });
+      }
+    } catch (error) {
+      this.logger.error(
+        "Kalıcı JobRun indeksi yenilenemedi",
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
+  }
+
+  public onModuleDestroy(): void {
+    if (this.refreshTimer) clearInterval(this.refreshTimer);
+    this.refreshTimer = null;
+  }
 
   public nextId(): string {
-    this.counter.n += 1;
-    return `jr-${String(this.counter.n).padStart(10, "0")}`;
+    return randomUUID();
   }
 
   /**
@@ -311,7 +383,6 @@ export class JobRunsRepository {
    */
   public clear(): void {
     this.byId.clear();
-    this.counter.n = 0;
   }
 
   /* ------------------------------------------------------------------------

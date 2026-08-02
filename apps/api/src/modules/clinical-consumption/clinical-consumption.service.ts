@@ -130,8 +130,8 @@ export class ClinicalConsumptionService {
     this.requireTenantScope(actor, tenantId);
     if (lines.length === 0) return null;
     // Idempotency: aynı prescription için zaten kayıt varsa yenisi oluşturma.
-    const existing = this.repo
-      .listByContextRef(tenantId, prescriptionId)
+    const existing = (await this.repo
+      .persistedByContextRef(tenantId, prescriptionId))
       .find((r) => r.context === "prescription" && r.status === "recorded");
     if (existing) return toClinicalConsumption(existing);
 
@@ -172,7 +172,7 @@ export class ClinicalConsumptionService {
     actor: ActorContext,
   ): Promise<ClinicalConsumption> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findById(tenantId, id);
+    const rec = await this.repo.persistedById(tenantId, id);
     if (!rec) {
       throw new DomainError({
         errorCode: "VET-CLINICAL_CONSUMPTION-0001",
@@ -201,6 +201,27 @@ export class ClinicalConsumptionService {
         severity: "warning",
         i18nKey: "error.VET-CLINICAL_CONSUMPTION-0005",
       });
+    }
+
+    // Kalıcı modda ters hareketler ile durum değişimi tek transaction'da
+    // yapılır. Test/uyumluluk modunda aşağıdaki eski servis yolu kullanılır.
+    const atomicCancelled = await this.repo.cancelWithReversals(
+      tenantId,
+      rec.id,
+      actor.actorId ?? "system",
+      input.cancelReason,
+    );
+    if (atomicCancelled) {
+      await this.audit.recordSimple(
+        "audit:clinical_consumption.cancel",
+        "clinical_consumption",
+        rec.id,
+        "cancel",
+        this.actorToAuditActor(actor),
+        "warning",
+        { context: rec.context, contextRefId: rec.contextRefId, patientId: rec.patientId, lineCount: rec.lines.length, stockMovementIds: rec.stockMovementIds, cancelReason: input.cancelReason },
+      );
+      return toClinicalConsumption(atomicCancelled);
     }
 
     // Her satır için ters kayıt oluştur.
@@ -232,12 +253,10 @@ export class ClinicalConsumptionService {
       cancelledBy: actor.actorId ?? "system",
       cancelReason: input.cancelReason,
     };
-    // Replace record in repo.
-    (
-      this.repo as unknown as {
-        byId: Map<string, ClinicalConsumptionRecord>;
-      }
-    ).byId.set(rec.id, cancelled);
+    const persisted = await this.repo.persistedCancel(tenantId, rec.id, cancelled);
+    if (!persisted) {
+      throw new DomainError({ errorCode: "VET-CLINICAL_CONSUMPTION-0001", message: "Klinik tüketim kaydı bulunamadı", httpStatus: 404, severity: "warning", i18nKey: "error.VET-CLINICAL_CONSUMPTION-0001", details: { id } });
+    }
 
     await this.audit.recordSimple(
       "audit:clinical_consumption.cancel",
@@ -256,7 +275,7 @@ export class ClinicalConsumptionService {
       },
     );
 
-    return toClinicalConsumption(cancelled);
+    return toClinicalConsumption(persisted);
   }
 
   // =========================================================================
@@ -269,7 +288,7 @@ export class ClinicalConsumptionService {
     actor: ActorContext,
   ): Promise<ClinicalConsumption | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findById(tenantId, id);
+    const rec = await this.repo.persistedById(tenantId, id);
     return rec ? toClinicalConsumption(rec) : null;
   }
 
@@ -283,7 +302,7 @@ export class ClinicalConsumptionService {
     actor: ActorContext,
   ): Promise<ClinicalConsumptionListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.search(tenantId, this.toSearchFilters(filters));
+    const result = await this.repo.persistedSearch(tenantId, this.toSearchFilters(filters));
     return {
       items: result.items.map((r) => toClinicalConsumption(r)),
       total: result.total,
@@ -475,7 +494,7 @@ export class ClinicalConsumptionService {
       cancelReason: null,
       stockMovementIds,
     };
-    this.repo.insert(rec);
+    await this.repo.persist(rec);
 
     // 5) Audit.
     await this.audit.recordSimple(

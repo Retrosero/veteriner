@@ -135,7 +135,7 @@ export class StockMovementsController {
     const filters: { productId?: string; lotId?: string } = {};
     if (productId) filters.productId = productId;
     if (lotId) filters.lotId = lotId;
-    return this.service.listBalances(tenantId, actor, filters);
+    return this.service.listPersistentBalances(tenantId, actor, filters);
   }
 
   // -------------------------------------------------------------------------

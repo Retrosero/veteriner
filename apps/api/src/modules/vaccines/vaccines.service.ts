@@ -107,7 +107,7 @@ export class VaccinesService {
       updatedAt: nowIso,
       archivedAt: null,
     });
-    this.repo.insert(record);
+    await this.repo.persist(record);
 
     // 4) Audit.
     await this.audit.recordSimple(
@@ -141,7 +141,7 @@ export class VaccinesService {
     actor: ActorContext,
   ): Promise<VaccineProtocolListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.search(tenantId, {
+    const result = await this.repo.persistedSearch(tenantId, {
       species: filters.species,
       category: filters.category,
       isCore: filters.isCore,
@@ -164,7 +164,7 @@ export class VaccinesService {
     actor: ActorContext,
   ): Promise<VaccineProtocol | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findById(tenantId, id);
+    const rec = await this.repo.persistedById(tenantId, id);
     return rec ? toVaccineProtocol(rec) : null;
   }
 
@@ -179,7 +179,7 @@ export class VaccinesService {
     actor: ActorContext,
   ): Promise<VaccineProtocol> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",
@@ -228,7 +228,7 @@ export class VaccinesService {
     const nowIso = new Date().toISOString();
     patch.updatedAt = nowIso;
 
-    const updated = this.repo.update(tenantId, id, patch);
+    const updated = await this.repo.persistedUpdate(tenantId, id, patch);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",
@@ -272,7 +272,7 @@ export class VaccinesService {
     actor: ActorContext,
   ): Promise<void> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",
@@ -295,7 +295,7 @@ export class VaccinesService {
     }
 
     const nowIso = new Date().toISOString();
-    this.repo.update(tenantId, id, { archivedAt: nowIso, updatedAt: nowIso });
+    await this.repo.persistedUpdate(tenantId, id, { archivedAt: nowIso, updatedAt: nowIso });
 
     await this.audit.recordSimple(
       "audit:vaccine.protocol.archive",

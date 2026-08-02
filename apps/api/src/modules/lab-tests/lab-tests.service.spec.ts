@@ -109,7 +109,7 @@ describe("LabTestsService", () => {
         makeCreateInput(),
         STAFF_A,
       );
-      expect(out.id).toMatch(/^lt-/);
+      expect(out.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
       expect(out.code).toBe("CBC");
       expect(out.name).toBe("Tam kan sayımı");
       expect(out.sampleType).toBe("blood");

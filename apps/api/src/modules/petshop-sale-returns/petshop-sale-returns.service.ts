@@ -89,7 +89,7 @@ export class PetshopSaleReturnsService {
     this.requireTenantScope(actor, tenantId);
 
     // 1) Orijinal satış var mı ve completed mı?
-    const originalSale = this.salesRepo.findById(
+    const originalSale = await this.salesRepo.persistedById(
       tenantId,
       input.originalSaleId,
     );
@@ -119,21 +119,21 @@ export class PetshopSaleReturnsService {
 
     // 2) İade edilebilecek miktarları hesapla (orijinal - daha önce
     //    iade edilen).
-    const originalLines = this.salesRepo.listLinesBySale(
+    const originalLines = await this.salesRepo.persistedLines(
       tenantId,
       originalSale.id,
     );
     const originalById = new Map<string, PetshopSaleLineRecord>();
     for (const l of originalLines) originalById.set(l.id, l);
 
-    const previousReturns = this.repo.listReturnsByOriginalSale(
+    const previousReturns = await this.repo.persistedByOriginalSale(
       tenantId,
       originalSale.id,
     );
     const alreadyReturned = new Map<string, string>(); // originalLineId → qty
     for (const ret of previousReturns) {
       if (ret.status === "cancelled") continue;
-      const lines = this.repo.listLinesByReturn(tenantId, ret.id);
+      const lines = await this.repo.persistedLines(tenantId, ret.id);
       for (const rl of lines) {
         const sum = addDecimalString(
           alreadyReturned.get(rl.originalLineId) ?? "0",
@@ -280,6 +280,9 @@ export class PetshopSaleReturnsService {
       refundAmount,
       updatedAt: nowIso,
     });
+    const persistedHeader = this.repo.findById(tenantId, returnId);
+    if (!persistedHeader) throw new Error("Petshop iadesi oluşturulamadı");
+    await this.repo.persistReturnWithLines(persistedHeader, lineRecords);
 
     // 6) Audit.
     await this.audit.recordSimple(
@@ -325,7 +328,7 @@ export class PetshopSaleReturnsService {
     actor: ActorContext,
   ): Promise<PetshopSaleReturnListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.search(tenantId, {
+    const result = await this.repo.persistedSearch(tenantId, {
       status: filters.status,
       originalSaleId: filters.originalSaleId,
       customerOwnerId: filters.customerOwnerId,
@@ -352,9 +355,9 @@ export class PetshopSaleReturnsService {
     actor: ActorContext,
   ): Promise<PetshopSaleReturnDetail | null> {
     this.requireTenantScope(actor, tenantId);
-    const header = this.repo.findById(tenantId, id);
+    const header = await this.repo.persistedById(tenantId, id);
     if (!header) return null;
-    const lines = this.repo.listLinesByReturn(tenantId, id);
+    const lines = await this.repo.persistedLines(tenantId, id);
     return {
       return: toPetshopSaleReturn(header),
       lines: lines.map((l) => toPetshopSaleReturnLine(l)),
@@ -372,7 +375,7 @@ export class PetshopSaleReturnsService {
     actor: ActorContext,
   ): Promise<PetshopSaleReturnDetail> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-RETURN-0001",
@@ -395,7 +398,7 @@ export class PetshopSaleReturnsService {
     }
 
     const nowIso = new Date().toISOString();
-    const lines = this.repo.listLinesByReturn(tenantId, id);
+    const lines = await this.repo.persistedLines(tenantId, id);
 
     // Her satır için stok iade hareketi.
     for (const line of lines) {
@@ -438,13 +441,13 @@ export class PetshopSaleReturnsService {
 
     const refundMethod = input?.refundMethod ?? existing.refundMethod;
     if (input?.notes !== undefined) {
-      this.repo.update(tenantId, id, {
+      await this.repo.persistedUpdate(tenantId, id, {
         notes: input.notes,
         updatedAt: nowIso,
       });
     }
 
-    this.repo.update(tenantId, id, {
+    await this.repo.persistedUpdate(tenantId, id, {
       status: "completed",
       refundMethod,
       completedAt: nowIso,
@@ -468,7 +471,7 @@ export class PetshopSaleReturnsService {
       },
     );
 
-    const updated = this.repo.findById(tenantId, id);
+    const updated = await this.repo.persistedById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-RETURN-0001",
@@ -497,7 +500,7 @@ export class PetshopSaleReturnsService {
     actor: ActorContext,
   ): Promise<PetshopSaleReturnDetail> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-RETURN-0001",
@@ -530,7 +533,7 @@ export class PetshopSaleReturnsService {
     }
 
     const nowIso = new Date().toISOString();
-    this.repo.update(tenantId, id, {
+    await this.repo.persistedUpdate(tenantId, id, {
       status: "cancelled",
       cancelledAt: nowIso,
       cancelledBy: actor.actorId ?? "system",
@@ -551,7 +554,7 @@ export class PetshopSaleReturnsService {
       },
     );
 
-    const updated = this.repo.findById(tenantId, id);
+    const updated = await this.repo.persistedById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-RETURN-0001",

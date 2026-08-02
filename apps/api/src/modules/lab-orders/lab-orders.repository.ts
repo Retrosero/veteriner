@@ -15,6 +15,8 @@
  * @since GOAL-091 (FAZ-9) laboratuvar isteği ve numune core
  */
 
+import { randomUUID } from "node:crypto";
+
 import { Injectable } from "@nestjs/common";
 
 import type { LabOrderRecord } from "../../common/lab-orders/lab-order.types.js";
@@ -59,13 +61,8 @@ export interface LabOrderSearchFilters {
 export class LabOrdersRepository {
   /** key: id → record. */
   private readonly byId = new Map<string, LabOrderRecord>();
-  /** Her tenant için id counter. */
-  private readonly counters = new Map<string, number>();
-
-  public nextId(tenantId: string): string {
-    const n = (this.counters.get(tenantId) ?? 0) + 1;
-    this.counters.set(tenantId, n);
-    return `lo-${tenantId.slice(0, 8)}-${String(n).padStart(6, "0")}`;
+  public nextId(_tenantId: string): string {
+    return randomUUID();
   }
 
   public insert(record: LabOrderRecord): LabOrderRecord {
@@ -123,6 +120,5 @@ export class LabOrdersRepository {
   /** Test yardımcısı. */
   public clear(): void {
     this.byId.clear();
-    this.counters.clear();
   }
 }

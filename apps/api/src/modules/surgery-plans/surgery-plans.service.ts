@@ -101,7 +101,7 @@ export class SurgeryPlansService {
       createdBy: actor.actorId ?? "system",
       updatedAt: nowIso,
     };
-    this.repo.insert(record);
+    await this.repo.persist(record);
 
     await this.audit.recordSimple(
       "audit:surgery_plan.create",
@@ -132,7 +132,7 @@ export class SurgeryPlansService {
     actor: ActorContext,
   ): Promise<SurgeryPlanListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.search(tenantId, {
+    const result = await this.repo.persistedSearch(tenantId, {
       status: filters.status,
       patientId: filters.patientId,
       leadSurgeonUserId: filters.leadSurgeonUserId,
@@ -158,7 +158,7 @@ export class SurgeryPlansService {
     actor: ActorContext,
   ): Promise<SurgeryPlan | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findById(tenantId, id);
+    const rec = await this.repo.persistedById(tenantId, id);
     return rec ? toSurgeryPlan(rec) : null;
   }
 
@@ -173,7 +173,7 @@ export class SurgeryPlansService {
     actor: ActorContext,
   ): Promise<SurgeryPlan> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-SURGERY-0001",
@@ -208,7 +208,7 @@ export class SurgeryPlansService {
     }
 
     const nowIso = new Date().toISOString();
-    this.repo.update(tenantId, id, {
+    await this.repo.persistedUpdate(tenantId, id, {
       operationType: input.operationType,
       scheduledAt: input.scheduledAt,
       appointmentId: input.appointmentId,
@@ -226,7 +226,7 @@ export class SurgeryPlansService {
       { fieldsChanged: Object.keys(input) },
     );
 
-    const updated = this.repo.findById(tenantId, id);
+    const updated = await this.repo.persistedById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-SURGERY-0001",
@@ -247,7 +247,7 @@ export class SurgeryPlansService {
     actor: ActorContext,
   ): Promise<SurgeryPlan> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-SURGERY-0001",
@@ -267,7 +267,7 @@ export class SurgeryPlansService {
     }
 
     const nowIso = new Date().toISOString();
-    this.repo.update(tenantId, id, {
+    await this.repo.persistedUpdate(tenantId, id, {
       status: "in_progress",
       startedAt: nowIso,
       startedBy: actor.actorId ?? "system",
@@ -287,7 +287,7 @@ export class SurgeryPlansService {
       },
     );
 
-    const updated = this.repo.findById(tenantId, id);
+    const updated = await this.repo.persistedById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-SURGERY-0001",
@@ -308,7 +308,7 @@ export class SurgeryPlansService {
     actor: ActorContext,
   ): Promise<SurgeryPlan> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-SURGERY-0001",
@@ -328,7 +328,7 @@ export class SurgeryPlansService {
     }
 
     const nowIso = new Date().toISOString();
-    this.repo.update(tenantId, id, {
+    await this.repo.persistedUpdate(tenantId, id, {
       status: "completed",
       completedAt: nowIso,
       completedBy: actor.actorId ?? "system",
@@ -348,7 +348,7 @@ export class SurgeryPlansService {
       },
     );
 
-    const updated = this.repo.findById(tenantId, id);
+    const updated = await this.repo.persistedById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-SURGERY-0001",
@@ -370,7 +370,7 @@ export class SurgeryPlansService {
     actor: ActorContext,
   ): Promise<SurgeryPlan> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-SURGERY-0001",
@@ -400,7 +400,7 @@ export class SurgeryPlansService {
     }
 
     const nowIso = new Date().toISOString();
-    this.repo.update(tenantId, id, {
+    await this.repo.persistedUpdate(tenantId, id, {
       status: "cancelled",
       cancelledAt: nowIso,
       cancelledBy: actor.actorId ?? "system",
@@ -421,7 +421,7 @@ export class SurgeryPlansService {
       },
     );
 
-    const updated = this.repo.findById(tenantId, id);
+    const updated = await this.repo.persistedById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-SURGERY-0001",

@@ -101,7 +101,7 @@ export class VitalsService {
     const id = this.repo.nextId(tenantId);
     const now = new Date().toISOString();
     const takenAt = input.takenAt ?? now;
-    const record: VitalsPersistRecord = this.repo.insert({
+    const record: VitalsPersistRecord = await this.repo.persist({
       id,
       tenantId,
       examinationId,
@@ -147,7 +147,7 @@ export class VitalsService {
     // varlık kontrolü YAPILMAZ — read endpoint'i, ölçüm listesi
     // döndürür; muayene bulunamazsa boş liste semantiği tercih
     // edildi (controller 404 ayrıca yapmaz).
-    const recs = this.repo.findByExamination(tenantId, examinationId);
+    const recs = await this.repo.persistedByExam(tenantId, examinationId);
     return recs.map((r) => toVitalsRecord(r));
   }
 
@@ -177,7 +177,7 @@ export class VitalsService {
       });
     }
 
-    const rec = this.repo.latestForPatient(tenantId, patientId);
+    const rec = await this.repo.persistedLatest(tenantId, patientId);
     return rec ? toVitalsRecord(rec) : null;
   }
 

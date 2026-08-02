@@ -85,7 +85,7 @@ export class ConsentsService {
       createdBy: actor.actorId ?? "system",
       updatedAt: nowIso,
     };
-    this.repo.insert(record);
+    await this.repo.persist(record);
 
     await this.audit.recordSimple(
       "audit:consent.create",
@@ -116,7 +116,7 @@ export class ConsentsService {
     actor: ActorContext,
   ): Promise<ConsentListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.search(tenantId, {
+    const result = await this.repo.persistedSearch(tenantId, {
       status: filters.status,
       templateType: filters.templateType,
       patientId: filters.patientId,
@@ -137,7 +137,7 @@ export class ConsentsService {
     actor: ActorContext,
   ): Promise<Consent | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findById(tenantId, id);
+    const rec = await this.repo.persistedById(tenantId, id);
     return rec ? toConsent(rec) : null;
   }
 
@@ -152,7 +152,7 @@ export class ConsentsService {
     actor: ActorContext,
   ): Promise<Consent> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-CONSENT-0001",
@@ -175,7 +175,7 @@ export class ConsentsService {
     }
 
     const nowIso = new Date().toISOString();
-    this.repo.update(tenantId, id, {
+    await this.repo.persistedUpdate(tenantId, id, {
       status: "signed",
       signatureMethod: input.signatureMethod,
       signatureProvider: input.signatureProvider ?? null,
@@ -200,7 +200,7 @@ export class ConsentsService {
       },
     );
 
-    const updated = this.repo.findById(tenantId, id);
+    const updated = await this.repo.persistedById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-CONSENT-0001",
@@ -222,7 +222,7 @@ export class ConsentsService {
     actor: ActorContext,
   ): Promise<Consent> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-CONSENT-0001",
@@ -252,7 +252,7 @@ export class ConsentsService {
     }
 
     const nowIso = new Date().toISOString();
-    this.repo.update(tenantId, id, {
+    await this.repo.persistedUpdate(tenantId, id, {
       status: "revoked",
       revokedAt: nowIso,
       revokedBy: actor.actorId ?? "system",
@@ -273,7 +273,7 @@ export class ConsentsService {
       },
     );
 
-    const updated = this.repo.findById(tenantId, id);
+    const updated = await this.repo.persistedById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-CONSENT-0001",

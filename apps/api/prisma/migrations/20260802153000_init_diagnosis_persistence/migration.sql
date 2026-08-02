@@ -1,0 +1,5 @@
+CREATE TABLE diagnoses (id VARCHAR(80) PRIMARY KEY, tenant_id UUID NOT NULL, examination_id VARCHAR(80) NOT NULL REFERENCES examinations(id) ON DELETE RESTRICT, patient_id UUID NOT NULL REFERENCES patients(id) ON DELETE RESTRICT, code VARCHAR(100), name VARCHAR(500) NOT NULL, category VARCHAR(40) NOT NULL, status VARCHAR(30) NOT NULL, notes TEXT, created_at TIMESTAMPTZ(6) NOT NULL, created_by UUID NOT NULL, resolved_at TIMESTAMPTZ(6), archived_at TIMESTAMPTZ(6));
+CREATE INDEX diagnoses_tenant_exam_created_idx ON diagnoses(tenant_id, examination_id, created_at);
+CREATE INDEX diagnoses_tenant_patient_created_idx ON diagnoses(tenant_id, patient_id, created_at);
+ALTER TABLE diagnoses ENABLE ROW LEVEL SECURITY;
+CREATE POLICY diagnoses_tenant_isolation ON diagnoses USING (current_setting('app.is_superadmin',true)='true' OR tenant_id::text=current_setting('app.tenant_id',true)) WITH CHECK (current_setting('app.is_superadmin',true)='true' OR tenant_id::text=current_setting('app.tenant_id',true));

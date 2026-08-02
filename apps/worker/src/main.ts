@@ -22,6 +22,7 @@ import { logger } from "./logger.js";
 import { closeRedisConnection } from "./queues/connection.js";
 import { closeHealthQueue, getHealthQueue } from "./queues/health.queue.js";
 import { closeHealthWorker, getHealthWorker } from "./workers/health.worker.js";
+import { closeJobRunReporter } from "./observability/job-run-reporter.js";
 
 /**
  * Süreci başlat. Hata durumunda logla ve exit(1).
@@ -73,6 +74,14 @@ async function shutdown(signal: NodeJS.Signals): Promise<void> {
     logger.error(
       { err: error, step: "closeRedisConnection" },
       "redis bağlantısı kapatılamadı",
+    );
+  }
+  try {
+    await closeJobRunReporter();
+  } catch (error) {
+    logger.error(
+      { err: error, step: "closeJobRunReporter" },
+      "JobRun PostgreSQL bağlantısı kapatılamadı",
     );
   }
   logger.info("graceful shutdown tamamlandı");

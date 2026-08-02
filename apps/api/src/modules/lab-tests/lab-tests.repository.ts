@@ -16,6 +16,8 @@
  * @since GOAL-090 (FAZ-9) laboratuvar test kataloğu core
  */
 
+import { randomUUID } from "node:crypto";
+
 import { Injectable } from "@nestjs/common";
 
 import type { LabTestRecord } from "../../common/lab-tests/lab-test.types.js";
@@ -49,13 +51,8 @@ export class LabTestsRepository {
   private readonly byId = new Map<string, LabTestRecord>();
   /** key: tenantId::codeLower → id. */
   private readonly byCode = new Map<string, string>();
-  /** Her tenant için id counter. */
-  private readonly counters = new Map<string, number>();
-
-  public nextId(tenantId: string): string {
-    const n = (this.counters.get(tenantId) ?? 0) + 1;
-    this.counters.set(tenantId, n);
-    return `lt-${tenantId.slice(0, 8)}-${String(n).padStart(6, "0")}`;
+  public nextId(_tenantId: string): string {
+    return randomUUID();
   }
 
   public codeKey(tenantId: string, code: string): string {
@@ -128,6 +125,5 @@ export class LabTestsRepository {
   public clear(): void {
     this.byId.clear();
     this.byCode.clear();
-    this.counters.clear();
   }
 }

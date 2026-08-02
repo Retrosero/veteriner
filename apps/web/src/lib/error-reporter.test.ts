@@ -214,6 +214,20 @@ describe("ErrorReporter", () => {
     expect(reporter.pendingCount()).toBe(0);
   });
 
+  it("backend request-id'yi hata raporu header'ında korur", async () => {
+    const reporter = new ErrorReporter({
+      enabled: true,
+      flushIntervalMs: 60_000,
+      fetchImpl: fetchMock as unknown as typeof fetch,
+    });
+    reporter.captureMessage("API failure", "error", {}, "req-origin-123");
+    await reporter.flush();
+    const options = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(new Headers(options.headers).get("x-request-id")).toBe(
+      "req-origin-123",
+    );
+  });
+
   it("dedup window: aynı mesaj+route 1 sn içinde yalnız 1 kez", () => {
     const reporter = new ErrorReporter({
       enabled: true,

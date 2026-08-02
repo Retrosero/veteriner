@@ -137,7 +137,7 @@ export class StockMovementsService {
     actor: ActorContext,
   ): Promise<StockMovementListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.search(tenantId, this.toSearchFilters(filters));
+    const result = await this.repo.persistedSearch(tenantId, this.toSearchFilters(filters));
     return {
       items: result.items.map((r) => toStockMovement(r)),
       total: result.total,
@@ -154,7 +154,7 @@ export class StockMovementsService {
     actor: ActorContext,
   ): Promise<StockMovement | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findById(tenantId, id);
+    const rec = await this.repo.persistedById(tenantId, id);
     return rec ? toStockMovement(rec) : null;
   }
 
@@ -176,7 +176,7 @@ export class StockMovementsService {
     actor: ActorContext,
   ): Promise<StockMovement> {
     this.requireTenantScope(actor, tenantId);
-    const original = this.repo.findById(tenantId, id);
+    const original = await this.repo.persistedById(tenantId, id);
     if (!original) {
       throw new DomainError({
         errorCode: "VET-STOCK-0001",
@@ -188,7 +188,7 @@ export class StockMovementsService {
       });
     }
     // Zaten ters kayıt var mı?
-    const existingReversals = this.repo.listByReversal(tenantId, id);
+    const existingReversals = await this.repo.persistedByReversal(tenantId, id);
     if (existingReversals.length > 0) {
       throw new DomainError({
         errorCode: "VET-STOCK-0010",
@@ -233,7 +233,7 @@ export class StockMovementsService {
       createdAt: nowIso,
       createdBy: actor.actorId ?? "system",
     };
-    this.repo.insert(reversal);
+    await this.repo.persist(reversal);
 
     await this.audit.recordSimple(
       "audit:stock_movement.reverse",
@@ -302,6 +302,27 @@ export class StockMovementsService {
       movementCount: e.count,
     }));
     return { items };
+  }
+
+  /** Kalıcı çalışma zamanında bakiye, append-only PostgreSQL defterinden türetilir. */
+  public async listPersistentBalances(
+    tenantId: string,
+    actor: ActorContext,
+    filters?: { productId?: string; lotId?: string },
+  ): Promise<StockBalanceListResponse> {
+    this.requireTenantScope(actor, tenantId);
+    const rows = (await this.repo.persistedSearch(tenantId, {
+      limit: 10000, offset: 0, productId: filters?.productId, lotId: filters?.lotId,
+    })).items;
+    const map = new Map<string, { productId: string; lotId: string | null; net: string; count: number }>();
+    for (const rec of rows) {
+      const key = `${rec.productId}|${rec.lotId ?? "null"}`;
+      const entry = map.get(key) ?? { productId: rec.productId, lotId: rec.lotId, net: "0", count: 0 };
+      entry.net = addSignedDecimals(entry.net, rec.quantity) ?? rec.quantity;
+      entry.count += 1;
+      map.set(key, entry);
+    }
+    return { items: Array.from(map.values()).map((entry) => ({ productId: entry.productId, lotId: entry.lotId, netQuantity: entry.net, movementCount: entry.count })) };
   }
 
   // =========================================================================
@@ -461,7 +482,7 @@ export class StockMovementsService {
       createdAt: new Date().toISOString(),
       createdBy: actor.actorId ?? "system",
     };
-    this.repo.insert(rec);
+    await this.repo.persist(rec);
 
     // 8) Audit.
     await this.audit.recordSimple(

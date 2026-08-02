@@ -6,7 +6,7 @@ kullanıcılara (personel + portal) açıktır. Bu nedenle
 `/api/v1/system/` namespace'i altında tutulur.
 
 - **Modül:** error-events
-- **Yetki:** Oturum açmış kullanıcı (auth placeholder).
+- **Yetki:** Oturum açmış kullanıcı (uygulama geneli `AuthGuard`).
 - **Audit:** `audit:error_event.client_report` (info).
 
 İstemciden gelen `tenantId` / `branchId` / `userId` /
@@ -55,7 +55,7 @@ gönderir.
 
 ```json
 {
-  "id": "err-0000000042",
+  "id": "b7167b8e-425f-4e84-95fe-56e9f45e2d9e",
   "fingerprint": "abc123def4567890"
 }
 ```

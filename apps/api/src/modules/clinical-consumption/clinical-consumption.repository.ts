@@ -21,7 +21,10 @@
  * @since GOAL-066 (FAZ-6) klinik tüketimden otomatik stok düşümü core
  */
 
-import { Injectable } from "@nestjs/common";
+import { Injectable, Optional } from "@nestjs/common";
+import type { ClinicalConsumptionRecord as DbConsumption, Prisma } from "@prisma/client";
+import { randomUUID } from "node:crypto";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
 import type { ClinicalConsumptionRecord } from "../../common/clinical-consumption/clinical-consumption.types.js";
 import type {
@@ -65,13 +68,44 @@ export class ClinicalConsumptionRepository {
   private readonly byPatient = new Map<string, Set<string>>();
   /** TenantId → next sequence. */
   private readonly counters = new Map<string, number>();
+  public constructor(@Optional() private readonly prisma?: PrismaService) {}
 
   /* ---------- ID üretimi ---------- */
 
   public nextId(tenantId: string): string {
+    if (this.prisma) return `clco-${tenantId.slice(0, 8)}-${randomUUID()}`;
     const n = (this.counters.get(tenantId) ?? 0) + 1;
     this.counters.set(tenantId, n);
     return `clco-${tenantId.slice(0, 8)}-${String(n).padStart(8, "0")}`;
+  }
+
+  public async persist(rec: ClinicalConsumptionRecord): Promise<ClinicalConsumptionRecord> { if(!this.prisma)return this.insert(rec);const row=await this.inTenant(rec.tenantId,(tx)=>tx.clinicalConsumptionRecord.create({data:{...rec,lines:rec.lines as Prisma.InputJsonValue,stockMovementIds:rec.stockMovementIds as Prisma.InputJsonValue,occurredAt:new Date(rec.occurredAt),createdAt:new Date(rec.createdAt),cancelledAt:rec.cancelledAt?new Date(rec.cancelledAt):null}}));this.insert(rec);return this.map(row); }
+  public async persistedById(tenantId:string,id:string):Promise<ClinicalConsumptionRecord|null>{if(!this.prisma)return this.findById(tenantId,id);const row=await this.inTenant(tenantId,(tx)=>tx.clinicalConsumptionRecord.findFirst({where:{tenantId,id}}));return row?this.map(row):null;}
+  public async persistedByContextRef(tenantId:string,contextRefId:string):Promise<ClinicalConsumptionRecord[]>{if(!this.prisma)return this.listByContextRef(tenantId,contextRefId);const rows=await this.inTenant(tenantId,(tx)=>tx.clinicalConsumptionRecord.findMany({where:{tenantId,contextRefId}}));return rows.map(r=>this.map(r));}
+  public async persistedSearch(tenantId:string,f:ClinicalConsumptionSearchFilters):Promise<{items:ClinicalConsumptionRecord[];total:number}>{if(!this.prisma)return this.search(tenantId,f);const where:Prisma.ClinicalConsumptionRecordWhereInput={tenantId,...(f.context?{context:f.context}:{}),...(f.contextRefId?{contextRefId:f.contextRefId}:{}),...(f.patientId?{patientId:f.patientId}:{}),...(f.status?{status:f.status}:{}),...(f.occurredFrom||f.occurredTo?{occurredAt:{...(f.occurredFrom?{gte:new Date(f.occurredFrom)}:{}),...(f.occurredTo?{lte:new Date(f.occurredTo)}:{})}}:{})};const[rows,total]=await this.inTenant(tenantId,(tx)=>Promise.all([tx.clinicalConsumptionRecord.findMany({where,orderBy:{occurredAt:"desc"},skip:f.offset,take:f.limit}),tx.clinicalConsumptionRecord.count({where})]));return{items:rows.map(r=>this.map(r)),total};}
+  public async persistedCancel(tenantId:string,id:string,patch:Pick<ClinicalConsumptionRecord,"status"|"cancelledAt"|"cancelledBy"|"cancelReason">):Promise<ClinicalConsumptionRecord|null>{if(!this.prisma){const rec=this.findById(tenantId,id);if(!rec)return null;Object.assign(rec,patch);return rec;}const data={status:patch.status,cancelledAt:patch.cancelledAt?new Date(patch.cancelledAt):null,cancelledBy:patch.cancelledBy,cancelReason:patch.cancelReason};const out=await this.inTenant(tenantId,(tx)=>tx.clinicalConsumptionRecord.updateMany({where:{tenantId,id},data}));return out.count?this.persistedById(tenantId,id):null;}
+  /** Tüketim iptali ve eksik ters stok kayıtlarını tek transaction'da yazar. */
+  public async cancelWithReversals(tenantId:string,id:string,cancelledBy:string,cancelReason:string):Promise<ClinicalConsumptionRecord|null>{
+    if(!this.prisma)return null;
+    return this.inTenant(tenantId,async tx=>{
+      const rec=await tx.clinicalConsumptionRecord.findFirst({where:{tenantId,id}});
+      if(!rec)return null;
+      const movementIds=rec.stockMovementIds as unknown as string[];
+      const originals=await tx.stockMovementRecord.findMany({where:{tenantId,id:{in:movementIds}}});
+      if(originals.length!==movementIds.length)throw new Error("Klinik tüketim stok hareketi bulunamadı");
+      const prior=await tx.stockMovementRecord.findMany({where:{tenantId,reversesMovementId:{in:movementIds}},select:{reversesMovementId:true}});
+      const reversed=new Set(prior.map(row=>row.reversesMovementId));
+      const now=new Date();
+      for(const original of originals){
+        if(reversed.has(original.id))continue;
+        const quantity=original.quantity.startsWith("-")?original.quantity.slice(1):`-${original.quantity}`;
+        await tx.stockMovementRecord.create({data:{id:`stmv-${tenantId.slice(0,8)}-${randomUUID()}`,tenantId,type:"reversal",productId:original.productId,lotId:original.lotId,quantity,unitCost:original.unitCost,unitPrice:original.unitPrice,sourceType:"clinical_consumption_cancel",sourceId:id,reversesMovementId:original.id,reason:`clinical_consumption_cancel:${id}:${cancelReason}`,occurredAt:now,notes:null,createdAt:now,createdBy:cancelledBy}});
+      }
+      const update=await tx.clinicalConsumptionRecord.updateMany({where:{tenantId,id,status:"recorded"},data:{status:"cancelled",cancelledAt:now,cancelledBy,cancelReason}});
+      if(!update.count)return this.map(rec);
+      const row=await tx.clinicalConsumptionRecord.findFirst({where:{tenantId,id}});
+      return row?this.map(row):null;
+    });
   }
 
   /* ---------- Insert ---------- */
@@ -197,4 +231,6 @@ export class ClinicalConsumptionRepository {
     }
     set.add(id);
   }
+  private map(row:DbConsumption):ClinicalConsumptionRecord{return{id:row.id,tenantId:row.tenantId,context:row.context as ClinicalConsumptionRecord["context"],contextRefId:row.contextRefId,patientId:row.patientId,lines:row.lines as unknown as ClinicalConsumptionRecord["lines"],notes:row.notes,status:row.status as ClinicalConsumptionRecord["status"],occurredAt:row.occurredAt.toISOString(),createdAt:row.createdAt.toISOString(),createdBy:row.createdBy,cancelledAt:row.cancelledAt?.toISOString()??null,cancelledBy:row.cancelledBy,cancelReason:row.cancelReason,stockMovementIds:row.stockMovementIds as unknown as string[]};}
+  private async inTenant<T>(tenantId:string,callback:(tx:Prisma.TransactionClient)=>Promise<T>):Promise<T>{if(!this.prisma)throw new Error("Prisma bağlantısı bulunamadı");return this.prisma.$transaction(async tx=>{await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;return callback(tx);});}
 }

@@ -448,9 +448,8 @@ export class ErrorEventsController {
  * (PII mask'lı), route, occurredAt (opsiyonel), release (opsiyonel)
  * ve country (opsiyonel) bilgilerini gönderir.
  *
- * Auth placeholder'ı bu endpoint'i kabul eder; gerçek auth
- * devreye girdiğinde JWT/session doğrulaması `ActorContextService`
- * üzerinden otomatik sağlanır.
+ * Uygulama geneli AuthGuard bu endpoint'te session/JWT doğrular ve
+ * `ActorContextService` güvenilir aktör bağlamını üretir.
  * @since GOAL-101 (FAZ-10) frontend hata yakalama core
  */
 @ApiTags("system/error-events")

@@ -162,7 +162,7 @@ export class PricingService {
       archivedBy: null,
       archiveReason: null,
     });
-    this.repo.insertList(record);
+    await this.repo.persistList(record);
 
     await this.audit.recordSimple(
       "audit:price_list.create",
@@ -195,7 +195,7 @@ export class PricingService {
     actor: ActorContext,
   ): Promise<PriceListListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.searchLists(tenantId, {
+    const result = await this.repo.persistedSearchLists(tenantId, {
       type: filters.type,
       status: filters.status,
       customerId: filters.customerId,
@@ -208,9 +208,7 @@ export class PricingService {
       offset: filters.offset,
     });
     return {
-      items: result.items.map((rec) =>
-        toPriceList(rec, this.repo.countActiveItemsForList(rec.id)),
-      ),
+      items: await Promise.all(result.items.map(async (rec) => toPriceList(rec, await this.repo.persistedActiveItemCount(tenantId, rec.id)))),
       total: result.total,
     };
   }
@@ -225,9 +223,9 @@ export class PricingService {
     actor: ActorContext,
   ): Promise<PriceList | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findListById(tenantId, id);
+    const rec = await this.repo.persistedListById(tenantId, id);
     if (!rec) return null;
-    return toPriceList(rec, this.repo.countActiveItemsForList(rec.id));
+    return toPriceList(rec, await this.repo.persistedActiveItemCount(tenantId, rec.id));
   }
 
   // ===========================================================================
@@ -241,7 +239,7 @@ export class PricingService {
     actor: ActorContext,
   ): Promise<PriceList> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findListById(tenantId, id);
+    const existing = await this.repo.persistedListById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-PRICING-0001",
@@ -281,7 +279,7 @@ export class PricingService {
     if (input.validUntil !== undefined) patch.validUntil = input.validUntil;
     patch.updatedAt = new Date().toISOString();
 
-    const updated = this.repo.updateList(tenantId, id, patch);
+    const updated = await this.repo.persistedUpdateList(tenantId, id, patch);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-PRICING-0001",
@@ -331,7 +329,7 @@ export class PricingService {
     actor: ActorContext,
   ): Promise<PriceList> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findListById(tenantId, id);
+    const existing = await this.repo.persistedListById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-PRICING-0001",
@@ -369,7 +367,7 @@ export class PricingService {
         details: { id, status: existing.status },
       });
     }
-    if (this.repo.countItemsForList(id) === 0) {
+    if ((await this.repo.persistedItemCount(tenantId, id)) === 0) {
       throw new DomainError({
         errorCode: "VET-PRICING-0010",
         message: "Aktifleştirmek için en az bir fiyat satırı gerekli",
@@ -381,7 +379,7 @@ export class PricingService {
     }
 
     const nowIso = new Date().toISOString();
-    const updated = this.repo.updateList(tenantId, id, {
+    const updated = await this.repo.persistedUpdateList(tenantId, id, {
       status: "active",
       updatedAt: nowIso,
     });
@@ -420,7 +418,7 @@ export class PricingService {
     actor: ActorContext,
   ): Promise<PriceList> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findListById(tenantId, id);
+    const existing = await this.repo.persistedListById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-PRICING-0001",
@@ -443,7 +441,7 @@ export class PricingService {
     }
 
     const nowIso = new Date().toISOString();
-    const updated = this.repo.updateList(tenantId, id, {
+    const updated = await this.repo.persistedUpdateList(tenantId, id, {
       archivedAt: nowIso,
       archivedBy: actor.actorId ?? "system",
       archiveReason: input.reason,
@@ -486,7 +484,7 @@ export class PricingService {
   ): Promise<PriceListItem> {
     this.requireTenantScope(actor, tenantId);
 
-    const list = this.repo.findListById(tenantId, listId);
+    const list = await this.repo.persistedListById(tenantId, listId);
     if (!list) {
       throw new DomainError({
         errorCode: "VET-PRICING-0001",
@@ -568,7 +566,7 @@ export class PricingService {
     }
 
     // Aynı ürün için aynı listede aktif satır varsa reddet.
-    const existing = this.repo.findActiveItemByProductInList(
+    const existing = await this.repo.persistedActiveItemByProductInList(
       tenantId,
       listId,
       input.productId,
@@ -602,7 +600,7 @@ export class PricingService {
       createdAt: nowIso,
       createdBy: actor.actorId ?? "system",
     });
-    this.repo.insertItem(record);
+    await this.repo.persistItem(record);
 
     await this.audit.recordSimple(
       "audit:price_list_item.create",
@@ -635,7 +633,7 @@ export class PricingService {
     actor: ActorContext,
   ): Promise<PriceListItemListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const list = this.repo.findListById(tenantId, listId);
+    const list = await this.repo.persistedListById(tenantId, listId);
     if (!list) {
       throw new DomainError({
         errorCode: "VET-PRICING-0001",
@@ -646,17 +644,16 @@ export class PricingService {
         details: { listId },
       });
     }
-    const result = this.repo.searchItems(tenantId, {
+    const result = await this.repo.persistedSearchItems(tenantId, {
+      priceListId: listId,
       productId: filters.productId,
       status: filters.status,
       limit: filters.limit,
       offset: filters.offset,
     });
-    // Listeye ait satırları filtrele.
-    const items = result.items.filter((r) => r.priceListId === listId);
     return {
-      items: items.map((r) => toPriceListItem(r)),
-      total: items.length,
+      items: result.items.map((r) => toPriceListItem(r)),
+      total: result.total,
     };
   }
 
@@ -673,7 +670,7 @@ export class PricingService {
   ): Promise<PriceListItem> {
     this.requireTenantScope(actor, tenantId);
 
-    const list = this.repo.findListById(tenantId, listId);
+    const list = await this.repo.persistedListById(tenantId, listId);
     if (!list) {
       throw new DomainError({
         errorCode: "VET-PRICING-0001",
@@ -706,7 +703,7 @@ export class PricingService {
       });
     }
 
-    const existing = this.repo.findItemById(tenantId, itemId);
+    const existing = await this.repo.persistedItemById(tenantId, itemId);
     if (!existing || existing.priceListId !== listId) {
       throw new DomainError({
         errorCode: "VET-PRICING-0008",
@@ -759,7 +756,7 @@ export class PricingService {
 
     // 1) Eski satırı superseded yap.
     const nowIso = new Date().toISOString();
-    this.repo.updateItem(tenantId, itemId, {
+    await this.repo.persistedUpdateItem(tenantId, itemId, {
       status: "superseded",
     });
 
@@ -781,7 +778,7 @@ export class PricingService {
       createdAt: nowIso,
       createdBy: actor.actorId ?? "system",
     });
-    this.repo.insertItem(newRecord);
+    await this.repo.persistItem(newRecord);
 
     await this.audit.recordSimple(
       "audit:price_list_item.amend",
@@ -813,7 +810,7 @@ export class PricingService {
     actor: ActorContext,
   ): Promise<PriceListItem> {
     this.requireTenantScope(actor, tenantId);
-    const list = this.repo.findListById(tenantId, listId);
+    const list = await this.repo.persistedListById(tenantId, listId);
     if (!list) {
       throw new DomainError({
         errorCode: "VET-PRICING-0001",
@@ -824,7 +821,7 @@ export class PricingService {
         details: { listId },
       });
     }
-    const existing = this.repo.findItemById(tenantId, itemId);
+    const existing = await this.repo.persistedItemById(tenantId, itemId);
     if (!existing || existing.priceListId !== listId) {
       throw new DomainError({
         errorCode: "VET-PRICING-0008",
@@ -850,7 +847,7 @@ export class PricingService {
       });
     }
 
-    const updated = this.repo.updateItem(tenantId, itemId, {
+    const updated = await this.repo.persistedUpdateItem(tenantId, itemId, {
       status: "cancelled",
     });
     if (!updated) {
@@ -895,10 +892,10 @@ export class PricingService {
     actor: ActorContext,
   ): Promise<ProductPriceResolution> {
     this.requireTenantScope(actor, tenantId);
-    const items = this.repo.findActiveItemsByProduct(tenantId, productId);
+    const items = await this.repo.persistedItemsByProduct(tenantId, productId);
     const candidates: ProductPriceResolution["candidates"] = [];
     for (const it of items) {
-      const list = this.repo.findListById(tenantId, it.priceListId);
+      const list = await this.repo.persistedListById(tenantId, it.priceListId);
       if (!list) continue;
       if (list.archivedAt !== null) continue;
       if (list.status !== "active") continue;

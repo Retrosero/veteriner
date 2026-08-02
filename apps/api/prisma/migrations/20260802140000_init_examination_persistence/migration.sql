@@ -1,0 +1,9 @@
+CREATE TABLE examinations (id VARCHAR(80) PRIMARY KEY, tenant_id UUID NOT NULL, patient_id UUID NOT NULL REFERENCES patients(id) ON DELETE RESTRICT, veterinarian_id VARCHAR(100) NOT NULL, appointment_id VARCHAR(80), status VARCHAR(30) NOT NULL, type VARCHAR(40) NOT NULL, chief_complaint VARCHAR(2000) NOT NULL, started_at TIMESTAMPTZ(6) NOT NULL, completed_at TIMESTAMPTZ(6), signed_at TIMESTAMPTZ(6), signed_by UUID, created_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMPTZ(6) NOT NULL);
+CREATE INDEX examinations_tenant_patient_started_idx ON examinations(tenant_id, patient_id, started_at);
+CREATE INDEX examinations_tenant_appointment_idx ON examinations(tenant_id, appointment_id);
+ALTER TABLE examinations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY examinations_tenant_isolation ON examinations USING (current_setting('app.is_superadmin',true)='true' OR tenant_id::text=current_setting('app.tenant_id',true)) WITH CHECK (current_setting('app.is_superadmin',true)='true' OR tenant_id::text=current_setting('app.tenant_id',true));
+CREATE TABLE examination_amends (id VARCHAR(80) PRIMARY KEY, tenant_id UUID NOT NULL, examination_id VARCHAR(80) NOT NULL REFERENCES examinations(id) ON DELETE RESTRICT, reason VARCHAR(2000) NOT NULL, amended_by UUID NOT NULL, amended_at TIMESTAMPTZ(6) NOT NULL, previous_signed_at TIMESTAMPTZ(6), previous_signed_by UUID);
+CREATE INDEX examination_amends_tenant_exam_at_idx ON examination_amends(tenant_id, examination_id, amended_at);
+ALTER TABLE examination_amends ENABLE ROW LEVEL SECURITY;
+CREATE POLICY examination_amends_tenant_isolation ON examination_amends USING (current_setting('app.is_superadmin',true)='true' OR tenant_id::text=current_setting('app.tenant_id',true)) WITH CHECK (current_setting('app.is_superadmin',true)='true' OR tenant_id::text=current_setting('app.tenant_id',true));

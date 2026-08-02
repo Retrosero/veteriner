@@ -10,7 +10,10 @@
  * @since GOAL-065 (FAZ-6) petshop satış iadesi core
  */
 
-import { Injectable } from "@nestjs/common";
+import { Injectable, Optional } from "@nestjs/common";
+import type { Prisma, PetshopSaleReturnLineRecord as DbLine, PetshopSaleReturnRecord as DbReturn } from "@prisma/client";
+import { randomUUID } from "node:crypto";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
 import type {
   PetshopSaleReturnLineRecord,
@@ -70,14 +73,17 @@ export class PetshopSaleReturnsRepository {
   private readonly counters = new Map<string, number>();
   /** Her tenant için line id counter. */
   private readonly lineCounters = new Map<string, number>();
+  public constructor(@Optional() private readonly prisma?: PrismaService) {}
 
   public nextId(tenantId: string): string {
+    if (this.prisma) return `psr-${tenantId.slice(0, 8)}-${randomUUID()}`;
     const n = (this.counters.get(tenantId) ?? 0) + 1;
     this.counters.set(tenantId, n);
     return `psr-${tenantId.slice(0, 8)}-${String(n).padStart(6, "0")}`;
   }
 
   public nextLineId(tenantId: string): string {
+    if (this.prisma) return `psrl-${tenantId.slice(0, 8)}-${randomUUID()}`;
     const n = (this.lineCounters.get(tenantId) ?? 0) + 1;
     this.lineCounters.set(tenantId, n);
     return `psrl-${tenantId.slice(0, 8)}-${String(n).padStart(6, "0")}`;
@@ -91,6 +97,12 @@ export class PetshopSaleReturnsRepository {
     this.byOriginalSale.set(record.originalSaleId, list);
     return record;
   }
+  public async persistReturnWithLines(ret: PetshopSaleReturnRecord, lines: PetshopSaleReturnLineRecord[]): Promise<void> { if (!this.prisma) { if (!this.byId.has(ret.id)) this.insert(ret); for (const line of lines) { if (!this.lineById.has(line.id)) this.insertLine(line); } return; } await this.inTenant(ret.tenantId, async (tx) => { await tx.petshopSaleReturnRecord.create({ data: this.returnData(ret) }); if (lines.length) await tx.petshopSaleReturnLineRecord.createMany({ data: lines.map((line) => this.lineData(line)) }); }); }
+  public async persistedById(tenantId:string,id:string):Promise<PetshopSaleReturnRecord|null>{if(!this.prisma)return this.findById(tenantId,id);const row=await this.inTenant(tenantId,tx=>tx.petshopSaleReturnRecord.findFirst({where:{tenantId,id}}));return row?this.mapReturn(row):null;}
+  public async persistedLines(tenantId:string,returnId:string):Promise<PetshopSaleReturnLineRecord[]>{if(!this.prisma)return this.listLinesByReturn(tenantId,returnId);const rows=await this.inTenant(tenantId,tx=>tx.petshopSaleReturnLineRecord.findMany({where:{tenantId,returnId},orderBy:{createdAt:"asc"}}));return rows.map(row=>this.mapLine(row));}
+  public async persistedByOriginalSale(tenantId:string,originalSaleId:string):Promise<PetshopSaleReturnRecord[]>{if(!this.prisma)return this.listReturnsByOriginalSale(tenantId,originalSaleId);const rows=await this.inTenant(tenantId,tx=>tx.petshopSaleReturnRecord.findMany({where:{tenantId,originalSaleId},orderBy:{createdAt:"asc"}}));return rows.map(row=>this.mapReturn(row));}
+  public async persistedSearch(tenantId:string,f:PetshopSaleReturnSearchFilters):Promise<{items:PetshopSaleReturnRecord[];total:number}>{if(!this.prisma)return this.search(tenantId,f);const where:Prisma.PetshopSaleReturnRecordWhereInput={tenantId,...(f.status?{status:f.status}:{}),...(f.originalSaleId?{originalSaleId:f.originalSaleId}:{}),...(f.customerOwnerId?{customerOwnerId:f.customerOwnerId}:{}),...(f.customerPatientId?{customerPatientId:f.customerPatientId}:{}),...(f.refundMethod?{refundMethod:f.refundMethod}:{}),...(f.search?.trim()?{OR:[{id:{contains:f.search.trim()}},{originalSaleId:{contains:f.search.trim()}},{reason:{contains:f.search.trim(),mode:"insensitive"}}]}:{})};return this.inTenant(tenantId,async tx=>{const[items,total]=await Promise.all([tx.petshopSaleReturnRecord.findMany({where,orderBy:{createdAt:f.sort??"desc"},skip:f.offset,take:f.limit}),tx.petshopSaleReturnRecord.count({where})]);return{items:items.map(r=>this.mapReturn(r)),total};});}
+  public async persistedUpdate(tenantId:string,id:string,p:PetshopSaleReturnPatch):Promise<PetshopSaleReturnRecord|null>{if(!this.prisma)return this.update(tenantId,id,p);const data:Prisma.PetshopSaleReturnRecordUpdateManyMutationInput={...(p.status!==undefined?{status:p.status}:{}),...(p.refundMethod!==undefined?{refundMethod:p.refundMethod}:{}),...(p.totalAmount!==undefined?{totalAmount:p.totalAmount}:{}),...(p.globalDiscountPercent!==undefined?{globalDiscountPercent:p.globalDiscountPercent}:{}),...(p.refundAmount!==undefined?{refundAmount:p.refundAmount}:{}),...(p.notes!==undefined?{notes:p.notes}:{}),...(p.completedAt!==undefined?{completedAt:p.completedAt?new Date(p.completedAt):null}:{}),...(p.completedBy!==undefined?{completedBy:p.completedBy}:{}),...(p.cancelledAt!==undefined?{cancelledAt:p.cancelledAt?new Date(p.cancelledAt):null}:{}),...(p.cancelledBy!==undefined?{cancelledBy:p.cancelledBy}:{}),...(p.cancelReason!==undefined?{cancelReason:p.cancelReason}:{}),...(p.updatedAt!==undefined?{updatedAt:new Date(p.updatedAt)}:{})};const x=await this.inTenant(tenantId,tx=>tx.petshopSaleReturnRecord.updateMany({where:{tenantId,id},data}));return x.count?this.persistedById(tenantId,id):null;}
 
   public insertLine(
     record: PetshopSaleReturnLineRecord,
@@ -232,4 +244,9 @@ export class PetshopSaleReturnsRepository {
     this.counters.clear();
     this.lineCounters.clear();
   }
+  private returnData(r:PetshopSaleReturnRecord):Prisma.PetshopSaleReturnRecordUncheckedCreateInput{return{...r,completedAt:r.completedAt?new Date(r.completedAt):null,cancelledAt:r.cancelledAt?new Date(r.cancelledAt):null,createdAt:new Date(r.createdAt),updatedAt:new Date(r.updatedAt)};}
+  private lineData(r:PetshopSaleReturnLineRecord):Prisma.PetshopSaleReturnLineRecordUncheckedCreateInput{return{...r,createdAt:new Date(r.createdAt),updatedAt:new Date(r.updatedAt)};}
+  private mapReturn(r:DbReturn):PetshopSaleReturnRecord{return{...r,status:r.status as PetshopSaleReturnStatus,refundMethod:r.refundMethod as PetshopPaymentMethod,completedAt:r.completedAt?.toISOString()??null,cancelledAt:r.cancelledAt?.toISOString()??null,createdAt:r.createdAt.toISOString(),updatedAt:r.updatedAt.toISOString()};}
+  private mapLine(r:DbLine):PetshopSaleReturnLineRecord{return{...r,createdAt:r.createdAt.toISOString(),updatedAt:r.updatedAt.toISOString()};}
+  private async inTenant<T>(tenantId:string,callback:(tx:Prisma.TransactionClient)=>Promise<T>):Promise<T>{if(!this.prisma)throw new Error("Prisma bağlantısı bulunamadı");return this.prisma.$transaction(async tx=>{await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;return callback(tx);});}
 }

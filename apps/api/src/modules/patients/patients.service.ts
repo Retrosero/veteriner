@@ -158,7 +158,7 @@ export class PatientsService {
           details: { field: "microchip" },
         });
       }
-      const dup = this.repo.findByMicrochip(tenantId, input.microchip);
+      const dup = await this.repo.findPersistedByMicrochip(tenantId, input.microchip);
       if (dup) {
         throw new DomainError({
           errorCode: "VET-CLINIC-0003",
@@ -198,7 +198,7 @@ export class PatientsService {
 
     const id = this.repo.nextId(tenantId);
     const record = this.repo.toRecord(id, tenantId, input);
-    this.repo.insert(record);
+    await this.repo.persist(record);
 
     // GOAL-022: ilk sahiplik kaydını otomatik aç. Hasta kimliği
     // oluşturulduktan sonra, onun aktif sahiplik kaydı olmadan
@@ -257,7 +257,7 @@ export class PatientsService {
     actor: ActorContext,
   ): Promise<Patient | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findById(tenantId, id);
+    const rec = await this.repo.findPersistedById(tenantId, id);
     return rec ? this.toPatient(rec) : null;
   }
 
@@ -273,7 +273,7 @@ export class PatientsService {
     actor: ActorContext,
   ): Promise<AlertRecord[]> {
     this.requireTenantScope(actor, tenantId);
-    const patient = this.repo.findById(tenantId, patientId);
+    const patient = await this.repo.findPersistedById(tenantId, patientId);
     if (!patient) return [];
     return this.alerts.getActiveAlertsForPatient(tenantId, patientId, actor);
   }
@@ -288,7 +288,7 @@ export class PatientsService {
     actor: ActorContext,
   ): Promise<{ items: Patient[]; total: number }> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.search(tenantId, filters);
+    const result = await this.repo.searchPersisted(tenantId, filters);
     return {
       items: result.items.map((r) => this.toPatient(r)),
       total: result.total,
@@ -306,7 +306,7 @@ export class PatientsService {
     actor: ActorContext,
   ): Promise<Patient> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.findPersistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",
@@ -321,7 +321,7 @@ export class PatientsService {
       return this.toPatient(existing);
     }
     const at = new Date().toISOString();
-    const archived = this.repo.archive(tenantId, id, at);
+    const archived = await this.repo.archivePersisted(tenantId, id, at);
     if (!archived) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",
@@ -379,7 +379,7 @@ export class PatientsService {
     this.requireTenantScope(actor, tenantId);
 
     // 1) Patient tenant-scoped doğrulama (yoksa → 404 VET-AUTHZ-0002).
-    const existing = this.repo.findById(tenantId, patientId);
+    const existing = await this.repo.findPersistedById(tenantId, patientId);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-AUTHZ-0002",
@@ -442,7 +442,7 @@ export class PatientsService {
     );
 
     // 7) Repository güncellemesi (kimlik seviyesi).
-    const updated = this.repo.updateOwner(tenantId, patientId, newOwnerId);
+    const updated = await this.repo.updatePersistedOwner(tenantId, patientId, newOwnerId);
     if (!updated) {
       // Repo'da nadir koşul (aradaki yarış). 404 ile korunur.
       throw new DomainError({

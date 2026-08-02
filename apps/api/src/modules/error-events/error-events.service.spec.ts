@@ -28,6 +28,7 @@ import {
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
 const TENANT_A = "tnt-aaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+const TENANT_B = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
 
 const SUPERADMIN: ActorContext = {
   actorId: "usr-super-1",
@@ -98,7 +99,7 @@ describe("ErrorEventsService", () => {
   describe("recordError", () => {
     it("yeni hata kaydı oluşturur", () => {
       const out = service.recordError(makeInput());
-      expect(out.id).toMatch(/^err-/);
+      expect(out.id).toMatch(/^[0-9a-f-]{36}$/);
       expect(out.fingerprint).toHaveLength(16);
       expect(out.occurrenceCount).toBe(1);
       expect(out.statusCode).toBe(500);
@@ -110,6 +111,16 @@ describe("ErrorEventsService", () => {
       expect(out2.occurrenceCount).toBe(2);
       // aynı id
       expect(out2.id).toBe(service.recordError(makeInput()).id);
+    });
+
+    it("aynı fingerprint farklı tenantlarda ayrı aggregate olarak tutulur", () => {
+      const tenantA = service.recordError(makeInput());
+      const tenantB = service.recordError(makeInput({ tenantId: TENANT_B }));
+
+      expect(tenantB.fingerprint).toBe(tenantA.fingerprint);
+      expect(tenantB.id).not.toBe(tenantA.id);
+      expect(tenantA.occurrenceCount).toBe(1);
+      expect(tenantB.occurrenceCount).toBe(1);
     });
 
     it("farklı message normalize sonrası aynı fingerprint", () => {
@@ -427,7 +438,7 @@ describe("ErrorEventsService.recordClientError", () => {
       STAFF_A,
       "req-client-1",
     );
-    expect(out.id).toMatch(/^err-/);
+    expect(out.id).toMatch(/^[0-9a-f-]{36}$/);
     expect(out.fingerprint).toHaveLength(16);
   });
 
@@ -656,7 +667,10 @@ describe("ErrorEventsService.recordError — GOAL-103 status & timestamps", () =
     expect(repo.findById(initial.id)?.status).toBe("reopened");
 
     // Sistem kaynaklı otomatik transition log'a yazılır.
-    const transitions = repo.listTransitionsByFingerprint(initial.fingerprint);
+    const transitions = repo.listTransitionsByFingerprint(
+      initial.fingerprint,
+      initial.tenantId,
+    );
     const auto = transitions.find(
       (t) => t.fromStatus === "resolved" && t.toStatus === "reopened",
     );

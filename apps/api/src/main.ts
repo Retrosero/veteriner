@@ -115,7 +115,7 @@ async function bootstrap(): Promise<void> {
   logger.log(`Swagger UI: http://localhost:${env.PORT_API}/api/docs`);
   logger.log(`Request ID header: ${REQUEST_ID_HEADER}`);
   logger.log(
-    "Auth: cookie tabanlı (vetniva_session, httpOnly, SameSite=Lax). Login: POST /api/v1/auth/login",
+    "Auth: cookie tabanlı (vetniva_session, httpOnly, SameSite=Lax). Login: POST /auth/login",
   );
 }
 

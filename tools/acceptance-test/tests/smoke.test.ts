@@ -45,7 +45,12 @@ function mockFetchFactory(): UatFetch {
 describe("UAT smoke", () => {
   it("10 senaryonun hepsi mock fetch ile gecer", async () => {
     const fetchFn = mockFetchFactory();
-    let initialContext: Record<string, string> = {};
+    let initialContext: Record<string, string> = {
+      runSuffix: "smoke",
+      runPhone: "+905551234567",
+      runAppointmentStart: "2030-01-01T12:00:00.000Z",
+      runSurgeryStart: "2030-01-01T13:00:00.000Z",
+    };
     const results = [];
     for (const sc of SCENARIOS) {
       const res = await runScenario({

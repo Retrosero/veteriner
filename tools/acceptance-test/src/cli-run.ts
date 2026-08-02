@@ -24,6 +24,7 @@ import type { UatRunResult, UatScenarioKey } from "./types.js";
 interface CliArgs {
   base: string;
   token: string;
+  veterinarianToken: string;
   tenant: string;
   branch: string;
   scenario: UatScenarioKey | "all";
@@ -37,6 +38,7 @@ function parseArgs(argv: ReadonlyArray<string>): CliArgs {
   const args: CliArgs = {
     base: process.env.UAT_BASE_URL ?? "http://localhost:3001",
     token: process.env.UAT_TOKEN ?? "",
+    veterinarianToken: process.env.UAT_VETERINARIAN_TOKEN ?? "",
     tenant: process.env.UAT_TENANT_ID ?? "",
     branch: process.env.UAT_BRANCH_ID ?? "",
     scenario: "all",
@@ -59,6 +61,12 @@ function parseArgs(argv: ReadonlyArray<string>): CliArgs {
       args.token = v ?? args.token;
     } else if (a.startsWith("--token="))
       args.token = a.split("=")[1] ?? args.token;
+    else if (a === "--veterinarian-token") {
+      const v = consume();
+      args.veterinarianToken = v ?? args.veterinarianToken;
+    } else if (a.startsWith("--veterinarian-token="))
+      args.veterinarianToken =
+        a.split("=")[1] ?? args.veterinarianToken;
     else if (a === "--tenant") {
       const v = consume();
       args.tenant = v ?? args.tenant;
@@ -100,18 +108,43 @@ async function main(): Promise<void> {
     tenantId: args.tenant,
     branchId: args.branch,
   };
+  const veterinarianAuth: UatAuthContext = {
+    ...auth,
+    token: args.veterinarianToken || args.token,
+  };
 
   const scenarios =
     args.scenario === "all" ? SCENARIOS : [getScenario(args.scenario)];
 
   const runAt = new Date().toISOString();
   const scenarioResults = [];
-  let initialContext: Record<string, string> = {};
+  const runSeed = Date.now().toString();
+  const runPhone = `+905${runSeed.slice(-9).padStart(9, "0")}`;
+  const runAppointmentStart = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+  const runSurgeryStart = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+  let initialContext: Record<string, string> = {
+    runSuffix: runSeed,
+    runPhone,
+    runAppointmentStart,
+    runSurgeryStart,
+  };
+  const catalogContext = {
+    vaccineProtocolId: process.env.UAT_VACCINE_PROTOCOL_ID,
+    productId: process.env.UAT_PRODUCT_ID,
+    cageId: process.env.UAT_CAGE_ID,
+    labTestId: process.env.UAT_LAB_TEST_ID,
+    vaccineStockProductId: process.env.UAT_VACCINE_STOCK_PRODUCT_ID,
+  };
+  for (const [key, value] of Object.entries(catalogContext)) {
+    if (value) initialContext[key] = value;
+  }
   for (const sc of scenarios) {
+    const scenarioAuth =
+      sc.actorRole === "VETERINARIAN" ? veterinarianAuth : auth;
     const res = await runScenario({
       scenario: sc,
       baseUrl: args.base,
-      auth,
+      auth: scenarioAuth,
       initialContext,
     });
     scenarioResults.push(res);

@@ -84,6 +84,8 @@ export interface ClientErrorReportResponse {
 /** Kuyrukta bekleyen hata. */
 interface QueuedError {
   input: ClientErrorReportInput;
+  /** İlgili backend isteğinin güvenilir korelasyon kimliği (varsa). */
+  requestId?: string | null | undefined;
   enqueuedAt: number;
 }
 
@@ -351,6 +353,7 @@ export class ErrorReporter {
     message: string,
     severity: ErrorSeverity = "warning",
     context?: ErrorContext,
+    requestId?: string | null,
   ): void {
     if (!this.config.enabled) return;
     this.enqueue({
@@ -360,7 +363,7 @@ export class ErrorReporter {
       context: sanitizeContext(context),
       route: currentRoute(),
       occurredAt: new Date().toISOString(),
-    });
+    }, requestId);
   }
 
   /**
@@ -375,7 +378,7 @@ export class ErrorReporter {
     try {
       for (const item of batch) {
         try {
-          const result = await this.sendOne(item.input);
+          const result = await this.sendOne(item);
           // sendOne null dönerse HTTP hata veya parse hatası; kuyruğa geri al.
           if (result === null) {
             if (this.queue.length < this.config.maxQueueSize) {
@@ -439,7 +442,10 @@ export class ErrorReporter {
    * içinde ikinci kez gelirse yutulur.
    * @param input
    */
-  private enqueue(input: ClientErrorReportInput): void {
+  private enqueue(
+    input: ClientErrorReportInput,
+    requestId?: string | null,
+  ): void {
     const sig = `${input.message}|${input.route}`;
     const now = Date.now();
     const lastSeen = this.recentSignatures.get(sig);
@@ -460,7 +466,7 @@ export class ErrorReporter {
       // Kuyruk doluysa en eskiyi at.
       this.queue.shift();
     }
-    this.queue.push({ input, enqueuedAt: now });
+    this.queue.push({ input, requestId, enqueuedAt: now });
   }
 
   /**
@@ -468,8 +474,9 @@ export class ErrorReporter {
    * @param input
    */
   private async sendOne(
-    input: ClientErrorReportInput,
+    queued: QueuedError,
   ): Promise<ClientErrorReportResponse | null> {
+    const { input, requestId } = queued;
     const url = `${this.config.baseUrl}${this.config.endpoint}`;
     const controller = new AbortController();
     const handle = setTimeout(
@@ -486,6 +493,7 @@ export class ErrorReporter {
         headers: {
           "content-type": "application/json",
           accept: "application/json",
+          ...(requestId ? { "x-request-id": requestId } : {}),
         },
         body,
         signal: controller.signal,

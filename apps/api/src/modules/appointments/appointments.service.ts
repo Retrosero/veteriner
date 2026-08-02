@@ -188,7 +188,7 @@ export class AppointmentsService {
       createdBy: actor.actorId,
       createdAt: now,
     });
-    this.repo.insert(record);
+    await this.repo.persist(record);
     this.calendar.bookSlot({
       tenantId,
       branchId: branchId ?? null,
@@ -250,7 +250,7 @@ export class AppointmentsService {
     actor: ActorContext,
   ): Promise<Appointment | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findById(tenantId, id);
+    const rec = await this.repo.findPersistedById(tenantId, id);
     return rec ? this.toAppointment(rec) : null;
   }
 
@@ -264,7 +264,7 @@ export class AppointmentsService {
     actor: ActorContext,
   ): Promise<{ items: Appointment[]; total: number }> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.search(tenantId, filters);
+    const result = await this.repo.searchPersisted(tenantId, filters);
     return {
       items: result.items.map((r) => this.toAppointment(r)),
       total: result.total,
@@ -282,7 +282,7 @@ export class AppointmentsService {
     actor: ActorContext,
   ): Promise<Appointment> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.findPersistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",
@@ -382,7 +382,7 @@ export class AppointmentsService {
       }
     }
 
-    const updated = this.repo.update(tenantId, id, {
+    const updated = await this.repo.updatePersisted(tenantId, id, {
       type: input.type,
       veterinarianId: nextVet,
       status: input.status,
@@ -471,7 +471,7 @@ export class AppointmentsService {
     actor: ActorContext,
   ): Promise<void> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.findPersistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",
@@ -496,7 +496,7 @@ export class AppointmentsService {
         details: { id, status: existing.status },
       });
     }
-    this.repo.update(tenantId, id, { status: "cancelled" });
+    await this.repo.updatePersisted(tenantId, id, { status: "cancelled" });
     this.calendar.releaseSlot(
       tenantId,
       existing.veterinarianId,
@@ -542,7 +542,7 @@ export class AppointmentsService {
     actor: ActorContext,
   ): Promise<void> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.findPersistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",
@@ -564,7 +564,7 @@ export class AppointmentsService {
         details: { id, status: existing.status },
       });
     }
-    this.repo.update(tenantId, id, { status: "completed" });
+    await this.repo.updatePersisted(tenantId, id, { status: "completed" });
     this.calendar.releaseSlot(
       tenantId,
       existing.veterinarianId,
@@ -609,7 +609,7 @@ export class AppointmentsService {
     actor: ActorContext,
   ): Promise<void> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.findPersistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",
@@ -631,7 +631,7 @@ export class AppointmentsService {
         details: { id, status: existing.status },
       });
     }
-    this.repo.update(tenantId, id, { status: "no_show" });
+    await this.repo.updatePersisted(tenantId, id, { status: "no_show" });
     this.calendar.releaseSlot(
       tenantId,
       existing.veterinarianId,

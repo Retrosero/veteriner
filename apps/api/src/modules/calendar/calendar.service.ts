@@ -40,7 +40,9 @@
 
 import { randomUUID } from "node:crypto";
 
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, OnApplicationBootstrap, Optional } from "@nestjs/common";
+import { ModuleRef } from "@nestjs/core";
+import { AppointmentsRepository } from "../appointments/appointments.repository.js";
 
 import { AuditService } from "../../common/audit/audit.service.js";
 import {
@@ -86,7 +88,7 @@ interface BookedSlotRecord {
 const DEFAULT_VETERINARIAN_ID = "vet-default";
 
 @Injectable()
-export class CalendarService {
+export class CalendarService implements OnApplicationBootstrap {
   private readonly logger = new Logger(CalendarService.name);
 
   /** key: `${tenantId}|${veterinarianId}` → WorkingHours[] */
@@ -101,7 +103,25 @@ export class CalendarService {
   /** Key: blockId → BlockedSlotRecord */
   private readonly blockedById = new Map<string, BlockedSlotRecord>();
 
-  public constructor(private readonly audit: AuditService) {}
+  public constructor(private readonly audit: AuditService, @Optional() private readonly moduleRef?: ModuleRef) {}
+
+  /**
+   * Kalıcı scheduled randevuları süreç başlangıcında tekrar booked slot'a
+   * dönüştürür. Repository ModuleRef ile çözülür; Calendar↔Appointments
+   * modül döngüsü yaratılmaz. Hata uygulamayı başlatmaktan alıkoymaz ama
+   * görünür loglanır; sonraki restart'ta tekrar denenir.
+   */
+  public async onApplicationBootstrap(): Promise<void> {
+    try {
+      if (!this.moduleRef) return;
+      const repo = this.moduleRef.get(AppointmentsRepository, { strict: false });
+      const appointments = await repo.listScheduledForBootstrap();
+      for (const appointment of appointments) this.bookSlot({ tenantId: appointment.tenantId, branchId: appointment.branchId, veterinarianId: appointment.veterinarianId, appointmentId: appointment.id, start: appointment.start, end: appointment.end });
+      this.logger.log(`Kalıcı randevulardan ${appointments.length} takvim slotu yüklendi`);
+    } catch (error) {
+      this.logger.error(`Takvim slotları yüklenemedi: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
 
   /**
    * Bir günün tam takvimini döner: working hours'tan üretilen

@@ -121,7 +121,7 @@ export class SoapService {
       signedBy: null,
       amendedAt: null,
     });
-    this.repo.insert(record);
+    await this.repo.persist(record);
 
     await this.audit.recordSimple(
       "audit:soap.create",
@@ -149,7 +149,7 @@ export class SoapService {
     actor: ActorContext,
   ): Promise<SoapNote | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findByExamination(tenantId, examinationId);
+    const rec = await this.repo.persistedByExam(tenantId, examinationId);
     return rec ? toSoapNote(rec) : null;
   }
 
@@ -164,7 +164,7 @@ export class SoapService {
     actor: ActorContext,
   ): Promise<SoapNote> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findByExamination(tenantId, examinationId);
+    const existing = await this.repo.persistedByExam(tenantId, examinationId);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",
@@ -189,7 +189,7 @@ export class SoapService {
       });
     }
 
-    const updated = this.repo.update(tenantId, existing.id, {
+    const updated = await this.repo.persistedUpdate(tenantId, existing.id, {
       subjective: input.subjective,
       objective: input.objective,
       assessment: input.assessment,
@@ -243,7 +243,7 @@ export class SoapService {
     actor: ActorContext,
   ): Promise<SoapNote> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findByExamination(tenantId, examinationId);
+    const existing = await this.repo.persistedByExam(tenantId, examinationId);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",
@@ -270,7 +270,7 @@ export class SoapService {
     // kurallarını uygular (status=completed olmalı; aksi → 409).
     await this.examinations.sign(tenantId, examinationId, actor);
 
-    const updated = this.repo.update(tenantId, existing.id, {
+    const updated = await this.repo.persistedUpdate(tenantId, existing.id, {
       status: "signed",
       signedAt: now,
       signedBy: actor.actorId,
@@ -323,7 +323,7 @@ export class SoapService {
     actor: ActorContext,
   ): Promise<{ soap: SoapNote; amend: SoapAmendRecordContract }> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findByExamination(tenantId, examinationId);
+    const existing = await this.repo.persistedByExam(tenantId, examinationId);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",
@@ -365,9 +365,9 @@ export class SoapService {
       previousSignedAt: existing.signedAt,
       previousSignedBy: existing.signedBy,
     };
-    this.amends.insert(amendRecord);
+    await this.amends.persist(amendRecord);
 
-    const updated = this.repo.update(tenantId, existing.id, {
+    const updated = await this.repo.persistedUpdate(tenantId, existing.id, {
       status: "amended",
       amendedAt: now,
     });
@@ -415,7 +415,7 @@ export class SoapService {
     actor: ActorContext,
   ): Promise<SoapAmendRecordContract[]> {
     this.requireTenantScope(actor, tenantId);
-    return this.amends.findByExaminationId(tenantId, examinationId);
+    return this.amends.persistedByExam(tenantId, examinationId);
   }
 
   // -------------------------------------------------------------------------

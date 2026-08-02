@@ -180,7 +180,7 @@ describe("PatientsService", () => {
         STAFF_A,
       );
 
-      expect(patient.id).toMatch(/^pat-/);
+      expect(patient.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
       expect(patient.tenantId).toBe(TENANT_A);
       expect(patient.ownerId).toBe(OWNER_ID_A);
       expect(patient.name).toBe("Boncuk");

@@ -24,7 +24,10 @@
  * @since GOAL-061 (FAZ-6) depo, raf, lot ve SKT core
  */
 
-import { Injectable } from "@nestjs/common";
+import { Injectable, Optional } from "@nestjs/common";
+import type { Prisma, WarehouseRecord as DbWarehouse } from "@prisma/client";
+import { randomUUID } from "node:crypto";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
 import type {
   ShelfRecord,
@@ -158,16 +161,31 @@ export class InventoryRepository {
   private readonly lotsByProduct = new Map<string, Set<string>>();
   /** Lot counter. */
   private readonly lotCounters = new Map<string, number>();
+  public constructor(@Optional() private readonly prisma?: PrismaService) {}
 
   // -------------------------------------------------------------------------
   // Warehouse
   // -------------------------------------------------------------------------
 
   public nextWarehouseId(tenantId: string): string {
+    if (this.prisma) return `wh-${tenantId.slice(0, 8)}-${randomUUID()}`;
     const n = (this.warehouseCounters.get(tenantId) ?? 0) + 1;
     this.warehouseCounters.set(tenantId, n);
     return `wh-${tenantId.slice(0, 8)}-${String(n).padStart(6, "0")}`;
   }
+
+  /** Depo kaydını tenant RLS bağlamında kalıcılaştırır. */
+  public async persistWarehouse(record: WarehouseRecord): Promise<WarehouseRecord> {
+    if (!this.prisma) return this.insertWarehouse(record);
+    const row = await this.inTenant(record.tenantId, (tx) => tx.warehouseRecord.create({ data: { ...record, createdAt: new Date(record.createdAt), updatedAt: new Date(record.updatedAt), archivedAt: record.archivedAt ? new Date(record.archivedAt) : null } }));
+    this.insertWarehouse(record);
+    return this.mapWarehouse(row);
+  }
+  public async persistedWarehouseById(tenantId: string, id: string): Promise<WarehouseRecord | null> { if (!this.prisma) return this.findWarehouseById(tenantId, id); const row = await this.inTenant(tenantId, (tx) => tx.warehouseRecord.findFirst({ where: { tenantId, id } })); return row ? this.mapWarehouse(row) : null; }
+  public async persistedWarehouseByCode(tenantId: string, code: string): Promise<WarehouseRecord | null> { if (!this.prisma) return this.findWarehouseByCode(tenantId, code); const row = await this.inTenant(tenantId, (tx) => tx.warehouseRecord.findFirst({ where: { tenantId, code } })); return row ? this.mapWarehouse(row) : null; }
+  public async persistedWarehouseSearch(tenantId: string, f: WarehouseSearchFilters): Promise<{ items: WarehouseRecord[]; total: number }> { if (!this.prisma) return this.searchWarehouses(tenantId, f); const where: Prisma.WarehouseRecordWhereInput = { tenantId, ...(f.includeArchived ? {} : { archivedAt: null }), ...(f.type ? { type: f.type } : {}), ...(f.active !== undefined ? { active: f.active } : {}), ...(f.search ? { OR: [{ name: { contains: f.search, mode: "insensitive" } }, { code: { contains: f.search, mode: "insensitive" } }, { address: { contains: f.search, mode: "insensitive" } }] } : {}) }; const [rows,total] = await this.inTenant(tenantId, (tx) => Promise.all([tx.warehouseRecord.findMany({ where, orderBy: { code: "asc" }, skip: f.offset, take: f.limit }), tx.warehouseRecord.count({ where })])); return { items: rows.map((r) => this.mapWarehouse(r)), total }; }
+  public async persistedWarehouseUpdate(tenantId: string, id: string, patch: WarehousePatch): Promise<WarehouseRecord | null> { if (!this.prisma) return this.updateWarehouse(tenantId,id,patch); const data: Prisma.WarehouseRecordUpdateManyMutationInput = { ...(patch.name !== undefined ? { name: patch.name } : {}), ...(patch.code !== undefined ? { code: patch.code } : {}), ...(patch.type !== undefined ? { type: patch.type } : {}), ...(patch.address !== undefined ? { address: patch.address } : {}), ...(patch.notes !== undefined ? { notes: patch.notes } : {}), ...(patch.active !== undefined ? { active: patch.active } : {}), ...(patch.updatedAt !== undefined ? { updatedAt: new Date(patch.updatedAt) } : {}), ...(patch.archivedAt !== undefined ? { archivedAt: patch.archivedAt ? new Date(patch.archivedAt) : null } : {}), ...(patch.archivedBy !== undefined ? { archivedBy: patch.archivedBy } : {}), ...(patch.archiveReason !== undefined ? { archiveReason: patch.archiveReason } : {}) }; const count=await this.inTenant(tenantId,(tx)=>tx.warehouseRecord.updateMany({where:{tenantId,id},data})); return count.count ? this.persistedWarehouseById(tenantId,id):null; }
+  public async persistedActiveShelvesForWarehouse(tenantId: string, warehouseId: string): Promise<number> { if (!this.prisma) return this.countActiveShelvesForWarehouse(tenantId, warehouseId); return this.inTenant(tenantId, (tx) => tx.shelfRecord.count({ where: { tenantId, warehouseId, archivedAt: null } })); }
 
   public insertWarehouse(record: WarehouseRecord): WarehouseRecord {
     this.warehousesById.set(record.id, record);
@@ -252,10 +270,19 @@ export class InventoryRepository {
   // -------------------------------------------------------------------------
 
   public nextShelfId(tenantId: string): string {
+    if (this.prisma) return `shf-${tenantId.slice(0, 8)}-${randomUUID()}`;
     const n = (this.shelfCounters.get(tenantId) ?? 0) + 1;
     this.shelfCounters.set(tenantId, n);
     return `shf-${tenantId.slice(0, 8)}-${String(n).padStart(6, "0")}`;
   }
+
+  /** Raf kaydını tenant RLS bağlamında kalıcılaştırır. */
+  public async persistShelf(record: ShelfRecord): Promise<ShelfRecord> { if (!this.prisma) return this.insertShelf(record); const row=await this.inTenant(record.tenantId,(tx)=>tx.shelfRecord.create({data:{...record,createdAt:new Date(record.createdAt),updatedAt:new Date(record.updatedAt),archivedAt:record.archivedAt?new Date(record.archivedAt):null}})); this.insertShelf(record); return this.mapShelf(row); }
+  public async persistedShelfById(tenantId:string,id:string):Promise<ShelfRecord|null>{if(!this.prisma)return this.findShelfById(tenantId,id);const row=await this.inTenant(tenantId,(tx)=>tx.shelfRecord.findFirst({where:{tenantId,id}}));return row?this.mapShelf(row):null;}
+  public async persistedShelfByCode(tenantId:string,warehouseId:string,code:string):Promise<ShelfRecord|null>{if(!this.prisma)return this.findShelfByCode(tenantId,warehouseId,code);const row=await this.inTenant(tenantId,(tx)=>tx.shelfRecord.findFirst({where:{tenantId,warehouseId,code}}));return row?this.mapShelf(row):null;}
+  public async persistedShelfSearch(tenantId:string,f:ShelfSearchFilters):Promise<{items:ShelfRecord[];total:number}>{if(!this.prisma)return this.searchShelves(tenantId,f);const where:Prisma.ShelfRecordWhereInput={tenantId,...(f.includeArchived?{}:{archivedAt:null}),...(f.warehouseId?{warehouseId:f.warehouseId}:{}),...(f.temperatureZone?{temperatureZone:f.temperatureZone}:{}),...(f.active!==undefined?{active:f.active}:{}),...(f.search?{OR:[{name:{contains:f.search,mode:"insensitive"}},{code:{contains:f.search,mode:"insensitive"}},{notes:{contains:f.search,mode:"insensitive"}}]}:{})};const [rows,total]=await this.inTenant(tenantId,(tx)=>Promise.all([tx.shelfRecord.findMany({where,orderBy:{name:"asc"},skip:f.offset,take:f.limit}),tx.shelfRecord.count({where})]));return{items:rows.map(r=>this.mapShelf(r)),total};}
+  public async persistedShelfUpdate(tenantId:string,id:string,p:ShelfPatch):Promise<ShelfRecord|null>{if(!this.prisma)return this.updateShelf(tenantId,id,p);const data:Prisma.ShelfRecordUpdateManyMutationInput={...(p.name!==undefined?{name:p.name}:{}),...(p.code!==undefined?{code:p.code}:{}),...(p.temperatureZone!==undefined?{temperatureZone:p.temperatureZone}:{}),...(p.notes!==undefined?{notes:p.notes}:{}),...(p.active!==undefined?{active:p.active}:{}),...(p.updatedAt!==undefined?{updatedAt:new Date(p.updatedAt)}:{}),...(p.archivedAt!==undefined?{archivedAt:p.archivedAt?new Date(p.archivedAt):null}:{}),...(p.archivedBy!==undefined?{archivedBy:p.archivedBy}:{}),...(p.archiveReason!==undefined?{archiveReason:p.archiveReason}:{})};const result=await this.inTenant(tenantId,(tx)=>tx.shelfRecord.updateMany({where:{tenantId,id},data}));return result.count?this.persistedShelfById(tenantId,id):null;}
+  public async persistedActiveLotsForShelf(tenantId:string,shelfId:string):Promise<number>{if(!this.prisma)return this.countActiveLotsForShelf(tenantId,shelfId);return this.inTenant(tenantId,(tx)=>tx.stockLotRecord.count({where:{tenantId,shelfId,archivedAt:null}}));}
 
   public insertShelf(record: ShelfRecord): ShelfRecord {
     this.shelvesById.set(record.id, record);
@@ -379,10 +406,18 @@ export class InventoryRepository {
   // -------------------------------------------------------------------------
 
   public nextLotId(tenantId: string): string {
+    if (this.prisma) return `lot-${tenantId.slice(0, 8)}-${randomUUID()}`;
     const n = (this.lotCounters.get(tenantId) ?? 0) + 1;
     this.lotCounters.set(tenantId, n);
     return `lot-${tenantId.slice(0, 8)}-${String(n).padStart(6, "0")}`;
   }
+
+  /** Lot kaydını tenant RLS bağlamında kalıcılaştırır. */
+  public async persistLot(record: StockLotRecord): Promise<StockLotRecord> { if (!this.prisma) return this.insertLot(record); const row=await this.inTenant(record.tenantId,(tx)=>tx.stockLotRecord.create({data:{...record,expiryDate:new Date(record.expiryDate),manufacturedAt:record.manufacturedAt?new Date(record.manufacturedAt):null,receivedAt:new Date(record.receivedAt),createdAt:new Date(record.createdAt),updatedAt:new Date(record.updatedAt),archivedAt:record.archivedAt?new Date(record.archivedAt):null}})); this.insertLot(record); return this.mapLot(row); }
+  public async persistedLotById(tenantId:string,id:string):Promise<StockLotRecord|null>{if(!this.prisma)return this.findLotById(tenantId,id);const row=await this.inTenant(tenantId,(tx)=>tx.stockLotRecord.findFirst({where:{tenantId,id}}));return row?this.mapLot(row):null;}
+  public async persistedLotByProductAndNumber(tenantId:string,productId:string,lotNumber:string):Promise<StockLotRecord|null>{if(!this.prisma)return this.findLotByProductAndNumber(tenantId,productId,lotNumber);const row=await this.inTenant(tenantId,(tx)=>tx.stockLotRecord.findFirst({where:{tenantId,productId,lotNumber}}));return row?this.mapLot(row):null;}
+  public async persistedLotSearch(tenantId:string,f:StockLotSearchFilters):Promise<{items:StockLotRecord[];total:number}>{if(!this.prisma)return this.searchLots(tenantId,f);const where:Prisma.StockLotRecordWhereInput={tenantId,...(f.includeArchived?{}:{archivedAt:null}),...(f.productId?{productId:f.productId}:{}),...(f.shelfId?{shelfId:f.shelfId}:{}),...(f.warehouseId?{shelf:{warehouseId:f.warehouseId}}:{}),...(f.expiresBefore?{expiryDate:{lte:new Date(f.expiresBefore)}}:{}),...(f.expiresAfter?{expiryDate:{gte:new Date(f.expiresAfter)}}:{}),...(f.expiredOnly===true?{expiryDate:{lt:new Date()}}:{}),...(f.expiredOnly===false?{expiryDate:{gte:new Date()}}:{}),...(f.supplierName?{supplierName:f.supplierName}:{}),...(f.lotNumber?{lotNumber:f.lotNumber}:{}),...(f.active!==undefined?{active:f.active}:{}),...(f.search?{OR:[{lotNumber:{contains:f.search,mode:"insensitive"}},{productId:{contains:f.search,mode:"insensitive"}},{supplierName:{contains:f.search,mode:"insensitive"}},{notes:{contains:f.search,mode:"insensitive"}}]}:{})};const [rows,total]=await this.inTenant(tenantId,(tx)=>Promise.all([tx.stockLotRecord.findMany({where,orderBy:{expiryDate:"asc"},skip:f.offset,take:f.limit}),tx.stockLotRecord.count({where})]));return{items:rows.map(r=>this.mapLot(r)),total};}
+  public async persistedLotUpdate(tenantId:string,id:string,p:StockLotPatch):Promise<StockLotRecord|null>{if(!this.prisma)return this.updateLot(tenantId,id,p);const data:Prisma.StockLotRecordUpdateManyMutationInput={...(p.lotNumber!==undefined?{lotNumber:p.lotNumber}:{}),...(p.expiryDate!==undefined?{expiryDate:new Date(p.expiryDate)}:{}),...(p.manufacturedAt!==undefined?{manufacturedAt:p.manufacturedAt?new Date(p.manufacturedAt):null}:{}),...(p.receivedAt!==undefined?{receivedAt:new Date(p.receivedAt)}:{}),...(p.supplierName!==undefined?{supplierName:p.supplierName}:{}),...(p.shelfId!==undefined?{shelfId:p.shelfId}:{}),...(p.quantity!==undefined?{quantity:p.quantity}:{}),...(p.notes!==undefined?{notes:p.notes}:{}),...(p.active!==undefined?{active:p.active}:{}),...(p.updatedAt!==undefined?{updatedAt:new Date(p.updatedAt)}:{}),...(p.archivedAt!==undefined?{archivedAt:p.archivedAt?new Date(p.archivedAt):null}:{}),...(p.archivedBy!==undefined?{archivedBy:p.archivedBy}:{}),...(p.archiveReason!==undefined?{archiveReason:p.archiveReason}:{})};const result=await this.inTenant(tenantId,(tx)=>tx.stockLotRecord.updateMany({where:{tenantId,id},data}));return result.count?this.persistedLotById(tenantId,id):null;}
 
   public insertLot(record: StockLotRecord): StockLotRecord {
     this.lotsById.set(record.id, record);
@@ -600,4 +635,9 @@ export class InventoryRepository {
     const set = this.lotsByShelf.get(shelfId);
     if (set) set.delete(lotId);
   }
+
+  private mapWarehouse(row: DbWarehouse): WarehouseRecord { return { ...row, type: row.type as WarehouseRecord["type"], createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(), archivedAt: row.archivedAt?.toISOString() ?? null }; }
+  private mapShelf(row: {id:string;tenantId:string;warehouseId:string;name:string;code:string|null;temperatureZone:string;notes:string|null;active:boolean;createdAt:Date;createdBy:string;updatedAt:Date;archivedAt:Date|null;archivedBy:string|null;archiveReason:string|null}): ShelfRecord { return { ...row, temperatureZone: row.temperatureZone as ShelfRecord["temperatureZone"], createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(), archivedAt: row.archivedAt?.toISOString() ?? null }; }
+  private mapLot(row: {id:string;tenantId:string;productId:string;lotNumber:string;expiryDate:Date;manufacturedAt:Date|null;receivedAt:Date;supplierName:string|null;shelfId:string|null;quantity:string|null;notes:string|null;active:boolean;createdAt:Date;createdBy:string;updatedAt:Date;archivedAt:Date|null;archivedBy:string|null;archiveReason:string|null}): StockLotRecord { return { ...row, expiryDate: row.expiryDate.toISOString(), manufacturedAt: row.manufacturedAt?.toISOString() ?? null, receivedAt: row.receivedAt.toISOString(), createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(), archivedAt: row.archivedAt?.toISOString() ?? null }; }
+  private async inTenant<T>(tenantId: string, callback: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> { if (!this.prisma) throw new Error("Prisma bağlantısı bulunamadı"); return this.prisma.$transaction(async (tx) => { await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`; await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`; return callback(tx); }); }
 }

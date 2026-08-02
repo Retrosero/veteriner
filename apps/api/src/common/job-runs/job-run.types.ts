@@ -3,8 +3,8 @@
  * @module apps/api/common/job-runs/job-run.types
  *
  * @description GOAL-102 (FAZ-10) JobRun için iç kayıt tipleri.
- * In-memory Map'te tutulur; production'a geçişte Prisma
- * `JobRun` tablosu ile değiştirilecek (API sözleşmesi sabit kalır).
+ * API hızlı indeksinde tutulur; worker'ın kalıcı Prisma `JobRun`
+ * satırları başlangıçta ve düzenli yenilemeyle indekse yansır.
  *
  * `JobRunRecord` ile `JobRun` ayrılmıştır: record repository içi
  * tam yapı (startedAt/finishedAt raw, internal state alanları)
