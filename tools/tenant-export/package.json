@@ -1,0 +1,26 @@
+{
+  "name": "@vetniva/tenant-export",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Tenant veri dışa aktarma paketi (GOAL-125, FAZ-12). Owner/patient/examination/vaccination/prescription/sale/payment/lab/imaging/file dataset'leri için JSON/CSV export, PII kontrolü, audit log üretimi.",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "type-check": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "export": "node --import tsx src/cli-export.ts",
+    "validate": "node --import tsx src/cli-validate.ts"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@vetniva/config": "workspace:*",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}

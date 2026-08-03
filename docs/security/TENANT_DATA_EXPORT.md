@@ -61,7 +61,63 @@ pending → running → completed (download URL)
 - Export metadata (id, tenantId, createdAt, status)
   audit tablosunda 7 yıl tutulur.
 
-## Veri Seti Şeması
+## Core Export Aracı (tools/tenant-export)
+
+`tools/tenant-export` paketi tenant veri dışa aktarma
+mantığını içerir. 10 dataset + JSON/CSV format + PII
+kontrol modu + audit event üretimi sağlar.
+
+### Çalıştırma
+
+```bash
+pnpm --filter @vetniva/tenant-export type-check
+pnpm --filter @vetniva/tenant-export test   # 21 test
+pnpm --filter @vetniva/tenant-export validate
+
+# Demo data ile dry-run
+pnpm --filter @vetniva/tenant-export export -- \
+  --tenant=tnt-pilot-kadikoy --exported-by=usr-admin \
+  --datasets=owners,patients,examinations \
+  --format=json --pii=strict \
+  --out=./temp/tenant-export.json \
+  --with-demo-data --dry-run
+```
+
+> **PowerShell notu:** `--datasets=owners,patients`
+> tırnak içinde verilmelidir.
+
+### PII Kontrol Modları
+
+| Mod          | Davranış                                                              |
+| ------------ | --------------------------------------------------------------------- |
+| `strict`     | PII alanları mask'lenir (`De***mo`); export PII içermez               |
+| `permissive` | PII alanları olduğu gibi (veri sahibinin kendi verisi); audit warning |
+
+### Production Entegrasyonu
+
+CLI `InMemoryTenantDataSource` ile çalışır (test/demo).
+Production'da `PrismaTenantDataSource` adapter'ı yazılır:
+
+```typescript
+class PrismaTenantDataSource implements TenantDataSource {
+  constructor(private prisma: PrismaClient) {}
+  async listForTenant(tenantId, dataset) {
+    // dataset -> Prisma model mapping
+    // WHERE tenantId = ${tenantId} (zorunlu filtre)
+  }
+}
+```
+
+Adapter'lar `apps/api/src/common/adapters/` altında
+Prisma'ya bağlanır; `exportTenantData` core mantığı
+değişmez.
+
+### Audit Event
+
+Her export `audit:tenant.export.created` event'i üretir
+(`tenantId` + `actorId` + `actorType` + `format` +
+`datasets` + `totalRows` + `piiMasked` + `occurredAt` +
+`correlationId` alanlarıyla).
 
 ```json
 {
