@@ -16,6 +16,7 @@ import { SUPPORTED_LOCALES } from "@vetniva/contracts";
 import { Badge } from "@vetniva/ui";
 import { notFound } from "next/navigation";
 
+import { HelpButton } from "@/components/help/help-button";
 import { AppShell } from "@/components/layouts/app-shell";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { KpiCard } from "@/components/ui/kpi-card";
@@ -343,15 +344,16 @@ export default async function DashboardPage({
   ];
 
   return (
-    <AppShell
-      locale={locale}
-      pageTitle={labels.dashboard.sections.todayAppointments}
-      pageDescription={`${greeting}, Dr. Ayşe — ${today}`}
-      user={{
-        name: "Dr. Ayşe Yılmaz",
-        role: locale === "en-GB" ? "Veterinarian" : "Veteriner",
-      }}
-    >
+    <>
+      <AppShell
+        locale={locale}
+        pageTitle={labels.dashboard.sections.todayAppointments}
+        pageDescription={`${greeting}, Dr. Ayşe — ${today}`}
+        user={{
+          name: "Dr. Ayşe Yılmaz",
+          role: locale === "en-GB" ? "Veterinarian" : "Veteriner",
+        }}
+      >
       <PageHeader
         title={labels.dashboard.sections.todayAppointments}
         description={
@@ -496,7 +498,13 @@ export default async function DashboardPage({
           </div>
         </div>
       </section>
-    </AppShell>
+      </AppShell>
+      <HelpButton
+        locale={locale}
+        apiBaseUrl={process.env["API_BASE_URL"] ?? "http://localhost:3001"}
+        labels={labels.onboarding}
+      />
+    </>
   );
 }
 

@@ -26762,3 +26762,300 @@ entities:
           validation: "string",
           version: "1.0.0",
         }
+  - id: onboarding
+    description_tr: "Onboarding asistan entity alanlari (GOAL-117, FAZ-11)."
+    description_en: "Onboarding assistant entity fields (GOAL-117, FAZ-11)."
+    pii: false
+    tenant_scoped: false
+    fields:
+      - id: onboarding.id
+        name: id
+        type: string
+        required: true
+        unique: false
+        pii: false
+        description_tr: "Senaryo kimlik alani."
+        description_en: "Scenario id field."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.category
+        name: category
+        type: string
+        required: true
+        unique: false
+        pii: false
+        description_tr: "Senaryo kategori alani."
+        description_en: "Scenario category field."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.module
+        name: module
+        type: string
+        required: true
+        unique: false
+        pii: false
+        description_tr: "Senaryo modul alani."
+        description_en: "Scenario module field."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.triggers
+        name: triggers
+        type: string
+        required: false
+        unique: false
+        pii: false
+        description_tr: "Senaryo tetikleyici anahtar kelimeleri."
+        description_en: "Scenario trigger keywords."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.title
+        name: title
+        type: string
+        required: true
+        unique: false
+        pii: false
+        description_tr: "Senaryo baslik alani."
+        description_en: "Scenario title field."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.summary
+        name: summary
+        type: string
+        required: false
+        unique: false
+        pii: false
+        description_tr: "Senaryo ozet alani."
+        description_en: "Scenario summary field."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.steps
+        name: steps
+        type: string
+        required: false
+        unique: false
+        pii: false
+        description_tr: "Senaryo adim listesi."
+        description_en: "Scenario step list."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.order
+        name: order
+        type: number
+        required: true
+        unique: false
+        pii: false
+        description_tr: "Adim sirasi (1-based)."
+        description_en: "Step order (1-based)."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.route
+        name: route
+        type: string
+        required: true
+        unique: false
+        pii: false
+        description_tr: "Adim sayfa yolu (Next.js route pattern)."
+        description_en: "Step page route (Next.js route pattern)."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.description
+        name: description
+        type: string
+        required: false
+        unique: false
+        pii: false
+        description_tr: "Adim aciklama alani."
+        description_en: "Step description field."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.action
+        name: action
+        type: string
+        required: false
+        unique: false
+        pii: false
+        description_tr: "Adim aksiyonu (buton adi)."
+        description_en: "Step action (button name)."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.required_permission
+        name: required_permission
+        type: string
+        required: false
+        unique: false
+        pii: false
+        description_tr: "Adim icin gereken permission."
+        description_en: "Step required permission."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.highlight
+        name: highlight
+        type: boolean
+        required: false
+        unique: false
+        pii: false
+        description_tr: "Adim one-cikarilan ilk 5 dakika icin mi?"
+        description_en: "Whether step is highlighted in first 5 minutes."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.roles
+        name: roles
+        type: string
+        required: false
+        unique: false
+        pii: false
+        description_tr: "Senaryo icin gecerli roller."
+        description_en: "Roles valid for the scenario."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.related_chunks
+        name: related_chunks
+        type: string
+        required: false
+        unique: false
+        pii: false
+        description_tr: "Senaryo kaynak chunk ID'leri."
+        description_en: "Scenario source chunk IDs."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.related_pages
+        name: related_pages
+        type: string
+        required: false
+        unique: false
+        pii: false
+        description_tr: "Senaryo iliskili sayfa ID'leri."
+        description_en: "Scenario related page IDs."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.related_api
+        name: related_api
+        type: string
+        required: false
+        unique: false
+        pii: false
+        description_tr: "Senaryo iliskili API endpoint'leri."
+        description_en: "Scenario related API endpoints."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.query_id
+        name: query_id
+        type: string
+        required: true
+        unique: false
+        pii: false
+        description_tr: "Onboarding ask sorgu ID (correlation)."
+        description_en: "Onboarding ask query ID (correlation)."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.answer
+        name: answer
+        type: string
+        required: true
+        unique: false
+        pii: false
+        description_tr: "Onboarding asistan kisa cevabi."
+        description_en: "Onboarding assistant short answer."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.generationSource
+        name: generationSource
+        type: string
+        required: true
+        unique: false
+        pii: false
+        description_tr: "Onboarding cevap kaynagi (template/retrieval/refusal)."
+        description_en: "Onboarding answer source (template/retrieval/refusal)."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.scenario
+        name: scenario
+        type: string
+        required: false
+        unique: false
+        pii: false
+        description_tr: "Eslesen lokalize senaryo."
+        description_en: "Matched localized scenario."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.alternatives
+        name: alternatives
+        type: string
+        required: false
+        unique: false
+        pii: false
+        description_tr: "Diger aday senaryo listesi."
+        description_en: "Other candidate scenario list."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.score
+        name: score
+        type: number
+        required: false
+        unique: false
+        pii: false
+        description_tr: "Senaryo eslesme skoru."
+        description_en: "Scenario match score."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.duration_ms
+        name: duration_ms
+        type: number
+        required: true
+        unique: false
+        pii: false
+        description_tr: "Onboarding islem suresi (ms)."
+        description_en: "Onboarding operation duration (ms)."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.refusalReason
+        name: refusalReason
+        type: string
+        required: false
+        unique: false
+        pii: false
+        description_tr: "Refusal durumunda neden (medical/dosage/diagnosis/treatment/out_of_scope)."
+        description_en: "Refusal reason (medical/dosage/diagnosis/treatment/out_of_scope)."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.role
+        name: role
+        type: string
+        required: true
+        unique: false
+        pii: false
+        description_tr: "Aktorun onboarding rol alani."
+        description_en: "Actor onboarding role field."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.scenarios
+        name: scenarios
+        type: string
+        required: false
+        unique: false
+        pii: false
+        description_tr: "Senaryo listesi yanit dizisi."
+        description_en: "Scenario list response array."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.stepCount
+        name: stepCount
+        type: number
+        required: false
+        unique: false
+        pii: false
+        description_tr: "Senaryo adim sayisi."
+        description_en: "Scenario step count."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+      - id: onboarding.totalScenarios
+        name: totalScenarios
+        type: number
+        required: true
+        unique: false
+        pii: false
+        description_tr: "Toplam senaryo sayisi (filtrelerden once)."
+        description_en: "Total scenario count (before filters)."
+        validation: "GOAL-117 onboarding"
+        version: "1.0.0"
+

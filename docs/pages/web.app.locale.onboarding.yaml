@@ -1,0 +1,75 @@
+page_id: web.app.locale.onboarding
+route: "/[locale]/onboarding"
+module: onboarding
+title_key: onboarding.welcome
+purpose:
+  tr-TR: "Ilk kullanim asistaninin tam sayfa olarak goruntulendigi route. Wizard 3 adimli: rol secimi, tetikleyici eslestirmesi, navigasyon linkleri. Tibbi sorular reddedilir."
+  en-GB: "Onboarding assistant full-page route. The wizard is 3 steps: role selection, trigger matching, navigation links. Medical questions are refused."
+allowed_roles:
+  - SUPERADMIN
+  - OWNER
+  - VETERINARIAN
+  - STAFF
+  - PET_OWNER_PORTAL
+required_permissions: []
+prerequisites:
+  - "Kullanicinin aktif oturumu olmali (auth + role guard backend tarafinda)."
+  - "Onboarding backend modulu (common/onboarding/) devrede olmali."
+fields:
+  - key: role
+    label_key: onboarding.step1_title
+    description:
+      tr-TR: "Kullanicinin rol secimi (VETERINARIAN / STAFF / OWNER / PET_OWNER_PORTAL)."
+      en-GB: "User role selection (VETERINARIAN / STAFF / OWNER / PET_OWNER_PORTAL)."
+    required: true
+  - key: query
+    label_key: onboarding.step2_input_label
+    description:
+      tr-TR: "Kullanicinin 'X nasil yapilir?' sorusu."
+      en-GB: "User's 'how do I do X?' question."
+    required: false
+  - key: scenario
+    label_key: onboarding.step3_title
+    description:
+      tr-TR: "Eslestirilen senaryo (adim listesi + navigasyon linkleri)."
+      en-GB: "Matched scenario (step list + navigation links)."
+    required: false
+actions:
+  - key: navigate
+    description:
+      tr-TR: "Senaryo adiminda verilen sayfaya git."
+      en-GB: "Navigate to the page specified in a scenario step."
+  - key: ask
+    description:
+      tr-TR: "POST /api/v1/onboarding/ask ile soru gonder."
+      en-GB: "Send a question via POST /api/v1/onboarding/ask."
+step_by_step:
+  tr-TR:
+    - "Tarayicidan /<locale>/onboarding adresine git."
+    - "Rolunu sec (Veteriner / Personel / Isletme Sahibi / Portal)."
+    - "Soru sor veya mevcut senaryolardan birini sec."
+    - "Senaryo adimlarini takip et; her adimdaki 'Sayfaya git' linkiyle ilgili sayfayi ac."
+  en-GB:
+    - "Navigate to /<locale>/onboarding in the browser."
+    - "Pick your role (Veterinarian / Staff / Owner / Portal)."
+    - "Ask a question or pick a scenario."
+    - "Follow the scenario steps; use the 'Go to page' link to open the related page."
+possible_errors:
+  - error_code: VET-VALIDATION-0001
+    resolution:
+      tr-TR: "Sorgu 3 karakterden kisa. Daha uzun bir soru yazin."
+      en-GB: "Query is too short (min 3 chars). Write a longer question."
+  - error_code: VET-AUTH-0001
+    resolution:
+      tr-TR: "Oturum gecersiz. Yeniden giris yapin."
+      en-GB: "Session invalid. Please log in again."
+related_pages:
+  - web.app.locale
+related_api:
+  - POST /api/v1/onboarding/ask
+  - GET /api/v1/onboarding/scenarios
+keywords:
+  tr-TR: [onboarding, ilk kullanim, yardim, wizard, tibbi reddi]
+  en-GB: [onboarding, first use, help, wizard, medical refusal]
+version: "1.0.0"
+last_verified_at: "2026-08-03"
