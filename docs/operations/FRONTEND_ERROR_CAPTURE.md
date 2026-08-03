@@ -92,15 +92,15 @@
 
 ## 7. Test Coverage
 
-| Dosya                                            | Test sayısı | Konu                         |
-| ------------------------------------------------ | ----------- | ---------------------------- |
-| `error-reporter.test.ts`                         | 24 + 7 = 31 | PII, queue, rate limit, retry |
-| `api-error-integration.test.ts`                  | 9           | API hata entegrasyonu        |
-| `app/[locale]/error.test.tsx`                    | 4           | Route error boundary         |
-| `app/[locale]/global-error.test.tsx`             | 4           | Global error boundary        |
-| `global-error-listener.test.tsx`                 | 3           | Hook bağlama                 |
-| `superadmin/error-event-list.test.tsx`           | 1           | Liste render                 |
-| **Toplam (core + next-tick)**                    | **52+**     |                              |
+| Dosya                                  | Test sayısı | Konu                          |
+| -------------------------------------- | ----------- | ----------------------------- |
+| `error-reporter.test.ts`               | 24 + 7 = 31 | PII, queue, rate limit, retry |
+| `api-error-integration.test.ts`        | 9           | API hata entegrasyonu         |
+| `app/[locale]/error.test.tsx`          | 4           | Route error boundary          |
+| `app/[locale]/global-error.test.tsx`   | 4           | Global error boundary         |
+| `global-error-listener.test.tsx`       | 3           | Hook bağlama                  |
+| `superadmin/error-event-list.test.tsx` | 1           | Liste render                  |
+| **Toplam (core + next-tick)**          | **52+**     |                               |
 
 Yeni eklenenler (GOAL-101 next-tick):
 

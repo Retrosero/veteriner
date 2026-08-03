@@ -148,6 +148,30 @@ yorumu kaydedilir.
   - PDF indir çalışır.
 - **Test kullanıcısı:** `owner@pilot.vetniva.local`.
 
+## API kabul otomasyonu
+
+`tools/acceptance-test` paketi, aynı on senaryonun API seviyesindeki
+tekrar edilebilir kabul koşumunu sağlar. Araç, yeni müşteri/hayvan
+senaryosundan sonra yalnızca o koşuma ait bir portal hesabı oluşturur,
+email doğrulamasını tamamlar ve portal randevu talebini bu oturumla
+gönderir. Talebin onay adımı ise personel oturumuyla çalışır. Böylece
+portal sahibi ile klinik personelinin yetkileri birbirine karışmaz.
+
+Gerekli ortam değişkenleri:
+
+- `UAT_BASE_URL`, `UAT_TOKEN`, `UAT_VETERINARIAN_TOKEN`
+- `UAT_TENANT_ID`, `UAT_BRANCH_ID`
+- `UAT_VACCINE_PROTOCOL_ID`, `UAT_VACCINE_STOCK_PRODUCT_ID`
+- `UAT_PRODUCT_ID`, `UAT_CAGE_ID`, `UAT_LAB_TEST_ID`
+
+İsteğe bağlı `UAT_PORTAL_TOKEN` sağlanırsa mevcut portal oturumu
+kullanılır; sağlanmazsa koşum, oluşturduğu demo sahibi için geçici
+portal oturumunu üretir. Randevu zamanı tekrar koşumlarda çakışmaması
+için bir hafta sonrasındaki benzersiz bir slotta seçilir.
+
+Çıktı JSON raporu ile değerlendirilir; geçiş için tüm 10 senaryonun ve
+tüm adımların başarılı olması gerekir.
+
 ## Test Şablonu
 
 Her senaryo için doldurulacak tablo:

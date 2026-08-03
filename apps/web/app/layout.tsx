@@ -14,6 +14,8 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
+import { GlobalErrorListener } from "@/components/observability/global-error-listener";
+
 export const metadata: Metadata = {
   title: {
     default: "VetNiva",
@@ -52,6 +54,7 @@ export default function RootLayout({
   return (
     <html lang="tr" dir="ltr" suppressHydrationWarning>
       <body className="min-h-screen bg-[rgb(var(--color-bg))] text-[rgb(var(--color-fg))] antialiased">
+        <GlobalErrorListener />
         {children}
       </body>
     </html>

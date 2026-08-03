@@ -29,6 +29,7 @@ import type {
   UatScenarioResult,
   UatStep,
   UatStepResult,
+  UatActorRole,
 } from "./types.js";
 
 /** Senaryo basina fetch davranisi (testte inject edilir). */
@@ -56,6 +57,8 @@ export interface RunScenarioOptions {
   baseUrl: string;
   /** Auth/header bilgisi. */
   auth: UatAuthContext;
+  /** Rol değiştiren senaryo adımları için oturumlar. */
+  authByActorRole?: Readonly<Partial<Record<UatActorRole, UatAuthContext>>>;
   /**
    * Disaridan gelen pilot geri bildirimi (adim adi -> feedback).
    * Calistirici sadece okur, dogrudan iliiskilendirir.
@@ -351,6 +354,7 @@ export async function runScenario(
     scenario,
     baseUrl,
     auth,
+    authByActorRole,
     feedbackByStep,
     fetchFn = defaultFetch,
     now = () => new Date(),
@@ -367,7 +371,17 @@ export async function runScenario(
   const stepResults: UatStepResult[] = [];
   for (const step of scenario.steps) {
     const fb = feedbackByStep?.get(step.name) ?? null;
-    const res = await runStep(step, context, baseUrl, auth, fb, fetchFn, now);
+    const stepAuth =
+      (step.actorRole ? authByActorRole?.[step.actorRole] : undefined) ?? auth;
+    const res = await runStep(
+      step,
+      context,
+      baseUrl,
+      stepAuth,
+      fb,
+      fetchFn,
+      now,
+    );
     stepResults.push(res);
     if (!res.passed) {
       // Basarisiz adimdan sonra devam etmek yerine senaryoyu

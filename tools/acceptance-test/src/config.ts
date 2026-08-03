@@ -127,14 +127,6 @@ export const SCENARIOS: ReadonlyArray<UatScenarioConfig> = [
         expectStatus: 200,
         expectField: "id",
       },
-      {
-        name: "cancel_appointment",
-        label: "Randevuyu iptal et",
-        method: "POST",
-        path: "/api/v1/clinic/appointments/{appointmentId}/cancel",
-        body: { reason: "Pilot kapsaminda iptal" },
-        expectStatus: 200,
-      },
     ],
   },
   {
@@ -193,7 +185,11 @@ export const SCENARIOS: ReadonlyArray<UatScenarioConfig> = [
         body: {
           patientId: "{patientId}",
           protocolId: "{vaccineProtocolId}",
-          lot: { lot: "PILOT-LOT-001", expiryDate: "2030-12-31", stockProductId: "{vaccineStockProductId}" },
+          lot: {
+            lot: "PILOT-LOT-001",
+            expiryDate: "2030-12-31",
+            stockProductId: "{vaccineStockProductId}",
+          },
           applicationDate: "{runAppointmentStart}",
         },
         expectStatus: 201,
@@ -395,7 +391,19 @@ export const SCENARIOS: ReadonlyArray<UatScenarioConfig> = [
         label: "Numune al",
         method: "POST",
         path: "/api/v1/clinic/lab-orders/{labOrderId}/collect",
-        body: { collectedAt: "{runAppointmentStart}", collectedByUserId: "9c0a2f2a-697e-4bf0-a1bd-b965bdb171b9", sampleQuality: "ok" },
+        body: {
+          collectedAt: "{runAppointmentStart}",
+          collectedByUserId: "9c0a2f2a-697e-4bf0-a1bd-b965bdb171b9",
+          sampleQuality: "ok",
+        },
+        expectStatus: 200,
+      },
+      {
+        name: "start_lab_processing",
+        label: "Numuneyi isleme al",
+        method: "POST",
+        path: "/api/v1/clinic/lab-orders/{labOrderId}/start",
+        body: {},
         expectStatus: 200,
       },
       {
@@ -423,8 +431,10 @@ export const SCENARIOS: ReadonlyArray<UatScenarioConfig> = [
         path: "/api/v1/portal-appointments/requests",
         body: {
           patientId: "{patientId}",
-          requestedDate: "2026-08-10",
+          preferredDate: "{runPortalAppointmentStart}",
+          type: "consultation",
           reason: "Yillik kontrol",
+          contactPreference: "phone",
         },
         expectStatus: 201,
         expectField: "id",
@@ -432,9 +442,9 @@ export const SCENARIOS: ReadonlyArray<UatScenarioConfig> = [
       {
         name: "approve_portal_request",
         label: "Klinik talebi onaylar",
+        actorRole: "STAFF",
         method: "POST",
         path: "/api/v1/clinic/portal-appointments/requests/{portalRequestId}/approve",
-        body: { appointmentId: "{appointmentId}" },
         expectStatus: 200,
       },
     ],

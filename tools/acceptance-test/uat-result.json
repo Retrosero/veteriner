@@ -1,0 +1,287 @@
+{
+  "runAt": "2026-08-02T19:47:10.754Z",
+  "operator": "pilot-cli",
+  "baseUrl": "http://localhost:3001",
+  "tenantId": "11c6beec-7c64-4cf6-9cb7-d9ea6fd5c8a1",
+  "scenarios": [
+    {
+      "scenario": "new_owner_patient",
+      "title": "Yeni musteri ve hayvan kaydi",
+      "module": "owner",
+      "startedAt": "2026-08-02T19:47:10.755Z",
+      "finishedAt": "2026-08-02T19:47:10.842Z",
+      "totalDurationMs": 87,
+      "steps": [
+        {
+          "name": "create_owner",
+          "status": 401,
+          "durationMs": 86,
+          "error": null,
+          "extracted": {
+            "runSuffix": "1785700030755",
+            "runPhone": "+905700030755",
+            "runAppointmentStart": "2026-08-02T20:47:10.755Z",
+            "runSurgeryStart": "2026-08-02T21:47:10.755Z",
+            "vaccineProtocolId": "vacp-11c6beec-9ba219e5-3811-4704-89d2-4aee452253c8",
+            "productId": "prd-11c6beec-1b7e6353-aee3-412b-8952-2edbc9a1a14e",
+            "cageId": "cag-11c6beec-429577a8-b834-4cef-8f66-e84ac4085bb7",
+            "labTestId": "72a9bb97-015d-44bd-9120-1d6bf7aceb10",
+            "vaccineStockProductId": "prd-11c6beec-0659e354-177a-43e2-8c46-ba0358160e20",
+            "branchId": "b203d16a-91e2-49c0-b9d7-9bdc55fdf60d"
+          },
+          "feedback": null,
+          "passed": false,
+          "fieldFound": false
+        }
+      ],
+      "allPassed": false,
+      "passedCount": 0,
+      "failedCount": 1,
+      "unnecessaryCount": 0,
+      "averageRating": 0
+    },
+    {
+      "scenario": "appointment",
+      "title": "Randevu olusturma ve yonetimi",
+      "module": "appointment",
+      "startedAt": "2026-08-02T19:47:10.842Z",
+      "finishedAt": "2026-08-02T19:47:10.850Z",
+      "totalDurationMs": 8,
+      "steps": [
+        {
+          "name": "list_calendar_today",
+          "status": 401,
+          "durationMs": 8,
+          "error": null,
+          "extracted": {
+            "runSuffix": "1785700030755",
+            "runPhone": "+905700030755",
+            "runAppointmentStart": "2026-08-02T20:47:10.755Z",
+            "runSurgeryStart": "2026-08-02T21:47:10.755Z",
+            "vaccineProtocolId": "vacp-11c6beec-9ba219e5-3811-4704-89d2-4aee452253c8",
+            "productId": "prd-11c6beec-1b7e6353-aee3-412b-8952-2edbc9a1a14e",
+            "cageId": "cag-11c6beec-429577a8-b834-4cef-8f66-e84ac4085bb7",
+            "labTestId": "72a9bb97-015d-44bd-9120-1d6bf7aceb10",
+            "vaccineStockProductId": "prd-11c6beec-0659e354-177a-43e2-8c46-ba0358160e20",
+            "branchId": "b203d16a-91e2-49c0-b9d7-9bdc55fdf60d"
+          },
+          "feedback": null,
+          "passed": false,
+          "fieldFound": null
+        }
+      ],
+      "allPassed": false,
+      "passedCount": 0,
+      "failedCount": 1,
+      "unnecessaryCount": 0,
+      "averageRating": 0
+    },
+    {
+      "scenario": "examination",
+      "title": "Muayene baslatma ve tamamlama",
+      "module": "examination",
+      "startedAt": "2026-08-02T19:47:10.850Z",
+      "finishedAt": "2026-08-02T19:47:10.850Z",
+      "totalDurationMs": 0,
+      "steps": [
+        {
+          "name": "start_examination",
+          "status": 0,
+          "durationMs": 0,
+          "error": "UAT-PLACEHOLDER-0002: appointmentId",
+          "extracted": {},
+          "feedback": null,
+          "passed": false,
+          "fieldFound": null
+        }
+      ],
+      "allPassed": false,
+      "passedCount": 0,
+      "failedCount": 1,
+      "unnecessaryCount": 0,
+      "averageRating": 0
+    },
+    {
+      "scenario": "vaccination",
+      "title": "Asi uygulamasi ve asi karti",
+      "module": "vaccination",
+      "startedAt": "2026-08-02T19:47:10.851Z",
+      "finishedAt": "2026-08-02T19:47:10.851Z",
+      "totalDurationMs": 0,
+      "steps": [
+        {
+          "name": "create_vaccine_application",
+          "status": 0,
+          "durationMs": 0,
+          "error": "UAT-PLACEHOLDER-0002: patientId",
+          "extracted": {},
+          "feedback": null,
+          "passed": false,
+          "fieldFound": null
+        }
+      ],
+      "allPassed": false,
+      "passedCount": 0,
+      "failedCount": 1,
+      "unnecessaryCount": 0,
+      "averageRating": 0
+    },
+    {
+      "scenario": "petshop_sale",
+      "title": "Petshop satis",
+      "module": "petshop",
+      "startedAt": "2026-08-02T19:47:10.851Z",
+      "finishedAt": "2026-08-02T19:47:10.851Z",
+      "totalDurationMs": 0,
+      "steps": [
+        {
+          "name": "create_sale",
+          "status": 0,
+          "durationMs": 0,
+          "error": "UAT-PLACEHOLDER-0002: ownerId",
+          "extracted": {},
+          "feedback": null,
+          "passed": false,
+          "fieldFound": null
+        }
+      ],
+      "allPassed": false,
+      "passedCount": 0,
+      "failedCount": 1,
+      "unnecessaryCount": 0,
+      "averageRating": 0
+    },
+    {
+      "scenario": "collection",
+      "title": "Tahsilat",
+      "module": "payment",
+      "startedAt": "2026-08-02T19:47:10.851Z",
+      "finishedAt": "2026-08-02T19:47:10.851Z",
+      "totalDurationMs": 0,
+      "steps": [
+        {
+          "name": "create_payment",
+          "status": 0,
+          "durationMs": 0,
+          "error": "UAT-PLACEHOLDER-0002: saleId",
+          "extracted": {},
+          "feedback": null,
+          "passed": false,
+          "fieldFound": null
+        }
+      ],
+      "allPassed": false,
+      "passedCount": 0,
+      "failedCount": 1,
+      "unnecessaryCount": 0,
+      "averageRating": 0
+    },
+    {
+      "scenario": "surgery",
+      "title": "Ameliyat planlama ve tamamlama",
+      "module": "surgery",
+      "startedAt": "2026-08-02T19:47:10.851Z",
+      "finishedAt": "2026-08-02T19:47:10.851Z",
+      "totalDurationMs": 0,
+      "steps": [
+        {
+          "name": "create_surgery_plan",
+          "status": 0,
+          "durationMs": 0,
+          "error": "UAT-PLACEHOLDER-0002: patientId",
+          "extracted": {},
+          "feedback": null,
+          "passed": false,
+          "fieldFound": null
+        }
+      ],
+      "allPassed": false,
+      "passedCount": 0,
+      "failedCount": 1,
+      "unnecessaryCount": 0,
+      "averageRating": 0
+    },
+    {
+      "scenario": "hospitalization",
+      "title": "Yatis ve kafes yonetimi",
+      "module": "hospitalization",
+      "startedAt": "2026-08-02T19:47:10.851Z",
+      "finishedAt": "2026-08-02T19:47:10.851Z",
+      "totalDurationMs": 0,
+      "steps": [
+        {
+          "name": "create_hospitalization",
+          "status": 0,
+          "durationMs": 0,
+          "error": "UAT-PLACEHOLDER-0002: patientId",
+          "extracted": {},
+          "feedback": null,
+          "passed": false,
+          "fieldFound": null
+        }
+      ],
+      "allPassed": false,
+      "passedCount": 0,
+      "failedCount": 1,
+      "unnecessaryCount": 0,
+      "averageRating": 0
+    },
+    {
+      "scenario": "laboratory",
+      "title": "Laboratuvar istegi",
+      "module": "lab",
+      "startedAt": "2026-08-02T19:47:10.851Z",
+      "finishedAt": "2026-08-02T19:47:10.851Z",
+      "totalDurationMs": 0,
+      "steps": [
+        {
+          "name": "create_lab_order",
+          "status": 0,
+          "durationMs": 0,
+          "error": "UAT-PLACEHOLDER-0002: patientId",
+          "extracted": {},
+          "feedback": null,
+          "passed": false,
+          "fieldFound": null
+        }
+      ],
+      "allPassed": false,
+      "passedCount": 0,
+      "failedCount": 1,
+      "unnecessaryCount": 0,
+      "averageRating": 0
+    },
+    {
+      "scenario": "portal",
+      "title": "Hasta sahibi portali",
+      "module": "portal",
+      "startedAt": "2026-08-02T19:47:10.851Z",
+      "finishedAt": "2026-08-02T19:47:10.851Z",
+      "totalDurationMs": 0,
+      "steps": [
+        {
+          "name": "create_portal_request",
+          "status": 0,
+          "durationMs": 0,
+          "error": "UAT-PLACEHOLDER-0002: patientId",
+          "extracted": {},
+          "feedback": null,
+          "passed": false,
+          "fieldFound": null
+        }
+      ],
+      "allPassed": false,
+      "passedCount": 0,
+      "failedCount": 1,
+      "unnecessaryCount": 0,
+      "averageRating": 0
+    }
+  ],
+  "allPassed": false,
+  "passedCount": 0,
+  "failedCount": 10,
+  "totalSteps": 10,
+  "totalFailedSteps": 10,
+  "totalUnnecessary": 0,
+  "averageRating": 0
+}

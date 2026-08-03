@@ -20,7 +20,14 @@ import { processHealthJob, type HealthJobPayload } from "../jobs/health-job.js";
 import { logger } from "../logger.js";
 import { getRedisConnection } from "../queues/connection.js";
 import { HEALTH_QUEUE_NAME } from "../queues/health.queue.js";
-import { finishJobRun, startJobRun } from "../observability/job-run-reporter.js";
+import {
+  finishJobRun,
+  startJobRun,
+} from "../observability/job-run-reporter.js";
+import {
+  maskWorkerPayload,
+  maskWorkerString,
+} from "../observability/pii-masker.js";
 
 /**
  * Worker seçenekleri. Sabit kodlanmış: orchestrator bu değerleri
@@ -63,7 +70,10 @@ export function getHealthWorker(): Worker {
           correlationId,
         });
         childLogger.info(
-          { attempt: job.attemptsMade + 1, data: job.data },
+          {
+            attempt: job.attemptsMade + 1,
+            data: maskWorkerPayload(job.data),
+          },
           "health job işleniyor",
         );
         try {
@@ -75,7 +85,10 @@ export function getHealthWorker(): Worker {
             maxAttempts,
             output: result as unknown as Record<string, unknown>,
           });
-          childLogger.info({ result }, "health job başarılı");
+          childLogger.info(
+            { result: maskWorkerPayload(result) },
+            "health job başarılı",
+          );
           return result;
         } catch (error) {
           await finishJobRun({
@@ -86,9 +99,14 @@ export function getHealthWorker(): Worker {
             error,
           });
           const reason =
-            error instanceof Error ? error.message : "Bilinmeyen hata";
+            error instanceof Error
+              ? maskWorkerString(error.message)
+              : "Bilinmeyen hata";
           childLogger.error(
-            { err: error, failedReason: reason },
+            {
+              errorName: error instanceof Error ? error.name : "UnknownError",
+              failedReason: reason,
+            },
             "health job başarısız",
           );
           // BullMQ'nun retry mekanizması için hatayı yeniden fırlat.
@@ -111,15 +129,20 @@ export function getHealthWorker(): Worker {
           jobId: job?.id,
           queue: HEALTH_QUEUE_NAME,
           attempts: job?.attemptsMade,
-          failedReason: job?.failedReason,
-          err: error,
+          failedReason: job?.failedReason
+            ? maskWorkerString(job.failedReason)
+            : undefined,
+          errorName: error instanceof Error ? error.name : "UnknownError",
         },
         "health job kalıcı olarak başarısız",
       );
     });
     worker.on("error", (error) => {
       logger.error(
-        { err: error, queue: HEALTH_QUEUE_NAME },
+        {
+          errorName: error instanceof Error ? error.name : "UnknownError",
+          queue: HEALTH_QUEUE_NAME,
+        },
         "worker runtime hatası",
       );
     });

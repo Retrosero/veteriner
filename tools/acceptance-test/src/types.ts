@@ -34,6 +34,10 @@ export type UatScenarioKey =
 /** HTTP metodu. */
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
+/** UAT adımını çalıştıran kullanıcı rolü. */
+export type UatActorRole =
+  "OWNER" | "VETERINARIAN" | "STAFF" | "PET_OWNER_PORTAL";
+
 /**
  * Tek bir pilot adimi. Pilot kullanicinin UI'da tikladigi
  * aksiyona karsilik gelen API cagrisi.
@@ -45,6 +49,8 @@ export interface UatStep {
   label: string;
   /** HTTP metodu. */
   method: HttpMethod;
+  /** Senaryo varsayılanından farklı rol gerektiren adım. */
+  actorRole?: UatActorRole;
   /**
    * API yolu (placeholder'larla). Ornek:
    *   "/api/v1/owners/{ownerId}/patients"
@@ -129,7 +135,7 @@ export interface UatScenarioConfig {
    * Pilot kullanicinin tipik rolu. Ornek: OWNER (tek
    * klinik sahibi) veya VETERINARIAN.
    */
-  actorRole: "OWNER" | "VETERINARIAN" | "STAFF" | "PET_OWNER_PORTAL";
+  actorRole: UatActorRole;
   /** Adim sirasi. */
   steps: ReadonlyArray<UatStep>;
   /**

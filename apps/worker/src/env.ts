@@ -37,7 +37,8 @@ const envSchema = z.object({
     .string()
     .min(1, "DATABASE_URL boş olamaz")
     .refine(
-      (value) => value.startsWith("postgresql://") || value.startsWith("postgres://"),
+      (value) =>
+        value.startsWith("postgresql://") || value.startsWith("postgres://"),
       "DATABASE_URL postgresql:// veya postgres:// şeması ile başlamalıdır",
     ),
   LOG_LEVEL: z

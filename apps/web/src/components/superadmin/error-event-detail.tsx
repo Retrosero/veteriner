@@ -139,11 +139,7 @@ function renderAuditDetails(entry: AuditEntry): JSX.Element {
         </span>
       );
     case "occurrence_recorded":
-      return (
-        <span>
-          {String(d["reason"] ?? "Yeni oluşum")}
-        </span>
-      );
+      return <span>{String(d["reason"] ?? "Yeni oluşum")}</span>;
     default:
       return <span className="text-slate-500">—</span>;
   }
@@ -174,10 +170,9 @@ export function ErrorEventDetail({
         `/api/v1/superadmin/error-events/${eventId}`,
         { credentials: "include" },
       ),
-      apiRequest<NoteList>(
-        `/api/v1/superadmin/error-events/${eventId}/notes`,
-        { credentials: "include" },
-      ),
+      apiRequest<NoteList>(`/api/v1/superadmin/error-events/${eventId}/notes`, {
+        credentials: "include",
+      }),
       apiRequest<AuditList>(
         `/api/v1/superadmin/error-events/${eventId}/audit-log`,
         { credentials: "include" },
@@ -296,9 +291,7 @@ export function ErrorEventDetail({
 
   return (
     <aside className="space-y-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="text-lg font-medium text-slate-900">
-        Hata ayrıntısı
-      </h2>
+      <h2 className="text-lg font-medium text-slate-900">Hata ayrıntısı</h2>
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
       {!event ? <p className="text-sm text-slate-500">Yükleniyor…</p> : null}
       {event ? (
@@ -478,14 +471,14 @@ export function ErrorEventDetail({
                     key={entry.id}
                   >
                     <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                      <span>
-                        {new Date(entry.occurredAt).toLocaleString()}
-                      </span>
+                      <span>{new Date(entry.occurredAt).toLocaleString()}</span>
                       <span>·</span>
                       <span>{AUDIT_ACTION_LABELS[entry.action]}</span>
                       <span>·</span>
                       <span>
-                        {entry.actorType === "system" ? "Sistem" : entry.actorId}
+                        {entry.actorType === "system"
+                          ? "Sistem"
+                          : entry.actorId}
                       </span>
                     </div>
                     <div className="mt-1 text-sm text-slate-800">

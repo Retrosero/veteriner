@@ -391,9 +391,8 @@ describe("ErrorReporter — token-bucket rate limit (per user)", () => {
       rateLimitBucketCapacity: 2,
       rateLimitRefillIntervalMs: 60_000,
       userIdProvider: () => {
-        const current = (
-          globalThis as { __vetniva_test_user?: string }
-        ).__vetniva_test_user;
+        const current = (globalThis as { __vetniva_test_user?: string })
+          .__vetniva_test_user;
         return current ?? "anonymous";
       },
     });
@@ -541,4 +540,3 @@ describe("ErrorReporter — max retry attempts", () => {
     vi.useRealTimers();
   });
 });
-

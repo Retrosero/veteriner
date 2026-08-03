@@ -92,16 +92,16 @@ append-only log'a yazılır.
 
 ## 6. Atama / Çözüm Notu / Destek Bağlantısı (GOAL-104)
 
-| Aksiyon          | Endpoint                                          | Permission                  |
-| ---------------- | ------------------------------------------------- | --------------------------- |
-| Not ekleme       | `POST /:id/notes`                                 | `error:event:note:write`    |
-| Not listesi      | `GET  /:id/notes`                                 | `error:event:note:write`    |
-| Destek bağlantısı| `POST /:id/support-links`                         | `error:event:support:write` |
-| Destek listesi   | `GET  /:id/support-links`                         | `error:event:support:write` |
-| Atama            | `PATCH /:id/assignment`                           | `error:event:assign:write`  |
-| Atama geçmişi    | `GET  /:id/assignments`                           | `error:event:assign:write`  |
-| Durum geçişi     | `PATCH /:id/status`                               | `error:event:status:write`  |
-| Birleşik audit   | `GET  /:id/audit-log`                             | `error:event:audit:read`    |
+| Aksiyon           | Endpoint                  | Permission                  |
+| ----------------- | ------------------------- | --------------------------- |
+| Not ekleme        | `POST /:id/notes`         | `error:event:note:write`    |
+| Not listesi       | `GET  /:id/notes`         | `error:event:note:write`    |
+| Destek bağlantısı | `POST /:id/support-links` | `error:event:support:write` |
+| Destek listesi    | `GET  /:id/support-links` | `error:event:support:write` |
+| Atama             | `PATCH /:id/assignment`   | `error:event:assign:write`  |
+| Atama geçmişi     | `GET  /:id/assignments`   | `error:event:assign:write`  |
+| Durum geçişi      | `PATCH /:id/status`       | `error:event:status:write`  |
+| Birleşik audit    | `GET  /:id/audit-log`     | `error:event:audit:read`    |
 
 Notlar `PiiMasker.maskString` ile işlenir; PII (email/TCKN/telefon/IBAN)
 mask'lanır. Atama, status değiştirmez. `unassign=true` ile `UNASSIGNED`
@@ -123,10 +123,10 @@ sentetik assigneeId gönderilir.
 | Modül                                 | Testler | Durum |
 | ------------------------------------- | ------- | ----- |
 | ErrorEventsService (core + next-tick) | 110+    | ✓     |
-| ErrorEventsRepository                  | 10+     | ✓     |
-| error-reporter                         | 24      | ✓     |
+| ErrorEventsRepository                 | 10+     | ✓     |
+| error-reporter                        | 24      | ✓     |
 | error boundary + global-error         | 8       | ✓     |
-| api-error-integration                  | 9       | ✓     |
+| api-error-integration                 | 9       | ✓     |
 
 Yeni eklenenler (GOAL-100 next-tick):
 

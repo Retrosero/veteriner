@@ -6,16 +6,16 @@
 
 ## 1. Endpoint'ler ve Permission'lar
 
-| Aksiyon          | Endpoint                                          | Permission                   | Not                          |
-| ---------------- | ------------------------------------------------- | ---------------------------- | ---------------------------- |
-| Durum güncelleme | `PATCH /:id/status`                               | `error:event:status:write`   | State machine doğrulanır.    |
-| Atama            | `PATCH /:id/assignment`                           | `error:event:assign:write`   | Append-only kayıt.           |
-| Atama geçmişi    | `GET  /:id/assignments`                           | `error:event:assign:write`   | Tarih sırası.                |
-| Not ekleme       | `POST /:id/notes`                                 | `error:event:note:write`     | PII mask'lı.                 |
-| Not listesi      | `GET  /:id/notes`                                 | `error:event:note:write`     | CreatedAt ASC.               |
-| Destek bağlantısı| `POST /:id/support-links`                         | `error:event:support:write`  | En az 1 tanımlayıcı.         |
-| Destek listesi   | `GET  /:id/support-links`                         | `error:event:support:write`  | CreatedAt ASC.               |
-| Birleşik audit   | `GET  /:id/audit-log`                             | `error:event:audit:read`     | Tüm aksiyonlar.              |
+| Aksiyon           | Endpoint                  | Permission                  | Not                       |
+| ----------------- | ------------------------- | --------------------------- | ------------------------- |
+| Durum güncelleme  | `PATCH /:id/status`       | `error:event:status:write`  | State machine doğrulanır. |
+| Atama             | `PATCH /:id/assignment`   | `error:event:assign:write`  | Append-only kayıt.        |
+| Atama geçmişi     | `GET  /:id/assignments`   | `error:event:assign:write`  | Tarih sırası.             |
+| Not ekleme        | `POST /:id/notes`         | `error:event:note:write`    | PII mask'lı.              |
+| Not listesi       | `GET  /:id/notes`         | `error:event:note:write`    | CreatedAt ASC.            |
+| Destek bağlantısı | `POST /:id/support-links` | `error:event:support:write` | En az 1 tanımlayıcı.      |
+| Destek listesi    | `GET  /:id/support-links` | `error:event:support:write` | CreatedAt ASC.            |
+| Birleşik audit    | `GET  /:id/audit-log`     | `error:event:audit:read`    | Tüm aksiyonlar.           |
 
 Mevcut uygulamada SUPERADMIN tüm permission'lara sahiptir
 (`applies_to_roles: [SUPERADMIN]`). Mevcut testler `audit:log:read`
@@ -81,13 +81,13 @@ tanımlayıcı zorunlu (`system` + `externalId`/`url`/`title` kombinasyonu).
 
 `GET /:id/audit-log` tüm aksiyonları occurredAt artan sırada döner:
 
-| Action                  | Tetikleyici                    | UI ipucu                |
-| ----------------------- | ------------------------------ | ----------------------- |
-| `status_transition`     | Manuel PATCH /:id/status       | From → To + reason      |
-| `note_added`            | POST /:id/notes                | Visibility + preview    |
-| `support_link_added`    | POST /:id/support-links        | System + externalId/url |
-| `assignment_changed`    | PATCH /:id/assignment          | Assignee + reason       |
-| `occurrence_recorded`   | resolved → reopened (sistem)    | Reason                  |
+| Action                | Tetikleyici                  | UI ipucu                |
+| --------------------- | ---------------------------- | ----------------------- |
+| `status_transition`   | Manuel PATCH /:id/status     | From → To + reason      |
+| `note_added`          | POST /:id/notes              | Visibility + preview    |
+| `support_link_added`  | POST /:id/support-links      | System + externalId/url |
+| `assignment_changed`  | PATCH /:id/assignment        | Assignee + reason       |
+| `occurrence_recorded` | resolved → reopened (sistem) | Reason                  |
 
 UI (`ErrorEventDetail`) bu timeline'ı `<ol>` içinde render eder; her
 entry aksiyonuna göre `renderAuditDetails` ile özelleştirilmiş
@@ -112,22 +112,22 @@ Yeni granular permission'lar `docs/permissions/PERMISSION_CATALOG.yaml`'da
 tanımlandı; SUPERADMIN için `applies_to_roles` ile eklendi. İleride
 (FAZ-15+) tenant-side mühendis ekipleri bu permission'ları alabilir.
 
-| Permission                  | Tipik kullanıcı              | Aksiyon kapsamı       |
-| --------------------------- | ---------------------------- | --------------------- |
-| `error:event:tenant:read`   | OWNER (kendi tenant'ı)       | Salt-okunur görüntüleme |
-| `error:event:status:write`  | SUPERADMIN mühendis          | State transition     |
-| `error:event:assign:write`  | SUPERADMIN mühendis          | Atama                |
-| `error:event:note:write`    | SUPERADMIN mühendis          | Çözüm notu           |
-| `error:event:support:write` | SUPERADMIN mühendis          | Destek bağlantısı    |
-| `error:event:audit:read`    | SUPERADMIN mühendis + denetçi | Audit timeline       |
+| Permission                  | Tipik kullanıcı               | Aksiyon kapsamı         |
+| --------------------------- | ----------------------------- | ----------------------- |
+| `error:event:tenant:read`   | OWNER (kendi tenant'ı)        | Salt-okunur görüntüleme |
+| `error:event:status:write`  | SUPERADMIN mühendis           | State transition        |
+| `error:event:assign:write`  | SUPERADMIN mühendis           | Atama                   |
+| `error:event:note:write`    | SUPERADMIN mühendis           | Çözüm notu              |
+| `error:event:support:write` | SUPERADMIN mühendis           | Destek bağlantısı       |
+| `error:event:audit:read`    | SUPERADMIN mühendis + denetçi | Audit timeline          |
 
 ## 8. Test Coverage
 
 | Dosya                                              | Testler | Konu                          |
 | -------------------------------------------------- | ------- | ----------------------------- |
-| `error-events.service.spec.ts` (assignment + note) | 18      | append-only, PII mask, IDOR  |
+| `error-events.service.spec.ts` (assignment + note) | 18      | append-only, PII mask, IDOR   |
 | `error-event-detail.test.tsx`                      | 2       | detay + audit timeline render |
-| **Toplam (core + next-tick)**                       | 20+     |                               |
+| **Toplam (core + next-tick)**                      | 20+     |                               |
 
 ## 9. Operasyonel Kontrol Listesi
 

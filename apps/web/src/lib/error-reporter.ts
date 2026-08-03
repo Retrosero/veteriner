@@ -409,14 +409,17 @@ export class ErrorReporter {
     requestId?: string | null,
   ): void {
     if (!this.config.enabled) return;
-    this.enqueue({
-      severity,
-      message: maskString(message),
-      stack: undefined,
-      context: sanitizeContext(context),
-      route: currentRoute(),
-      occurredAt: new Date().toISOString(),
-    }, requestId);
+    this.enqueue(
+      {
+        severity,
+        message: maskString(message),
+        stack: undefined,
+        context: sanitizeContext(context),
+        route: currentRoute(),
+        occurredAt: new Date().toISOString(),
+      },
+      requestId,
+    );
   }
 
   /**

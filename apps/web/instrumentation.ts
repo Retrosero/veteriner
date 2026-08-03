@@ -50,12 +50,15 @@ function bindClientHandlers(): void {
   // Önceki yüklemelerden gelen listener'lar olabilir; replace et.
   // Reporter singleton olduğu için aynı sayfada birden fazla kez
   // çağrılmamalı, ancak HMR sırasında tekrar yüklenebilir.
-  if ((window as unknown as { __vetniva_error_bound__: boolean })
-    .__vetniva_error_bound__) {
+  if (
+    (window as unknown as { __vetniva_error_bound__: boolean })
+      .__vetniva_error_bound__
+  ) {
     return;
   }
-  (window as unknown as { __vetniva_error_bound__: boolean })
-    .__vetniva_error_bound__ = true;
+  (
+    window as unknown as { __vetniva_error_bound__: boolean }
+  ).__vetniva_error_bound__ = true;
 
   window.addEventListener("error", (event) => {
     try {

@@ -9,6 +9,7 @@
 import { PrismaClient } from "@prisma/client";
 
 import { logger } from "../logger.js";
+import { maskWorkerPayload, maskWorkerString } from "./pii-masker.js";
 
 import type { Prisma } from "@prisma/client";
 
@@ -34,18 +35,38 @@ export async function startJobRun(args: {
       await tx.$executeRaw`SELECT set_config('app.system_write', 'true', true)`;
       return tx.jobRun.create({
         data: {
-          queueName: args.queueName, jobName: args.jobName, jobKey: args.jobKey,
-          source: "queue", status: "running", attempt: args.attempt,
-          maxAttempts: args.maxAttempts, tenantId: null, branchId: null,
-          correlationId: args.jobKey, requestId: null, actorId: null,
-          actorType: "system", input: args.input as Prisma.InputJsonValue, output: {}, country: "SYSTEM",
-          startedAt: new Date(), triggeredBy: "system", release: process.env["APP_VERSION"] ?? "0.0.0-dev",
-        }, select: { id: true },
+          queueName: args.queueName,
+          jobName: args.jobName,
+          jobKey: args.jobKey,
+          source: "queue",
+          status: "running",
+          attempt: args.attempt,
+          maxAttempts: args.maxAttempts,
+          tenantId: null,
+          branchId: null,
+          correlationId: args.jobKey,
+          requestId: null,
+          actorId: null,
+          actorType: "system",
+          input: maskWorkerPayload(args.input) as Prisma.InputJsonValue,
+          output: {},
+          country: "SYSTEM",
+          startedAt: new Date(),
+          triggeredBy: "system",
+          release: process.env["APP_VERSION"] ?? "0.0.0-dev",
+        },
+        select: { id: true },
       });
     });
     return row.id;
   } catch (error) {
-    logger.error({ err: error, action: "job-run-start" }, "JobRun başlatılamadı");
+    logger.error(
+      {
+        action: "job-run-start",
+        errorName: error instanceof Error ? error.name : "UnknownError",
+      },
+      "JobRun başlatılamadı",
+    );
     return null;
   }
 }
@@ -66,20 +87,48 @@ export async function finishJobRun(args: {
       await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'false', true)`;
       await tx.$executeRaw`SELECT set_config('app.system_write', 'true', true)`;
       const now = new Date();
-      const current = await tx.jobRun.findUnique({ where: { id }, select: { startedAt: true } });
+      const current = await tx.jobRun.findUnique({
+        where: { id },
+        select: { startedAt: true },
+      });
       if (!current) return;
-      const status = args.succeeded ? "succeeded" : args.attempt >= args.maxAttempts ? "dead_letter" : "failed";
-      const message = args.error instanceof Error ? args.error.message : args.error ? "Bilinmeyen worker hatası" : null;
-      await tx.jobRun.update({ where: { id }, data: {
-        status, finishedAt: now, durationMs: Math.max(0, now.getTime() - current.startedAt.getTime()),
-        output: (args.succeeded ? args.output ?? {} : {}) as Prisma.InputJsonValue,
-        errorCode: args.succeeded ? null : "VET-SYSTEM-0001",
-        errorMessage: args.succeeded ? null : message,
-        errorStack: !args.succeeded && args.error instanceof Error ? args.error.stack ?? null : null,
-      } });
+      const status = args.succeeded
+        ? "succeeded"
+        : args.attempt >= args.maxAttempts
+          ? "dead_letter"
+          : "failed";
+      const message =
+        args.error instanceof Error
+          ? maskWorkerString(args.error.message)
+          : args.error
+            ? "Bilinmeyen worker hatası"
+            : null;
+      await tx.jobRun.update({
+        where: { id },
+        data: {
+          status,
+          finishedAt: now,
+          durationMs: Math.max(0, now.getTime() - current.startedAt.getTime()),
+          output: maskWorkerPayload(
+            args.succeeded ? (args.output ?? {}) : {},
+          ) as Prisma.InputJsonValue,
+          errorCode: args.succeeded ? null : "VET-SYSTEM-0001",
+          errorMessage: args.succeeded ? null : message,
+          errorStack:
+            !args.succeeded && args.error instanceof Error && args.error.stack
+              ? maskWorkerString(args.error.stack)
+              : null,
+        },
+      });
     });
   } catch (error) {
-    logger.error({ err: error, action: "job-run-finish" }, "JobRun sonuçlandırılamadı");
+    logger.error(
+      {
+        action: "job-run-finish",
+        errorName: error instanceof Error ? error.name : "UnknownError",
+      },
+      "JobRun sonuçlandırılamadı",
+    );
   }
 }
 

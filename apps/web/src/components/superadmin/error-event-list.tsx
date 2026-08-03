@@ -11,6 +11,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { apiRequest } from "../../lib/api-client";
+import { ErrorEventDetail } from "./error-event-detail";
 
 type ErrorEventRow = {
   id: string;
@@ -42,6 +43,7 @@ export function ErrorEventList(): JSX.Element {
   const [data, setData] = useState<ErrorEventList | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterState>(INITIAL_FILTERS);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const path = useMemo(() => buildPath(filters), [filters]);
 
   useEffect(() => {
@@ -134,7 +136,15 @@ export function ErrorEventList(): JSX.Element {
             <tbody>
               {data.items.map((event) => (
                 <tr className="border-t border-slate-100" key={event.id}>
-                  <td className="p-3">{event.status}</td>
+                  <td className="p-3">
+                    <button
+                      className="text-left underline decoration-slate-300 underline-offset-2 hover:text-blue-700"
+                      onClick={() => setSelectedEventId(event.id)}
+                      type="button"
+                    >
+                      {event.status}
+                    </button>
+                  </td>
                   <td className="p-3">{event.severity}</td>
                   <td className="p-3 font-mono">{event.errorCode}</td>
                   <td className="p-3">{event.module}</td>
@@ -148,6 +158,7 @@ export function ErrorEventList(): JSX.Element {
           </table>
         </div>
       ) : null}
+      {selectedEventId ? <ErrorEventDetail eventId={selectedEventId} /> : null}
     </section>
   );
 }
