@@ -1,18 +1,24 @@
 /**
- * @file AI modülü.
+ * @file AI feature modulu.
  * @module apps/api/modules/ai/ai.module
- * @description AI help endpoint modülü. RetrievalService'i
- * kullanır. FAZ-0 iskeleti: retrieval-only, LLM yok.
- * @since GOAL-005 (FAZ-0) dokümantasyon ve AI bilgi havuzu
+ * @description AI help endpoint + RAG index endpoint modulu.
+ * RetrievalService + AiRagIndexService'i kullanir.
+ * FAZ-11: GOAL-115 (context-aware help) + GOAL-116 (RAG index).
+ * @since GOAL-005 (FAZ-0) dokumantasyon ve AI bilgi havuzu
+ * @updated GOAL-116 (FAZ-11) RAG index endpoint eklendi
  */
 
 import { Module } from "@nestjs/common";
 
 import { AiController } from "./ai.controller.js";
+import { AiRagIndexController } from "./ai-rag-index.controller.js";
+import { AiRagIndexService } from "./ai-rag-index.service.js";
 import { AiModule as CommonAiModule } from "../../common/ai/ai.module.js";
 
 @Module({
   imports: [CommonAiModule],
-  controllers: [AiController],
+  controllers: [AiController, AiRagIndexController],
+  providers: [AiRagIndexService],
+  exports: [AiRagIndexService],
 })
 export class AiFeatureModule {}

@@ -22,7 +22,10 @@ import { logger } from "./logger.js";
 import { closeRedisConnection } from "./queues/connection.js";
 import { closeHealthQueue, getHealthQueue } from "./queues/health.queue.js";
 import { closeHealthWorker, getHealthWorker } from "./workers/health.worker.js";
+import { closeRagChunkQueue, getRagChunkQueue } from "./queues/rag-chunk.queue.js";
+import { closeRagChunkWorker, getRagChunkWorker } from "./workers/rag-chunk.worker.js";
 import { closeJobRunReporter } from "./observability/job-run-reporter.js";
+import { startRagChunkScheduler } from "./scheduler/rag-chunk-scheduler.js";
 
 /**
  * Süreci başlat. Hata durumunda logla ve exit(1).
@@ -37,10 +40,25 @@ async function bootstrap(): Promise<void> {
 
   // 2) Queue + Worker oluştur. Sıralama önemli: queue önce
   // hazır olmalı, çünkü worker aynı bağlantıyı paylaşır.
-  const queue = getHealthQueue();
-  const worker = getHealthWorker();
-  void queue;
-  void worker;
+  const healthQueue = getHealthQueue();
+  const healthWorker = getHealthWorker();
+  void healthQueue;
+  void healthWorker;
+
+  // 3) RAG chunk worker (GOAL-116). Queue + worker oluşturulur;
+  // aynı Redis bağlantısı paylaşılır.
+  const ragQueue = getRagChunkQueue();
+  const ragWorker = getRagChunkWorker();
+  void ragQueue;
+  void ragWorker;
+
+  // 4) RAG chunk scheduler (GOAL-116). Üretim davranışı: her
+  // 6 saatte bir docs/* dizinlerini tarayıp AI_CHUNKS.yaml'ı
+  // günceller. Orchestrator (Kubernetes CronJob) tercih edilir;
+  // bu scheduler process-içi fallback'tir.
+  if (env.NODE_ENV === "production") {
+    startRagChunkScheduler();
+  }
 
   logger.info("worker süreci hazır: sinyaller dinleniyor");
 }
@@ -61,11 +79,27 @@ async function shutdown(signal: NodeJS.Signals): Promise<void> {
     );
   }
   try {
+    await closeRagChunkWorker();
+  } catch (error) {
+    logger.error(
+      { err: error, step: "closeRagChunkWorker" },
+      "rag-chunk worker kapatılamadı",
+    );
+  }
+  try {
     await closeHealthQueue();
   } catch (error) {
     logger.error(
       { err: error, step: "closeHealthQueue" },
       "queue kapatılamadı",
+    );
+  }
+  try {
+    await closeRagChunkQueue();
+  } catch (error) {
+    logger.error(
+      { err: error, step: "closeRagChunkQueue" },
+      "rag-chunk queue kapatılamadı",
     );
   }
   try {

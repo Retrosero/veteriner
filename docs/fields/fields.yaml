@@ -22351,6 +22351,76 @@ entities:
         description_en: "Ai generation source field."
         validation: "auto-generated; refine in follow-up"
         version: "1.0.0"
+      - id: ai.source
+        name: source
+        type: string
+        required: false
+        unique: false
+        pii: false
+        description_tr: "RAG chunk kaynak dosya yolu (docs/workflows/vaccine.md vb.)."
+        description_en: "RAG chunk source file path (e.g. docs/workflows/vaccine.md)."
+        validation: "GOAL-116 RAG index"
+        version: "1.0.0"
+      - id: ai.score
+        name: score
+        type: number
+        required: false
+        unique: false
+        pii: false
+        description_tr: "RAG arama 0-1 normalize edilmis TF-IDF skoru."
+        description_en: "RAG search 0-1 normalized TF-IDF score."
+        validation: "GOAL-116 RAG index"
+        version: "1.0.0"
+      - id: ai.pii
+        name: pii
+        type: boolean
+        required: false
+        unique: false
+        pii: false
+        description_tr: "RAG chunk PII icerikli mi (PII_MASKING.md'ye gore)."
+        description_en: "Whether RAG chunk contains PII (per PII_MASKING.md)."
+        validation: "GOAL-116 RAG index"
+        version: "1.0.0"
+      - id: ai.matchedTerms
+        name: matchedTerms
+        type: string
+        required: false
+        unique: false
+        pii: false
+        description_tr: "RAG arama sorgusu token'larinin eslesme listesi."
+        description_en: "RAG search query token match list."
+        validation: "GOAL-116 RAG index"
+        version: "1.0.0"
+      - id: ai.results
+        name: results
+        type: string
+        required: false
+        unique: false
+        pii: false
+        description_tr: "RAG arama sonuclari dizisi."
+        description_en: "RAG search results array."
+        validation: "GOAL-116 RAG index"
+        version: "1.0.0"
+      - id: ai.totalChunks
+        name: totalChunks
+        type: number
+        required: false
+        unique: false
+        pii: false
+        description_tr: "RAG indeksinde filtre uygulanmis toplam chunk sayisi."
+        description_en: "RAG index filter-applied total chunk count."
+        validation: "GOAL-116 RAG index"
+        version: "1.0.0"
+      - id: ai.loader
+        name: loader
+        type: string
+        required: false
+        unique: false
+        pii: false
+        description_tr: "RAG chunk loader (in-memory TF-IDF veya vector DB)."
+        description_en: "RAG chunk loader (in-memory TF-IDF or vector DB)."
+        validation: "GOAL-116 RAG index"
+        version: "1.0.0"
   - id: clinic_sale
     description_tr: "Clinic_sale varlığı (FAZ-11 bulk add)."
     description_en: "Clinic_sale entity (FAZ-11 bulk add)."

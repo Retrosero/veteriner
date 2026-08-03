@@ -38,6 +38,13 @@ const helpRequestSchema = z.object({
   currentPage: z.string().max(256).optional(),
   selectedEntity: z.string().max(256).optional(),
   topK: z.number().int().min(1).max(20).optional(),
+  /**
+   * Üretim kaynağı. Belirtilmezse davranış chunks.length'e göre
+   * otomatik seçilir: `template` (boş) | `retrieval` (var, kısa) |
+   * `hybrid` (var, uzun). `retrieval` zorlanırsa AI_CHUNKS.yaml'dan
+   * retrieval sonuçları önceliklendirilir.
+   */
+  generationSource: z.enum(["auto", "template", "retrieval", "hybrid"]).optional(),
 });
 
 /** Help response gövdesi. */
@@ -131,13 +138,33 @@ export class AiController {
         title: c.metadata.title,
         snippet: c.content.slice(0, 200),
       })),
-      generationSource:
-        result.chunks.length > 0
-          ? answer.length > 50
-            ? "hybrid"
-            : "retrieval"
-          : "template",
+      generationSource: this.resolveGenerationSource(
+        body.generationSource,
+        result.chunks.length,
+        answer.length,
+      ),
     };
+  }
+
+  /**
+   * Generation source seçimi. Client `auto` (default) belirtirse
+   * chunks uzunluğu + answer uzunluğuna göre otomatik seçilir;
+   * belirli bir mod zorlanırsa o kullanılır (chunks boş olsa bile
+   * `retrieval` seçilebilir — bu durumda boş sources döner).
+   * @param requested
+   * @param chunksCount
+   * @param answerLength
+   */
+  private resolveGenerationSource(
+    requested: "auto" | "template" | "retrieval" | "hybrid" | undefined,
+    chunksCount: number,
+    answerLength: number,
+  ): HelpResponseBody["generationSource"] {
+    if (requested && requested !== "auto") {
+      return requested;
+    }
+    if (chunksCount === 0) return "template";
+    return answerLength > 50 ? "hybrid" : "retrieval";
   }
 
   /**

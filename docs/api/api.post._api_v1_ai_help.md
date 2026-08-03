@@ -16,7 +16,8 @@ entegrasyonu Faz 12+'da bu katmanı değiştirecek.
   "locale": "tr-TR",
   "currentPage": "/[locale]/clinic/patients/{patientId}/vaccinations/new",
   "selectedEntity": "patient-uuid",
-  "topK": 5
+  "topK": 5,
+  "generationSource": "auto"
 }
 ```
 
@@ -25,6 +26,11 @@ entegrasyonu Faz 12+'da bu katmanı değiştirecek.
 - `currentPage` (string, max 256) opsiyonel.
 - `selectedEntity` (string, max 256) opsiyonel.
 - `topK` (1-20, default 5) opsiyonel.
+- `generationSource` (auto | template | retrieval | hybrid, default
+  `auto`) opsiyonel. `auto` chunks.length + answer uzunluguna gore
+  otomatik secer; belirli bir mod zorlanirsa o kullanilir.
+  `retrieval` zorlanirsa AI_CHUNKS.yaml'dan retrieval sonuclari
+  onceliklendirilir (chunks bos olsa bile).
 
 **Response 200 (`HelpResponse`):**
 
