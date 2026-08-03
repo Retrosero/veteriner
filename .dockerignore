@@ -1,0 +1,12 @@
+# Yerel bağımlılıklar platforma özgü symlink içerir; Docker builder kendi
+# Linux bağımlılıklarını kurar. Test çıktıları ve çalışma verisi de imaja girmez.
+node_modules
+**/node_modules
+**/dist
+**/.next
+temp
+.git
+.turbo
+coverage
+*.log
+.env

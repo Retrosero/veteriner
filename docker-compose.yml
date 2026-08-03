@@ -72,6 +72,72 @@ services:
       - "1025:1025"
       - "8025:8025"
 
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: vetniva-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT_API: 3001
+      APP_VERSION: ${APP_VERSION:-0.1.0}
+      DATABASE_URL: postgresql://vetniva_app:vetniva_app@postgres:5432/vetniva?schema=public
+      REDIS_URL: redis://redis:6379
+      SMTP_HOST: mailhog
+      SMTP_PORT: 1025
+      SMTP_FROM: ${SMTP_FROM:-no-reply@vetniva.local}
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET}
+      AUTH_JWT_ACCESS_TTL: ${AUTH_JWT_ACCESS_TTL:-900}
+      AUTH_JWT_REFRESH_TTL: ${AUTH_JWT_REFRESH_TTL:-2592000}
+      STORAGE_DRIVER: local
+      STORAGE_LOCAL_ROOT: /app/storage
+      STORAGE_SIGNING_KEY: ${STORAGE_SIGNING_KEY}
+      SCAN_DRIVER: noop
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: vetniva-web
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      API_BASE_URL: http://api:3001
+      APP_VERSION: ${APP_VERSION:-0.1.0}
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_started
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    container_name: vetniva-worker
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      APP_VERSION: ${APP_VERSION:-0.1.0}
+      DATABASE_URL: postgresql://vetniva_app:vetniva_app@postgres:5432/vetniva?schema=public
+      REDIS_URL: redis://redis:6379
+      SMTP_HOST: mailhog
+      SMTP_PORT: 1025
+      SMTP_FROM: ${SMTP_FROM:-no-reply@vetniva.local}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
 volumes:
   vetniva-postgres-data:
   vetniva-postgres-shadow-data:

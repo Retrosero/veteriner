@@ -21,12 +21,11 @@ COPY packages/contracts/package.json packages/contracts/
 COPY packages/i18n/package.json packages/i18n/
 COPY packages/ui/package.json packages/ui/
 COPY apps/worker/package.json apps/worker/
-RUN pnpm install --filter @vetniva/worker... --frozen-lockfile=false
+RUN pnpm install --filter @vetniva/worker... --frozen-lockfile=false --ignore-scripts
 
 # ---- 3) Build ----------------------------------------------------
 FROM base AS build
 COPY --from=deps /repo /repo
-COPY tsconfig.base.json ./
 COPY packages/config packages/config
 COPY packages/contracts packages/contracts
 COPY apps/worker apps/worker

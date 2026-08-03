@@ -18,7 +18,7 @@ COPY packages/ui/package.json packages/ui/
 COPY apps/web/package.json apps/web/
 
 # Yalnızca web paketi + bağımlılıkları (dev dahil) kurulur.
-RUN pnpm install --filter @vetniva/web... --frozen-lockfile=false
+RUN pnpm install --filter @vetniva/web... --frozen-lockfile=false --ignore-scripts
 
 # ---- 2. Build katmanı ----
 FROM deps AS builder
@@ -32,14 +32,21 @@ COPY packages/contracts packages/contracts
 COPY packages/i18n packages/i18n
 COPY packages/ui packages/ui
 COPY apps/web apps/web
-COPY tsconfig.base.json ./
-
 # Önce workspace paketlerini derle (turbo yerine sıralı)
 RUN pnpm --filter @vetniva/config build || true
 RUN pnpm --filter @vetniva/contracts build
 RUN pnpm --filter @vetniva/i18n build
 RUN pnpm --filter @vetniva/ui build
-
+# Hoisted pnpm yapılandırmasında Next kök node_modules üzerinden çözer.
+# Builder Linux bağlarını açıkça kurar; Windows host node_modules imaja alınmaz.
+RUN rm -rf node_modules/@vetniva/ui node_modules/@vetniva/contracts node_modules/@vetniva/i18n \
+  && mkdir -p node_modules/@vetniva \
+  && ln -sfn ../../packages/ui node_modules/@vetniva/ui \
+  && ln -sfn ../../packages/contracts node_modules/@vetniva/contracts \
+  && ln -sfn ../../packages/i18n node_modules/@vetniva/i18n
+RUN test -f node_modules/@vetniva/ui/package.json \
+  && test -f node_modules/@vetniva/ui/dist/index.js \
+  && node -e "console.log(require.resolve('@vetniva/ui/package.json'))"
 # Next.js standalone build
 RUN pnpm --filter @vetniva/web build
 
