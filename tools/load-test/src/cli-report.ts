@@ -7,6 +7,9 @@
  * Markdown + JSON rapor yazar. Tenant izolasyonu ve PII
  * gereksinimlerine uyar.
  *
+ * Threshold degerleri ortam degiskenleri ile override
+ * edilebilir (bkz. config.applyThresholdEnvOverrides).
+ *
  * Kullanim:
  *   pnpm --filter @vetniva/load-test report -- --summary=./summary.json --profile=pilot --base-url=http://localhost:3001
  *
@@ -16,10 +19,19 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-import { SCENARIOS, LOAD_PROFILES } from "./config.js";
+import {
+  SCENARIOS,
+  LOAD_PROFILES,
+  applyThresholdEnvOverrides,
+} from "./config.js";
 import { evaluateScenario } from "./thresholds.js";
 import { buildReport, reportToJson, reportToMarkdown } from "./report.js";
-import type { K6Summary, LoadProfile, ScenarioResult } from "./types.js";
+import type {
+  K6Summary,
+  LoadProfile,
+  ScenarioConfig,
+  ScenarioResult,
+} from "./types.js";
 
 interface Args {
   summary: string;
@@ -102,9 +114,17 @@ async function main(): Promise<void> {
   const raw = await readFile(summaryPath, "utf8");
   const summary = JSON.parse(raw) as K6Summary;
 
-  const results: ScenarioResult[] = SCENARIOS.map((s) =>
-    evaluateScenario(s, summary, args.profile, args.durationMs),
-  );
+  const results: ScenarioResult[] = SCENARIOS.map((s) => {
+    // Env override uygulanmis threshold ile karsilastir.
+    const effective: ScenarioConfig = {
+      ...s,
+      thresholds: applyThresholdEnvOverrides(s.thresholds, {
+        profile: args.profile,
+        scenarioKey: s.key,
+      }),
+    };
+    return evaluateScenario(effective, summary, args.profile, args.durationMs);
+  });
 
   const report = buildReport({
     profile: args.profile,

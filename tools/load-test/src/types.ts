@@ -44,6 +44,16 @@ export interface ScenarioConfig {
   thresholds: ThresholdSpec;
   /** Onerilen yuk profilleri. */
   recommendedProfiles: ReadonlyArray<LoadProfile>;
+  /**
+   * Ramp-up suresi (k6 stages icin). Bos veya undefined = profil
+   * varsayilanina dus (k6 sabit VU). k6 suresi string ("30s").
+   */
+  warmupSec?: string;
+  /**
+   * Cool-down suresi (k6 stages icin). Bos veya undefined = profil
+   * varsayilanina dus (k6 sabit VU). k6 suresi string ("30s").
+   */
+  cooldownSec?: string;
 }
 
 /** Tek bir API cagrisi (adim). */

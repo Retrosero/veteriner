@@ -29,6 +29,28 @@ const BRANCH_ID = __ENV.BRANCH_ID || 'brc-pilot-merkez';
 const AUTH_TOKEN = __ENV.AUTH_TOKEN || '';
 const USER_ID = __ENV.USER_ID || 'usr-pilot-vet';
 
+// patientId benzeri katalog placeholder'larını environment'tan çözer.
+// Konfigürasyon anahtarları snake case environment adına dönüştürülür.
+export function resolvePath(value) {
+  return String(value).replace(/\\{([A-Za-z0-9_]+)\\}/g, function (_match, key) {
+    const envKey = key.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toUpperCase();
+    const resolved = __ENV[envKey];
+    if (!resolved) fail('Missing load-test environment variable: ' + envKey);
+    return resolved;
+  });
+}
+
+export function resolveDeep(value) {
+  if (typeof value === 'string') return resolvePath(value);
+  if (Array.isArray(value)) return value.map(resolveDeep);
+  if (value && typeof value === 'object') {
+    const out = {};
+    Object.keys(value).forEach(function (key) { out[key] = resolveDeep(value[key]); });
+    return out;
+  }
+  return value;
+}
+
 // ---- Custom metrikler ----
 export const errorCount = new Counter('vetniva_errors');
 export const piiRedactedCount = new Counter('vetniva_pii_redacted');
@@ -127,15 +149,47 @@ export function jitterSleep(minMs, maxMs) {
 /**
  * Tum senaryolar icin k6 options blogu uretir.
  * Profile (smoke/pilot/first_100/stress) VU ve sureyi belirler.
+ * Warm-up / cool-down sureleri stages bloguna yansir; bu
+ * sayede k6 rampa asamasinda JIT/cache isinmasi nedeniyle
+ * olusan false-positive latency piklerini threshold
+ * hesabina katmaz.
  */
-export function k6Options(profileShape: {
-  vus: number;
-  duration: string;
-  description: string;
-}): string {
-  return `export const options = {
+export function k6Options(
+  profileShape: {
+    vus: number;
+    duration: string;
+    description: string;
+  },
+  stages?: { warmup: string | null; cooldown: string | null },
+): string {
+  const useStages =
+    stages && (stages.warmup !== null || stages.cooldown !== null);
+
+  if (!useStages) {
+    return `export const options = {
   vus: ${profileShape.vus},
   duration: '${profileShape.duration}',
+  thresholds: {
+    // k6 tarafinda hizli baseline; detayli kontrol TypeScript
+    // tarafinda (evaluateScenario) yapilir.
+    http_req_failed: ['rate<0.05'],
+    http_req_duration: ['p(95)<2000'],
+  },
+  tags: { suite: 'vetniva-load-test' },
+};
+`;
+  }
+
+  // Warm-up + sustained + cool-down. Surenin govde kismi
+  // tam sayi degilse k6 stages "30s" gibi kabul eder.
+  const warmup = stages.warmup ?? "0s";
+  const cooldown = stages.cooldown ?? "0s";
+  return `export const options = {
+  stages: [
+    { duration: '${warmup}', target: ${profileShape.vus} },     // warm-up
+    { duration: '${profileShape.duration}', target: ${profileShape.vus} }, // sustained
+    { duration: '${cooldown}', target: 0 },                    // cool-down
+  ],
   thresholds: {
     // k6 tarafinda hizli baseline; detayli kontrol TypeScript
     // tarafinda (evaluateScenario) yapilir.

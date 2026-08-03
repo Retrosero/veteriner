@@ -52,6 +52,98 @@ export function thresholdsForProfile(profile: LoadProfile): ThresholdSpec {
 }
 
 /**
+ * Ortam degiskenleri ile threshold override.
+ *
+ * GOAL-122 (FAZ-12) geregi production / pilot esik degerleri
+ * ortam uzerinden asagidaki oncelikle override edilir:
+ *   1. Senaryo + profil adina ozel env: LOAD_TEST_P95_MS_<KEY>_<PROFILE>
+ *      (ornek: LOAD_TEST_P95_MS_PATIENT_SEARCH_PILOT=600)
+ *   2. Profil bazli env: LOAD_TEST_P95_MS_PILOT=550
+ *   3. Genel env: LOAD_TEST_P95_MS=500
+ *   4. Profil varsayilani
+ *
+ * maxErrorRate 0-1 orani olarak beklenir; 0..1 araliginda
+ * parse edilir. minRps negatifse null kabul edilir.
+ *
+ * Guvenlik: env degerleri Number(...) ile parse edilir;
+ * NaN/Infinity durumunda override uygulanmaz, profil
+ * varsayilani korunur. Bu sayede operator hatali env
+ * degeri ile sessiz sansur uretmez.
+ */
+export interface EnvOverride {
+  profile: LoadProfile;
+  scenarioKey?: ScenarioKey;
+  env?: NodeJS.ProcessEnv;
+}
+
+export function applyThresholdEnvOverrides(
+  base: ThresholdSpec,
+  ovr: EnvOverride,
+): ThresholdSpec {
+  const env = ovr.env ?? process.env;
+  const pfx = buildPrefix(ovr);
+
+  // p95Ms (>=0)
+  const p95 = readNumber(env[`${pfx}_P95_MS`]);
+  // p99Ms (>=0 veya "null" string)
+  const p99Raw = env[`${pfx}_P99_MS`];
+  let p99: number | null = base.p99Ms;
+  if (p99Raw !== undefined) {
+    if (p99Raw === "null" || p99Raw === "") {
+      p99 = null;
+    } else {
+      const v = Number(p99Raw);
+      if (Number.isFinite(v) && v >= 0) p99 = v;
+    }
+  }
+  // maxErrorRate (0-1) — yuzdelik 0-100 olarak da kabul edilir;
+  // 1'den buyukse yuzdelik olarak yorumlanir.
+  let maxErr = base.maxErrorRate;
+  const maxErrRaw = env[`${pfx}_MAX_ERROR_RATE`];
+  if (maxErrRaw !== undefined) {
+    const v = Number(maxErrRaw);
+    if (Number.isFinite(v) && v >= 0) {
+      maxErr = v > 1 ? v / 100 : v;
+    }
+  }
+  // minRps (>=0 veya "null")
+  let minRps: number | null = base.minRps;
+  const minRpsRaw = env[`${pfx}_MIN_RPS`];
+  if (minRpsRaw !== undefined) {
+    if (minRpsRaw === "null" || minRpsRaw === "") {
+      minRps = null;
+    } else {
+      const v = Number(minRpsRaw);
+      if (Number.isFinite(v) && v >= 0) minRps = v;
+    }
+  }
+
+  return {
+    p95Ms: p95 ?? base.p95Ms,
+    p99Ms: p99,
+    maxErrorRate: maxErr,
+    minRps,
+  };
+}
+
+/** Env anahtar on ekini uretir. */
+function buildPrefix(ovr: EnvOverride): string {
+  const profile = ovr.profile.toUpperCase();
+  if (ovr.scenarioKey) {
+    return `LOAD_TEST_${ovr.scenarioKey.toUpperCase()}_${profile}`;
+  }
+  return `LOAD_TEST_${profile}`;
+}
+
+/** Env stringini sayiya cevirir; gecersizse undefined. */
+function readNumber(v: string | undefined): number | undefined {
+  if (v === undefined) return undefined;
+  const n = Number(v);
+  if (!Number.isFinite(n) || n < 0) return undefined;
+  return n;
+}
+
+/**
  * 7 kritik senaryo katalogu. Sirasi ile:
  *
  *  1. patient_search    — hasta sahibi/hayvan arama
@@ -72,13 +164,13 @@ export const SCENARIOS: ReadonlyArray<ScenarioConfig> = [
       {
         name: "search_owners",
         method: "GET",
-        path: "/api/v1/owners?query=demo&limit=20",
+        path: "/api/v1/clinic/owners?search=demo&limit=20",
         requiresAuth: true,
       },
       {
         name: "search_patients",
         method: "GET",
-        path: "/api/v1/patients?query=demo&limit=20",
+        path: "/api/v1/clinic/patients?search=demo&limit=20",
         requiresAuth: true,
       },
     ],
@@ -94,13 +186,13 @@ export const SCENARIOS: ReadonlyArray<ScenarioConfig> = [
       {
         name: "list_appointments_today",
         method: "GET",
-        path: "/api/v1/appointments?date=today&limit=50",
+        path: "/api/v1/calendar/days/{calendarDate}",
         requiresAuth: true,
       },
       {
         name: "list_appointments_week",
         method: "GET",
-        path: "/api/v1/appointments?date=this_week&limit=100",
+        path: "/api/v1/calendar/days/{calendarDate}?veterinarianId={veterinarianId}",
         requiresAuth: true,
       },
     ],
@@ -116,7 +208,7 @@ export const SCENARIOS: ReadonlyArray<ScenarioConfig> = [
       {
         name: "patient_timeline",
         method: "GET",
-        path: "/api/v1/patients/{patientId}/timeline?limit=50",
+        path: "/api/v1/clinic/patients/{patientId}/timeline?limit=50",
         requiresAuth: true,
       },
     ],
@@ -135,13 +227,13 @@ export const SCENARIOS: ReadonlyArray<ScenarioConfig> = [
       {
         name: "list_products",
         method: "GET",
-        path: "/api/v1/catalog/products?query=&limit=50",
+        path: "/api/v1/catalog/products?limit=50",
         requiresAuth: true,
       },
       {
         name: "list_stock",
         method: "GET",
-        path: "/api/v1/inventory/stock?limit=50",
+        path: "/api/v1/inventory/stock-movements/balances?limit=50",
         requiresAuth: true,
       },
     ],
@@ -157,16 +249,22 @@ export const SCENARIOS: ReadonlyArray<ScenarioConfig> = [
       {
         name: "create_sale_draft",
         method: "POST",
-        path: "/api/v1/clinic/sales",
+        path: "/api/v1/petshop/sales",
         requiresAuth: true,
-        body: { items: [], branchId: "{branchId}" },
-      },
-      {
-        name: "add_item",
-        method: "POST",
-        path: "/api/v1/clinic/sales/{saleId}/items",
-        requiresAuth: true,
-        body: { productId: "{productId}", quantity: 1 },
+        body: {
+          lines: [
+            {
+              productId: "{productId}",
+              unit: "unit",
+              quantity: "1",
+              unitPrice: "100.00",
+            },
+          ],
+          customerOwnerId: "{ownerId}",
+          customerPatientId: "{patientId}",
+          paymentMethod: "cash",
+          paidAmount: "0",
+        },
       },
     ],
     thresholds: {
@@ -184,7 +282,7 @@ export const SCENARIOS: ReadonlyArray<ScenarioConfig> = [
       {
         name: "daily_report",
         method: "GET",
-        path: "/api/v1/finance/reports/daily?date=today",
+        path: "/api/v1/reports/daily-sales?from={reportDate}&to={reportDate}",
         requiresAuth: true,
       },
     ],
@@ -247,6 +345,17 @@ export interface ProfileShape {
   vus: number;
   duration: string;
   description: string;
+  /**
+   * Default warm-up suresi (k6 stages). Senaryo kendi degerini
+   * belirlemediyse kullanilir; tanimli degilse k6 sabit VU
+   * modunda calisir (stages uretilmez).
+   */
+  defaultWarmup?: string;
+  /**
+   * Default cool-down suresi (k6 stages). Senaryo kendi degerini
+   * belirlemediyse kullanilir.
+   */
+  defaultCooldown?: string;
 }
 
 export const PROFILE_SHAPES: Record<LoadProfile, ProfileShape> = {
@@ -254,23 +363,54 @@ export const PROFILE_SHAPES: Record<LoadProfile, ProfileShape> = {
     vus: 1,
     duration: "30s",
     description: "Tek VU, 30sn — saglik kontrolu",
+    defaultWarmup: "5s",
+    defaultCooldown: "5s",
   },
   pilot: {
     vus: 10,
     duration: "2m",
     description: "10 VU, 2dk — pilot dogrulama",
+    defaultWarmup: "15s",
+    defaultCooldown: "15s",
   },
   first_100: {
     vus: 50,
     duration: "5m",
     description: "50 VU, 5dk — ilk 100 tenant hedefi",
+    defaultWarmup: "30s",
+    defaultCooldown: "30s",
   },
   stress: {
     vus: 200,
     duration: "5m",
     description: "200 VU, 5dk — darbogaz tespiti",
+    defaultWarmup: "30s",
+    defaultCooldown: "30s",
   },
 };
+
+/**
+ * Senaryo + profil icin k6 options blogunda kullanilacak
+ * warmup/cooldown degerlerini cozumler. Senaryo kendi degeri
+ * tanimlamadiysa profil varsayilani kullanilir; profil de
+ * tanimlamadiysa stages uretilmez (k6 sabit VU modunda
+ * calisir — geriye donuk uyumluluk).
+ */
+export interface ResolvedStages {
+  warmup: string | null;
+  cooldown: string | null;
+}
+
+export function resolveStages(
+  scenario: ScenarioConfig,
+  profile: LoadProfile,
+): ResolvedStages {
+  const shape = PROFILE_SHAPES[profile];
+  return {
+    warmup: scenario.warmupSec ?? shape.defaultWarmup ?? null,
+    cooldown: scenario.cooldownSec ?? shape.defaultCooldown ?? null,
+  };
+}
 
 /**
  * Senaryonun profile uygunlugunu kontrol eder. Uyari olarak

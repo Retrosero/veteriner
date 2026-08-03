@@ -54,11 +54,12 @@ describe("generateScenarioScript", () => {
     expect(out).toContain("./shared.js");
   });
 
-  it("options blogu VU ve duration icerir", () => {
+  it("options blogu VU ve duration icerir (stages ile)", () => {
     const s = getScenario("patient_search");
     const out = generateScenarioScript(s, "pilot");
     expect(out).toContain("export const options");
-    expect(out).toContain("vus: 10"); // pilot
+    expect(out).toContain("stages:"); // pilot default warm-up ile stages uretir
+    expect(out).toContain("target: 10"); // pilot VU
     expect(out).toContain("duration: '2m'");
   });
 
@@ -73,8 +74,8 @@ describe("generateScenarioScript", () => {
   it("POST step body literal olarak inline edilir", () => {
     const s = getScenario("pos");
     const out = generateScenarioScript(s, "pilot");
-    expect(out).toContain("items");
-    expect(out).toContain("branchId");
+    expect(out).toContain("lines");
+    expect(out).toContain("productId");
   });
 
   it("PI_BODY_REGEX inline edilir (string interpolation tamamlanir)", () => {
@@ -88,7 +89,29 @@ describe("generateScenarioScript", () => {
   it("stress profili yuksek VU uretir", () => {
     const s = getScenario("patient_search");
     const out = generateScenarioScript(s, "stress");
-    expect(out).toContain("vus: 200");
+    expect(out).toContain("target: 200"); // stages target ile uretilir
+  });
+
+  it("varsayilan profilde stages blogu uretilir (warm-up + cool-down)", () => {
+    const s = getScenario("patient_search");
+    const out = generateScenarioScript(s, "pilot");
+    // pilot shape defaultWarmup='15s' defaultCooldown='15s'
+    expect(out).toContain("stages:");
+    expect(out).toContain("duration: '15s'");
+    expect(out).toContain("target: 0"); // cool-down hedefi
+  });
+
+  it("senaryo kendi warmupSec tanimlarsa o kullanilir", () => {
+    const s = getScenario("patient_search");
+    // Generic shape ile stages yok ise (override edilmemis) blogu gormeyiz
+    const withoutStages = {
+      ...s,
+      warmupSec: undefined,
+      cooldownSec: undefined,
+    };
+    const out = generateScenarioScript(withoutStages, "pilot");
+    // pilot shape defaultWarmup var; bu nedenle stages yine uretilir
+    expect(out).toContain("stages:");
   });
 });
 

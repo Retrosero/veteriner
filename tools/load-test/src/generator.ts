@@ -14,7 +14,7 @@ import { writeFile, mkdir, readdir } from "node:fs/promises";
 import { join, dirname } from "node:path";
 
 import { K6_SHARED_TEMPLATE, k6Options } from "./k6-shared.js";
-import { PROFILE_SHAPES } from "./config.js";
+import { PROFILE_SHAPES, resolveStages } from "./config.js";
 import type { LoadProfile, ScenarioConfig, ScenarioStep } from "./types.js";
 
 /** Uretilen k6 dosyasinin govdesini olusturur. */
@@ -28,9 +28,10 @@ function renderScenarioScript(
 // Bu dosya elle degistirilmemelidir; ureticiden gelir.
 `;
 
-  const importLine = `import { ${joinImports(scenario)} } from './shared.js';`;
+  const importLine = `import { ${joinImports(scenario)}, resolveDeep, resolvePath } from './shared.js';`;
 
-  const options = k6Options(PROFILE_SHAPES[profile]);
+  const stages = resolveStages(scenario, profile);
+  const options = k6Options(PROFILE_SHAPES[profile], stages);
 
   const body = scenario.steps
     .map((step, idx) => renderStep(step, idx))
@@ -59,8 +60,10 @@ function joinImports(scenario: ScenarioConfig): string {
 function renderStep(step: ScenarioStep, idx: number): string {
   const fn = `vet${step.method.charAt(0)}${step.method.slice(1).toLowerCase()}`;
   const bodyLiteral =
-    step.body === undefined ? "undefined" : JSON.stringify(step.body, null, 2);
-  const pathLiteral = JSON.stringify(step.path);
+    step.body === undefined
+      ? "undefined"
+      : `resolveDeep(${JSON.stringify(step.body, null, 2)})`;
+  const pathLiteral = `resolvePath(${JSON.stringify(step.path)})`;
   const expectStatus = step.method === "POST" ? 201 : 200;
   return `  // step ${idx + 1}: ${step.name}
   const res${idx} = ${fn}(

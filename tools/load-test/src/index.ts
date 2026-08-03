@@ -37,11 +37,13 @@ export {
   LOAD_PROFILES,
   PROFILE_SHAPES,
   thresholdsForProfile,
+  applyThresholdEnvOverrides,
+  resolveStages,
   getScenario,
   listScenarioKeys,
   isProfileAllowed,
 } from "./config.js";
-export type { ProfileShape } from "./config.js";
+export type { ProfileShape, ResolvedStages, EnvOverride } from "./config.js";
 
 export {
   readMetricNumber,
