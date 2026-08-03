@@ -11,6 +11,7 @@ export { ErrorEventsRepository } from "./error-events.repository.js";
 export {
   ErrorEventsController,
   SystemErrorEventsController,
+  TenantErrorEventsController,
 } from "./error-events.controller.js";
 export {
   moduleFromRoute,

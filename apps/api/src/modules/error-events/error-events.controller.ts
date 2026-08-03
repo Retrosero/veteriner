@@ -437,6 +437,70 @@ export class ErrorEventsController {
 }
 
 /**
+ * Tenant kapsamında hata olayı görüntüleme controller'ı (GOAL-100
+ * next-tick). Bir OWNER kendi tenant'ı içindeki 5xx/critical
+ * hata olaylarını salt-okunur olarak görüntüleyebilir. Cross-tenant
+ * IDOR kontrolleri servis katmanında uygulanır (tenant filtresi
+ * aktör bağlamından türetilir; istemci tarafı gönderemez).
+ *
+ * Durum/atama/not aksiyonları burada YOKTUR; yalnızca
+ * `audit:log:read` permission'ı gerekir. Yazma işlemleri
+ * SUPERADMIN controller'ı üzerinden yapılır.
+ *
+ * Endpoint'ler:
+ * - `GET  /api/v1/tenant/error-events`         — Tenant filtreli liste.
+ * - `GET  /api/v1/tenant/error-events/:id`     — Tenant kapsamında detay.
+ * @security Aktör `tenantId` boşsa 403; filtrede gelen `tenantId`
+ *   aktör tenant'ından farklıysa 403. Detay response'unda
+ *   `tenantId` aktör tenant'ıyla eşleşmiyorsa 404 (bilgi sızdırmaz).
+ * @since GOAL-100 (FAZ-10) tenant bazlı hata filtresi iyileştirmesi
+ */
+@ApiTags("tenant/error-events")
+@UseGuards(PermissionsGuard)
+@Controller("api/v1/tenant/error-events")
+export class TenantErrorEventsController {
+  public constructor(private readonly service: ErrorEventsService) {}
+
+  @Get()
+  @RequirePermissions("error:event:tenant:read")
+  @ApiOperation({
+    operationId: "tenantErrorEventList",
+    summary: "Tenant hata olayları (OWNER)",
+    description:
+      "Aktörün tenant'ı kapsamındaki hata olaylarını filtreli olarak " +
+      "listeler. tenantId filtresi otomatik olarak aktörün tenant'ına " +
+      "kilitlenir; cross-tenant IDOR 403 ile reddedilir.",
+  })
+  @ApiResponse({ status: 200, description: "Liste döner." })
+  @ApiResponse({ status: 403, description: "Yetkisiz veya cross-tenant." })
+  public async list(
+    @Query(new ZodValidationPipe(errorEventFiltersSchema))
+    query: ErrorEventFilters,
+    @CurrentActor() actor: ActorContext,
+  ): Promise<ErrorEventListResponse> {
+    return this.service.listErrorEventsForTenant(query, actor);
+  }
+
+  @Get(":id")
+  @RequirePermissions("error:event:tenant:read")
+  @ApiOperation({
+    operationId: "tenantErrorEventDetail",
+    summary: "Tenant hata olayı detayı (OWNER)",
+    description:
+      "Aktörün tenant'ı içindeki tek bir hata olayının detayı. " +
+      "tenantId eşleşmezse 404 (bilgi sızdırmaz).",
+  })
+  @ApiResponse({ status: 200, description: "Detay döner." })
+  @ApiResponse({ status: 404, description: "Bulunamadı veya cross-tenant." })
+  public async detail(
+    @Param("id") id: string,
+    @CurrentActor() actor: ActorContext,
+  ): Promise<ErrorEvent> {
+    return this.service.getErrorEventDetailForTenant(id, actor);
+  }
+}
+
+/**
  * Frontend (tarayıcı) tarafından gönderilen hata raporlarını
  * kabul eden controller. `system` namespace'i altında tutulur
  * çünkü SUPERADMIN paneline değil, oturum açmış tüm kullanıcılara

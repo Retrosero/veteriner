@@ -244,13 +244,55 @@ export class ErrorEventsService {
    * 2. `input.module` — caller belirtti ise (filter "unknown" gönderir).
    * 3. `moduleFromRoute(input.route)` — path'ten türetilir.
    *
+   * `severityThreshold` opsiyonel kayıt kuralı filtresidir (GOAL-100
+   * next-tick). Verilen severity bu threshold'dan düşükse kayıt
+   * reddedilir; "err-rejected" placeholder event'i döner (filter
+   * akışını engellememek için). Default threshold `warning`'dir
+   * (info otomatik reddedilir, üretimde gürültüyü azaltır).
+   *
    * NOT: Bu metot hata fırlatmaz; sadece loglar. Filter'ın ana
    * hata akışını engellemez.
    */
   public recordError(
     input: ErrorEventCreateInput,
     derivedModule?: ErrorEventModule,
+    severityThreshold: string = "warning",
   ): ErrorEvent {
+    // Severity threshold filtresi: threshold altındaki olaylar
+    // kaydedilmeden reddedilir. Aciliyet (5xx) veya critical
+    // severity yine de kabul edilir; eşik sadece info/warning
+    // seviyelerini eler.
+    const isUrgent = input.statusCode >= 500 || input.severity === "critical";
+    if (
+      !isUrgent &&
+      ErrorEventsService.isSeverityBelow(input.severity, severityThreshold)
+    ) {
+      return {
+        id: "err-rejected",
+        requestId: input.requestId,
+        tenantId: input.tenantId,
+        branchId: input.branchId,
+        userId: input.userId,
+        actorType: input.actorType,
+        module: derivedModule ?? input.module ?? "unknown",
+        route: input.route,
+        release: input.release,
+        severity: input.severity,
+        fingerprint: "0000000000000000",
+        errorCode: input.errorCode,
+        message: input.message,
+        statusCode: input.statusCode,
+        stack: null,
+        context: {},
+        country: input.country,
+        occurredAt: input.occurredAt ?? new Date().toISOString(),
+        firstSeenAt: input.occurredAt ?? new Date().toISOString(),
+        lastSeenAt: input.occurredAt ?? new Date().toISOString(),
+        occurrenceCount: 0,
+        status: "new",
+        assignedToUserId: null,
+      };
+    }
     try {
       const module = this.resolveModule(input, derivedModule);
       const fingerprint = computeFingerprint(
@@ -752,6 +794,191 @@ export class ErrorEventsService {
       severity: "warning",
       i18nKey: "error.VET-AUTHZ-0001",
     });
+  }
+
+  /**
+   * Salt-okunur hata olayı görüntüleme yetkisi (GOAL-100 next-tick).
+   * SUPERADMIN her şeyi görür; OWNER kendi tenant'ı içindeki
+   * hataları görebilir (tenantId boşsa reddedilir). Diğer tüm
+   * roller için 403 döner.
+   */
+  private requireReadAccess(
+    actor: ActorContext,
+    requestedTenantId?: string,
+  ): void {
+    if (actor.role === "SUPERADMIN" || actor.isSuperadmin) return;
+    if (actor.role === "OWNER") {
+      if (!actor.tenantId) {
+        throw new DomainError({
+          errorCode: "VET-TENANT-0003",
+          message: "Aktif tenant seçilmemiş.",
+          httpStatus: 403,
+          severity: "warning",
+          i18nKey: "error.VET-TENANT-0003",
+        });
+      }
+      if (requestedTenantId && requestedTenantId !== actor.tenantId) {
+        throw new DomainError({
+          errorCode: "VET-AUTHZ-0003",
+          message: "Bu kaynağa erişim yetkiniz yok.",
+          httpStatus: 403,
+          severity: "warning",
+          i18nKey: "error.VET-AUTHZ-0003",
+          details: {
+            requestedTenant: requestedTenantId,
+            actorTenant: actor.tenantId,
+          },
+        });
+      }
+      return;
+    }
+    throw new DomainError({
+      errorCode: "VET-AUTHZ-0001",
+      message: "Bu işlem yalnızca SUPERADMIN veya OWNER için",
+      httpStatus: 403,
+      severity: "warning",
+      i18nKey: "error.VET-AUTHZ-0001",
+    });
+  }
+
+  /**
+   * Severity sıralaması (kayıt kuralı için). Düşükten yükseğe:
+   * info < warning < error < critical. Belirli bir threshold
+   * belirtilirse, threshold'dan düşük severity'li olaylar
+   * kaydedilmeden reddedilir.
+   */
+  public static readonly SEVERITY_RANK: Readonly<Record<string, number>> = {
+    info: 0,
+    warning: 1,
+    error: 2,
+    critical: 3,
+  };
+
+  /**
+   * Verilen severity verilen threshold'dan düşük mü? Yardımcı metot.
+   * `threshold=warning` ise yalnızca `warning`/`error`/`critical`
+   * geçer; `info` reddedilir.
+   */
+  public static isSeverityBelow(
+    severity: string,
+    threshold: string,
+  ): boolean {
+    // SEVERITY_RANK bilinen sabit anahtarlardan oluşur; yine de
+    // güvenli tarafta kalmak için `in` operatörü ile sınama yapılır.
+    const rank = ErrorEventsService.SEVERITY_RANK;
+    // eslint-disable-next-line security/detect-object-injection -- sabit anahtar sözlüğü
+    const a = rank[severity] !== undefined ? rank[severity] : -1;
+    // eslint-disable-next-line security/detect-object-injection -- sabit anahtar sözlüğü
+    const b = rank[threshold] !== undefined ? rank[threshold] : -1;
+    return a < b;
+  }
+
+  /**
+   * Tenant kapsamında filtreleme (GOAL-100 next-tick). Bir tenant
+   * yöneticisi (OWNER) kendi tenant'ındaki hata olaylarını
+   * görüntüleyebilir. Cross-tenant IDOR engellenir: `actor.tenantId`
+   * boşsa veya filtrede gelen `tenantId` ile eşleşmiyorsa 403 döner.
+   *
+   * Yalnızca `read` (severity=info dahil) kapsamındadır. Durum/
+   * atama/not aksiyonları SUPERADMIN yetkisi gerektirir; bu metot
+   * yalnız gözlem amaçlıdır.
+   */
+  public async listErrorEventsForTenant(
+    filters: ErrorEventFilters,
+    actor: ActorContext,
+  ): Promise<ErrorEventListResponse> {
+    this.requireReadAccess(actor, filters.tenantId);
+    const scoped: ErrorEventFilters = {
+      ...filters,
+      tenantId:
+        actor.role === "SUPERADMIN" || actor.isSuperadmin
+          ? filters.tenantId
+          : actor.tenantId ?? filters.tenantId,
+    };
+    const result = this.repo.search({
+      severity: scoped.severity,
+      module: scoped.module,
+      errorCode: scoped.errorCode,
+      fingerprint: scoped.fingerprint,
+      tenantId: scoped.tenantId,
+      branchId: scoped.branchId,
+      country: scoped.country,
+      release: scoped.release,
+      route: scoped.route,
+      status: scoped.status,
+      assignedToUserId: scoped.assignedToUserId,
+      from: scoped.from,
+      to: scoped.to,
+      search: scoped.search,
+      sort: scoped.sort,
+      limit: scoped.limit,
+      offset: scoped.offset,
+    });
+    return {
+      items: result.items.map(toErrorEvent),
+      total: result.total,
+    };
+  }
+
+  /**
+   * Bir tenant'ın kendi hata olayları için tek kayıt detayı.
+   * Cross-tenant IDOR kontrolü: detay döndürülen kaydın
+   * `tenantId`'si actor'ün tenantId'siyle eşleşmeli; eşleşmezse
+   * 404 döner (bilgi sızdırmaz).
+   */
+  public async getErrorEventDetailForTenant(
+    id: string,
+    actor: ActorContext,
+  ): Promise<ErrorEvent> {
+    // Yetki kontrolü: SUPERADMIN veya OWNER (tenant kapsamında).
+    if (
+      !(actor.role === "SUPERADMIN" || actor.isSuperadmin) &&
+      actor.role !== "OWNER"
+    ) {
+      throw new DomainError({
+        errorCode: "VET-AUTHZ-0001",
+        message: "Bu işlem yalnızca SUPERADMIN veya OWNER için",
+        httpStatus: 403,
+        severity: "warning",
+        i18nKey: "error.VET-AUTHZ-0001",
+      });
+    }
+    if (actor.role === "SUPERADMIN" || actor.isSuperadmin) {
+      return this.getErrorEventDetail(id, actor);
+    }
+    if (!actor.tenantId) {
+      throw new DomainError({
+        errorCode: "VET-TENANT-0003",
+        message: "Aktif tenant seçilmemiş.",
+        httpStatus: 403,
+        severity: "warning",
+        i18nKey: "error.VET-TENANT-0003",
+      });
+    }
+    // Doğrudan repo'dan tenant kapsamında oku; cross-tenant erişim
+    // sağlamaz (yoksa null döner).
+    const rec = this.repo.findById(id);
+    if (!rec) {
+      throw new DomainError({
+        errorCode: "VET-AUDIT-0001",
+        message: "Hata olayı bulunamadı",
+        httpStatus: 404,
+        severity: "warning",
+        i18nKey: "error.VET-AUDIT-0001",
+        details: { id },
+      });
+    }
+    if (rec.tenantId !== actor.tenantId) {
+      throw new DomainError({
+        errorCode: "VET-AUDIT-0001",
+        message: "Hata olayı bulunamadı",
+        httpStatus: 404,
+        severity: "warning",
+        i18nKey: "error.VET-AUDIT-0001",
+        details: { id },
+      });
+    }
+    return toErrorEvent(rec);
   }
 
   /**

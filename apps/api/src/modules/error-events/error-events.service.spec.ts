@@ -56,6 +56,19 @@ const STAFF_A: ActorContext = {
   source: "header",
 };
 
+const OWNER_A: ActorContext = {
+  actorId: "usr-owner-a",
+  actorType: "user",
+  role: "OWNER",
+  tenantId: TENANT_A,
+  branchId: null,
+  isSuperadmin: false,
+  correlationId: "req-3",
+  ipAddress: null,
+  userAgentHash: null,
+  source: "header",
+};
+
 /**
  *
  */
@@ -509,8 +522,10 @@ describe("ErrorEventsService.recordClientError", () => {
     expect(rec.actorType).toBe("portal_user");
   });
 
-  it("info severity → stack saklanmaz", () => {
-    const out = service.recordClientError(
+  it("info severity 4xx → kayıt reddedilir (err-rejected); 5xx kabul", () => {
+    // 4xx info olayları severity threshold (default warning) tarafından
+    // reddedilir; recordClientError yalnız {id, fingerprint} döner.
+    const rejected = service.recordClientError(
       {
         severity: "info",
         message: "Info",
@@ -520,8 +535,9 @@ describe("ErrorEventsService.recordClientError", () => {
       STAFF_A,
       "req-info-1",
     );
-    const rec = repo.findById(out.id);
-    expect(rec?.stack).toBeNull();
+    expect(rejected.id).toBe("err-rejected");
+    // Reddedilen event persist edilmez; repo'da görünmez.
+    expect(repo.all().length).toBe(0);
   });
 
   it("critical severity → stack saklanır", () => {
@@ -1530,5 +1546,224 @@ describe("PiiMasker.maskString — GOAL-104 not gövdesi için", () => {
     expect(m.maskString("IBAN: TR123456789012345678901234 idi")).toContain(
       "***",
     );
+  });
+});
+
+/* --------------------------------------------------------------------------
+ * GOAL-100 next-tick — severity threshold filtresi + tenant kapsamı
+ * --------------------------------------------------------------------------
+ */
+
+describe("ErrorEventsService.SEVERITY_RANK / isSeverityBelow", () => {
+  it("info < warning < error < critical sıralaması doğru", () => {
+    expect(ErrorEventsService.isSeverityBelow("info", "warning")).toBe(true);
+    expect(ErrorEventsService.isSeverityBelow("warning", "info")).toBe(false);
+    expect(ErrorEventsService.isSeverityBelow("error", "error")).toBe(false);
+    expect(ErrorEventsService.isSeverityBelow("critical", "error")).toBe(false);
+    expect(ErrorEventsService.isSeverityBelow("info", "critical")).toBe(true);
+  });
+
+  it("bilinmeyen severity -1 döner ve reddedilir", () => {
+    expect(ErrorEventsService.isSeverityBelow("garbage", "warning")).toBe(true);
+  });
+});
+
+describe("ErrorEventsService.recordError — severity threshold (GOAL-100 next-tick)", () => {
+  let service: ErrorEventsService;
+  let repo: ErrorEventsRepository;
+
+  beforeEach(() => {
+    repo = new ErrorEventsRepository();
+    service = new ErrorEventsService(repo);
+  });
+
+  it("default threshold=warning → info severity'li 4xx olayı reddedilir", () => {
+    const out = service.recordError(
+      makeInput({ severity: "info", statusCode: 422 }),
+    );
+    expect(out.id).toBe("err-rejected");
+    expect(out.occurrenceCount).toBe(0);
+  });
+
+  it("warning severity'li 4xx olayı default threshold ile kabul edilir", () => {
+    const out = service.recordError(
+      makeInput({ severity: "warning", statusCode: 422 }),
+    );
+    expect(out.id).not.toBe("err-rejected");
+    expect(out.occurrenceCount).toBe(1);
+  });
+
+  it("5xx info severity → aciliyet kuralı kabul eder", () => {
+    const out = service.recordError(
+      makeInput({ severity: "info", statusCode: 500 }),
+    );
+    expect(out.id).not.toBe("err-rejected");
+  });
+
+  it("critical severity → her durumda kabul", () => {
+    const out = service.recordError(
+      makeInput({ severity: "critical", statusCode: 200 }),
+    );
+    expect(out.id).not.toBe("err-rejected");
+  });
+
+  it("özel threshold=error → warning bile reddedilir", () => {
+    const out = service.recordError(
+      makeInput({ severity: "warning", statusCode: 422 }),
+      undefined,
+      "error",
+    );
+    expect(out.id).toBe("err-rejected");
+  });
+
+  it("özel threshold=error → 5xx warning yine aciliyet kuralıyla kabul", () => {
+    const out = service.recordError(
+      makeInput({ severity: "warning", statusCode: 500 }),
+      undefined,
+      "error",
+    );
+    expect(out.id).not.toBe("err-rejected");
+  });
+
+  it("threshold=info → tüm olaylar kabul", () => {
+    const out = service.recordError(
+      makeInput({ severity: "info", statusCode: 200 }),
+      undefined,
+      "info",
+    );
+    expect(out.id).not.toBe("err-rejected");
+  });
+});
+
+describe("ErrorEventsService.listErrorEventsForTenant (GOAL-100 next-tick)", () => {
+  let service: ErrorEventsService;
+  let repo: ErrorEventsRepository;
+
+  beforeEach(() => {
+    repo = new ErrorEventsRepository();
+    service = new ErrorEventsService(repo);
+  });
+
+  it("OWNER yalnız kendi tenant'ını görür; başka tenant'a sızmaz", async () => {
+    service.recordError(makeInput({ tenantId: TENANT_A, errorCode: "VET-CLINIC-0001" }));
+    service.recordError(makeInput({ tenantId: TENANT_B, errorCode: "VET-CLINIC-0002" }));
+
+    const out = await service.listErrorEventsForTenant(
+      { limit: 50, offset: 0 },
+      OWNER_A,
+    );
+    expect(out.items.every((e) => e.tenantId === TENANT_A)).toBe(true);
+    expect(out.total).toBe(1);
+  });
+
+  it("OWNER tenant filtresi kendi tenant'ına kilitlenir (cross-tenant IDOR reddi)", async () => {
+    service.recordError(makeInput({ tenantId: TENANT_A }));
+
+    await expect(
+      service.listErrorEventsForTenant(
+        { tenantId: TENANT_B, limit: 50, offset: 0 },
+        OWNER_A,
+      ),
+    ).rejects.toMatchObject({
+      errorCode: "VET-AUTHZ-0003",
+      httpStatus: 403,
+    });
+  });
+
+  it("tenantId olmayan OWNER → 403 VET-TENANT-0003", async () => {
+    const orphan: ActorContext = {
+      ...OWNER_A,
+      tenantId: null,
+    };
+    await expect(
+      service.listErrorEventsForTenant({ limit: 50, offset: 0 }, orphan),
+    ).rejects.toMatchObject({
+      errorCode: "VET-TENANT-0003",
+      httpStatus: 403,
+    });
+  });
+
+  it("STAFF (OWNER olmayan tenant üyesi) → 403 VET-AUTHZ-0001", async () => {
+    await expect(
+      service.listErrorEventsForTenant({ limit: 50, offset: 0 }, STAFF_A),
+    ).rejects.toMatchObject({
+      errorCode: "VET-AUTHZ-0001",
+      httpStatus: 403,
+    });
+  });
+
+  it("SUPERADMIN için tenant filtresi uygulanmaz; tüm tenant'lar görünür", async () => {
+    service.recordError(makeInput({ tenantId: TENANT_A }));
+    service.recordError(makeInput({ tenantId: TENANT_B }));
+    const out = await service.listErrorEventsForTenant(
+      { limit: 50, offset: 0 },
+      SUPERADMIN,
+    );
+    expect(out.total).toBe(2);
+  });
+
+  it("filtre olarak verilen kendi tenant'ı kabul edilir", async () => {
+    service.recordError(makeInput({ tenantId: TENANT_A }));
+    const out = await service.listErrorEventsForTenant(
+      { tenantId: TENANT_A, limit: 50, offset: 0 },
+      OWNER_A,
+    );
+    expect(out.total).toBe(1);
+  });
+});
+
+describe("ErrorEventsService.getErrorEventDetailForTenant (GOAL-100 next-tick)", () => {
+  let service: ErrorEventsService;
+  let repo: ErrorEventsRepository;
+
+  beforeEach(() => {
+    repo = new ErrorEventsRepository();
+    service = new ErrorEventsService(repo);
+  });
+
+  it("kendi tenant'ındaki kaydı döner", async () => {
+    const ev = service.recordError(makeInput({ tenantId: TENANT_A }));
+    const detail = await service.getErrorEventDetailForTenant(ev.id, OWNER_A);
+    expect(detail.tenantId).toBe(TENANT_A);
+  });
+
+  it("başka tenant'ın kaydı → 404 (bilgi sızdırmaz)", async () => {
+    const ev = service.recordError(makeInput({ tenantId: TENANT_B }));
+    await expect(
+      service.getErrorEventDetailForTenant(ev.id, OWNER_A),
+    ).rejects.toMatchObject({
+      errorCode: "VET-AUDIT-0001",
+      httpStatus: 404,
+    });
+  });
+
+  it("SUPERADMIN her tenant'ı görebilir", async () => {
+    const ev = service.recordError(makeInput({ tenantId: TENANT_B }));
+    const detail = await service.getErrorEventDetailForTenant(
+      ev.id,
+      SUPERADMIN,
+    );
+    expect(detail.tenantId).toBe(TENANT_B);
+  });
+
+  it("tenantId olmayan OWNER → 403 VET-TENANT-0003", async () => {
+    const ev = service.recordError(makeInput({ tenantId: TENANT_A }));
+    const orphan: ActorContext = { ...OWNER_A, tenantId: null };
+    await expect(
+      service.getErrorEventDetailForTenant(ev.id, orphan),
+    ).rejects.toMatchObject({
+      errorCode: "VET-TENANT-0003",
+      httpStatus: 403,
+    });
+  });
+
+  it("STAFF → 403 VET-AUTHZ-0001", async () => {
+    const ev = service.recordError(makeInput({ tenantId: TENANT_A }));
+    await expect(
+      service.getErrorEventDetailForTenant(ev.id, STAFF_A),
+    ).rejects.toMatchObject({
+      errorCode: "VET-AUTHZ-0001",
+      httpStatus: 403,
+    });
   });
 });

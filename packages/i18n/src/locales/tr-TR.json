@@ -150,7 +150,161 @@
     "branch:branch:update": "Şube güncelleme",
     "tenant:tenant:read": "Tenant görüntüleme",
     "tenant:tenant:create": "Tenant oluşturma",
-    "tenant:tenant:update": "Tenant güncelleme"
+    "tenant:tenant:update": "Tenant güncelleme",
+    "error:event:tenant:read": "Kendi tenant'ı kapsamındaki hata olaylarını görüntüleme",
+    "error:event:status:write": "Hata olayı durumunu değiştirme",
+    "error:event:assign:write": "Hata olayını geliştiriciye atama",
+    "error:event:note:write": "Hata çözüm notu ekleme",
+    "error:event:support:write": "Hata destek bağlantısı ekleme",
+    "error:event:audit:read": "Hata birleşik audit log görüntüleme"
+  },
+  "error_center": {
+    "_comment": "GOAL-100/103/104 (FAZ-10) merkezi hata yönetimi UI çevirileri.",
+    "title": "Hata Merkezi",
+    "subtitle": "Tüm tenant'ların hata olaylarını izle, durum yönet, atama yap ve çözüm notları ekle.",
+    "load_failed": "Hata kayıtları şu anda yüklenemiyor.",
+    "load_detail_failed": "Hata ayrıntısı şu anda yüklenemiyor.",
+    "load_audit_failed": "Hata audit log'u şu anda yüklenemiyor.",
+    "no_records": "Gösterilecek hata kaydı yok.",
+    "filters": {
+      "title": "Filtreler",
+      "severity": "Şiddet",
+      "module": "Modül",
+      "status": "Durum",
+      "tenant": "Tenant",
+      "from": "Başlangıç tarihi",
+      "to": "Bitiş tarihi",
+      "search": "Ara",
+      "search_placeholder": "Kod, mesaj veya modül",
+      "all": "Tümü",
+      "reset": "Filtreleri sıfırla"
+    },
+    "list": {
+      "items": "Hata olayları",
+      "total": "Toplam {count} olay",
+      "loading": "Hata kayıtları yükleniyor…",
+      "columns": {
+        "status": "Durum",
+        "severity": "Şiddet",
+        "code": "Kod",
+        "module": "Modül",
+        "message": "Mesaj",
+        "occurrence": "Tekrar",
+        "first_seen": "İlk görülme",
+        "last_seen": "Son görülme",
+        "tenant": "Tenant",
+        "branch": "Şube",
+        "assigned": "Atanan"
+      }
+    },
+    "detail": {
+      "title": "Hata ayrıntısı",
+      "code": "Kod",
+      "module": "Modül",
+      "fingerprint": "Fingerprint",
+      "occurrence": "Tekrar",
+      "first_last_seen": "İlk / son görülme",
+      "release": "Sürüm",
+      "route": "Route",
+      "tenant": "Tenant",
+      "branch": "Şube",
+      "country": "Ülke",
+      "actor": "Aktör",
+      "context": "İstek bağlamı",
+      "stack": "Stack trace",
+      "no_stack": "Bu olay için stack trace saklanmıyor (5xx/critical değil).",
+      "no_context": "Bağlam bilgisi yok."
+    },
+    "status": {
+      "new": "Yeni",
+      "investigating": "İnceleniyor",
+      "resolved": "Çözüldü",
+      "reopened": "Yeniden açıldı"
+    },
+    "severity": {
+      "info": "Bilgi",
+      "warning": "Uyarı",
+      "error": "Hata",
+      "critical": "Kritik"
+    },
+    "actions": {
+      "update_status": "Durumu kaydet",
+      "assign": "Ata",
+      "unassign": "Atamayı kaldır",
+      "add_note": "Not ekle",
+      "add_support_link": "Bağlantı ekle",
+      "refresh": "Yenile",
+      "close": "Kapat"
+    },
+    "assignment": {
+      "title": "Sorumlu atama",
+      "current": "Mevcut atama: {assignee}",
+      "unassigned": "Atanmamış",
+      "user_id": "Kullanıcı kimliği",
+      "reason": "Atama notu",
+      "placeholder_user_id": "örn. usr-dev-1",
+      "placeholder_reason": "opsiyonel"
+    },
+    "note": {
+      "title": "Çözüm notları",
+      "new": "Yeni not",
+      "placeholder": "Çözüm notu yazın (PII mask'lı saklanır)",
+      "visibility_internal": "Dahili",
+      "visibility_shared": "Paylaşımlı",
+      "preview": "Önizleme"
+    },
+    "support": {
+      "title": "Destek kaydı bağlantısı",
+      "url": "URL",
+      "title_label": "Başlık",
+      "system_jira": "JIRA",
+      "system_linear": "Linear",
+      "system_zendesk": "Zendesk",
+      "system_github": "GitHub",
+      "system_internal": "Dahili",
+      "system_other": "Diğer",
+      "placeholder_url": "https://...",
+      "placeholder_title": "opsiyonel"
+    },
+    "audit": {
+      "title": "Audit timeline",
+      "empty": "Bu olay için henüz audit kaydı yok.",
+      "action_status_transition": "Durum geçişi",
+      "action_note_added": "Not eklendi",
+      "action_support_link_added": "Destek bağlantısı eklendi",
+      "action_assignment_changed": "Atama değişti",
+      "action_occurrence_recorded": "Yeni oluşum kaydedildi",
+      "from_status": "Önceki durum",
+      "to_status": "Sonraki durum",
+      "reason": "Sebep",
+      "system_actor": "Sistem",
+      "visibility": "Görünürlük",
+      "assignee": "Atanan",
+      "unassigned": "Atama kaldırıldı",
+      "support_system": "Sistem",
+      "support_url": "URL",
+      "support_title": "Başlık"
+    },
+    "errors": {
+      "status_invalid": "Durum güncellenemedi; geçiş kuralını kontrol edin.",
+      "note_save_failed": "Çözüm notu kaydedilemedi.",
+      "assignment_save_failed": "Hata ataması güncellenemedi.",
+      "support_save_failed": "Destek bağlantısı kaydedilemedi.",
+      "audit_load_failed": "Audit log yüklenemedi.",
+      "not_found": "Hata olayı bulunamadı."
+    }
+  },
+  "frontend_error_capture": {
+    "_comment": "GOAL-101 (FAZ-10) frontend hata yakalama client-side çevirileri.",
+    "boundary_title": "Beklenmeyen bir hata oluştu",
+    "boundary_description": "Bu hata merkezi hata yönetimine otomatik olarak iletildi. Aşağıdaki referans kodu ile destek ekibine bildirim yapabilirsiniz.",
+    "boundary_fingerprint_label": "Hata referansı",
+    "boundary_retry": "Tekrar dene",
+    "boundary_home": "Ana sayfaya dön",
+    "global_title": "Uygulama geçici olarak kullanılamıyor",
+    "global_description": "Beklenmeyen bir kritik hata oluştu. Ekibimiz olayı otomatik olarak inceliyor. Lütfen birkaç dakika sonra tekrar deneyin.",
+    "reporter_disabled": "Hata raporlama devre dışı bırakıldı.",
+    "queue_full_warning": "Hata kuyruğu dolu; eski olaylar atılmış olabilir."
   },
   "error": {
     "_comment": "GOAL-004: VET-<MODULE>-<NNN> formatı. Eski TR_/EN_ kodları 6 ay alias olarak tutulur.",
@@ -351,5 +505,131 @@
     "open_menu": "Menüyü aç",
     "required_field": "Zorunlu alan",
     "skip_to_content": "İçeriğe geç"
+  },
+  "ops": {
+    "_comment": "GOAL-122/123/124/125 (FAZ-12) operasyon UI çevirileri: performans, güvenlik, yedekleme, tenant export.",
+    "perf": {
+      "title": "Performans ve Yük Testi",
+      "subtitle": "Pilot ve ilk 100 tenant ölçeği için kritik senaryoların p95/p99 latency, hata oranı ve RPS metrikleri.",
+      "scenarios": {
+        "patient_search": "Hasta arama",
+        "calendar": "Klinik takvimi",
+        "patient_timeline": "Hayvan zaman çizelgesi",
+        "stock_query": "Stok sorgusu",
+        "pos": "Petshop POS",
+        "report": "Temel finans raporu",
+        "error_center": "Hata merkezi"
+      },
+      "profiles": {
+        "smoke": "Sağlık kontrolü",
+        "pilot": "Pilot doğrulama",
+        "first_100": "İlk 100 tenant",
+        "stress": "Darboğaz tespiti"
+      },
+      "metrics": {
+        "p95": "p95 latency",
+        "p99": "p99 latency",
+        "error_rate": "HTTP hata oranı",
+        "rps": "Saniyedeki istek",
+        "duration_ms": "Süre (ms)"
+      },
+      "status": {
+        "passed": "Geçti",
+        "failed": "Kaldı",
+        "skipped": "Atlandı"
+      },
+      "actions": {
+        "run": "Yük testini başlat",
+        "report": "Rapor oluştur",
+        "download": "Raporu indir",
+        "cancel": "İptal"
+      },
+      "k6_install": "k6 binary gerekli. winget install k6 veya k6.io adresinden yükleyin.",
+      "threshold_override_help": "Profil ve senaryo bazında eşikler LOAD_TEST_<SCENARIO>_<PROFILE>_<METRIC> env değişkenleri ile override edilebilir.",
+      "warmup_cooldown_help": "Warm-up/cool-down k6 stages blogu olarak üretilir. JIT ısınması eşik hesabına katılmaz."
+    },
+    "security": {
+      "title": "Güvenlik Testi ve Severity Raporu",
+      "subtitle": "OWASP ASVS L1-L3 temelli kimlik doğrulama, yetkilendirme, IDOR, XSS, CSRF, SQL injection, dosya yükleme, rate limit ve tenant izolasyonu kontrollerinin PASS/FAIL/SKIP özeti.",
+      "controls": {
+        "auth": "Kimlik doğrulama",
+        "authz": "Yetkilendirme",
+        "idor": "IDOR (cross-tenant)",
+        "xss": "XSS / output encoding",
+        "csrf": "CSRF / state-changing token",
+        "sql_injection": "SQL injection",
+        "file_upload": "Dosya yükleme",
+        "rate_limit": "Rate limit (per-user)",
+        "tenant_isolation": "Tenant izolasyonu"
+      },
+      "severity": {
+        "critical": "Kritik",
+        "high": "Yüksek",
+        "medium": "Orta",
+        "low": "Düşük",
+        "info": "Bilgi"
+      },
+      "status": {
+        "pass": "PASS",
+        "fail": "FAIL",
+        "skip": "SKIP"
+      },
+      "actions": {
+        "run": "Güvenlik testini başlat",
+        "remediate": "Remediation planla",
+        "ack": "Kabul et"
+      },
+      "remediation_help": "Kritik ve yüksek önem dereceli bulgular için 24 saat / 7 gün SLA uygulanır. Remediation commit'i bu rapora linklenmelidir."
+    },
+    "backup": {
+      "title": "Yedekleme ve Restore",
+      "subtitle": "PostgreSQL pg_dump + WAL streaming + object storage replication. RPO/RTO tier'ları pilot için 5dk/1saat.",
+      "tiers": {
+        "pilot": "Pilot (ilk 10 tenant)",
+        "production": "Production (100 tenant)",
+        "critical": "Critical (KVKK/UK GDPR)"
+      },
+      "rpo_rto": "RPO/RTO",
+      "actions": {
+        "run_backup": "Manuel yedek al",
+        "run_restore_test": "Restore testi çalıştır",
+        "verify": "Yedek bütünlüğünü doğrula"
+      },
+      "encryption_help": "Yedek dosyaları AES-256 at-rest (SSE-S3 + Azure SSE) ile şifrelenir. Client-side encryption FAZ-12+ planlanmıştır.",
+      "retention_help": "Retention policy: 7 günlük, 4 haftalık, 12 aylık. Eskiyen yedekler S3 Glacier'a taşınır."
+    },
+    "tenant_export": {
+      "title": "Tenant Veri Dışa Aktarma",
+      "subtitle": "Yetkili tenant yöneticisinin müşteri, hayvan, klinik kayıt, finans ve dosya verilerini güvenli dışa aktarabilmesi. Asenkron çalışır, audit üretir.",
+      "datasets": {
+        "owners": "Hasta sahipleri",
+        "patients": "Hayvanlar",
+        "examinations": "Muayeneler",
+        "vaccinations": "Aşılar",
+        "prescriptions": "Reçeteler",
+        "sales": "Satışlar",
+        "payments": "Tahsilatlar",
+        "lab_results": "Lab sonuçları",
+        "imaging_orders": "Görüntüleme istemleri",
+        "files": "Dosyalar"
+      },
+      "formats": {
+        "json": "JSON (NDJSON streaming)",
+        "csv": "CSV (FAZ-13+)"
+      },
+      "status": {
+        "pending": "Beklemede",
+        "running": "Çalışıyor",
+        "completed": "Tamamlandı",
+        "failed": "Başarısız"
+      },
+      "actions": {
+        "create": "Yeni export başlat",
+        "download": "İndir",
+        "delete": "Export'u sil"
+      },
+      "retention_notice": "Tıbbi kayıtlar KVKK Madde 7 uyarınca 7 yıl saklanır. Export dosyası 30 gün sonra otomatik silinir.",
+      "rate_limit_help": "Varsayılan 1 export/gün/tenant. SUPERADMIN override edebilir."
+    }
   }
 }

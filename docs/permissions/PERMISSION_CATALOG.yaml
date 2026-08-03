@@ -206,6 +206,96 @@ permissions:
     applies_to_roles: [SUPERADMIN]
 
   # ----------------------------------------------------------------
+  # ERROR_EVENT — Hata merkezi (FAZ-10 / GOAL-100/103/104)
+  # ----------------------------------------------------------------
+  # Not: superadmin görünüm `audit:log:read` permission'ı ile
+  # korunur. Buradaki permission'lar tenant kapsamında ve
+  # granular aksiyonlar içindir.
+  - permission: "error:event:tenant:read"
+    description: "Tenant kapsamındaki hata olaylarını salt-okunur görüntüleme (OWNER)."
+    resource_type: error_event
+    action: read
+    tenant_scope: required
+    branch_scope: optional
+    self_only: false
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, SUPERADMIN]
+    notes: "GOAL-100 next-tick. Cross-tenant IDOR servis katmanında engellenir."
+
+  - permission: "error:event:status:write"
+    description: "Hata olayının durumunu (state machine) değiştirme."
+    resource_type: error_event
+    action: update
+    tenant_scope: not_applicable
+    branch_scope: not_applicable
+    self_only: false
+    audit: true
+    pii: false
+    amend: true
+    system_only: false
+    applies_to_roles: [SUPERADMIN]
+    notes: "GOAL-104. Geçiş kuralları (new→investigating, resolved→reopened vb.) servis tarafında doğrulanır."
+
+  - permission: "error:event:assign:write"
+    description: "Hata olayını geliştirici/sorumluya atama veya atamayı kaldırma."
+    resource_type: error_event
+    action: update
+    tenant_scope: not_applicable
+    branch_scope: not_applicable
+    self_only: false
+    audit: true
+    pii: false
+    amend: true
+    system_only: false
+    applies_to_roles: [SUPERADMIN]
+    notes: "GOAL-104. Atama append-only kayıt olarak tutulur; status değiştirmez."
+
+  - permission: "error:event:note:write"
+    description: "Hata olayına çözüm notu ekleme (append-only)."
+    resource_type: error_event
+    action: update
+    tenant_scope: not_applicable
+    branch_scope: not_applicable
+    self_only: false
+    audit: true
+    pii: true
+    amend: true
+    system_only: false
+    applies_to_roles: [SUPERADMIN]
+    notes: "GOAL-104. PII mask'lı saklanır; internal|shared görünürlük desteklenir."
+
+  - permission: "error:event:support:write"
+    description: "Hata olayına JIRA/Linear/Zendesk/GitHub destek bağlantısı ekleme."
+    resource_type: error_event
+    action: update
+    tenant_scope: not_applicable
+    branch_scope: not_applicable
+    self_only: false
+    audit: true
+    pii: false
+    amend: true
+    system_only: false
+    applies_to_roles: [SUPERADMIN]
+    notes: "GOAL-104. Append-only; en az bir tanımlayıcı (system/externalId/url/title) zorunlu."
+
+  - permission: "error:event:audit:read"
+    description: "Hata olayının birleşik audit log'unu (status + not + destek + atama) görüntüleme."
+    resource_type: error_event
+    action: read
+    tenant_scope: not_applicable
+    branch_scope: not_applicable
+    self_only: false
+    audit: false
+    pii: false
+    amend: false
+    system_only: false
+    applies_to_roles: [SUPERADMIN]
+    notes: "GOAL-104. Birleşik timeline UI; tenant hata görünümünde de kullanılabilir."
+
+  # ----------------------------------------------------------------
   # BRANCH — Şube yönetimi
   # ----------------------------------------------------------------
   - permission: "branch:branch:read"

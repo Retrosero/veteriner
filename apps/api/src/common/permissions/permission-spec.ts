@@ -218,6 +218,12 @@ export const PERMISSIONS = [
   "cash_register:session:reopen",
   "cash_register:movement:read",
   "cash_register:movement:export",
+  "error:event:tenant:read",
+  "error:event:status:write",
+  "error:event:assign:write",
+  "error:event:note:write",
+  "error:event:support:write",
+  "error:event:audit:read",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];

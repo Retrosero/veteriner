@@ -814,6 +814,25 @@ export class ErrorEventsRepository implements OnModuleInit {
     return idsToDelete.length;
   }
 
+  /** Kalıcı hata olaylarını ve bellek indeksini aynı retention cutoff'ı ile temizler. */
+  public async expirePersistedOlderThan(args: {
+    cutoff: string;
+    tenantId?: string | null;
+  }): Promise<number> {
+    if (!this.prisma) return this.expireOlderThan(args);
+    const deleted = await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'true', true)`;
+      return tx.errorEvent.deleteMany({
+        where: {
+          ...(args.tenantId !== undefined ? { tenantId: args.tenantId } : {}),
+          lastSeenAt: { lte: new Date(args.cutoff) },
+        },
+      });
+    });
+    this.expireOlderThan(args);
+    return deleted.count;
+  }
+
   /**
    * `lastSeenAt` alanı `cutoff` değerinden küçük veya eşit olan
    * (yani cutoff'a kadar olan) hata kayıtlarını sayar. Tenant

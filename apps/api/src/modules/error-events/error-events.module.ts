@@ -20,13 +20,18 @@ import { Global, Module } from "@nestjs/common";
 import {
   ErrorEventsController,
   SystemErrorEventsController,
+  TenantErrorEventsController,
 } from "./error-events.controller.js";
 import { ErrorEventsRepository } from "./error-events.repository.js";
 import { ErrorEventsService } from "./error-events.service.js";
 
 @Global()
 @Module({
-  controllers: [ErrorEventsController, SystemErrorEventsController],
+  controllers: [
+    ErrorEventsController,
+    SystemErrorEventsController,
+    TenantErrorEventsController,
+  ],
   providers: [ErrorEventsService, ErrorEventsRepository],
   exports: [ErrorEventsService, ErrorEventsRepository],
 })

@@ -150,7 +150,161 @@
     "branch:branch:update": "Update branch",
     "tenant:tenant:read": "View tenant",
     "tenant:tenant:create": "Create tenant",
-    "tenant:tenant:update": "Update tenant"
+    "tenant:tenant:update": "Update tenant",
+    "error:event:tenant:read": "View error events within own tenant scope",
+    "error:event:status:write": "Change error event status",
+    "error:event:assign:write": "Assign error event to a developer",
+    "error:event:note:write": "Add error resolution note",
+    "error:event:support:write": "Add error support ticket link",
+    "error:event:audit:read": "View error unified audit log"
+  },
+  "error_center": {
+    "_comment": "GOAL-100/103/104 (FAZ-10) centralised error management UI translations.",
+    "title": "Error Center",
+    "subtitle": "Monitor all tenant error events, manage statuses, assign owners, and add resolution notes.",
+    "load_failed": "Error records could not be loaded at this time.",
+    "load_detail_failed": "Error detail could not be loaded at this time.",
+    "load_audit_failed": "Error audit log could not be loaded at this time.",
+    "no_records": "No error records to display.",
+    "filters": {
+      "title": "Filters",
+      "severity": "Severity",
+      "module": "Module",
+      "status": "Status",
+      "tenant": "Tenant",
+      "from": "From date",
+      "to": "To date",
+      "search": "Search",
+      "search_placeholder": "Code, message, or module",
+      "all": "All",
+      "reset": "Reset filters"
+    },
+    "list": {
+      "items": "Error events",
+      "total": "Total {count} events",
+      "loading": "Loading error records…",
+      "columns": {
+        "status": "Status",
+        "severity": "Severity",
+        "code": "Code",
+        "module": "Module",
+        "message": "Message",
+        "occurrence": "Occurrence",
+        "first_seen": "First seen",
+        "last_seen": "Last seen",
+        "tenant": "Tenant",
+        "branch": "Branch",
+        "assigned": "Assigned"
+      }
+    },
+    "detail": {
+      "title": "Error detail",
+      "code": "Code",
+      "module": "Module",
+      "fingerprint": "Fingerprint",
+      "occurrence": "Occurrence",
+      "first_last_seen": "First / last seen",
+      "release": "Release",
+      "route": "Route",
+      "tenant": "Tenant",
+      "branch": "Branch",
+      "country": "Country",
+      "actor": "Actor",
+      "context": "Request context",
+      "stack": "Stack trace",
+      "no_stack": "No stack trace stored for this event (not 5xx/critical).",
+      "no_context": "No context information."
+    },
+    "status": {
+      "new": "New",
+      "investigating": "Investigating",
+      "resolved": "Resolved",
+      "reopened": "Reopened"
+    },
+    "severity": {
+      "info": "Info",
+      "warning": "Warning",
+      "error": "Error",
+      "critical": "Critical"
+    },
+    "actions": {
+      "update_status": "Save status",
+      "assign": "Assign",
+      "unassign": "Unassign",
+      "add_note": "Add note",
+      "add_support_link": "Add link",
+      "refresh": "Refresh",
+      "close": "Close"
+    },
+    "assignment": {
+      "title": "Owner assignment",
+      "current": "Current assignment: {assignee}",
+      "unassigned": "Unassigned",
+      "user_id": "User identifier",
+      "reason": "Assignment note",
+      "placeholder_user_id": "e.g. usr-dev-1",
+      "placeholder_reason": "optional"
+    },
+    "note": {
+      "title": "Resolution notes",
+      "new": "New note",
+      "placeholder": "Write a resolution note (PII is masked on store)",
+      "visibility_internal": "Internal",
+      "visibility_shared": "Shared",
+      "preview": "Preview"
+    },
+    "support": {
+      "title": "Support ticket link",
+      "url": "URL",
+      "title_label": "Title",
+      "system_jira": "JIRA",
+      "system_linear": "Linear",
+      "system_zendesk": "Zendesk",
+      "system_github": "GitHub",
+      "system_internal": "Internal",
+      "system_other": "Other",
+      "placeholder_url": "https://...",
+      "placeholder_title": "optional"
+    },
+    "audit": {
+      "title": "Audit timeline",
+      "empty": "No audit entries for this event yet.",
+      "action_status_transition": "Status transition",
+      "action_note_added": "Note added",
+      "action_support_link_added": "Support link added",
+      "action_assignment_changed": "Assignment changed",
+      "action_occurrence_recorded": "New occurrence recorded",
+      "from_status": "From status",
+      "to_status": "To status",
+      "reason": "Reason",
+      "system_actor": "System",
+      "visibility": "Visibility",
+      "assignee": "Assignee",
+      "unassigned": "Unassigned",
+      "support_system": "System",
+      "support_url": "URL",
+      "support_title": "Title"
+    },
+    "errors": {
+      "status_invalid": "Status could not be updated; please check the transition rules.",
+      "note_save_failed": "Resolution note could not be saved.",
+      "assignment_save_failed": "Assignment could not be updated.",
+      "support_save_failed": "Support link could not be saved.",
+      "audit_load_failed": "Audit log could not be loaded.",
+      "not_found": "Error event not found."
+    }
+  },
+  "frontend_error_capture": {
+    "_comment": "GOAL-101 (FAZ-10) frontend error capture client-side translations.",
+    "boundary_title": "An unexpected error occurred",
+    "boundary_description": "This error has been automatically forwarded to the central error management. Use the reference code below to contact support.",
+    "boundary_fingerprint_label": "Error reference",
+    "boundary_retry": "Try again",
+    "boundary_home": "Back to home",
+    "global_title": "Application is temporarily unavailable",
+    "global_description": "An unexpected critical error occurred. Our team has been automatically notified. Please try again in a few minutes.",
+    "reporter_disabled": "Error reporting is disabled.",
+    "queue_full_warning": "Error queue is full; older events may have been dropped."
   },
   "error": {
     "_comment": "GOAL-004: VET-<MODULE>-<NNN> format. Legacy TR_/EN_ codes retained as aliases.",
@@ -351,5 +505,131 @@
     "open_menu": "Open menu",
     "required_field": "Required field",
     "skip_to_content": "Skip to main content"
+  },
+  "ops": {
+    "_comment": "GOAL-122/123/124/125 (FAZ-12) operations UI translations: performance, security, backup, tenant export.",
+    "perf": {
+      "title": "Performance & Load Test",
+      "subtitle": "Critical scenarios p95/p99 latency, error rate and RPS metrics for pilot and first 100 tenant scale.",
+      "scenarios": {
+        "patient_search": "Patient search",
+        "calendar": "Clinic calendar",
+        "patient_timeline": "Patient timeline",
+        "stock_query": "Stock query",
+        "pos": "Petshop POS",
+        "report": "Finance report",
+        "error_center": "Error center"
+      },
+      "profiles": {
+        "smoke": "Health check",
+        "pilot": "Pilot validation",
+        "first_100": "First 100 tenants",
+        "stress": "Bottleneck detection"
+      },
+      "metrics": {
+        "p95": "p95 latency",
+        "p99": "p99 latency",
+        "error_rate": "HTTP error rate",
+        "rps": "Requests per second",
+        "duration_ms": "Duration (ms)"
+      },
+      "status": {
+        "passed": "Passed",
+        "failed": "Failed",
+        "skipped": "Skipped"
+      },
+      "actions": {
+        "run": "Run load test",
+        "report": "Generate report",
+        "download": "Download report",
+        "cancel": "Cancel"
+      },
+      "k6_install": "k6 binary required. Install with winget install k6 or from k6.io.",
+      "threshold_override_help": "Per profile and per scenario thresholds can be overridden via LOAD_TEST_<SCENARIO>_<PROFILE>_<METRIC> environment variables.",
+      "warmup_cooldown_help": "Warm-up/cool-down are emitted as k6 stages. JIT warm-up latency is excluded from threshold scoring."
+    },
+    "security": {
+      "title": "Security Test & Severity Report",
+      "subtitle": "OWASP ASVS L1-L3 control PASS/FAIL/SKIP summary for authentication, authorization, IDOR, XSS, CSRF, SQL injection, file upload, rate limit and tenant isolation.",
+      "controls": {
+        "auth": "Authentication",
+        "authz": "Authorization",
+        "idor": "IDOR (cross-tenant)",
+        "xss": "XSS / output encoding",
+        "csrf": "CSRF / state-changing token",
+        "sql_injection": "SQL injection",
+        "file_upload": "File upload",
+        "rate_limit": "Rate limit (per-user)",
+        "tenant_isolation": "Tenant isolation"
+      },
+      "severity": {
+        "critical": "Critical",
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low",
+        "info": "Info"
+      },
+      "status": {
+        "pass": "PASS",
+        "fail": "FAIL",
+        "skip": "SKIP"
+      },
+      "actions": {
+        "run": "Run security test",
+        "remediate": "Plan remediation",
+        "ack": "Acknowledge"
+      },
+      "remediation_help": "Critical and high severity findings follow 24h / 7d SLA. Remediation commit should be linked to this report."
+    },
+    "backup": {
+      "title": "Backup & Restore",
+      "subtitle": "PostgreSQL pg_dump + WAL streaming + object storage replication. RPO/RTO tiers: pilot 5min/1hr.",
+      "tiers": {
+        "pilot": "Pilot (first 10 tenants)",
+        "production": "Production (100 tenants)",
+        "critical": "Critical (KVKK/UK GDPR)"
+      },
+      "rpo_rto": "RPO/RTO",
+      "actions": {
+        "run_backup": "Run manual backup",
+        "run_restore_test": "Run restore test",
+        "verify": "Verify backup integrity"
+      },
+      "encryption_help": "Backup files encrypted at rest with AES-256 (SSE-S3 + Azure SSE). Client-side encryption is planned for FAZ-12+.",
+      "retention_help": "Retention policy: 7 daily, 4 weekly, 12 monthly. Older backups move to S3 Glacier."
+    },
+    "tenant_export": {
+      "title": "Tenant Data Export",
+      "subtitle": "Authorized tenant admins can securely export customer, patient, clinical, financial and file data. Runs async, produces audit trail.",
+      "datasets": {
+        "owners": "Patient owners",
+        "patients": "Patients",
+        "examinations": "Examinations",
+        "vaccinations": "Vaccinations",
+        "prescriptions": "Prescriptions",
+        "sales": "Sales",
+        "payments": "Payments",
+        "lab_results": "Lab results",
+        "imaging_orders": "Imaging orders",
+        "files": "Files"
+      },
+      "formats": {
+        "json": "JSON (NDJSON streaming)",
+        "csv": "CSV (FAZ-13+)"
+      },
+      "status": {
+        "pending": "Pending",
+        "running": "Running",
+        "completed": "Completed",
+        "failed": "Failed"
+      },
+      "actions": {
+        "create": "Start new export",
+        "download": "Download",
+        "delete": "Delete export"
+      },
+      "retention_notice": "Clinical records are retained for 7 years per KVKK Article 7. Export file is auto-deleted after 30 days.",
+      "rate_limit_help": "Default 1 export/day/tenant. SUPERADMIN can override."
+    }
   }
 }
