@@ -99,6 +99,73 @@ RPO/RTO hedefleri dokümante edilir.
 
 ## Yedekleme Testi (Aylık)
 
+Yerel Docker ve CI öncesi doğrulama için çalıştırılabilir PowerShell
+otomasyonu `tools/backup/` altında bulunur. Custom-format dump container
+içinde üretildiği için ikili verinin PowerShell yönlendirmesiyle bozulması
+engellenir. Restore testi canlı `vetniva` veritabanına yazmaz; yalnızca
+`vetniva_restore_test_` önekli geçici bir veritabanı oluşturur, `tenants`,
+`owners` ve `patients` tablolarını sayar ve işlem sonunda bu veritabanını
+silerek temizliği doğrular.
+
+```powershell
+$backup = .\tools\backup\backup-postgres.ps1 | ConvertFrom-Json
+.\tools\backup\restore-test.ps1 -BackupFile $backup.backupFile
+```
+
+2 Ağustos 2026 yerel Docker doğrulaması: restore başarılı; `tenants=1`,
+`owners=13`, `patients=16`. Bu sayıların içeriği değil, geri yüklenen
+şemada verinin erişilebilir olması kabul kanıtıdır.
+
+### TypeScript Tier Doğrulama
+
+`tools/backup/src/backup-types.ts` RPO/RTO tier matrisini
+tutarken `validate` komutu tier tutarlılığını doğrular:
+
+```bash
+pnpm --filter @vetniva/backup validate
+# {
+#   "tiers": [
+#     { "tier": "pilot", "rpoMinutes": 5, "rtoMinutes": 60, ... },
+#     { "tier": "production", "rpoMinutes": 1, "rtoMinutes": 30, ... },
+#     { "tier": "critical", "rpoMinutes": 0, "rtoMinutes": 15, ... }
+#   ],
+#   "issues": [],
+#   "allOk": true
+# }
+```
+
+Tier matrisi değişirse (örn. pilot RPO 5dk → 2dk) ilgili
+test ve doküman senkron güncellenmelidir; CI bu kontrolü
+PR gate'inde çalıştırır.
+
+### Object Storage Sync
+
+Object storage (S3 + Azure Blob) cross-region replication
+
+- GRS ile **sürekli** senkronize olur. Tenant dosyaları
+  silinmez (KVKK gereği); versioning aktiftir. Cross-tenant
+  erişim denemeleri `audit:security_event.tenant_isolation_breach_attempt`
+  event'i üretir.
+
+### Audit
+
+Tüm yedekleme aksiyonları audit log'a düşer:
+
+- `audit:backup.completed` (info) — başarılı yedek
+- `audit:backup.failed` (error) — yedek hatası
+- `audit:backup.restore_tested` (info) — restore testi
+  başarılı
+- `audit:backup.restore_failed` (error) — restore testi
+  başarısız
+
+Tüm event'ler `request_id` + `tenant_id` + `actor_type`
+
+- `correlation_id` + `app_version` alanlarını taşır;
+  `actor_type` = "system" (scheduled) veya "user"
+  (manual trigger).
+
+Eski platformlar için örnek prosedür:
+
 ```bash
 # /opt/vetniva/scripts/test-restore.sh
 #!/bin/bash
