@@ -69,10 +69,22 @@ export interface ErrorReporterConfig {
   flushIntervalMs: number;
   /** Tek fetch denemesi zaman aşımı (ms). */
   requestTimeoutMs: number;
+  /** 5xx + ağ hataları için en fazla geri deneme sayısı. */
+  maxRetryAttempts: number;
+  /** Per-user token-bucket kapasitesi (1 doluşta en fazla N olay). */
+  rateLimitBucketCapacity: number;
+  /** Token-bucket yenileme aralığı (ms). */
+  rateLimitRefillIntervalMs: number;
   /** Test amaçlı: gerçek fetch yerine bu fonksiyon çağrılır. */
   fetchImpl: typeof fetch;
   /** Reporter kapalı mı? Prod dışı test'lerde kullanılabilir. */
   enabled: boolean;
+  /**
+   * Opsiyonel: per-user identifier (userId, sessionId). Sağlanırsa
+   * her kullanıcı kendi rate limit bucket'ına sahip olur. Sağlanmazsa
+   * global bir "anonymous" bucket kullanılır.
+   */
+  userIdProvider?: (() => string | null) | undefined;
 }
 
 /** Raporlanmış hatanın backend'e ulaşma sonucu. */
@@ -87,6 +99,38 @@ interface QueuedError {
   /** İlgili backend isteğinin güvenilir korelasyon kimliği (varsa). */
   requestId?: string | null | undefined;
   enqueuedAt: number;
+  /** Başarısız gönderim sayısı; kontrollü geri deneme için kullanılır. */
+  attempts: number;
+  /** Bir sonraki gönderimin en erken denenebileceği zaman. */
+  retryAt: number;
+}
+
+/** Ağ veya 5xx hataları için başlangıç geri deneme gecikmesi. */
+const RETRY_INITIAL_DELAY_MS = 1_000;
+/** Geri denemelerin kullanıcı deneyimini etkilememesi için üst sınır. */
+const RETRY_MAX_DELAY_MS = 30_000;
+/**
+ * 5xx + ağ hataları için en fazla geri deneme sayısı (GOAL-101
+ * next-tick). 3 deneme sonrası kuyruktan düşürülür; kullanıcı
+ * deneyimini etkilemeyecek şekilde loglanır.
+ */
+const MAX_RETRY_ATTEMPTS = 3;
+
+/* --------------------------------------------------------------------------
+ * Token-bucket rate limit (per-user) — GOAL-101 next-tick
+ * --------------------------------------------------------------------------
+ */
+
+/** Per-user rate limit. Aynı kullanıcı 1 saniyede en fazla N olay
+ *  gönderebilir; kuyruk bu sayıyı aşarsa eski olay atılır. */
+const RATE_LIMIT_BUCKET_CAPACITY = 10;
+/** Token yenileme aralığı (ms). */
+const RATE_LIMIT_REFILL_INTERVAL_MS = 1_000;
+
+/** Bir kullanıcının rate limit bucket'ı. */
+interface UserBucket {
+  tokens: number;
+  lastRefill: number;
 }
 
 /* --------------------------------------------------------------------------
@@ -266,6 +310,9 @@ function defaultConfig(
     dedupWindowMs: 1_000,
     flushIntervalMs: 2_000,
     requestTimeoutMs: 3_000,
+    maxRetryAttempts: MAX_RETRY_ATTEMPTS,
+    rateLimitBucketCapacity: RATE_LIMIT_BUCKET_CAPACITY,
+    rateLimitRefillIntervalMs: RATE_LIMIT_REFILL_INTERVAL_MS,
     fetchImpl:
       typeof fetch === "function"
         ? fetch
@@ -299,6 +346,12 @@ export class ErrorReporter {
   private readonly config: ErrorReporterConfig;
   private readonly queue: QueuedError[] = [];
   private readonly recentSignatures = new Map<string, number>();
+  /**
+   * Per-user token-bucket'lar (GOAL-101 next-tick). `userId` →
+   * `{tokens, lastRefill}`. `userId` bilinmiyorsa `"anonymous"`
+   * bucket kullanılır (paylaşımlı limit).
+   */
+  private readonly userBuckets = new Map<string, UserBucket>();
   private flushTimer: ReturnType<typeof setInterval> | null = null;
   private flushing = false;
 
@@ -374,22 +427,23 @@ export class ErrorReporter {
   public async flush(): Promise<void> {
     if (this.flushing || this.queue.length === 0) return;
     this.flushing = true;
-    const batch = this.queue.splice(0, this.config.maxQueueSize);
+    const now = Date.now();
+    const pending = this.queue.splice(0);
+    const ready = pending.filter((item) => item.retryAt <= now);
+    const deferred = pending.filter((item) => item.retryAt > now);
+    const batch = ready.splice(0, this.config.maxQueueSize);
+    this.queue.push(...deferred, ...ready);
     try {
       for (const item of batch) {
         try {
           const result = await this.sendOne(item);
           // sendOne null dönerse HTTP hata veya parse hatası; kuyruğa geri al.
           if (result === null) {
-            if (this.queue.length < this.config.maxQueueSize) {
-              this.queue.push(item);
-            }
+            this.requeueWithBackoff(item);
           }
         } catch {
           // Ağ/abort/timeout: kuyruğa geri koy.
-          if (this.queue.length < this.config.maxQueueSize) {
-            this.queue.push(item);
-          }
+          this.requeueWithBackoff(item);
         }
       }
     } finally {
@@ -446,6 +500,11 @@ export class ErrorReporter {
     input: ClientErrorReportInput,
     requestId?: string | null,
   ): void {
+    // Per-user rate limit (token bucket). Bucket dolu değilse olay
+    // reddedilir; kullanıcı hata gönderemezse sessizce yutulur
+    // (kullanıcı deneyimini etkilemez).
+    if (!this.tryConsumeToken()) return;
+
     const sig = `${input.message}|${input.route}`;
     const now = Date.now();
     const lastSeen = this.recentSignatures.get(sig);
@@ -466,7 +525,86 @@ export class ErrorReporter {
       // Kuyruk doluysa en eskiyi at.
       this.queue.shift();
     }
-    this.queue.push({ input, requestId, enqueuedAt: now });
+    this.queue.push({
+      input,
+      requestId,
+      enqueuedAt: now,
+      attempts: 0,
+      retryAt: now,
+    });
+  }
+
+  /**
+   * Token-bucket'tan bir token tüketir. Kullanıcı tanımlıysa
+   * kullanıcıya özel bucket, değilse anonim bucket kullanılır.
+   * @description Bucket boşsa `false` döner; olay reddedilir.
+   * Yenileme `rateLimitRefillIntervalMs` aralığıyla olur (sürekli
+   * refill yerine atomik yenileme).
+   */
+  private tryConsumeToken(): boolean {
+    const userId = this.config.userIdProvider?.() ?? "anonymous";
+    const now = Date.now();
+    let bucket = this.userBuckets.get(userId);
+    if (!bucket) {
+      bucket = { tokens: this.config.rateLimitBucketCapacity, lastRefill: now };
+      this.userBuckets.set(userId, bucket);
+    } else {
+      const elapsed = now - bucket.lastRefill;
+      if (elapsed >= this.config.rateLimitRefillIntervalMs) {
+        const refillSteps = Math.floor(
+          elapsed / this.config.rateLimitRefillIntervalMs,
+        );
+        bucket.tokens = Math.min(
+          this.config.rateLimitBucketCapacity,
+          bucket.tokens + refillSteps,
+        );
+        bucket.lastRefill +=
+          refillSteps * this.config.rateLimitRefillIntervalMs;
+      }
+    }
+    if (bucket.tokens <= 0) return false;
+    bucket.tokens -= 1;
+    return true;
+  }
+
+  /**
+   * Test amaçlı: tüm per-user bucket'ları sıfırlar. Reporter
+   * konfigürasyonu değiştiğinde (örn. test setup) çağrılabilir.
+   */
+  public resetUserBuckets(): void {
+    this.userBuckets.clear();
+  }
+
+  /**
+   * Başarısız olayı sınırlı üstel geri deneme ile kuyruğa iade eder.
+   * @description Aynı hata, ağ kesintisinde her flush periyodunda tekrar
+   * gönderilmez. Başarılı olayların sırasını korumak için geri dönen olay
+   * kuyruğun sonuna eklenir; kapasite doluysa en eski bekleyen olay atılır.
+   * Maks. `maxRetryAttempts` (default 3) deneme sonrası olay kuyruktan
+   * düşürülür.
+   * @param item
+   */
+  private requeueWithBackoff(item: QueuedError): void {
+    const attempts = item.attempts + 1;
+    if (attempts >= this.config.maxRetryAttempts) {
+      // Maks deneme aşıldı; sessizce düşür (kullanıcı deneyimini
+      // etkilemez). `attempts >= maxRetryAttempts` mantığı: N
+      // deneme sonrası drop (1+1+1=3 deneme sonrası 3. flush'ta
+      // attempts 3 olur ve 3 >= 3 ile drop).
+      return;
+    }
+    if (this.queue.length >= this.config.maxQueueSize) {
+      this.queue.shift();
+    }
+    const delay = Math.min(
+      RETRY_INITIAL_DELAY_MS * 2 ** (attempts - 1),
+      RETRY_MAX_DELAY_MS,
+    );
+    this.queue.push({
+      ...item,
+      attempts,
+      retryAt: Date.now() + delay,
+    });
   }
 
   /**

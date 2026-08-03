@@ -285,6 +285,27 @@ describe("ErrorReporter", () => {
     expect(reporter.pendingCount()).toBeGreaterThanOrEqual(1);
   });
 
+  it("başarısız gönderimi geri deneme süresine kadar yeniden yollamaz", async () => {
+    vi.useFakeTimers();
+    const failFetch = vi.fn(() =>
+      Promise.resolve(new Response("server error", { status: 500 })),
+    );
+    const reporter = new ErrorReporter({
+      enabled: true,
+      flushIntervalMs: 60_000,
+      fetchImpl: failFetch as unknown as typeof fetch,
+    });
+    reporter.captureMessage("tekrar dene", "warning");
+
+    await reporter.flush();
+    await reporter.flush();
+    expect(failFetch).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(1_000);
+    await reporter.flush();
+    expect(failFetch).toHaveBeenCalledTimes(2);
+  });
+
   it("route CLIENT prefix'i ile işaretlenir (browser)", () => {
     // jsdom'da window var
     const reporter = new ErrorReporter({
@@ -333,3 +354,191 @@ describe("ErrorReporter", () => {
     expect(body.context).toEqual({ x: 1 });
   });
 });
+
+/* --------------------------------------------------------------------------
+ * GOAL-101 next-tick — token-bucket rate limit + max retry attempts
+ * --------------------------------------------------------------------------
+ */
+
+describe("ErrorReporter — token-bucket rate limit (per user)", () => {
+  let fetchMock: Mock;
+
+  beforeEach(() => {
+    fetchMock = makeFetchMock();
+  });
+
+  it("default userIdProvider: 'anonymous' bucket paylaşılır; kapasite aşılır", () => {
+    const reporter = new ErrorReporter({
+      enabled: true,
+      flushIntervalMs: 60_000,
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      rateLimitBucketCapacity: 3,
+      rateLimitRefillIntervalMs: 60_000,
+    });
+    reporter.captureMessage("m1", "warning");
+    reporter.captureMessage("m2", "warning");
+    reporter.captureMessage("m3", "warning");
+    reporter.captureMessage("m4-bucket-dolu", "warning");
+    // 3 kapasite → 3 kabul; 4. reddedilir.
+    expect(reporter.pendingCount()).toBe(3);
+  });
+
+  it("farklı userId'ler ayrı bucket kullanır", () => {
+    const reporter = new ErrorReporter({
+      enabled: true,
+      flushIntervalMs: 60_000,
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      rateLimitBucketCapacity: 2,
+      rateLimitRefillIntervalMs: 60_000,
+      userIdProvider: () => {
+        const current = (
+          globalThis as { __vetniva_test_user?: string }
+        ).__vetniva_test_user;
+        return current ?? "anonymous";
+      },
+    });
+    (globalThis as { __vetniva_test_user?: string }).__vetniva_test_user =
+      "user-a";
+    reporter.captureMessage("a1", "warning");
+    reporter.captureMessage("a2", "warning");
+    reporter.captureMessage("a3-dolu", "warning");
+    expect(reporter.pendingCount()).toBe(2);
+
+    (globalThis as { __vetniva_test_user?: string }).__vetniva_test_user =
+      "user-b";
+    reporter.captureMessage("b1", "warning");
+    reporter.captureMessage("b2", "warning");
+    expect(reporter.pendingCount()).toBe(4);
+    // Test sonrası temizle
+    delete (globalThis as { __vetniva_test_user?: string }).__vetniva_test_user;
+  });
+
+  it("refill interval geçtikten sonra yeni token kazanılır", () => {
+    vi.useFakeTimers();
+    const reporter = new ErrorReporter({
+      enabled: true,
+      flushIntervalMs: 60_000,
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      rateLimitBucketCapacity: 2,
+      rateLimitRefillIntervalMs: 1_000,
+    });
+    reporter.captureMessage("a", "warning");
+    reporter.captureMessage("b", "warning");
+    expect(reporter.pendingCount()).toBe(2);
+    // Bucket tükendi.
+    reporter.captureMessage("c", "warning");
+    expect(reporter.pendingCount()).toBe(2);
+
+    // 1 sn sonra refill olur (1 token).
+    vi.advanceTimersByTime(1_100);
+    reporter.captureMessage("d", "warning");
+    expect(reporter.pendingCount()).toBe(3);
+    vi.useRealTimers();
+  });
+
+  it("resetUserBuckets tüm kullanıcıların bucket'ını sıfırlar", () => {
+    const reporter = new ErrorReporter({
+      enabled: true,
+      flushIntervalMs: 60_000,
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      rateLimitBucketCapacity: 1,
+      rateLimitRefillIntervalMs: 60_000,
+    });
+    reporter.captureMessage("a", "warning");
+    reporter.captureMessage("b", "warning");
+    expect(reporter.pendingCount()).toBe(1);
+    reporter.resetUserBuckets();
+    reporter.captureMessage("c", "warning");
+    expect(reporter.pendingCount()).toBe(2);
+  });
+});
+
+describe("ErrorReporter — max retry attempts", () => {
+  let fetchMock: Mock;
+
+  beforeEach(() => {
+    fetchMock = makeFetchMock();
+  });
+
+  it("default maxRetryAttempts=3 sonrası kuyruktan düşer", async () => {
+    vi.useFakeTimers();
+    const failFetch = vi.fn(() =>
+      Promise.resolve(new Response("server error", { status: 500 })),
+    );
+    const reporter = new ErrorReporter({
+      enabled: true,
+      flushIntervalMs: 60_000,
+      maxQueueSize: 10,
+      maxRetryAttempts: 3,
+      rateLimitBucketCapacity: 100,
+      fetchImpl: failFetch as unknown as typeof fetch,
+    });
+    reporter.captureMessage("retry-test", "warning");
+    expect(reporter.pendingCount()).toBe(1);
+
+    // 1. deneme başarısız → re-enqueue (attempts=1)
+    await reporter.flush();
+    expect(failFetch).toHaveBeenCalledTimes(1);
+    // 1 sn sonra retryAt dolmuş olur
+    await vi.advanceTimersByTimeAsync(1_100);
+    // 2. deneme başarısız → re-enqueue (attempts=2)
+    await reporter.flush();
+    expect(failFetch).toHaveBeenCalledTimes(2);
+    // 2 sn sonra (toplam 3 sn)
+    await vi.advanceTimersByTimeAsync(2_000);
+    // 3. deneme başarısız → attempts 3, maxRetryAttempts=3 → drop
+    await reporter.flush();
+    expect(failFetch).toHaveBeenCalledTimes(3);
+    expect(reporter.pendingCount()).toBe(0);
+    vi.useRealTimers();
+  });
+
+  it("özel maxRetryAttempts=1: ilk hatada düşer", async () => {
+    const failFetch = vi.fn(() =>
+      Promise.resolve(new Response("server error", { status: 500 })),
+    );
+    const reporter = new ErrorReporter({
+      enabled: true,
+      flushIntervalMs: 60_000,
+      maxQueueSize: 10,
+      maxRetryAttempts: 1,
+      rateLimitBucketCapacity: 100,
+      fetchImpl: failFetch as unknown as typeof fetch,
+    });
+    reporter.captureMessage("one-shot", "warning");
+    // 1. deneme başarısız → attempts 1, maxRetryAttempts=1 → drop
+    await reporter.flush();
+    expect(failFetch).toHaveBeenCalledTimes(1);
+    expect(reporter.pendingCount()).toBe(0);
+  });
+
+  it("başarısız denemeler arasında exponential backoff uygulanır", async () => {
+    vi.useFakeTimers();
+    const failFetch = vi.fn(() =>
+      Promise.resolve(new Response("server error", { status: 500 })),
+    );
+    const reporter = new ErrorReporter({
+      enabled: true,
+      flushIntervalMs: 60_000,
+      maxQueueSize: 10,
+      maxRetryAttempts: 3,
+      rateLimitBucketCapacity: 100,
+      fetchImpl: failFetch as unknown as typeof fetch,
+    });
+    reporter.captureMessage("backoff", "warning");
+
+    // 1. deneme
+    await reporter.flush();
+    expect(failFetch).toHaveBeenCalledTimes(1);
+    // 1 sn sonra 2. deneme (1 * 2^0 = 1 sn).
+    await vi.advanceTimersByTimeAsync(1_100);
+    await reporter.flush();
+    expect(failFetch).toHaveBeenCalledTimes(2);
+    // 2 sn sonra 3. deneme (1 * 2^1 = 2 sn).
+    await vi.advanceTimersByTimeAsync(2_100);
+    await reporter.flush();
+    expect(failFetch).toHaveBeenCalledTimes(3);
+    vi.useRealTimers();
+  });
+});
+
