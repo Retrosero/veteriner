@@ -19,9 +19,15 @@
  * @since GOAL-040 (FAZ-4) muayene başlatma ve yaşam döngüsü core
  */
 
+import { randomUUID } from "node:crypto";
+
 import { Injectable, Optional } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service.js";
-import type { Examination as PrismaExamination, ExaminationAmend as PrismaExaminationAmend, Prisma } from "@prisma/client";
+import type {
+  Examination as PrismaExamination,
+  ExaminationAmend as PrismaExaminationAmend,
+  Prisma,
+} from "@prisma/client";
 
 import type {
   Examination,
@@ -67,14 +73,129 @@ export class ExaminationsRepository {
   /** Her tenant için id counter. */
   private readonly counters = new Map<string, number>();
   public constructor(@Optional() private readonly prisma?: PrismaService) {}
-  public async persist(record:ExaminationRecord):Promise<ExaminationRecord>{if(!this.prisma)return this.insert(record);this.insert(record);const r=await this.ctx(record.tenantId,tx=>tx.examination.create({data:{id:record.id,tenantId:record.tenantId,patientId:record.patientId,veterinarianId:record.veterinarianId,appointmentId:record.appointmentId,status:record.status,type:record.type,chiefComplaint:record.chiefComplaint,startedAt:new Date(record.startedAt),completedAt:record.completedAt?new Date(record.completedAt):null,signedAt:record.signedAt?new Date(record.signedAt):null,signedBy:record.signedBy,createdAt:new Date(record.createdAt),updatedAt:new Date(record.updatedAt)}}));return this.map(r);}
-  public async persistedFind(tenantId:string,id:string):Promise<ExaminationRecord|null>{if(!this.prisma)return this.findById(tenantId,id);const r=await this.ctx(tenantId,tx=>tx.examination.findUnique({where:{id}}));return r?this.map(r):null;}
-  public async persistedSearch(tenantId:string,f:Parameters<ExaminationsRepository['search']>[1]):Promise<{items:ExaminationRecord[];total:number}>{if(!this.prisma)return this.search(tenantId,f);const where:Prisma.ExaminationWhereInput={tenantId,...(f.patientId?{patientId:f.patientId}:{}),...(f.veterinarianId?{veterinarianId:f.veterinarianId}:{}),...(f.status?{status:f.status}:{}),...(f.from||f.to?{startedAt:{...(f.from?{gte:new Date(f.from)}:{}),...(f.to?{lte:new Date(f.to)}:{})}}:{})};const x=await this.ctx(tenantId,async tx=>Promise.all([tx.examination.findMany({where,orderBy:{startedAt:'desc'},skip:f.offset,take:f.limit}),tx.examination.count({where})]));return{items:x[0].map(r=>this.map(r)),total:x[1]};}
-  public async persistedUpdate(tenantId:string,id:string,p:Parameters<ExaminationsRepository['update']>[2]):Promise<ExaminationRecord|null>{if(!this.prisma)return this.update(tenantId,id,p);const data:Prisma.ExaminationUpdateManyMutationInput={...(p.status!==undefined?{status:p.status}:{}),...(p.completedAt!==undefined?{completedAt:p.completedAt?new Date(p.completedAt):null}:{}),...(p.signedAt!==undefined?{signedAt:p.signedAt?new Date(p.signedAt):null}:{}),...(p.signedBy!==undefined?{signedBy:p.signedBy}:{}),...(p.updatedAt!==undefined?{updatedAt:new Date(p.updatedAt)}:{})};const x=await this.ctx(tenantId,tx=>tx.examination.updateMany({where:{id,tenantId},data}));return x.count?this.persistedFind(tenantId,id):null;}
-  private async ctx<T>(tenantId:string,fn:(tx:Prisma.TransactionClient)=>Promise<T>):Promise<T>{if(!this.prisma)throw new Error('Prisma bağlantısı bulunamadı');return this.prisma.$transaction(async tx=>{await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;return fn(tx);});}
-  private map(r:PrismaExamination):ExaminationRecord{return{id:r.id,tenantId:r.tenantId,patientId:r.patientId,veterinarianId:r.veterinarianId,appointmentId:r.appointmentId,status:r.status as ExaminationStatus,type:r.type as ExaminationType,chiefComplaint:r.chiefComplaint,startedAt:r.startedAt.toISOString(),completedAt:r.completedAt?.toISOString()??null,signedAt:r.signedAt?.toISOString()??null,signedBy:r.signedBy,createdAt:r.createdAt.toISOString(),updatedAt:r.updatedAt.toISOString()};}
+  public async persist(record: ExaminationRecord): Promise<ExaminationRecord> {
+    if (!this.prisma) return this.insert(record);
+    this.insert(record);
+    const r = await this.ctx(record.tenantId, (tx) =>
+      tx.examination.create({
+        data: {
+          id: record.id,
+          tenantId: record.tenantId,
+          patientId: record.patientId,
+          veterinarianId: record.veterinarianId,
+          appointmentId: record.appointmentId,
+          status: record.status,
+          type: record.type,
+          chiefComplaint: record.chiefComplaint,
+          startedAt: new Date(record.startedAt),
+          completedAt: record.completedAt ? new Date(record.completedAt) : null,
+          signedAt: record.signedAt ? new Date(record.signedAt) : null,
+          signedBy: record.signedBy,
+          createdAt: new Date(record.createdAt),
+          updatedAt: new Date(record.updatedAt),
+        },
+      }),
+    );
+    return this.map(r);
+  }
+  public async persistedFind(
+    tenantId: string,
+    id: string,
+  ): Promise<ExaminationRecord | null> {
+    if (!this.prisma) return this.findById(tenantId, id);
+    const r = await this.ctx(tenantId, (tx) =>
+      tx.examination.findUnique({ where: { id } }),
+    );
+    return r ? this.map(r) : null;
+  }
+  public async persistedSearch(
+    tenantId: string,
+    f: Parameters<ExaminationsRepository["search"]>[1],
+  ): Promise<{ items: ExaminationRecord[]; total: number }> {
+    if (!this.prisma) return this.search(tenantId, f);
+    const where: Prisma.ExaminationWhereInput = {
+      tenantId,
+      ...(f.patientId ? { patientId: f.patientId } : {}),
+      ...(f.veterinarianId ? { veterinarianId: f.veterinarianId } : {}),
+      ...(f.status ? { status: f.status } : {}),
+      ...(f.from || f.to
+        ? {
+            startedAt: {
+              ...(f.from ? { gte: new Date(f.from) } : {}),
+              ...(f.to ? { lte: new Date(f.to) } : {}),
+            },
+          }
+        : {}),
+    };
+    const x = await this.ctx(tenantId, async (tx) =>
+      Promise.all([
+        tx.examination.findMany({
+          where,
+          orderBy: { startedAt: "desc" },
+          skip: f.offset,
+          take: f.limit,
+        }),
+        tx.examination.count({ where }),
+      ]),
+    );
+    return { items: x[0].map((r) => this.map(r)), total: x[1] };
+  }
+  public async persistedUpdate(
+    tenantId: string,
+    id: string,
+    p: Parameters<ExaminationsRepository["update"]>[2],
+  ): Promise<ExaminationRecord | null> {
+    if (!this.prisma) return this.update(tenantId, id, p);
+    const data: Prisma.ExaminationUpdateManyMutationInput = {
+      ...(p.status !== undefined ? { status: p.status } : {}),
+      ...(p.completedAt !== undefined
+        ? { completedAt: p.completedAt ? new Date(p.completedAt) : null }
+        : {}),
+      ...(p.signedAt !== undefined
+        ? { signedAt: p.signedAt ? new Date(p.signedAt) : null }
+        : {}),
+      ...(p.signedBy !== undefined ? { signedBy: p.signedBy } : {}),
+      ...(p.updatedAt !== undefined
+        ? { updatedAt: new Date(p.updatedAt) }
+        : {}),
+    };
+    const x = await this.ctx(tenantId, (tx) =>
+      tx.examination.updateMany({ where: { id, tenantId }, data }),
+    );
+    return x.count ? this.persistedFind(tenantId, id) : null;
+  }
+  private async ctx<T>(
+    tenantId: string,
+    fn: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    if (!this.prisma) throw new Error("Prisma bağlantısı bulunamadı");
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;
+      await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;
+      return fn(tx);
+    });
+  }
+  private map(r: PrismaExamination): ExaminationRecord {
+    return {
+      id: r.id,
+      tenantId: r.tenantId,
+      patientId: r.patientId,
+      veterinarianId: r.veterinarianId,
+      appointmentId: r.appointmentId,
+      status: r.status as ExaminationStatus,
+      type: r.type as ExaminationType,
+      chiefComplaint: r.chiefComplaint,
+      startedAt: r.startedAt.toISOString(),
+      completedAt: r.completedAt?.toISOString() ?? null,
+      signedAt: r.signedAt?.toISOString() ?? null,
+      signedBy: r.signedBy,
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+    };
+  }
 
   public nextId(tenantId: string): string {
+    if (this.prisma) return `exam-${tenantId.slice(0, 8)}-${randomUUID()}`;
     const n = (this.counters.get(tenantId) ?? 0) + 1;
     this.counters.set(tenantId, n);
     return `exam-${tenantId.slice(0, 8)}-${String(n).padStart(6, "0")}`;
@@ -173,10 +294,65 @@ export class ExaminationAmendsRepository {
   private readonly counters = new Map<string, number>();
   public constructor(@Optional() private readonly prisma?: PrismaService) {}
   /** Amendment fiziksel olarak güncellenmez; bu yol yalnızca insert/list yapar. */
-  public async persist(record: ExaminationAmendRecord): Promise<ExaminationAmendRecord> { if (!this.prisma) return this.insert(record); this.insert(record); const row=await this.ctx(record.tenantId,tx=>tx.examinationAmend.create({data:{id:record.id,tenantId:record.tenantId,examinationId:record.examinationId,reason:record.reason,amendedBy:record.amendedBy,amendedAt:new Date(record.amendedAt),previousSignedAt:record.previousSignedAt?new Date(record.previousSignedAt):null,previousSignedBy:record.previousSignedBy}})); return this.mapPersisted(row); }
-  public async persistedByExamination(tenantId:string,examinationId:string):Promise<ExaminationAmendRecord[]>{if(!this.prisma)return this.findByExaminationId(tenantId,examinationId);const rows=await this.ctx(tenantId,tx=>tx.examinationAmend.findMany({where:{tenantId,examinationId},orderBy:{amendedAt:'asc'}}));return rows.map(r=>this.mapPersisted(r));}
-  private async ctx<T>(tenantId:string,fn:(tx:Prisma.TransactionClient)=>Promise<T>):Promise<T>{if(!this.prisma)throw new Error('Prisma bağlantısı bulunamadı');return this.prisma.$transaction(async tx=>{await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;return fn(tx);});}
-  private mapPersisted(r:PrismaExaminationAmend):ExaminationAmendRecord{return{id:r.id,tenantId:r.tenantId,examinationId:r.examinationId,reason:r.reason,amendedBy:r.amendedBy,amendedAt:r.amendedAt.toISOString(),previousSignedAt:r.previousSignedAt?.toISOString()??null,previousSignedBy:r.previousSignedBy};}
+  public async persist(
+    record: ExaminationAmendRecord,
+  ): Promise<ExaminationAmendRecord> {
+    if (!this.prisma) return this.insert(record);
+    this.insert(record);
+    const row = await this.ctx(record.tenantId, (tx) =>
+      tx.examinationAmend.create({
+        data: {
+          id: record.id,
+          tenantId: record.tenantId,
+          examinationId: record.examinationId,
+          reason: record.reason,
+          amendedBy: record.amendedBy,
+          amendedAt: new Date(record.amendedAt),
+          previousSignedAt: record.previousSignedAt
+            ? new Date(record.previousSignedAt)
+            : null,
+          previousSignedBy: record.previousSignedBy,
+        },
+      }),
+    );
+    return this.mapPersisted(row);
+  }
+  public async persistedByExamination(
+    tenantId: string,
+    examinationId: string,
+  ): Promise<ExaminationAmendRecord[]> {
+    if (!this.prisma) return this.findByExaminationId(tenantId, examinationId);
+    const rows = await this.ctx(tenantId, (tx) =>
+      tx.examinationAmend.findMany({
+        where: { tenantId, examinationId },
+        orderBy: { amendedAt: "asc" },
+      }),
+    );
+    return rows.map((r) => this.mapPersisted(r));
+  }
+  private async ctx<T>(
+    tenantId: string,
+    fn: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    if (!this.prisma) throw new Error("Prisma bağlantısı bulunamadı");
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;
+      await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;
+      return fn(tx);
+    });
+  }
+  private mapPersisted(r: PrismaExaminationAmend): ExaminationAmendRecord {
+    return {
+      id: r.id,
+      tenantId: r.tenantId,
+      examinationId: r.examinationId,
+      reason: r.reason,
+      amendedBy: r.amendedBy,
+      amendedAt: r.amendedAt.toISOString(),
+      previousSignedAt: r.previousSignedAt?.toISOString() ?? null,
+      previousSignedBy: r.previousSignedBy,
+    };
+  }
 
   public nextId(tenantId: string): string {
     const n = (this.counters.get(tenantId) ?? 0) + 1;

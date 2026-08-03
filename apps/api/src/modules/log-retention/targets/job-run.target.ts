@@ -33,14 +33,14 @@ export class JobRunRetentionTarget implements LogRetentionTarget {
     return Array.from(set);
   }
 
-  public expireOlderThan(args: ExpireOlderThanArgs): number {
+  public async expireOlderThan(args: ExpireOlderThanArgs): Promise<number> {
     const repoArgs: { cutoff: string; tenantId?: string | null } = {
       cutoff: args.cutoff,
     };
     if (args.tenantId !== undefined) {
       repoArgs.tenantId = args.tenantId;
     }
-    return this.repo.expireOlderThan(repoArgs);
+    return this.repo.expirePersistedOlderThan(repoArgs);
   }
 
   public countOlderThan(args: CountOlderThanArgs): number {

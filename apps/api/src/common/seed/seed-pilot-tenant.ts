@@ -106,21 +106,29 @@ export const PILOT_SEED: PilotSeed = {
     },
   ],
   owners: [
-    { id: "own-pilot-1", fullName: "Demo Sahip 1", phone: "+905550000001" },
-    { id: "own-pilot-2", fullName: "Demo Sahip 2", phone: "+905550000002" },
+    {
+      id: "c4aeb0a1-d45f-4c96-9c1a-2583d97e6a11",
+      fullName: "Demo Sahip 1",
+      phone: "+905550000001",
+    },
+    {
+      id: "ab7d7790-44c0-4d89-9c86-1e8369d2a922",
+      fullName: "Demo Sahip 2",
+      phone: "+905550000002",
+    },
   ],
   patients: [
     {
-      id: "pat-pilot-1",
+      id: "f194d39c-e70b-4a09-91a5-290864843a33",
       name: "Karabaş",
       species: "dog",
-      ownerId: "own-pilot-1",
+      ownerId: "c4aeb0a1-d45f-4c96-9c1a-2583d97e6a11",
     },
     {
-      id: "pat-pilot-2",
+      id: "0bdad955-7d79-40f4-b6f6-06c3a9a85b44",
       name: "Minnoş",
       species: "cat",
-      ownerId: "own-pilot-2",
+      ownerId: "ab7d7790-44c0-4d89-9c86-1e8369d2a922",
     },
   ],
 };
@@ -171,10 +179,16 @@ export class PilotSeedService {
       usersCreated += 1;
     }
 
-    // Sahip/hasta modülleri henüz bellek-içi repository kullanıyor.
-    // Kalıcıymış gibi demo veri yazmayız; kabul senaryosu bunları API ile oluşturur.
-    const ownersCreated = 0;
-    const patientsCreated = 0;
+    let ownersCreated = 0;
+    for (const owner of PILOT_SEED.owners) {
+      await this.upsertOwner(owner);
+      ownersCreated += 1;
+    }
+    let patientsCreated = 0;
+    for (const patient of PILOT_SEED.patients) {
+      await this.upsertPatient(patient);
+      patientsCreated += 1;
+    }
 
     this.logger.log(
       `Pilot seed complete: users=${usersCreated} owners=${ownersCreated} patients=${patientsCreated}`,
@@ -194,7 +208,13 @@ export class PilotSeedService {
     await this.prisma.tenant.upsert({
       where: { slug: t.slug },
       create: { ...t },
-      update: { name: t.name, country: t.country, defaultLocale: t.defaultLocale, timezone: t.timezone, status: "active" },
+      update: {
+        name: t.name,
+        country: t.country,
+        defaultLocale: t.defaultLocale,
+        timezone: t.timezone,
+        status: "active",
+      },
     });
   }
 
@@ -202,9 +222,25 @@ export class PilotSeedService {
     await this.prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'true', true)`;
       await tx.branch.upsert({
-        where: { tenantId_code: { tenantId: PILOT_SEED.tenant.id, code: "merkez" } },
-        create: { id: b.id, tenantId: PILOT_SEED.tenant.id, code: "merkez", name: b.name, city: "İstanbul", addressJson: { formatted: b.address }, phone: b.phone },
-        update: { name: b.name, city: "İstanbul", addressJson: { formatted: b.address }, phone: b.phone, status: "active" },
+        where: {
+          tenantId_code: { tenantId: PILOT_SEED.tenant.id, code: "merkez" },
+        },
+        create: {
+          id: b.id,
+          tenantId: PILOT_SEED.tenant.id,
+          code: "merkez",
+          name: b.name,
+          city: "İstanbul",
+          addressJson: { formatted: b.address },
+          phone: b.phone,
+        },
+        update: {
+          name: b.name,
+          city: "İstanbul",
+          addressJson: { formatted: b.address },
+          phone: b.phone,
+          status: "active",
+        },
       });
     });
   }
@@ -218,26 +254,82 @@ export class PilotSeedService {
   }): Promise<void> {
     const user = await this.prisma.user.upsert({
       where: { email: u.email },
-      create: { id: u.id, email: u.email, displayName: u.fullName, passwordHash: u.passwordHash, passwordChangedAt: new Date() },
-      update: { displayName: u.fullName, passwordHash: u.passwordHash, passwordChangedAt: new Date(), status: "active" },
+      create: {
+        id: u.id,
+        email: u.email,
+        displayName: u.fullName,
+        passwordHash: u.passwordHash,
+        passwordChangedAt: new Date(),
+      },
+      update: {
+        displayName: u.fullName,
+        passwordHash: u.passwordHash,
+        passwordChangedAt: new Date(),
+        status: "active",
+      },
     });
     await this.prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'true', true)`;
       await tx.userTenantMembership.upsert({
-        where: { userId_tenantId: { userId: user.id, tenantId: PILOT_SEED.tenant.id } },
-        create: { userId: user.id, tenantId: PILOT_SEED.tenant.id, role: u.role },
+        where: {
+          userId_tenantId: { userId: user.id, tenantId: PILOT_SEED.tenant.id },
+        },
+        create: {
+          userId: user.id,
+          tenantId: PILOT_SEED.tenant.id,
+          role: u.role,
+        },
         update: { role: u.role, status: "active", revokedAt: null },
       });
     });
   }
 
-  private async upsertOwner(_o: PilotSeed["owners"][number]): Promise<void> {
-    // OwnerRepository.upsert() implementasyonu FAZ-12+ ile bağlanır.
+  private async upsertOwner(o: PilotSeed["owners"][number]): Promise<void> {
+    const [firstName, ...lastNameParts] = o.fullName.split(" ");
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'true', true)`;
+      await tx.owner.upsert({
+        where: {
+          tenantId_phone: { tenantId: PILOT_SEED.tenant.id, phone: o.phone },
+        },
+        create: {
+          id: o.id,
+          tenantId: PILOT_SEED.tenant.id,
+          firstName: firstName ?? "Demo",
+          lastName: lastNameParts.join(" ") || "Sahip",
+          phone: o.phone,
+          consents: { kvkk: true },
+        },
+        update: {
+          firstName: firstName ?? "Demo",
+          lastName: lastNameParts.join(" ") || "Sahip",
+          archivedAt: null,
+        },
+      });
+    });
   }
 
-  private async upsertPatient(
-    _p: PilotSeed["patients"][number],
-  ): Promise<void> {
-    // PatientRepository.upsert() implementasyonu FAZ-12+ ile bağlanır.
+  private async upsertPatient(p: PilotSeed["patients"][number]): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'true', true)`;
+      await tx.patient.upsert({
+        where: { id: p.id },
+        create: {
+          id: p.id,
+          tenantId: PILOT_SEED.tenant.id,
+          ownerId: p.ownerId,
+          name: p.name,
+          species: p.species,
+          gender: "unknown",
+          neutered: false,
+        },
+        update: {
+          ownerId: p.ownerId,
+          name: p.name,
+          species: p.species,
+          archivedAt: null,
+        },
+      });
+    });
   }
 }

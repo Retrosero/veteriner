@@ -197,7 +197,7 @@ export class PaymentsController {
       "alanları kümülatif ters kayıt bilgisini içerir.",
   })
   public async findById(
-    @Param("id", new ParseUUIDPipe()) id: string,
+    @Param("id") id: string,
     @CurrentActor() actor: ActorContext,
   ): Promise<Payment> {
     const tenantId = this.requireTenant(actor);
@@ -227,7 +227,7 @@ export class PaymentsController {
       "paymentAmount, totalReversed, remainingAmount, reversalCount.",
   })
   public async getReversalSummary(
-    @Param("id", new ParseUUIDPipe()) id: string,
+    @Param("id") id: string,
     @CurrentActor() actor: ActorContext,
   ): Promise<PaymentReversalSummary> {
     const tenantId = this.requireTenant(actor);
@@ -267,7 +267,7 @@ export class PaymentsController {
       "(403 VET-PAYMENT-0010). Zaten reversed → 409 VET-PAYMENT-0002.",
   })
   public async reverse(
-    @Param("id", new ParseUUIDPipe()) id: string,
+    @Param("id") id: string,
     @Body(new ZodValidationPipe(paymentReversalCreateInputSchema))
     body: PaymentReversalCreateInput,
     @CurrentActor() actor: ActorContext,

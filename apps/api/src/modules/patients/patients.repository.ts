@@ -60,38 +60,140 @@ export class PatientsRepository {
     // Ownership-history gibi henüz DB'ye taşınmamış klinik modülleri aynı
     // request içinde hasta kimliğini bellekten okuyabilmelidir.
     this.insert(record);
-    const saved = await this.withTenant(record.tenantId, (tx) => tx.patient.create({ data: {
-      id: record.id, tenantId: record.tenantId, ownerId: record.ownerId, name: record.name,
-      species: record.species, breed: record.breed, birthDate: record.birthDate ? new Date(`${record.birthDate}T00:00:00.000Z`) : null,
-      gender: record.gender, microchip: record.microchip, color: record.color, neutered: record.neutered,
-      notes: record.notes, createdAt: new Date(record.createdAt),
-    }}));
+    const saved = await this.withTenant(record.tenantId, (tx) =>
+      tx.patient.create({
+        data: {
+          id: record.id,
+          tenantId: record.tenantId,
+          ownerId: record.ownerId,
+          name: record.name,
+          species: record.species,
+          breed: record.breed,
+          birthDate: record.birthDate
+            ? new Date(`${record.birthDate}T00:00:00.000Z`)
+            : null,
+          gender: record.gender,
+          microchip: record.microchip,
+          color: record.color,
+          neutered: record.neutered,
+          notes: record.notes,
+          createdAt: new Date(record.createdAt),
+        },
+      }),
+    );
     return this.fromPrisma(saved);
   }
-  public async findPersistedById(tenantId: string, id: string): Promise<PatientRecord | null> {
+  public async findPersistedById(
+    tenantId: string,
+    id: string,
+  ): Promise<PatientRecord | null> {
     if (!this.prisma) return this.findById(tenantId, id);
-    const row = await this.withTenant(tenantId, (tx) => tx.patient.findUnique({ where: { id } })); return row ? this.fromPrisma(row) : null;
+    const row = await this.withTenant(tenantId, (tx) =>
+      tx.patient.findUnique({ where: { id } }),
+    );
+    return row ? this.fromPrisma(row) : null;
   }
-  public async findPersistedByMicrochip(tenantId: string, microchip: string): Promise<PatientRecord | null> {
+  public async findPersistedByMicrochip(
+    tenantId: string,
+    microchip: string,
+  ): Promise<PatientRecord | null> {
     if (!this.prisma) return this.findByMicrochip(tenantId, microchip);
-    const row = await this.withTenant(tenantId, (tx) => tx.patient.findFirst({ where: { tenantId, microchip, archivedAt: null } })); return row ? this.fromPrisma(row) : null;
+    const row = await this.withTenant(tenantId, (tx) =>
+      tx.patient.findFirst({
+        where: { tenantId, microchip, archivedAt: null },
+      }),
+    );
+    return row ? this.fromPrisma(row) : null;
   }
-  public async searchPersisted(tenantId: string, args: Parameters<PatientsRepository["search"]>[1]): Promise<{ items: PatientRecord[]; total: number }> {
+  public async searchPersisted(
+    tenantId: string,
+    args: Parameters<PatientsRepository["search"]>[1],
+  ): Promise<{ items: PatientRecord[]; total: number }> {
     if (!this.prisma) return this.search(tenantId, args);
-    const term = args.search?.trim(); const where: Prisma.PatientWhereInput = { tenantId, ...(args.includeArchived ? {} : { archivedAt: null }), ...(args.ownerId ? { ownerId: args.ownerId } : {}), ...(args.species ? { species: args.species } : {}), ...(term ? { OR: ["name", "breed", "microchip"].map((field) => ({ [field]: { contains: term, mode: "insensitive" } })) } : {}) };
-    const result = await this.withTenant(tenantId, async (tx) => Promise.all([tx.patient.findMany({ where, orderBy: { createdAt: "desc" }, skip: args.offset, take: args.limit }), tx.patient.count({ where })]));
-    return { items: result[0].map((row) => this.fromPrisma(row)), total: result[1] };
+    const term = args.search?.trim();
+    const where: Prisma.PatientWhereInput = {
+      tenantId,
+      ...(args.includeArchived ? {} : { archivedAt: null }),
+      ...(args.ownerId ? { ownerId: args.ownerId } : {}),
+      ...(args.species ? { species: args.species } : {}),
+      ...(term
+        ? {
+            OR: ["name", "breed", "microchip"].map((field) => ({
+              [field]: { contains: term, mode: "insensitive" },
+            })),
+          }
+        : {}),
+    };
+    const result = await this.withTenant(tenantId, async (tx) =>
+      Promise.all([
+        tx.patient.findMany({
+          where,
+          orderBy: { createdAt: "desc" },
+          skip: args.offset,
+          take: args.limit,
+        }),
+        tx.patient.count({ where }),
+      ]),
+    );
+    return {
+      items: result[0].map((row) => this.fromPrisma(row)),
+      total: result[1],
+    };
   }
-  public async archivePersisted(tenantId: string, id: string, at: string): Promise<PatientRecord | null> {
+  public async archivePersisted(
+    tenantId: string,
+    id: string,
+    at: string,
+  ): Promise<PatientRecord | null> {
     if (!this.prisma) return this.archive(tenantId, id, at);
-    const changed = await this.withTenant(tenantId, (tx) => tx.patient.updateMany({ where: { id, tenantId }, data: { archivedAt: new Date(at) } })); return changed.count ? this.findPersistedById(tenantId, id) : null;
+    const changed = await this.withTenant(tenantId, (tx) =>
+      tx.patient.updateMany({
+        where: { id, tenantId },
+        data: { archivedAt: new Date(at) },
+      }),
+    );
+    return changed.count ? this.findPersistedById(tenantId, id) : null;
   }
-  public async updatePersistedOwner(tenantId: string, id: string, ownerId: string): Promise<PatientRecord | null> {
+  public async updatePersistedOwner(
+    tenantId: string,
+    id: string,
+    ownerId: string,
+  ): Promise<PatientRecord | null> {
     if (!this.prisma) return this.updateOwner(tenantId, id, ownerId);
-    const changed = await this.withTenant(tenantId, (tx) => tx.patient.updateMany({ where: { id, tenantId }, data: { ownerId } })); return changed.count ? this.findPersistedById(tenantId, id) : null;
+    const changed = await this.withTenant(tenantId, (tx) =>
+      tx.patient.updateMany({ where: { id, tenantId }, data: { ownerId } }),
+    );
+    return changed.count ? this.findPersistedById(tenantId, id) : null;
   }
-  private async withTenant<T>(tenantId: string, fn: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> { if (!this.prisma) throw new Error("Prisma bağlantısı bulunamadı"); return this.prisma.$transaction(async (tx) => { await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'false', true)`; await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, true)`; return fn(tx); }); }
-  private fromPrisma(row: PrismaPatient): PatientRecord { return { id: row.id, tenantId: row.tenantId, ownerId: row.ownerId, name: row.name, species: row.species as Patient["species"], breed: row.breed, birthDate: row.birthDate?.toISOString().slice(0, 10) ?? null, gender: row.gender as Patient["gender"], microchip: row.microchip, color: row.color, neutered: row.neutered, notes: row.notes, createdAt: row.createdAt.toISOString(), archivedAt: row.archivedAt?.toISOString() ?? null }; }
+  private async withTenant<T>(
+    tenantId: string,
+    fn: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    if (!this.prisma) throw new Error("Prisma bağlantısı bulunamadı");
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'false', true)`;
+      await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
+      return fn(tx);
+    });
+  }
+  private fromPrisma(row: PrismaPatient): PatientRecord {
+    return {
+      id: row.id,
+      tenantId: row.tenantId,
+      ownerId: row.ownerId,
+      name: row.name,
+      species: row.species as Patient["species"],
+      breed: row.breed,
+      birthDate: row.birthDate?.toISOString().slice(0, 10) ?? null,
+      gender: row.gender as Patient["gender"],
+      microchip: row.microchip,
+      color: row.color,
+      neutered: row.neutered,
+      notes: row.notes,
+      createdAt: row.createdAt.toISOString(),
+      archivedAt: row.archivedAt?.toISOString() ?? null,
+    };
+  }
   public nextId(_tenantId: string): string {
     return randomUUID();
   }

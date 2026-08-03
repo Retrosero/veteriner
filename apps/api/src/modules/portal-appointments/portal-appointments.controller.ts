@@ -29,7 +29,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseUUIDPipe,
   Post,
   Req,
   UseGuards,
@@ -112,7 +111,7 @@ export class PortalAppointmentsPortalController {
   @Post("requests/:id/cancel")
   @HttpCode(HttpStatus.OK)
   public async cancel(
-    @Param("id", new ParseUUIDPipe()) id: string,
+    @Param("id") id: string,
     @Req() request: Request & PortalSessionRequest,
   ): Promise<{ cancelled: true }> {
     const { portalUserId, tenantId } = this.requireSession(request);
@@ -183,7 +182,7 @@ export class PortalAppointmentsClinicController {
   @RequirePermissions("clinic:appointment:create")
   @HttpCode(HttpStatus.OK)
   public async approve(
-    @Param("id", new ParseUUIDPipe()) id: string,
+    @Param("id") id: string,
     @CurrentActor() actor: ActorContext,
   ): Promise<{ request: AppointmentRequest; appointment: Appointment }> {
     const tenantId = this.requireTenant(actor);
@@ -214,7 +213,7 @@ export class PortalAppointmentsClinicController {
   @RequirePermissions("clinic:appointment:create")
   @HttpCode(HttpStatus.OK)
   public async reject(
-    @Param("id", new ParseUUIDPipe()) id: string,
+    @Param("id") id: string,
     @Body(new ZodValidationPipe(appointmentRequestRejectInputSchema))
     body: AppointmentRequestRejectInput,
     @CurrentActor() actor: ActorContext,

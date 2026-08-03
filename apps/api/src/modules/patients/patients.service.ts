@@ -158,7 +158,10 @@ export class PatientsService {
           details: { field: "microchip" },
         });
       }
-      const dup = await this.repo.findPersistedByMicrochip(tenantId, input.microchip);
+      const dup = await this.repo.findPersistedByMicrochip(
+        tenantId,
+        input.microchip,
+      );
       if (dup) {
         throw new DomainError({
           errorCode: "VET-CLINIC-0003",
@@ -442,7 +445,11 @@ export class PatientsService {
     );
 
     // 7) Repository güncellemesi (kimlik seviyesi).
-    const updated = await this.repo.updatePersistedOwner(tenantId, patientId, newOwnerId);
+    const updated = await this.repo.updatePersistedOwner(
+      tenantId,
+      patientId,
+      newOwnerId,
+    );
     if (!updated) {
       // Repo'da nadir koşul (aradaki yarış). 404 ile korunur.
       throw new DomainError({

@@ -40,7 +40,12 @@
 
 import { randomUUID } from "node:crypto";
 
-import { Injectable, Logger, OnApplicationBootstrap, Optional } from "@nestjs/common";
+import {
+  Injectable,
+  Logger,
+  OnApplicationBootstrap,
+  Optional,
+} from "@nestjs/common";
 import { ModuleRef } from "@nestjs/core";
 import { AppointmentsRepository } from "../appointments/appointments.repository.js";
 
@@ -103,7 +108,10 @@ export class CalendarService implements OnApplicationBootstrap {
   /** Key: blockId → BlockedSlotRecord */
   private readonly blockedById = new Map<string, BlockedSlotRecord>();
 
-  public constructor(private readonly audit: AuditService, @Optional() private readonly moduleRef?: ModuleRef) {}
+  public constructor(
+    private readonly audit: AuditService,
+    @Optional() private readonly moduleRef?: ModuleRef,
+  ) {}
 
   /**
    * Kalıcı scheduled randevuları süreç başlangıcında tekrar booked slot'a
@@ -114,12 +122,26 @@ export class CalendarService implements OnApplicationBootstrap {
   public async onApplicationBootstrap(): Promise<void> {
     try {
       if (!this.moduleRef) return;
-      const repo = this.moduleRef.get(AppointmentsRepository, { strict: false });
+      const repo = this.moduleRef.get(AppointmentsRepository, {
+        strict: false,
+      });
       const appointments = await repo.listScheduledForBootstrap();
-      for (const appointment of appointments) this.bookSlot({ tenantId: appointment.tenantId, branchId: appointment.branchId, veterinarianId: appointment.veterinarianId, appointmentId: appointment.id, start: appointment.start, end: appointment.end });
-      this.logger.log(`Kalıcı randevulardan ${appointments.length} takvim slotu yüklendi`);
+      for (const appointment of appointments)
+        this.bookSlot({
+          tenantId: appointment.tenantId,
+          branchId: appointment.branchId,
+          veterinarianId: appointment.veterinarianId,
+          appointmentId: appointment.id,
+          start: appointment.start,
+          end: appointment.end,
+        });
+      this.logger.log(
+        `Kalıcı randevulardan ${appointments.length} takvim slotu yüklendi`,
+      );
     } catch (error) {
-      this.logger.error(`Takvim slotları yüklenemedi: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Takvim slotları yüklenemedi: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 

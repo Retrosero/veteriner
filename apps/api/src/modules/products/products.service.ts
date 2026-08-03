@@ -309,7 +309,10 @@ export class ProductsService {
       input.barcode !== null &&
       input.barcode !== existing.barcode
     ) {
-      const dupe = await this.repo.persistedFindByBarcode(tenantId, input.barcode);
+      const dupe = await this.repo.persistedFindByBarcode(
+        tenantId,
+        input.barcode,
+      );
       if (dupe && dupe.id !== id && dupe.archivedAt === null) {
         throw new DomainError({
           errorCode: "VET-PRODUCT-0002",

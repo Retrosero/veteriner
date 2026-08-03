@@ -18,7 +18,10 @@
  */
 
 import { Injectable, Optional } from "@nestjs/common";
-import type { Prisma, VaccineReminderRecord as DbReminder } from "@prisma/client";
+import type {
+  Prisma,
+  VaccineReminderRecord as DbReminder,
+} from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { PrismaService } from "../../prisma/prisma.service.js";
 
@@ -66,8 +69,47 @@ export class VaccineRemindersRepository {
   }
 
   /** Dedupe anahtarı tenant içinde benzersiz olacak şekilde kalıcı kayıt ekler. */
-  public async persist(record:VaccineReminderRecord):Promise<{inserted:true;record:VaccineReminderRecord}|{inserted:false;existing:VaccineReminderRecord}>{if(!this.prisma)return this.insert(record);return this.inTenant(record.tenantId,async tx=>{const existing=await tx.vaccineReminderRecord.findFirst({where:{tenantId:record.tenantId,dedupeKey:record.dedupeKey}});if(existing)return{inserted:false,existing:this.map(existing)};const row=await tx.vaccineReminderRecord.create({data:{...record,applicationSnapshot:record.applicationSnapshot as Prisma.InputJsonValue,stepSnapshot:record.stepSnapshot as Prisma.InputJsonValue,scheduledFor:new Date(record.scheduledFor),sentAt:record.sentAt?new Date(record.sentAt):null,createdAt:new Date(record.createdAt)}});return{inserted:true,record:this.map(row)};});}
-  public async persistedDue(now:number,limit:number):Promise<VaccineReminderRecord[]>{if(!this.prisma)return this.listDue(now,limit);const rows=await this.prisma.$transaction(async tx=>{await tx.$executeRaw`SELECT set_config('app.is_superadmin','true',true)`;return tx.vaccineReminderRecord.findMany({where:{status:"scheduled",scheduledFor:{lte:new Date(now)}},orderBy:{scheduledFor:"asc"},take:limit});});return rows.map(row=>this.map(row));}
+  public async persist(
+    record: VaccineReminderRecord,
+  ): Promise<
+    | { inserted: true; record: VaccineReminderRecord }
+    | { inserted: false; existing: VaccineReminderRecord }
+  > {
+    if (!this.prisma) return this.insert(record);
+    return this.inTenant(record.tenantId, async (tx) => {
+      const existing = await tx.vaccineReminderRecord.findFirst({
+        where: { tenantId: record.tenantId, dedupeKey: record.dedupeKey },
+      });
+      if (existing) return { inserted: false, existing: this.map(existing) };
+      const row = await tx.vaccineReminderRecord.create({
+        data: {
+          ...record,
+          applicationSnapshot:
+            record.applicationSnapshot as Prisma.InputJsonValue,
+          stepSnapshot: record.stepSnapshot as Prisma.InputJsonValue,
+          scheduledFor: new Date(record.scheduledFor),
+          sentAt: record.sentAt ? new Date(record.sentAt) : null,
+          createdAt: new Date(record.createdAt),
+        },
+      });
+      return { inserted: true, record: this.map(row) };
+    });
+  }
+  public async persistedDue(
+    now: number,
+    limit: number,
+  ): Promise<VaccineReminderRecord[]> {
+    if (!this.prisma) return this.listDue(now, limit);
+    const rows = await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin','true',true)`;
+      return tx.vaccineReminderRecord.findMany({
+        where: { status: "scheduled", scheduledFor: { lte: new Date(now) } },
+        orderBy: { scheduledFor: "asc" },
+        take: limit,
+      });
+    });
+    return rows.map((row) => this.map(row));
+  }
 
   /** Idempotency anahtarı üretir (public static helper). */
   public static buildDedupeKey(
@@ -136,15 +178,25 @@ export class VaccineRemindersRepository {
   public async persistedListForPatient(
     tenantId: string,
     patientId: string,
-    filters: { protocolId?: string; applicationId?: string; status?: VaccineReminderStatus },
+    filters: {
+      protocolId?: string;
+      applicationId?: string;
+      status?: VaccineReminderStatus;
+    },
     limit: number,
     offset: number,
   ): Promise<{ items: VaccineReminderRecord[]; total: number }> {
-    if (!this.prisma) return this.listForPatient(tenantId, patientId, filters, limit, offset);
+    if (!this.prisma)
+      return this.listForPatient(tenantId, patientId, filters, limit, offset);
     return this.inTenant(tenantId, async (tx) => {
       const where = { tenantId, patientId, ...filters };
       const [items, total] = await Promise.all([
-        tx.vaccineReminderRecord.findMany({ where, orderBy: { scheduledFor: "asc" }, skip: offset, take: limit }),
+        tx.vaccineReminderRecord.findMany({
+          where,
+          orderBy: { scheduledFor: "asc" },
+          skip: offset,
+          take: limit,
+        }),
         tx.vaccineReminderRecord.count({ where }),
       ]);
       return { items: items.map((row) => this.map(row)), total };
@@ -194,7 +246,12 @@ export class VaccineRemindersRepository {
   public async persistedUpdate(
     tenantId: string,
     id: string,
-    patch: Partial<Pick<VaccineReminderRecord, "status" | "attempts" | "lastError" | "sentAt">>,
+    patch: Partial<
+      Pick<
+        VaccineReminderRecord,
+        "status" | "attempts" | "lastError" | "sentAt"
+      >
+    >,
   ): Promise<VaccineReminderRecord | null> {
     if (!this.prisma) return this.update(tenantId, id, patch);
     return this.inTenant(tenantId, async (tx) => {
@@ -203,12 +260,18 @@ export class VaccineRemindersRepository {
         data: {
           ...(patch.status !== undefined ? { status: patch.status } : {}),
           ...(patch.attempts !== undefined ? { attempts: patch.attempts } : {}),
-          ...(patch.lastError !== undefined ? { lastError: patch.lastError } : {}),
-          ...(patch.sentAt !== undefined ? { sentAt: patch.sentAt ? new Date(patch.sentAt) : null } : {}),
+          ...(patch.lastError !== undefined
+            ? { lastError: patch.lastError }
+            : {}),
+          ...(patch.sentAt !== undefined
+            ? { sentAt: patch.sentAt ? new Date(patch.sentAt) : null }
+            : {}),
         },
       });
       if (result.count === 0) return null;
-      const row = await tx.vaccineReminderRecord.findFirstOrThrow({ where: { id, tenantId } });
+      const row = await tx.vaccineReminderRecord.findFirstOrThrow({
+        where: { id, tenantId },
+      });
       return this.map(row);
     });
   }
@@ -230,11 +293,21 @@ export class VaccineRemindersRepository {
   }
 
   /** Uygulamanın bekleyen kayıtlarını kalıcı olarak iptal eder. */
-  public async persistedCancelForApplication(tenantId: string, applicationId: string): Promise<number> {
+  public async persistedCancelForApplication(
+    tenantId: string,
+    applicationId: string,
+  ): Promise<number> {
     if (!this.prisma) return this.cancelForApplication(tenantId, applicationId);
-    return this.inTenant(tenantId, async (tx) => (await tx.vaccineReminderRecord.updateMany({
-      where: { tenantId, applicationId, status: "scheduled" }, data: { status: "cancelled" },
-    })).count);
+    return this.inTenant(
+      tenantId,
+      async (tx) =>
+        (
+          await tx.vaccineReminderRecord.updateMany({
+            where: { tenantId, applicationId, status: "scheduled" },
+            data: { status: "cancelled" },
+          })
+        ).count,
+    );
   }
 
   /**
@@ -255,11 +328,21 @@ export class VaccineRemindersRepository {
   }
 
   /** Hastanın bekleyen kayıtlarını kalıcı olarak iptal eder. */
-  public async persistedCancelForPatient(tenantId: string, patientId: string): Promise<number> {
+  public async persistedCancelForPatient(
+    tenantId: string,
+    patientId: string,
+  ): Promise<number> {
     if (!this.prisma) return this.cancelForPatient(tenantId, patientId);
-    return this.inTenant(tenantId, async (tx) => (await tx.vaccineReminderRecord.updateMany({
-      where: { tenantId, patientId, status: "scheduled" }, data: { status: "cancelled" },
-    })).count);
+    return this.inTenant(
+      tenantId,
+      async (tx) =>
+        (
+          await tx.vaccineReminderRecord.updateMany({
+            where: { tenantId, patientId, status: "scheduled" },
+            data: { status: "cancelled" },
+          })
+        ).count,
+    );
   }
 
   /**
@@ -330,32 +413,64 @@ export class VaccineRemindersRepository {
   }
 
   /** Yeni sonraki aşı tarihine göre kalıcı planları atomik taşır veya iptal eder. */
-  public async persistedRescheduleForApplication(args: { tenantId: string; applicationId: string; newNextDueDate: string }): Promise<number> {
+  public async persistedRescheduleForApplication(args: {
+    tenantId: string;
+    applicationId: string;
+    newNextDueDate: string;
+  }): Promise<number> {
     if (!this.prisma) return this.rescheduleForApplication(args);
     const { tenantId, applicationId, newNextDueDate } = args;
     return this.inTenant(tenantId, async (tx) => {
-      const records = await tx.vaccineReminderRecord.findMany({ where: { tenantId, applicationId, status: "scheduled" } });
+      const records = await tx.vaccineReminderRecord.findMany({
+        where: { tenantId, applicationId, status: "scheduled" },
+      });
       let moved = 0;
       for (const row of records) {
         const record = this.map(row);
-        const oldDueMs = new Date(`${record.nextDueDate}T00:00:00.000Z`).getTime();
+        const oldDueMs = new Date(
+          `${record.nextDueDate}T00:00:00.000Z`,
+        ).getTime();
         const newDueMs = new Date(`${newNextDueDate}T00:00:00.000Z`).getTime();
         const oldScheduledMs = new Date(record.scheduledFor).getTime();
-        if (Number.isNaN(oldDueMs) || Number.isNaN(newDueMs) || Number.isNaN(oldScheduledMs)) {
-          await tx.vaccineReminderRecord.update({ where: { id: record.id }, data: { status: "cancelled" } });
+        if (
+          Number.isNaN(oldDueMs) ||
+          Number.isNaN(newDueMs) ||
+          Number.isNaN(oldScheduledMs)
+        ) {
+          await tx.vaccineReminderRecord.update({
+            where: { id: record.id },
+            data: { status: "cancelled" },
+          });
           moved += 1;
           continue;
         }
         const newScheduledMs = oldScheduledMs + newDueMs - oldDueMs;
         if (newScheduledMs <= Date.now()) {
-          await tx.vaccineReminderRecord.update({ where: { id: record.id }, data: { status: "cancelled" } });
+          await tx.vaccineReminderRecord.update({
+            where: { id: record.id },
+            data: { status: "cancelled" },
+          });
           moved += 1;
           continue;
         }
         const scheduledFor = new Date(newScheduledMs).toISOString();
-        const dedupeKey = VaccineRemindersRepository.buildDedupeKey(record.applicationId, record.channel, scheduledFor);
-        const applicationSnapshot = record.applicationSnapshot ? { ...record.applicationSnapshot, nextDueDate: newNextDueDate } : undefined;
-        await tx.vaccineReminderRecord.update({ where: { id: record.id }, data: { scheduledFor: new Date(scheduledFor), nextDueDate: newNextDueDate, dedupeKey, applicationSnapshot: applicationSnapshot as Prisma.InputJsonValue } });
+        const dedupeKey = VaccineRemindersRepository.buildDedupeKey(
+          record.applicationId,
+          record.channel,
+          scheduledFor,
+        );
+        const applicationSnapshot = record.applicationSnapshot
+          ? { ...record.applicationSnapshot, nextDueDate: newNextDueDate }
+          : undefined;
+        await tx.vaccineReminderRecord.update({
+          where: { id: record.id },
+          data: {
+            scheduledFor: new Date(scheduledFor),
+            nextDueDate: newNextDueDate,
+            dedupeKey,
+            applicationSnapshot: applicationSnapshot as Prisma.InputJsonValue,
+          },
+        });
         moved += 1;
       }
       return moved;
@@ -380,24 +495,51 @@ export class VaccineRemindersRepository {
   }
 
   /** Tenant hatırlatma ayarını RLS kapsamlı upsert eder. */
-  public async persistedUpsertTenantConfig(config: VaccineReminderTenantConfig): Promise<VaccineReminderTenantConfig> {
+  public async persistedUpsertTenantConfig(
+    config: VaccineReminderTenantConfig,
+  ): Promise<VaccineReminderTenantConfig> {
     if (!this.prisma) return this.upsertTenantConfig(config);
     return this.inTenant(config.tenantId, async (tx) => {
       const row = await tx.vaccineReminderTenantConfigRecord.upsert({
         where: { tenantId: config.tenantId },
-        create: { tenantId: config.tenantId, daysBeforeDue: config.daysBeforeDue, channels: config.channels as Prisma.InputJsonValue, updatedAt: new Date(config.updatedAt) },
-        update: { daysBeforeDue: config.daysBeforeDue, channels: config.channels as Prisma.InputJsonValue, updatedAt: new Date(config.updatedAt) },
+        create: {
+          tenantId: config.tenantId,
+          daysBeforeDue: config.daysBeforeDue,
+          channels: config.channels as Prisma.InputJsonValue,
+          updatedAt: new Date(config.updatedAt),
+        },
+        update: {
+          daysBeforeDue: config.daysBeforeDue,
+          channels: config.channels as Prisma.InputJsonValue,
+          updatedAt: new Date(config.updatedAt),
+        },
       });
-      return { tenantId: row.tenantId, daysBeforeDue: row.daysBeforeDue, channels: row.channels as VaccineReminderChannel[], updatedAt: row.updatedAt.toISOString() };
+      return {
+        tenantId: row.tenantId,
+        daysBeforeDue: row.daysBeforeDue,
+        channels: row.channels as VaccineReminderChannel[],
+        updatedAt: row.updatedAt.toISOString(),
+      };
     });
   }
 
   /** Tenant hatırlatma ayarını RLS kapsamlı getirir. */
-  public async persistedGetTenantConfig(tenantId: string): Promise<VaccineReminderTenantConfig | null> {
+  public async persistedGetTenantConfig(
+    tenantId: string,
+  ): Promise<VaccineReminderTenantConfig | null> {
     if (!this.prisma) return this.getTenantConfig(tenantId);
     return this.inTenant(tenantId, async (tx) => {
-      const row = await tx.vaccineReminderTenantConfigRecord.findUnique({ where: { tenantId } });
-      return row ? { tenantId: row.tenantId, daysBeforeDue: row.daysBeforeDue, channels: row.channels as VaccineReminderChannel[], updatedAt: row.updatedAt.toISOString() } : null;
+      const row = await tx.vaccineReminderTenantConfigRecord.findUnique({
+        where: { tenantId },
+      });
+      return row
+        ? {
+            tenantId: row.tenantId,
+            daysBeforeDue: row.daysBeforeDue,
+            channels: row.channels as VaccineReminderChannel[],
+            updatedAt: row.updatedAt.toISOString(),
+          }
+        : null;
     });
   }
 
@@ -408,6 +550,28 @@ export class VaccineRemindersRepository {
     this.counters.clear();
     this.tenantConfigs.clear();
   }
-  private map(row:DbReminder):VaccineReminderRecord{return{...row,channel:row.channel as VaccineReminderRecord["channel"],status:row.status as VaccineReminderRecord["status"],scheduledFor:row.scheduledFor.toISOString(),sentAt:row.sentAt?.toISOString()??null,createdAt:row.createdAt.toISOString(),applicationSnapshot:row.applicationSnapshot as VaccineReminderRecord["applicationSnapshot"],stepSnapshot:row.stepSnapshot as VaccineReminderRecord["stepSnapshot"]};}
-  private async inTenant<T>(tenantId:string,callback:(tx:Prisma.TransactionClient)=>Promise<T>):Promise<T>{if(!this.prisma)throw new Error("Prisma bağlantısı bulunamadı");return this.prisma.$transaction(async tx=>{await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;return callback(tx);});}
+  private map(row: DbReminder): VaccineReminderRecord {
+    return {
+      ...row,
+      channel: row.channel as VaccineReminderRecord["channel"],
+      status: row.status as VaccineReminderRecord["status"],
+      scheduledFor: row.scheduledFor.toISOString(),
+      sentAt: row.sentAt?.toISOString() ?? null,
+      createdAt: row.createdAt.toISOString(),
+      applicationSnapshot:
+        row.applicationSnapshot as VaccineReminderRecord["applicationSnapshot"],
+      stepSnapshot: row.stepSnapshot as VaccineReminderRecord["stepSnapshot"],
+    };
+  }
+  private async inTenant<T>(
+    tenantId: string,
+    callback: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    if (!this.prisma) throw new Error("Prisma bağlantısı bulunamadı");
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;
+      await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;
+      return callback(tx);
+    });
+  }
 }

@@ -17,7 +17,15 @@
  * @since GOAL-084 (FAZ-8) yatış ve kafes yönetimi core
  */
 
-import { Injectable } from "@nestjs/common";
+import { Injectable, Optional } from "@nestjs/common";
+import type {
+  CageAssignmentRecord as DbAssignment,
+  CageRecord as DbCage,
+  HospitalizationRecord as DbHospitalization,
+  Prisma,
+} from "@prisma/client";
+import { randomUUID } from "node:crypto";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
 import type {
   CageAssignmentRecord,
@@ -87,8 +95,10 @@ export class HospitalizationRepository {
   // -------------------------------------------------------------------------
 
   private readonly counters = new Map<string, number>();
+  public constructor(@Optional() private readonly prisma?: PrismaService) {}
 
   public nextId(tenantId: string, prefix: string): string {
+    if (this.prisma) return `${prefix}-${tenantId.slice(0, 8)}-${randomUUID()}`;
     const n = (this.counters.get(tenantId) ?? 0) + 1;
     this.counters.set(tenantId, n);
     return `${prefix}-${tenantId.slice(0, 8)}-${String(n).padStart(6, "0")}`;
@@ -105,6 +115,83 @@ export class HospitalizationRepository {
     this.cages.set(rec.id, rec);
     this.cageByCode.set(`${rec.tenantId}::${rec.code}`, rec.id);
     return rec;
+  }
+  public async persistCage(rec: CageRecord): Promise<CageRecord> {
+    if (!this.prisma) return this.insertCage(rec);
+    const row = await this.inTenant(rec.tenantId, (tx) =>
+      tx.cageRecord.create({
+        data: {
+          ...rec,
+          createdAt: new Date(rec.createdAt),
+          updatedAt: new Date(rec.updatedAt),
+        },
+      }),
+    );
+    return this.mapCage(row);
+  }
+  public async persistedCageById(
+    tenantId: string,
+    id: string,
+  ): Promise<CageRecord | null> {
+    if (!this.prisma) return this.findCageById(tenantId, id);
+    const row = await this.inTenant(tenantId, (tx) =>
+      tx.cageRecord.findFirst({ where: { tenantId, id } }),
+    );
+    return row ? this.mapCage(row) : null;
+  }
+  public async persistedCageByCode(
+    tenantId: string,
+    code: string,
+  ): Promise<CageRecord | null> {
+    if (!this.prisma) return this.findCageByCode(tenantId, code);
+    const row = await this.inTenant(tenantId, (tx) =>
+      tx.cageRecord.findFirst({ where: { tenantId, code } }),
+    );
+    return row ? this.mapCage(row) : null;
+  }
+  public async persistedSearchCages(
+    tenantId: string,
+    f: CageSearchFilters,
+  ): Promise<{ items: CageRecord[]; total: number }> {
+    if (!this.prisma) return this.searchCages(tenantId, f);
+    const where: Prisma.CageRecordWhereInput = {
+      tenantId,
+      ...(f.kind ? { kind: f.kind } : {}),
+      ...(f.active !== undefined ? { active: f.active } : {}),
+    };
+    return this.inTenant(tenantId, async (tx) => {
+      const [items, total] = await Promise.all([
+        tx.cageRecord.findMany({
+          where,
+          orderBy: { code: f.sort ?? "asc" },
+          skip: f.offset,
+          take: f.limit,
+        }),
+        tx.cageRecord.count({ where }),
+      ]);
+      return { items: items.map((row) => this.mapCage(row)), total };
+    });
+  }
+  public async persistedUpdateCage(
+    tenantId: string,
+    id: string,
+    p: CagePatch,
+  ): Promise<CageRecord | null> {
+    if (!this.prisma) return this.updateCage(tenantId, id, p);
+    const data: Prisma.CageRecordUpdateManyMutationInput = {
+      ...(p.name !== undefined ? { name: p.name } : {}),
+      ...(p.kind !== undefined ? { kind: p.kind } : {}),
+      ...(p.capacity !== undefined ? { capacity: p.capacity } : {}),
+      ...(p.active !== undefined ? { active: p.active } : {}),
+      ...(p.notes !== undefined ? { notes: p.notes } : {}),
+      ...(p.updatedAt !== undefined
+        ? { updatedAt: new Date(p.updatedAt) }
+        : {}),
+    };
+    const out = await this.inTenant(tenantId, (tx) =>
+      tx.cageRecord.updateMany({ where: { tenantId, id }, data }),
+    );
+    return out.count ? this.persistedCageById(tenantId, id) : null;
   }
 
   public findCageById(tenantId: string, id: string): CageRecord | null {
@@ -178,6 +265,82 @@ export class HospitalizationRepository {
       this.activeByPatient.set(`${rec.tenantId}::${rec.patientId}`, rec.id);
     }
     return rec;
+  }
+  public async persistHospitalization(
+    rec: HospitalizationRecord,
+  ): Promise<HospitalizationRecord> {
+    if (!this.prisma) return this.insertHospitalization(rec);
+    const row = await this.inTenant(rec.tenantId, (tx) =>
+      tx.hospitalizationRecord.create({
+        data: {
+          ...rec,
+          plannedAt: rec.plannedAt ? new Date(rec.plannedAt) : null,
+          admittedAt: rec.admittedAt ? new Date(rec.admittedAt) : null,
+          dischargedAt: rec.dischargedAt ? new Date(rec.dischargedAt) : null,
+          createdAt: new Date(rec.createdAt),
+          updatedAt: new Date(rec.updatedAt),
+        },
+      }),
+    );
+    return this.mapHospitalization(row);
+  }
+  public async persistedHospitalizationById(
+    tenantId: string,
+    id: string,
+  ): Promise<HospitalizationRecord | null> {
+    if (!this.prisma) return this.findHospitalizationById(tenantId, id);
+    const row = await this.inTenant(tenantId, (tx) =>
+      tx.hospitalizationRecord.findFirst({ where: { tenantId, id } }),
+    );
+    return row ? this.mapHospitalization(row) : null;
+  }
+  public async persistedActiveByPatient(
+    tenantId: string,
+    patientId: string,
+  ): Promise<HospitalizationRecord | null> {
+    if (!this.prisma) return this.findActiveByPatient(tenantId, patientId);
+    const row = await this.inTenant(tenantId, (tx) =>
+      tx.hospitalizationRecord.findFirst({
+        where: {
+          tenantId,
+          patientId,
+          status: { in: ["planned", "admitted", "active"] },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+    );
+    return row ? this.mapHospitalization(row) : null;
+  }
+  public async persistedUpdateHospitalization(
+    tenantId: string,
+    id: string,
+    p: HospitalizationPatch,
+  ): Promise<HospitalizationRecord | null> {
+    if (!this.prisma) return this.updateHospitalization(tenantId, id, p);
+    const data: Prisma.HospitalizationRecordUpdateManyMutationInput = {
+      ...(p.plannedAt !== undefined
+        ? { plannedAt: p.plannedAt ? new Date(p.plannedAt) : null }
+        : {}),
+      ...(p.admittedAt !== undefined
+        ? { admittedAt: p.admittedAt ? new Date(p.admittedAt) : null }
+        : {}),
+      ...(p.admittedBy !== undefined ? { admittedBy: p.admittedBy } : {}),
+      ...(p.dischargedAt !== undefined
+        ? { dischargedAt: p.dischargedAt ? new Date(p.dischargedAt) : null }
+        : {}),
+      ...(p.dischargedBy !== undefined ? { dischargedBy: p.dischargedBy } : {}),
+      ...(p.cancelReason !== undefined ? { cancelReason: p.cancelReason } : {}),
+      ...(p.reason !== undefined ? { reason: p.reason } : {}),
+      ...(p.notes !== undefined ? { notes: p.notes } : {}),
+      ...(p.status !== undefined ? { status: p.status } : {}),
+      ...(p.updatedAt !== undefined
+        ? { updatedAt: new Date(p.updatedAt) }
+        : {}),
+    };
+    const r = await this.inTenant(tenantId, (tx) =>
+      tx.hospitalizationRecord.updateMany({ where: { tenantId, id }, data }),
+    );
+    return r.count ? this.persistedHospitalizationById(tenantId, id) : null;
   }
 
   public findHospitalizationById(
@@ -267,6 +430,94 @@ export class HospitalizationRepository {
     this.cageAssignments.set(rec.id, rec);
     return rec;
   }
+  public async persistCageAssignment(
+    rec: CageAssignmentRecord,
+  ): Promise<CageAssignmentRecord> {
+    if (!this.prisma) return this.insertCageAssignment(rec);
+    const row = await this.inTenant(rec.tenantId, (tx) =>
+      tx.cageAssignmentRecord.create({
+        data: {
+          ...rec,
+          from: new Date(rec.from),
+          to: rec.to ? new Date(rec.to) : null,
+          createdAt: new Date(rec.createdAt),
+        },
+      }),
+    );
+    return this.mapAssignment(row);
+  }
+  public async persistedAssignmentById(
+    tenantId: string,
+    id: string,
+  ): Promise<CageAssignmentRecord | null> {
+    if (!this.prisma) return this.findCageAssignmentById(tenantId, id);
+    const row = await this.inTenant(tenantId, (tx) =>
+      tx.cageAssignmentRecord.findFirst({ where: { tenantId, id } }),
+    );
+    return row ? this.mapAssignment(row) : null;
+  }
+  public async persistedAssignments(
+    tenantId: string,
+    hospitalizationId: string,
+  ): Promise<CageAssignmentRecord[]> {
+    if (!this.prisma)
+      return this.listCageAssignments(tenantId, hospitalizationId);
+    const rows = await this.inTenant(tenantId, (tx) =>
+      tx.cageAssignmentRecord.findMany({
+        where: { tenantId, hospitalizationId },
+        orderBy: { from: "asc" },
+      }),
+    );
+    return rows.map((row) => this.mapAssignment(row));
+  }
+  public async persistedUpdateAssignment(
+    tenantId: string,
+    id: string,
+    p: CageAssignmentPatch,
+  ): Promise<CageAssignmentRecord | null> {
+    if (!this.prisma) return this.updateCageAssignment(tenantId, id, p);
+    const data: Prisma.CageAssignmentRecordUpdateManyMutationInput = {
+      ...(p.to !== undefined ? { to: p.to ? new Date(p.to) : null } : {}),
+      ...(p.endedBy !== undefined ? { endedBy: p.endedBy } : {}),
+    };
+    const r = await this.inTenant(tenantId, (tx) =>
+      tx.cageAssignmentRecord.updateMany({ where: { tenantId, id }, data }),
+    );
+    return r.count ? this.persistedAssignmentById(tenantId, id) : null;
+  }
+  public async persistedOverlappingAssignment(
+    tenantId: string,
+    cageId: string,
+    from: string,
+    to: string | null,
+    excludeAssignmentId: string | null,
+  ): Promise<CageAssignmentRecord | null> {
+    if (!this.prisma)
+      return this.findOverlappingAssignment(
+        tenantId,
+        cageId,
+        from,
+        to,
+        excludeAssignmentId,
+      );
+    const rows = await this.inTenant(tenantId, (tx) =>
+      tx.cageAssignmentRecord.findMany({
+        where: {
+          tenantId,
+          cageId,
+          ...(excludeAssignmentId ? { id: { not: excludeAssignmentId } } : {}),
+        },
+      }),
+    );
+    const start = new Date(from).getTime(),
+      end = new Date(to ?? "9999-12-31T23:59:59.999Z").getTime();
+    const hit = rows.find(
+      (row) =>
+        start <= (row.to ?? new Date("9999-12-31T23:59:59.999Z")).getTime() &&
+        end >= row.from.getTime(),
+    );
+    return hit ? this.mapAssignment(hit) : null;
+  }
 
   public findCageAssignmentById(
     tenantId: string,
@@ -329,8 +580,6 @@ export class HospitalizationRepository {
       if (excludeAssignmentId && rec.id === excludeAssignmentId) continue;
       const eFrom = rec.from;
       const eTo = rec.to;
-      // new.from < e.to (veya e.to null) VE new.to > e.from
-      if (from < eFrom) continue; // new starts before existing start — but overlap depends
       // yeni interval [from, to], mevcut [eFrom, eTo]
       // overlap: from <= eTo AND to >= eFrom (to=null → açık)
       const eToResolved = eTo ?? "9999-12-31T23:59:59.999Z";
@@ -352,5 +601,43 @@ export class HospitalizationRepository {
     this.hospitalizations.clear();
     this.activeByPatient.clear();
     this.cageAssignments.clear();
+  }
+  private mapCage(row: DbCage): CageRecord {
+    return {
+      ...row,
+      kind: row.kind as CageKind,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+    };
+  }
+  private mapHospitalization(row: DbHospitalization): HospitalizationRecord {
+    return {
+      ...row,
+      status: row.status as HospitalizationStatus,
+      plannedAt: row.plannedAt?.toISOString() ?? null,
+      admittedAt: row.admittedAt?.toISOString() ?? null,
+      dischargedAt: row.dischargedAt?.toISOString() ?? null,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+    };
+  }
+  private mapAssignment(row: DbAssignment): CageAssignmentRecord {
+    return {
+      ...row,
+      from: row.from.toISOString(),
+      to: row.to?.toISOString() ?? null,
+      createdAt: row.createdAt.toISOString(),
+    };
+  }
+  private async inTenant<T>(
+    tenantId: string,
+    callback: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    if (!this.prisma) throw new Error("Prisma bağlantısı bulunamadı");
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;
+      await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;
+      return callback(tx);
+    });
   }
 }

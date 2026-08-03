@@ -19,7 +19,11 @@
  */
 
 import { Injectable, Optional } from "@nestjs/common";
-import type { Prisma, PurchaseOrderLineRecord as DbLine, PurchaseOrderRecord as DbOrder } from "@prisma/client";
+import type {
+  Prisma,
+  PurchaseOrderLineRecord as DbLine,
+  PurchaseOrderRecord as DbOrder,
+} from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { PrismaService } from "../../prisma/prisma.service.js";
 
@@ -101,16 +105,185 @@ export class PurchaseOrdersRepository {
     return record;
   }
 
-  public async persistOrderWithLines(order: PurchaseOrderRecord, lines: PurchaseOrderLineRecord[]): Promise<void> {
-    if (!this.prisma) { this.insert(order); for (const line of lines) this.insertLine(line); return; }
-    await this.inTenant(order.tenantId, async (tx) => { await tx.purchaseOrderRecord.create({ data: this.orderCreateData(order) }); if (lines.length) await tx.purchaseOrderLineRecord.createMany({ data: lines.map((line) => this.lineCreateData(line)) }); });
+  public async persistOrderWithLines(
+    order: PurchaseOrderRecord,
+    lines: PurchaseOrderLineRecord[],
+  ): Promise<void> {
+    if (!this.prisma) {
+      this.insert(order);
+      for (const line of lines) this.insertLine(line);
+      return;
+    }
+    await this.inTenant(order.tenantId, async (tx) => {
+      await tx.purchaseOrderRecord.create({
+        data: this.orderCreateData(order),
+      });
+      if (lines.length)
+        await tx.purchaseOrderLineRecord.createMany({
+          data: lines.map((line) => this.lineCreateData(line)),
+        });
+    });
   }
-  public async persistedById(tenantId: string, id: string): Promise<PurchaseOrderRecord | null> { if (!this.prisma) return this.findById(tenantId, id); const row = await this.inTenant(tenantId, (tx) => tx.purchaseOrderRecord.findFirst({ where: { tenantId, id } })); return row ? this.mapOrder(row) : null; }
-  public async persistedLines(tenantId: string, orderId: string): Promise<PurchaseOrderLineRecord[]> { if (!this.prisma) return this.listLinesByOrder(tenantId, orderId); const rows = await this.inTenant(tenantId, (tx) => tx.purchaseOrderLineRecord.findMany({ where: { tenantId, purchaseOrderId: orderId }, orderBy: { createdAt: "asc" } })); return rows.map((row) => this.mapLine(row)); }
-  public async persistedSearch(tenantId: string, filters: PurchaseOrderSearchFilters): Promise<{ items: PurchaseOrderRecord[]; total: number }> { if (!this.prisma) return this.search(tenantId, filters); const where: Prisma.PurchaseOrderRecordWhereInput = { tenantId, ...(filters.status ? { status: filters.status } : {}), ...(filters.supplierId ? { supplierId: filters.supplierId } : {}), ...(filters.branchId ? { branchId: filters.branchId } : {}), ...(filters.search?.trim() ? { OR: [{ id: { contains: filters.search.trim() } }, { supplierId: { contains: filters.search.trim() } }, { notes: { contains: filters.search.trim(), mode: "insensitive" } }] } : {}) }; return this.inTenant(tenantId, async (tx) => { const [items,total] = await Promise.all([tx.purchaseOrderRecord.findMany({ where, orderBy: { createdAt: filters.sort ?? "desc" }, skip: filters.offset, take: filters.limit }), tx.purchaseOrderRecord.count({ where })]); return { items: items.map((row) => this.mapOrder(row)), total }; }); }
-  public async persistedUpdate(tenantId: string, id: string, patch: PurchaseOrderPatch): Promise<PurchaseOrderRecord | null> { if (!this.prisma) return this.update(tenantId,id,patch); const data: Prisma.PurchaseOrderRecordUpdateManyMutationInput = { ...(patch.status !== undefined ? { status: patch.status } : {}), ...(patch.supplierId !== undefined ? { supplierId: patch.supplierId } : {}), ...(patch.branchId !== undefined ? { branchId: patch.branchId } : {}), ...(patch.currency !== undefined ? { currency: patch.currency } : {}), ...(patch.expectedAt !== undefined ? { expectedAt: patch.expectedAt ? new Date(patch.expectedAt) : null } : {}), ...(patch.notes !== undefined ? { notes: patch.notes } : {}), ...(patch.approvedAt !== undefined ? { approvedAt: patch.approvedAt ? new Date(patch.approvedAt) : null } : {}), ...(patch.approvedBy !== undefined ? { approvedBy: patch.approvedBy } : {}), ...(patch.receivedAt !== undefined ? { receivedAt: patch.receivedAt ? new Date(patch.receivedAt) : null } : {}), ...(patch.receivedBy !== undefined ? { receivedBy: patch.receivedBy } : {}), ...(patch.cancelledAt !== undefined ? { cancelledAt: patch.cancelledAt ? new Date(patch.cancelledAt) : null } : {}), ...(patch.cancelledBy !== undefined ? { cancelledBy: patch.cancelledBy } : {}), ...(patch.cancelReason !== undefined ? { cancelReason: patch.cancelReason } : {}), ...(patch.totalAmount !== undefined ? { totalAmount: patch.totalAmount } : {}), ...(patch.updatedAt !== undefined ? { updatedAt: new Date(patch.updatedAt) } : {}) }; const result = await this.inTenant(tenantId, (tx) => tx.purchaseOrderRecord.updateMany({ where: { tenantId,id }, data })); return result.count ? this.persistedById(tenantId,id) : null; }
-  public async persistedUpdateLine(tenantId: string, lineId: string, patch: PurchaseOrderLinePatch): Promise<PurchaseOrderLineRecord | null> { if (!this.prisma) return this.updateLine(tenantId,lineId,patch); const data: Prisma.PurchaseOrderLineRecordUpdateManyMutationInput = { ...(patch.receivedQuantity !== undefined ? { receivedQuantity: patch.receivedQuantity } : {}), ...(patch.unitCost !== undefined ? { unitCost: patch.unitCost } : {}), ...(patch.notes !== undefined ? { notes: patch.notes } : {}), ...(patch.updatedAt !== undefined ? { updatedAt: new Date(patch.updatedAt) } : {}) }; const result = await this.inTenant(tenantId, (tx) => tx.purchaseOrderLineRecord.updateMany({where:{tenantId,id:lineId},data})); if (!result.count) return null; const row = await this.inTenant(tenantId, (tx) => tx.purchaseOrderLineRecord.findFirstOrThrow({where:{tenantId,id:lineId}})); return this.mapLine(row); }
-  public async persistedReplaceLines(tenantId: string, orderId: string, lines: PurchaseOrderLineRecord[]): Promise<void> { if (!this.prisma) { this.linesByOrder.set(orderId, []); for (const line of lines) this.insertLine(line); return; } await this.inTenant(tenantId, async (tx) => { await tx.purchaseOrderLineRecord.deleteMany({ where: { tenantId, purchaseOrderId: orderId } }); if (lines.length) await tx.purchaseOrderLineRecord.createMany({ data: lines.map((line) => this.lineCreateData(line)) }); }); }
+  public async persistedById(
+    tenantId: string,
+    id: string,
+  ): Promise<PurchaseOrderRecord | null> {
+    if (!this.prisma) return this.findById(tenantId, id);
+    const row = await this.inTenant(tenantId, (tx) =>
+      tx.purchaseOrderRecord.findFirst({ where: { tenantId, id } }),
+    );
+    return row ? this.mapOrder(row) : null;
+  }
+  public async persistedLines(
+    tenantId: string,
+    orderId: string,
+  ): Promise<PurchaseOrderLineRecord[]> {
+    if (!this.prisma) return this.listLinesByOrder(tenantId, orderId);
+    const rows = await this.inTenant(tenantId, (tx) =>
+      tx.purchaseOrderLineRecord.findMany({
+        where: { tenantId, purchaseOrderId: orderId },
+        orderBy: { createdAt: "asc" },
+      }),
+    );
+    return rows.map((row) => this.mapLine(row));
+  }
+  public async persistedSearch(
+    tenantId: string,
+    filters: PurchaseOrderSearchFilters,
+  ): Promise<{ items: PurchaseOrderRecord[]; total: number }> {
+    if (!this.prisma) return this.search(tenantId, filters);
+    const where: Prisma.PurchaseOrderRecordWhereInput = {
+      tenantId,
+      ...(filters.status ? { status: filters.status } : {}),
+      ...(filters.supplierId ? { supplierId: filters.supplierId } : {}),
+      ...(filters.branchId ? { branchId: filters.branchId } : {}),
+      ...(filters.search?.trim()
+        ? {
+            OR: [
+              { id: { contains: filters.search.trim() } },
+              { supplierId: { contains: filters.search.trim() } },
+              {
+                notes: { contains: filters.search.trim(), mode: "insensitive" },
+              },
+            ],
+          }
+        : {}),
+    };
+    return this.inTenant(tenantId, async (tx) => {
+      const [items, total] = await Promise.all([
+        tx.purchaseOrderRecord.findMany({
+          where,
+          orderBy: { createdAt: filters.sort ?? "desc" },
+          skip: filters.offset,
+          take: filters.limit,
+        }),
+        tx.purchaseOrderRecord.count({ where }),
+      ]);
+      return { items: items.map((row) => this.mapOrder(row)), total };
+    });
+  }
+  public async persistedUpdate(
+    tenantId: string,
+    id: string,
+    patch: PurchaseOrderPatch,
+  ): Promise<PurchaseOrderRecord | null> {
+    if (!this.prisma) return this.update(tenantId, id, patch);
+    const data: Prisma.PurchaseOrderRecordUpdateManyMutationInput = {
+      ...(patch.status !== undefined ? { status: patch.status } : {}),
+      ...(patch.supplierId !== undefined
+        ? { supplierId: patch.supplierId }
+        : {}),
+      ...(patch.branchId !== undefined ? { branchId: patch.branchId } : {}),
+      ...(patch.currency !== undefined ? { currency: patch.currency } : {}),
+      ...(patch.expectedAt !== undefined
+        ? { expectedAt: patch.expectedAt ? new Date(patch.expectedAt) : null }
+        : {}),
+      ...(patch.notes !== undefined ? { notes: patch.notes } : {}),
+      ...(patch.approvedAt !== undefined
+        ? { approvedAt: patch.approvedAt ? new Date(patch.approvedAt) : null }
+        : {}),
+      ...(patch.approvedBy !== undefined
+        ? { approvedBy: patch.approvedBy }
+        : {}),
+      ...(patch.receivedAt !== undefined
+        ? { receivedAt: patch.receivedAt ? new Date(patch.receivedAt) : null }
+        : {}),
+      ...(patch.receivedBy !== undefined
+        ? { receivedBy: patch.receivedBy }
+        : {}),
+      ...(patch.cancelledAt !== undefined
+        ? {
+            cancelledAt: patch.cancelledAt ? new Date(patch.cancelledAt) : null,
+          }
+        : {}),
+      ...(patch.cancelledBy !== undefined
+        ? { cancelledBy: patch.cancelledBy }
+        : {}),
+      ...(patch.cancelReason !== undefined
+        ? { cancelReason: patch.cancelReason }
+        : {}),
+      ...(patch.totalAmount !== undefined
+        ? { totalAmount: patch.totalAmount }
+        : {}),
+      ...(patch.updatedAt !== undefined
+        ? { updatedAt: new Date(patch.updatedAt) }
+        : {}),
+    };
+    const result = await this.inTenant(tenantId, (tx) =>
+      tx.purchaseOrderRecord.updateMany({ where: { tenantId, id }, data }),
+    );
+    return result.count ? this.persistedById(tenantId, id) : null;
+  }
+  public async persistedUpdateLine(
+    tenantId: string,
+    lineId: string,
+    patch: PurchaseOrderLinePatch,
+  ): Promise<PurchaseOrderLineRecord | null> {
+    if (!this.prisma) return this.updateLine(tenantId, lineId, patch);
+    const data: Prisma.PurchaseOrderLineRecordUpdateManyMutationInput = {
+      ...(patch.receivedQuantity !== undefined
+        ? { receivedQuantity: patch.receivedQuantity }
+        : {}),
+      ...(patch.unitCost !== undefined ? { unitCost: patch.unitCost } : {}),
+      ...(patch.notes !== undefined ? { notes: patch.notes } : {}),
+      ...(patch.updatedAt !== undefined
+        ? { updatedAt: new Date(patch.updatedAt) }
+        : {}),
+    };
+    const result = await this.inTenant(tenantId, (tx) =>
+      tx.purchaseOrderLineRecord.updateMany({
+        where: { tenantId, id: lineId },
+        data,
+      }),
+    );
+    if (!result.count) return null;
+    const row = await this.inTenant(tenantId, (tx) =>
+      tx.purchaseOrderLineRecord.findFirstOrThrow({
+        where: { tenantId, id: lineId },
+      }),
+    );
+    return this.mapLine(row);
+  }
+  public async persistedReplaceLines(
+    tenantId: string,
+    orderId: string,
+    lines: PurchaseOrderLineRecord[],
+  ): Promise<void> {
+    if (!this.prisma) {
+      this.linesByOrder.set(orderId, []);
+      for (const line of lines) this.insertLine(line);
+      return;
+    }
+    await this.inTenant(tenantId, async (tx) => {
+      await tx.purchaseOrderLineRecord.deleteMany({
+        where: { tenantId, purchaseOrderId: orderId },
+      });
+      if (lines.length)
+        await tx.purchaseOrderLineRecord.createMany({
+          data: lines.map((line) => this.lineCreateData(line)),
+        });
+    });
+  }
 
   public insertLine(record: PurchaseOrderLineRecord): PurchaseOrderLineRecord {
     this.lineById.set(record.id, record);
@@ -232,9 +405,57 @@ export class PurchaseOrdersRepository {
     this.counters.clear();
     this.lineCounters.clear();
   }
-  private orderCreateData(order: PurchaseOrderRecord): Prisma.PurchaseOrderRecordUncheckedCreateInput { return { ...order, expectedAt: order.expectedAt ? new Date(order.expectedAt) : null, approvedAt: order.approvedAt ? new Date(order.approvedAt) : null, receivedAt: order.receivedAt ? new Date(order.receivedAt) : null, cancelledAt: order.cancelledAt ? new Date(order.cancelledAt) : null, createdAt: new Date(order.createdAt), updatedAt: new Date(order.updatedAt) }; }
-  private lineCreateData(line: PurchaseOrderLineRecord): Prisma.PurchaseOrderLineRecordUncheckedCreateInput { return { ...line, createdAt: new Date(line.createdAt), updatedAt: new Date(line.updatedAt) }; }
-  private mapOrder(row: DbOrder): PurchaseOrderRecord { return { ...row, status: row.status as PurchaseOrderStatus, currency: row.currency as PurchaseOrderRecord["currency"], expectedAt: row.expectedAt?.toISOString() ?? null, approvedAt: row.approvedAt?.toISOString() ?? null, receivedAt: row.receivedAt?.toISOString() ?? null, cancelledAt: row.cancelledAt?.toISOString() ?? null, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString() }; }
-  private mapLine(row: DbLine): PurchaseOrderLineRecord { return { ...row, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString() }; }
-  private async inTenant<T>(tenantId: string, callback: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> { if (!this.prisma) throw new Error("Prisma bağlantısı bulunamadı"); return this.prisma.$transaction(async (tx) => { await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`; await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`; return callback(tx); }); }
+  private orderCreateData(
+    order: PurchaseOrderRecord,
+  ): Prisma.PurchaseOrderRecordUncheckedCreateInput {
+    return {
+      ...order,
+      expectedAt: order.expectedAt ? new Date(order.expectedAt) : null,
+      approvedAt: order.approvedAt ? new Date(order.approvedAt) : null,
+      receivedAt: order.receivedAt ? new Date(order.receivedAt) : null,
+      cancelledAt: order.cancelledAt ? new Date(order.cancelledAt) : null,
+      createdAt: new Date(order.createdAt),
+      updatedAt: new Date(order.updatedAt),
+    };
+  }
+  private lineCreateData(
+    line: PurchaseOrderLineRecord,
+  ): Prisma.PurchaseOrderLineRecordUncheckedCreateInput {
+    return {
+      ...line,
+      createdAt: new Date(line.createdAt),
+      updatedAt: new Date(line.updatedAt),
+    };
+  }
+  private mapOrder(row: DbOrder): PurchaseOrderRecord {
+    return {
+      ...row,
+      status: row.status as PurchaseOrderStatus,
+      currency: row.currency as PurchaseOrderRecord["currency"],
+      expectedAt: row.expectedAt?.toISOString() ?? null,
+      approvedAt: row.approvedAt?.toISOString() ?? null,
+      receivedAt: row.receivedAt?.toISOString() ?? null,
+      cancelledAt: row.cancelledAt?.toISOString() ?? null,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+    };
+  }
+  private mapLine(row: DbLine): PurchaseOrderLineRecord {
+    return {
+      ...row,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+    };
+  }
+  private async inTenant<T>(
+    tenantId: string,
+    callback: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    if (!this.prisma) throw new Error("Prisma bağlantısı bulunamadı");
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;
+      await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;
+      return callback(tx);
+    });
+  }
 }

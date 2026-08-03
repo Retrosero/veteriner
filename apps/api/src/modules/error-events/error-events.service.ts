@@ -859,10 +859,7 @@ export class ErrorEventsService {
    * `threshold=warning` ise yalnızca `warning`/`error`/`critical`
    * geçer; `info` reddedilir.
    */
-  public static isSeverityBelow(
-    severity: string,
-    threshold: string,
-  ): boolean {
+  public static isSeverityBelow(severity: string, threshold: string): boolean {
     // SEVERITY_RANK bilinen sabit anahtarlardan oluşur; yine de
     // güvenli tarafta kalmak için `in` operatörü ile sınama yapılır.
     const rank = ErrorEventsService.SEVERITY_RANK;
@@ -893,7 +890,7 @@ export class ErrorEventsService {
       tenantId:
         actor.role === "SUPERADMIN" || actor.isSuperadmin
           ? filters.tenantId
-          : actor.tenantId ?? filters.tenantId,
+          : (actor.tenantId ?? filters.tenantId),
     };
     const result = this.repo.search({
       severity: scoped.severity,
@@ -1108,13 +1105,16 @@ export class ErrorEventsService {
         i18nKey: "error.VET-ERRNOTE-0001",
       });
     }
-    return this.repo.addNote({
-      fingerprint: rec.fingerprint,
-      authorId: actor.actorId ?? "system",
-      authorType: actor.actorType,
-      body: safeBody,
-      visibility: input.visibility ?? "internal",
-    }, rec.tenantId);
+    return this.repo.addNote(
+      {
+        fingerprint: rec.fingerprint,
+        authorId: actor.actorId ?? "system",
+        authorType: actor.actorType,
+        body: safeBody,
+        visibility: input.visibility ?? "internal",
+      },
+      rec.tenantId,
+    );
   }
 
   /**
@@ -1177,15 +1177,18 @@ export class ErrorEventsService {
         details: { id },
       });
     }
-    return this.repo.addSupportLink({
-      fingerprint: rec.fingerprint,
-      system: input.system,
-      externalId: input.externalId ?? null,
-      url: input.url ?? null,
-      title: input.title ?? null,
-      createdById: actor.actorId ?? "system",
-      createdByType: actor.actorType,
-    }, rec.tenantId);
+    return this.repo.addSupportLink(
+      {
+        fingerprint: rec.fingerprint,
+        system: input.system,
+        externalId: input.externalId ?? null,
+        url: input.url ?? null,
+        title: input.title ?? null,
+        createdById: actor.actorId ?? "system",
+        createdByType: actor.actorType,
+      },
+      rec.tenantId,
+    );
   }
 
   /**
@@ -1264,13 +1267,16 @@ export class ErrorEventsService {
         i18nKey: "error.VET-ERRNOTE-0001",
       });
     }
-    const assignment = this.repo.addAssignment({
-      fingerprint: rec.fingerprint,
-      assigneeId,
-      assignedById: actor.actorId ?? "system",
-      assignedByType: actor.actorType,
-      reason: input.reason ?? null,
-    }, rec.tenantId);
+    const assignment = this.repo.addAssignment(
+      {
+        fingerprint: rec.fingerprint,
+        assigneeId,
+        assignedById: actor.actorId ?? "system",
+        assignedByType: actor.actorType,
+        reason: input.reason ?? null,
+      },
+      rec.tenantId,
+    );
     // Güncellenmiş event'i tekrar oku (assignedToUserId değişmiş olabilir).
     const updated = this.repo.findById(id);
     return {
@@ -1344,7 +1350,10 @@ export class ErrorEventsService {
     }
     const entries: ErrorEventAuditEntry[] = [];
     // Status transitions.
-    for (const t of this.repo.listTransitionsByFingerprint(rec.fingerprint, rec.tenantId)) {
+    for (const t of this.repo.listTransitionsByFingerprint(
+      rec.fingerprint,
+      rec.tenantId,
+    )) {
       entries.push({
         id: t.id,
         fingerprint: t.fingerprint,
@@ -1360,7 +1369,10 @@ export class ErrorEventsService {
       });
     }
     // Notlar.
-    for (const n of this.repo.listNotesByFingerprint(rec.fingerprint, rec.tenantId)) {
+    for (const n of this.repo.listNotesByFingerprint(
+      rec.fingerprint,
+      rec.tenantId,
+    )) {
       entries.push({
         id: n.id,
         fingerprint: n.fingerprint,
@@ -1376,7 +1388,10 @@ export class ErrorEventsService {
       });
     }
     // Destek bağlantıları.
-    for (const s of this.repo.listSupportLinksByFingerprint(rec.fingerprint, rec.tenantId)) {
+    for (const s of this.repo.listSupportLinksByFingerprint(
+      rec.fingerprint,
+      rec.tenantId,
+    )) {
       entries.push({
         id: s.id,
         fingerprint: s.fingerprint,
@@ -1394,7 +1409,10 @@ export class ErrorEventsService {
       });
     }
     // Atamalar.
-    for (const a of this.repo.listAssignmentsByFingerprint(rec.fingerprint, rec.tenantId)) {
+    for (const a of this.repo.listAssignmentsByFingerprint(
+      rec.fingerprint,
+      rec.tenantId,
+    )) {
       const unassigned = a.assigneeId === UNASSIGNED;
       entries.push({
         id: a.id,
@@ -1413,7 +1431,10 @@ export class ErrorEventsService {
     }
     // resolved → reopened otomatik terfiler (resolved-status görünce
     // occurrence_recorded olarak yeniden yazılır).
-    for (const t of this.repo.listTransitionsByFingerprint(rec.fingerprint, rec.tenantId)) {
+    for (const t of this.repo.listTransitionsByFingerprint(
+      rec.fingerprint,
+      rec.tenantId,
+    )) {
       if (t.toStatus === "reopened" && t.actorId === "system") {
         entries.push({
           id: `${t.id}-occ`,

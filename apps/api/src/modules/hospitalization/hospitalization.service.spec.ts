@@ -494,6 +494,60 @@ describe("HospitalizationService", () => {
       });
     });
 
+    it("yeni atama mevcut aralıktan önce başlayıp içine uzandığında çakışmayı reddeder", async () => {
+      const cage = await service.createCage(TENANT_A, makeCageInput(), VET_A);
+      const h1 = await service.createHospitalization(
+        TENANT_A,
+        makeHospInput(),
+        VET_A,
+      );
+      await service.admitHospitalization(
+        TENANT_A,
+        h1.id,
+        makeAdmitInput(),
+        VET_A,
+      );
+      await service.assignCage(
+        TENANT_A,
+        h1.id,
+        makeAssignmentInput({
+          cageId: cage.id,
+          from: isoOffset(-30),
+          to: isoOffset(-10),
+        }),
+        VET_A,
+      );
+      await service.dischargeHospitalization(
+        TENANT_A,
+        h1.id,
+        makeDischargeInput(),
+        VET_A,
+      );
+      const h2 = await service.createHospitalization(
+        TENANT_A,
+        makeHospInput({ patientId: PATIENT_B }),
+        VET_A,
+      );
+      await service.admitHospitalization(
+        TENANT_A,
+        h2.id,
+        makeAdmitInput(),
+        VET_A,
+      );
+      await expect(
+        service.assignCage(
+          TENANT_A,
+          h2.id,
+          makeAssignmentInput({
+            cageId: cage.id,
+            from: isoOffset(-45),
+            to: isoOffset(-20),
+          }),
+          VET_A,
+        ),
+      ).rejects.toMatchObject({ errorCode: "VET-HOSP-0009", httpStatus: 409 });
+    });
+
     it("aynı yatış için ikinci açık atama 409 VET-HOSP-0011", async () => {
       const cage = await service.createCage(TENANT_A, makeCageInput(), VET_A);
       const h = await service.createHospitalization(

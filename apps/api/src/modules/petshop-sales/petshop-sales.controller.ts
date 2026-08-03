@@ -24,7 +24,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -107,7 +106,7 @@ export class PetshopSalesController {
     description: "Header + satırlar. Cross-tenant → 404.",
   })
   public async findById(
-    @Param("id", new ParseUUIDPipe()) id: string,
+    @Param("id") id: string,
     @CurrentActor() actor: ActorContext,
   ): Promise<PetshopSaleDetail> {
     const tenantId = this.requireTenant(actor);
@@ -134,7 +133,7 @@ export class PetshopSalesController {
       "Tamamlanmış/iptal edilmiş satışlar 409 VET-SALE-0003.",
   })
   public async update(
-    @Param("id", new ParseUUIDPipe()) id: string,
+    @Param("id") id: string,
     @Body(new ZodValidationPipe(petshopSaleUpdateInputSchema))
     body: PetshopSaleUpdateInput,
     @CurrentActor() actor: ActorContext,
@@ -155,7 +154,7 @@ export class PetshopSalesController {
       "422 VET-SALE-0006.",
   })
   public async complete(
-    @Param("id", new ParseUUIDPipe()) id: string,
+    @Param("id") id: string,
     @Body(new ZodValidationPipe(petshopSaleCompleteInputSchema))
     body: PetshopSaleCompleteInput,
     @CurrentActor() actor: ActorContext,
@@ -176,7 +175,7 @@ export class PetshopSalesController {
       "Zaten iptal edilmişse 409 VET-SALE-0004. İptal nedeni zorunlu.",
   })
   public async cancel(
-    @Param("id", new ParseUUIDPipe()) id: string,
+    @Param("id") id: string,
     @Body(new ZodValidationPipe(petshopSaleCancelInputSchema))
     body: PetshopSaleCancelInput,
     @CurrentActor() actor: ActorContext,

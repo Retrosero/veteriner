@@ -69,7 +69,10 @@ export class SuppliersService {
     this.requireTenantScope(actor, tenantId);
 
     // 1) Code unique kontrolü.
-    const existingByCode = await this.repo.persistedByCode(tenantId, input.code);
+    const existingByCode = await this.repo.persistedByCode(
+      tenantId,
+      input.code,
+    );
     if (existingByCode && existingByCode.archivedAt === null) {
       throw new DomainError({
         errorCode: "VET-SUPPLIER-0002",

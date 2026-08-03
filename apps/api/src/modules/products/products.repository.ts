@@ -92,47 +92,183 @@ export class ProductsRepository {
   /** Ürün kaydını tenant RLS bağlamında kalıcılaştırır. */
   public async persist(record: ProductRecord): Promise<ProductRecord> {
     if (!this.prisma) return this.insert(record);
-    const row = await this.inTenant(record.tenantId, (tx) => tx.productRecord.create({ data: this.toCreateData(record) }));
+    const row = await this.inTenant(record.tenantId, (tx) =>
+      tx.productRecord.create({ data: this.toCreateData(record) }),
+    );
     this.insert(record);
     return this.map(row);
   }
 
-  public async persistedFindById(tenantId: string, id: string): Promise<ProductRecord | null> {
+  public async persistedFindById(
+    tenantId: string,
+    id: string,
+  ): Promise<ProductRecord | null> {
     if (!this.prisma) return this.findById(tenantId, id);
-    const row = await this.inTenant(tenantId, (tx) => tx.productRecord.findFirst({ where: { id, tenantId } }));
+    const row = await this.inTenant(tenantId, (tx) =>
+      tx.productRecord.findFirst({ where: { id, tenantId } }),
+    );
     return row ? this.map(row) : null;
   }
 
-  public async persistedFindBySku(tenantId: string, sku: string): Promise<ProductRecord | null> {
+  public async persistedFindBySku(
+    tenantId: string,
+    sku: string,
+  ): Promise<ProductRecord | null> {
     if (!this.prisma) return this.findBySku(tenantId, sku);
-    const row = await this.inTenant(tenantId, (tx) => tx.productRecord.findFirst({ where: { tenantId, sku } }));
+    const row = await this.inTenant(tenantId, (tx) =>
+      tx.productRecord.findFirst({ where: { tenantId, sku } }),
+    );
     return row ? this.map(row) : null;
   }
 
-  public async persistedFindByBarcode(tenantId: string, barcode: string): Promise<ProductRecord | null> {
+  public async persistedFindByBarcode(
+    tenantId: string,
+    barcode: string,
+  ): Promise<ProductRecord | null> {
     if (!this.prisma) return this.findByBarcode(tenantId, barcode);
-    const row = await this.inTenant(tenantId, (tx) => tx.productRecord.findFirst({ where: { tenantId, barcode } }));
+    const row = await this.inTenant(tenantId, (tx) =>
+      tx.productRecord.findFirst({ where: { tenantId, barcode } }),
+    );
     return row ? this.map(row) : null;
   }
 
-  public async persistedSearch(tenantId: string, filters: ProductSearchFilters): Promise<{ items: ProductRecord[]; total: number }> {
+  public async persistedSearch(
+    tenantId: string,
+    filters: ProductSearchFilters,
+  ): Promise<{ items: ProductRecord[]; total: number }> {
     if (!this.prisma) return this.search(tenantId, filters);
-    const where: Prisma.ProductRecordWhereInput = { tenantId, ...(filters.includeArchived ? {} : { archivedAt: null }), ...(filters.kind ? { kind: filters.kind } : {}), ...(filters.kinds?.length ? { kind: { in: filters.kinds } } : {}), ...(filters.clinicUsage !== undefined ? { clinicUsage: filters.clinicUsage } : {}), ...(filters.petshopUsage !== undefined ? { petshopUsage: filters.petshopUsage } : {}), ...(filters.active !== undefined ? { active: filters.active } : {}), ...(filters.category ? { category: { contains: filters.category, mode: "insensitive" } } : {}), ...(filters.search ? { OR: ["name", "sku", "barcode", "category"].map((field) => ({ [field]: { contains: filters.search, mode: "insensitive" } })) } : {}) };
-    const [rows, total] = await this.inTenant(tenantId, (tx) => Promise.all([tx.productRecord.findMany({ where, orderBy: { createdAt: "desc" }, skip: filters.offset, take: filters.limit }), tx.productRecord.count({ where })]));
+    const where: Prisma.ProductRecordWhereInput = {
+      tenantId,
+      ...(filters.includeArchived ? {} : { archivedAt: null }),
+      ...(filters.kind ? { kind: filters.kind } : {}),
+      ...(filters.kinds?.length ? { kind: { in: filters.kinds } } : {}),
+      ...(filters.clinicUsage !== undefined
+        ? { clinicUsage: filters.clinicUsage }
+        : {}),
+      ...(filters.petshopUsage !== undefined
+        ? { petshopUsage: filters.petshopUsage }
+        : {}),
+      ...(filters.active !== undefined ? { active: filters.active } : {}),
+      ...(filters.category
+        ? { category: { contains: filters.category, mode: "insensitive" } }
+        : {}),
+      ...(filters.search
+        ? {
+            OR: ["name", "sku", "barcode", "category"].map((field) => ({
+              [field]: { contains: filters.search, mode: "insensitive" },
+            })),
+          }
+        : {}),
+    };
+    const [rows, total] = await this.inTenant(tenantId, (tx) =>
+      Promise.all([
+        tx.productRecord.findMany({
+          where,
+          orderBy: { createdAt: "desc" },
+          skip: filters.offset,
+          take: filters.limit,
+        }),
+        tx.productRecord.count({ where }),
+      ]),
+    );
     return { items: rows.map((row) => this.map(row)), total };
   }
 
-  public async persistedUpdate(tenantId: string, id: string, patch: ProductPatch): Promise<ProductRecord | null> {
+  public async persistedUpdate(
+    tenantId: string,
+    id: string,
+    patch: ProductPatch,
+  ): Promise<ProductRecord | null> {
     if (!this.prisma) return this.update(tenantId, id, patch);
     const data: Prisma.ProductRecordUpdateManyMutationInput = {
-      ...(patch.sku !== undefined ? { sku: patch.sku } : {}), ...(patch.barcode !== undefined ? { barcode: patch.barcode } : {}), ...(patch.name !== undefined ? { name: patch.name } : {}), ...(patch.category !== undefined ? { category: patch.category } : {}), ...(patch.unit !== undefined ? { unit: patch.unit } : {}), ...(patch.taxProfile !== undefined ? { taxProfile: patch.taxProfile } : {}), ...(patch.purchasePrice !== undefined ? { purchasePrice: patch.purchasePrice } : {}), ...(patch.salePrice !== undefined ? { salePrice: patch.salePrice } : {}), ...(patch.currency !== undefined ? { currency: patch.currency } : {}), ...(patch.clinicUsage !== undefined ? { clinicUsage: patch.clinicUsage } : {}), ...(patch.petshopUsage !== undefined ? { petshopUsage: patch.petshopUsage } : {}), ...(patch.saleAvailable !== undefined ? { saleAvailable: patch.saleAvailable } : {}), ...(patch.purchaseTracked !== undefined ? { purchaseTracked: patch.purchaseTracked } : {}), ...(patch.requiresPrescription !== undefined ? { requiresPrescription: patch.requiresPrescription } : {}), ...(patch.controlledDrug !== undefined ? { controlledDrug: patch.controlledDrug } : {}), ...(patch.lowStockThreshold !== undefined ? { lowStockThreshold: patch.lowStockThreshold } : {}), ...(patch.notes !== undefined ? { notes: patch.notes } : {}), ...(patch.active !== undefined ? { active: patch.active } : {}), ...(patch.updatedAt !== undefined ? { updatedAt: new Date(patch.updatedAt) } : {}), ...(patch.archivedAt !== undefined ? { archivedAt: patch.archivedAt ? new Date(patch.archivedAt) : null } : {}), ...(patch.archivedBy !== undefined ? { archivedBy: patch.archivedBy } : {}), ...(patch.archiveReason !== undefined ? { archiveReason: patch.archiveReason } : {}) };
-    const result = await this.inTenant(tenantId, (tx) => tx.productRecord.updateMany({ where: { id, tenantId }, data }));
+      ...(patch.sku !== undefined ? { sku: patch.sku } : {}),
+      ...(patch.barcode !== undefined ? { barcode: patch.barcode } : {}),
+      ...(patch.name !== undefined ? { name: patch.name } : {}),
+      ...(patch.category !== undefined ? { category: patch.category } : {}),
+      ...(patch.unit !== undefined ? { unit: patch.unit } : {}),
+      ...(patch.taxProfile !== undefined
+        ? { taxProfile: patch.taxProfile }
+        : {}),
+      ...(patch.purchasePrice !== undefined
+        ? { purchasePrice: patch.purchasePrice }
+        : {}),
+      ...(patch.salePrice !== undefined ? { salePrice: patch.salePrice } : {}),
+      ...(patch.currency !== undefined ? { currency: patch.currency } : {}),
+      ...(patch.clinicUsage !== undefined
+        ? { clinicUsage: patch.clinicUsage }
+        : {}),
+      ...(patch.petshopUsage !== undefined
+        ? { petshopUsage: patch.petshopUsage }
+        : {}),
+      ...(patch.saleAvailable !== undefined
+        ? { saleAvailable: patch.saleAvailable }
+        : {}),
+      ...(patch.purchaseTracked !== undefined
+        ? { purchaseTracked: patch.purchaseTracked }
+        : {}),
+      ...(patch.requiresPrescription !== undefined
+        ? { requiresPrescription: patch.requiresPrescription }
+        : {}),
+      ...(patch.controlledDrug !== undefined
+        ? { controlledDrug: patch.controlledDrug }
+        : {}),
+      ...(patch.lowStockThreshold !== undefined
+        ? { lowStockThreshold: patch.lowStockThreshold }
+        : {}),
+      ...(patch.notes !== undefined ? { notes: patch.notes } : {}),
+      ...(patch.active !== undefined ? { active: patch.active } : {}),
+      ...(patch.updatedAt !== undefined
+        ? { updatedAt: new Date(patch.updatedAt) }
+        : {}),
+      ...(patch.archivedAt !== undefined
+        ? { archivedAt: patch.archivedAt ? new Date(patch.archivedAt) : null }
+        : {}),
+      ...(patch.archivedBy !== undefined
+        ? { archivedBy: patch.archivedBy }
+        : {}),
+      ...(patch.archiveReason !== undefined
+        ? { archiveReason: patch.archiveReason }
+        : {}),
+    };
+    const result = await this.inTenant(tenantId, (tx) =>
+      tx.productRecord.updateMany({ where: { id, tenantId }, data }),
+    );
     return result.count ? this.persistedFindById(tenantId, id) : null;
   }
 
-  private toCreateData(record: ProductRecord): Prisma.ProductRecordUncheckedCreateInput { return { ...record, createdAt: new Date(record.createdAt), updatedAt: new Date(record.updatedAt), archivedAt: record.archivedAt ? new Date(record.archivedAt) : null }; }
-  private map(row: DbProduct): ProductRecord { return { ...row, kind: row.kind as ProductRecord["kind"], unit: row.unit as ProductRecord["unit"], taxProfile: row.taxProfile as ProductRecord["taxProfile"], currency: row.currency as ProductRecord["currency"], createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(), archivedAt: row.archivedAt?.toISOString() ?? null }; }
-  private async inTenant<T>(tenantId: string, callback: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> { if (!this.prisma) throw new Error("Prisma bağlantısı bulunamadı"); return this.prisma.$transaction(async (tx) => { await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`; await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`; return callback(tx); }); }
+  private toCreateData(
+    record: ProductRecord,
+  ): Prisma.ProductRecordUncheckedCreateInput {
+    return {
+      ...record,
+      createdAt: new Date(record.createdAt),
+      updatedAt: new Date(record.updatedAt),
+      archivedAt: record.archivedAt ? new Date(record.archivedAt) : null,
+    };
+  }
+  private map(row: DbProduct): ProductRecord {
+    return {
+      ...row,
+      kind: row.kind as ProductRecord["kind"],
+      unit: row.unit as ProductRecord["unit"],
+      taxProfile: row.taxProfile as ProductRecord["taxProfile"],
+      currency: row.currency as ProductRecord["currency"],
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+      archivedAt: row.archivedAt?.toISOString() ?? null,
+    };
+  }
+  private async inTenant<T>(
+    tenantId: string,
+    callback: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    if (!this.prisma) throw new Error("Prisma bağlantısı bulunamadı");
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;
+      await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;
+      return callback(tx);
+    });
+  }
 
   /**
    * Auto-generate için sonraki SKU sayacı. Her çağrıda artar;

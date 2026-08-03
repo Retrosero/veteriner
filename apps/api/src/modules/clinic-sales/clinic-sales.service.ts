@@ -280,9 +280,36 @@ export class ClinicSalesService {
       );
       globalDiscountPercent = input.globalDiscountPercent;
     }
-    const updated = replacementLines !== undefined
-      ? await this.repo.persistedUpdateWithLines(tenantId, id, { totalAmount, globalDiscountPercent, netAmount: this.applyGlobalDiscount(totalAmount, globalDiscountPercent), ...(input.notes !== undefined ? { notes: input.notes } : {}), updatedAt: new Date().toISOString() }, replacementLines)
-      : await this.repo.persistedUpdate(tenantId, id, { ...(input.globalDiscountPercent !== undefined ? { globalDiscountPercent, netAmount: this.applyGlobalDiscount(totalAmount, globalDiscountPercent) } : {}), ...(input.notes !== undefined ? { notes: input.notes } : {}), updatedAt: new Date().toISOString() });
+    const updated =
+      replacementLines !== undefined
+        ? await this.repo.persistedUpdateWithLines(
+            tenantId,
+            id,
+            {
+              totalAmount,
+              globalDiscountPercent,
+              netAmount: this.applyGlobalDiscount(
+                totalAmount,
+                globalDiscountPercent,
+              ),
+              ...(input.notes !== undefined ? { notes: input.notes } : {}),
+              updatedAt: new Date().toISOString(),
+            },
+            replacementLines,
+          )
+        : await this.repo.persistedUpdate(tenantId, id, {
+            ...(input.globalDiscountPercent !== undefined
+              ? {
+                  globalDiscountPercent,
+                  netAmount: this.applyGlobalDiscount(
+                    totalAmount,
+                    globalDiscountPercent,
+                  ),
+                }
+              : {}),
+            ...(input.notes !== undefined ? { notes: input.notes } : {}),
+            updatedAt: new Date().toISOString(),
+          });
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-CLINIC_SALE-0001",
@@ -302,7 +329,9 @@ export class ClinicSalesService {
 
     return {
       sale: toClinicSale(updated),
-      lines: (await this.repo.persistedLines(tenantId, id)).map((l) => toClinicSaleLine(l)),
+      lines: (await this.repo.persistedLines(tenantId, id)).map((l) =>
+        toClinicSaleLine(l),
+      ),
     };
   }
 

@@ -248,7 +248,11 @@ export class OwnershipHistoryService {
     }
 
     // 1) Eski aktif kaydı kapat.
-    const closedRecord = await this.repo.closePersistedActive(tenantId, patientId, newStart);
+    const closedRecord = await this.repo.closePersistedActive(
+      tenantId,
+      patientId,
+      newStart,
+    );
 
     // 2) Yeni kayıt aç.
     const newId = this.repo.nextId(tenantId);
@@ -265,7 +269,11 @@ export class OwnershipHistoryService {
 
     // 3) Patient.ownerId güncellenir (kimlik seviyesi).
     patient.ownerId = input.newOwnerId;
-    await this.patients.updatePersistedOwner(tenantId, patientId, input.newOwnerId);
+    await this.patients.updatePersistedOwner(
+      tenantId,
+      patientId,
+      input.newOwnerId,
+    );
 
     await this.audit.record({
       eventName: "audit:ownership.transfer",
@@ -342,7 +350,10 @@ export class OwnershipHistoryService {
     return rec ? this.toOwnership(rec) : null;
   }
 
-  private async requirePatient(tenantId: string, patientId: string): Promise<PatientRecord> {
+  private async requirePatient(
+    tenantId: string,
+    patientId: string,
+  ): Promise<PatientRecord> {
     const patient = await this.patients.findPersistedById(tenantId, patientId);
     if (!patient) {
       throw new DomainError({

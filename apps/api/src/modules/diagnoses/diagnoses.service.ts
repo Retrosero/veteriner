@@ -249,7 +249,9 @@ export class DiagnosesService {
       });
     }
 
-    const updated = await this.repo.persistedUpdate(tenantId, id, { status: "chronic" });
+    const updated = await this.repo.persistedUpdate(tenantId, id, {
+      status: "chronic",
+    });
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",
@@ -309,7 +311,9 @@ export class DiagnosesService {
       });
     }
 
-    const updated = await this.repo.persistedUpdate(tenantId, id, { status: "ruled_out" });
+    const updated = await this.repo.persistedUpdate(tenantId, id, {
+      status: "ruled_out",
+    });
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",
@@ -364,7 +368,9 @@ export class DiagnosesService {
     }
 
     const now = new Date().toISOString();
-    const updated = await this.repo.persistedUpdate(tenantId, id, { archivedAt: now });
+    const updated = await this.repo.persistedUpdate(tenantId, id, {
+      archivedAt: now,
+    });
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-CLINIC-0001",

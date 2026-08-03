@@ -1645,8 +1645,12 @@ describe("ErrorEventsService.listErrorEventsForTenant (GOAL-100 next-tick)", () 
   });
 
   it("OWNER yalnız kendi tenant'ını görür; başka tenant'a sızmaz", async () => {
-    service.recordError(makeInput({ tenantId: TENANT_A, errorCode: "VET-CLINIC-0001" }));
-    service.recordError(makeInput({ tenantId: TENANT_B, errorCode: "VET-CLINIC-0002" }));
+    service.recordError(
+      makeInput({ tenantId: TENANT_A, errorCode: "VET-CLINIC-0001" }),
+    );
+    service.recordError(
+      makeInput({ tenantId: TENANT_B, errorCode: "VET-CLINIC-0002" }),
+    );
 
     const out = await service.listErrorEventsForTenant(
       { limit: 50, offset: 0 },

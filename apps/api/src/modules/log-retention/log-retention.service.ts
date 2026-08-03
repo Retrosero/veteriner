@@ -337,7 +337,7 @@ export class LogRetentionService {
                 scannedCount: archiveCount,
               };
             } else {
-              const deleted = target.expireOlderThan({
+              const deleted = await target.expireOlderThan({
                 cutoff: deleteZoneCutoff,
                 tenantId,
                 archive: false,

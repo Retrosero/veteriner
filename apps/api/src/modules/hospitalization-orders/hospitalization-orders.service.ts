@@ -127,7 +127,7 @@ export class HospitalizationOrdersService {
       createdBy: actor.actorId ?? "system",
       updatedAt: nowIso,
     };
-    this.repo.insertOrder(rec);
+    await this.repo.persistOrder(rec);
 
     await this.audit.recordSimple(
       "audit:hospitalization_order.create",
@@ -152,7 +152,7 @@ export class HospitalizationOrdersService {
     actor: ActorContext,
   ): Promise<HospitalizationOrderListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.searchOrders(tenantId, {
+    const result = await this.repo.persistedOrders(tenantId, {
       hospitalizationId: filters.hospitalizationId,
       orderType: filters.orderType,
       status: filters.status,
@@ -173,13 +173,13 @@ export class HospitalizationOrdersService {
     actor: ActorContext,
   ): Promise<HospitalizationOrderDetail | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findOrderById(tenantId, id);
+    const rec = await this.repo.persistedOrderById(tenantId, id);
     if (!rec) return null;
     return {
       order: toHospitalizationOrder(rec),
-      schedules: this.repo
-        .listSchedules(tenantId, id)
-        .map(toHospitalizationOrderSchedule),
+      schedules: (await this.repo.persistedSchedules(tenantId, id)).map(
+        toHospitalizationOrderSchedule,
+      ),
     };
   }
 
@@ -190,9 +190,9 @@ export class HospitalizationOrdersService {
     actor: ActorContext,
   ): Promise<HospitalizationOrder> {
     this.requireTenantScope(actor, tenantId);
-    this.requireActiveOrder(tenantId, id, "güncelleme");
+    await this.requireActiveOrder(tenantId, id, "güncelleme");
     const nowIso = new Date().toISOString();
-    this.repo.updateOrder(tenantId, id, {
+    await this.repo.persistedUpdateOrder(tenantId, id, {
       instructions: input.instructions,
       frequency: input.frequency,
       priority: input.priority,
@@ -211,7 +211,7 @@ export class HospitalizationOrdersService {
       { fieldsChanged: Object.keys(input) },
     );
 
-    const updated = this.repo.findOrderById(tenantId, id);
+    const updated = await this.repo.persistedOrderById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-HORD-0001",
@@ -229,7 +229,7 @@ export class HospitalizationOrdersService {
     actor: ActorContext,
   ): Promise<HospitalizationOrder> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findOrderById(tenantId, id);
+    const existing = await this.repo.persistedOrderById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-HORD-0001",
@@ -251,7 +251,7 @@ export class HospitalizationOrdersService {
       });
     }
     const nowIso = new Date().toISOString();
-    this.repo.updateOrder(tenantId, id, {
+    await this.repo.persistedUpdateOrder(tenantId, id, {
       status: "cancelled",
       cancelledAt: nowIso,
       cancelledBy: actor.actorId ?? "system",
@@ -270,7 +270,7 @@ export class HospitalizationOrdersService {
       { reason: input.reason },
     );
 
-    const updated = this.repo.findOrderById(tenantId, id);
+    const updated = await this.repo.persistedOrderById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-HORD-0001",
@@ -292,7 +292,11 @@ export class HospitalizationOrdersService {
     actor: ActorContext,
   ): Promise<HospitalizationOrderSchedule> {
     this.requireTenantScope(actor, tenantId);
-    const order = this.requireActiveOrder(tenantId, orderId, "schedule ekleme");
+    const order = await this.requireActiveOrder(
+      tenantId,
+      orderId,
+      "schedule ekleme",
+    );
     const nowIso = new Date().toISOString();
     const id = this.repo.nextId(tenantId, "hrs");
     const rec: HospitalizationOrderScheduleRecord = {
@@ -308,7 +312,7 @@ export class HospitalizationOrdersService {
       notes: input.notes ?? null,
       createdAt: nowIso,
     };
-    this.repo.insertSchedule(rec);
+    await this.repo.persistSchedule(rec);
 
     await this.audit.recordSimple(
       "audit:hospitalization_order.schedule_add",
@@ -332,7 +336,7 @@ export class HospitalizationOrdersService {
     actor: ActorContext,
   ): Promise<HospitalizationOrderScheduleListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.searchSchedules(tenantId, {
+    const result = await this.repo.persistedSearchSchedules(tenantId, {
       orderId: filters.orderId,
       status: filters.status,
       asOf: filters.asOf,
@@ -353,7 +357,10 @@ export class HospitalizationOrdersService {
     actor: ActorContext,
   ): Promise<HospitalizationOrderSchedule> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findScheduleById(tenantId, scheduleId);
+    const existing = await this.repo.persistedScheduleById(
+      tenantId,
+      scheduleId,
+    );
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-HORD-0002",
@@ -385,7 +392,10 @@ export class HospitalizationOrdersService {
       });
     }
     // Order hâlâ active mı?
-    const order = this.repo.findOrderById(tenantId, existing.orderId);
+    const order = await this.repo.persistedOrderById(
+      tenantId,
+      existing.orderId,
+    );
     if (order && order.status !== "active") {
       throw new DomainError({
         errorCode: "VET-HORD-0006",
@@ -402,7 +412,7 @@ export class HospitalizationOrdersService {
     }
 
     const nowIso = new Date().toISOString();
-    this.repo.updateSchedule(tenantId, scheduleId, {
+    await this.repo.persistedUpdateSchedule(tenantId, scheduleId, {
       appliedAt: input.appliedAt ?? nowIso,
       appliedByUserId: actor.actorId ?? "system",
     });
@@ -420,7 +430,7 @@ export class HospitalizationOrdersService {
       },
     );
 
-    const updated = this.repo.findScheduleById(tenantId, scheduleId);
+    const updated = await this.repo.persistedScheduleById(tenantId, scheduleId);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-HORD-0002",
@@ -438,7 +448,10 @@ export class HospitalizationOrdersService {
     actor: ActorContext,
   ): Promise<HospitalizationOrderSchedule> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findScheduleById(tenantId, scheduleId);
+    const existing = await this.repo.persistedScheduleById(
+      tenantId,
+      scheduleId,
+    );
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-HORD-0002",
@@ -470,7 +483,7 @@ export class HospitalizationOrdersService {
       });
     }
     const nowIso = new Date().toISOString();
-    this.repo.updateSchedule(tenantId, scheduleId, {
+    await this.repo.persistedUpdateSchedule(tenantId, scheduleId, {
       skippedAt: input.skippedAt ?? nowIso,
       skippedByUserId: actor.actorId ?? "system",
       skipReason: input.reason,
@@ -489,7 +502,7 @@ export class HospitalizationOrdersService {
       },
     );
 
-    const updated = this.repo.findScheduleById(tenantId, scheduleId);
+    const updated = await this.repo.persistedScheduleById(tenantId, scheduleId);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-HORD-0002",
@@ -504,12 +517,12 @@ export class HospitalizationOrdersService {
   // Private helpers
   // ===========================================================================
 
-  private requireActiveOrder(
+  private async requireActiveOrder(
     tenantId: string,
     id: string,
     subType: string,
-  ): HospitalizationOrderRecord {
-    const rec = this.repo.findOrderById(tenantId, id);
+  ): Promise<HospitalizationOrderRecord> {
+    const rec = await this.repo.persistedOrderById(tenantId, id);
     if (!rec) {
       throw new DomainError({
         errorCode: "VET-HORD-0001",

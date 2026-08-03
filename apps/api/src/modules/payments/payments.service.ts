@@ -302,7 +302,10 @@ export class PaymentsService {
     }
 
     // 2) Tutar hesapla (kalan tutar = amount - reversedAmount).
-    const currentReversed = await this.reversals.persistedSumReversedForPayment(tenantId, id);
+    const currentReversed = await this.reversals.persistedSumReversedForPayment(
+      tenantId,
+      id,
+    );
     const remaining = this.subtractAmounts(existing.amount, currentReversed);
     const reverseAmount = input.amount ?? remaining;
 
@@ -380,23 +383,28 @@ export class PaymentsService {
     } as const;
 
     // 7) Kasa etkisi: debit.
-    const reversalKasaEntry = input.cashRegisterEffect ?? true
-      ? this.makeKasaEntry(
-        tenantId,
-        existing,
-        "debit",
-        newStatus === "reversed"
-          ? "payment_reverse"
-          : "payment_partial_reverse",
-        actor.actorId ?? "system",
-        reversalId,
-        "payment_reversal",
-        nowIso,
-        amountCheck.value,
-      )
-      : null;
+    const reversalKasaEntry =
+      (input.cashRegisterEffect ?? true)
+        ? this.makeKasaEntry(
+            tenantId,
+            existing,
+            "debit",
+            newStatus === "reversed"
+              ? "payment_reverse"
+              : "payment_partial_reverse",
+            actor.actorId ?? "system",
+            reversalId,
+            "payment_reversal",
+            nowIso,
+            amountCheck.value,
+          )
+        : null;
     if (this.repo.usesPersistence()) {
-      await this.repo.persistReversalWithPaymentAndKasa(reversal, paymentPatch, reversalKasaEntry);
+      await this.repo.persistReversalWithPaymentAndKasa(
+        reversal,
+        paymentPatch,
+        reversalKasaEntry,
+      );
     } else {
       await this.reversals.persist(reversal);
       await this.repo.persistedUpdate(tenantId, id, paymentPatch);
@@ -496,12 +504,14 @@ export class PaymentsService {
       paymentId,
     );
     const remaining = this.subtractAmounts(payment.amount, totalReversed);
-    const items = (await this.reversals.persistedSearch(tenantId, {
-      paymentId,
-      limit: 1000,
-      offset: 0,
-      sort: "desc",
-    })).items;
+    const items = (
+      await this.reversals.persistedSearch(tenantId, {
+        paymentId,
+        limit: 1000,
+        offset: 0,
+        sort: "desc",
+      })
+    ).items;
     const lastReversalAt = items[0]?.reversedAt ?? null;
     return {
       paymentId,

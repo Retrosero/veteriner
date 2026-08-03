@@ -137,7 +137,9 @@ describe("SecurityEventsService", () => {
   describe("recordSecurityEvent", () => {
     it("yeni güvenlik kaydı oluşturur", () => {
       const out = service.recordSecurityEvent(makeInput(), STAFF_A);
-      expect(out.id).toMatch(/^sec-/);
+      expect(out.id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+      );
       expect(out.fingerprint).toHaveLength(16);
       expect(out.occurrenceCount).toBe(1);
       expect(out.tenantId).toBe(TENANT_A);
@@ -592,7 +594,9 @@ describe("SecurityEventsService", () => {
         },
         STAFF_A,
       );
-      expect(out.id).toMatch(/^sec-/);
+      expect(out.id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+      );
       expect(out.fingerprint).toHaveLength(16);
       // STAFF actor'undan türetilmiş olmalı.
       const rec = repo.all()[0]!;

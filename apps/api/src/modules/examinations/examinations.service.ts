@@ -427,7 +427,10 @@ export class ExaminationsService {
     actor: ActorContext,
   ): Promise<ExaminationAmend[]> {
     this.requireTenantScope(actor, tenantId);
-    const recs = await this.amends.persistedByExamination(tenantId, examinationId);
+    const recs = await this.amends.persistedByExamination(
+      tenantId,
+      examinationId,
+    );
     return recs.map((r) => toExaminationAmend(r));
   }
 

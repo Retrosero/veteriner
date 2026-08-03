@@ -54,7 +54,32 @@ export class StockAlertAcksRepository {
     set.add(record.alertKey);
     return record;
   }
-  public async persistedUpsert(record: StockAlertAckRecord): Promise<StockAlertAckRecord> { if (!this.prisma) return this.upsert(record); const row = await this.inTenant(record.tenantId, (tx) => tx.stockAlertAckRecord.upsert({ where: { tenantId_alertKey: { tenantId: record.tenantId, alertKey: record.alertKey } }, create: { id: `saa-${record.tenantId.slice(0, 8)}-${randomUUID()}`, ...record, acknowledgedAt: new Date(record.acknowledgedAt) }, update: { acknowledgedBy: record.acknowledgedBy, note: record.note, acknowledgedAt: new Date(record.acknowledgedAt) } })); return this.map(row); }
+  public async persistedUpsert(
+    record: StockAlertAckRecord,
+  ): Promise<StockAlertAckRecord> {
+    if (!this.prisma) return this.upsert(record);
+    const row = await this.inTenant(record.tenantId, (tx) =>
+      tx.stockAlertAckRecord.upsert({
+        where: {
+          tenantId_alertKey: {
+            tenantId: record.tenantId,
+            alertKey: record.alertKey,
+          },
+        },
+        create: {
+          id: `saa-${record.tenantId.slice(0, 8)}-${randomUUID()}`,
+          ...record,
+          acknowledgedAt: new Date(record.acknowledgedAt),
+        },
+        update: {
+          acknowledgedBy: record.acknowledgedBy,
+          note: record.note,
+          acknowledgedAt: new Date(record.acknowledgedAt),
+        },
+      }),
+    );
+    return this.map(row);
+  }
 
   /**
    * Belirli bir uyarı için ack kaydını döner. Bulunamazsa null.
@@ -67,7 +92,19 @@ export class StockAlertAcksRepository {
     const key = this.compositeKey(tenantId, `${alertType}:${targetId}`);
     return this.byTenantAndKey.get(key) ?? null;
   }
-  public async persistedFind(tenantId: string, alertType: "lowStock" | "expiring", targetId: string): Promise<StockAlertAckRecord | null> { if (!this.prisma) return this.find(tenantId, alertType, targetId); const row = await this.inTenant(tenantId, (tx) => tx.stockAlertAckRecord.findFirst({ where: { tenantId, alertType, targetId } })); return row ? this.map(row) : null; }
+  public async persistedFind(
+    tenantId: string,
+    alertType: "lowStock" | "expiring",
+    targetId: string,
+  ): Promise<StockAlertAckRecord | null> {
+    if (!this.prisma) return this.find(tenantId, alertType, targetId);
+    const row = await this.inTenant(tenantId, (tx) =>
+      tx.stockAlertAckRecord.findFirst({
+        where: { tenantId, alertType, targetId },
+      }),
+    );
+    return row ? this.map(row) : null;
+  }
 
   /**
    * Tenant-scoped tüm ack kayıtları. Compute sırasında uyarı
@@ -85,7 +122,15 @@ export class StockAlertAcksRepository {
     }
     return out;
   }
-  public async persistedListForTenant(tenantId: string): Promise<StockAlertAckRecord[]> { if (!this.prisma) return this.listForTenant(tenantId); const rows = await this.inTenant(tenantId, (tx) => tx.stockAlertAckRecord.findMany({ where: { tenantId } })); return rows.map((row) => this.map(row)); }
+  public async persistedListForTenant(
+    tenantId: string,
+  ): Promise<StockAlertAckRecord[]> {
+    if (!this.prisma) return this.listForTenant(tenantId);
+    const rows = await this.inTenant(tenantId, (tx) =>
+      tx.stockAlertAckRecord.findMany({ where: { tenantId } }),
+    );
+    return rows.map((row) => this.map(row));
+  }
 
   /**
    * Tüm ack'ları temizle. `resetAcknowledgements=true` refresh
@@ -101,7 +146,15 @@ export class StockAlertAcksRepository {
     set.clear();
     return removed;
   }
-  public async persistedClearForTenant(tenantId: string): Promise<number> { if (!this.prisma) return this.clearForTenant(tenantId); return this.inTenant(tenantId, async (tx) => (await tx.stockAlertAckRecord.deleteMany({ where: { tenantId } })).count); }
+  public async persistedClearForTenant(tenantId: string): Promise<number> {
+    if (!this.prisma) return this.clearForTenant(tenantId);
+    return this.inTenant(
+      tenantId,
+      async (tx) =>
+        (await tx.stockAlertAckRecord.deleteMany({ where: { tenantId } }))
+          .count,
+    );
+  }
 
   /** Test yardımcısı. */
   public clear(): void {
@@ -112,6 +165,26 @@ export class StockAlertAcksRepository {
   private compositeKey(tenantId: string, alertKey: string): string {
     return `${tenantId}|${alertKey}`;
   }
-  private map(row: DbAck): StockAlertAckRecord { return { tenantId: row.tenantId, alertKey: row.alertKey, alertType: row.alertType as StockAlertAckRecord["alertType"], targetId: row.targetId, acknowledgedAt: row.acknowledgedAt.toISOString(), acknowledgedBy: row.acknowledgedBy, note: row.note }; }
-  private async inTenant<T>(tenantId: string, callback: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> { if (!this.prisma) throw new Error("Prisma bağlantısı bulunamadı"); return this.prisma.$transaction(async (tx) => { await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`; await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`; return callback(tx); }); }
+  private map(row: DbAck): StockAlertAckRecord {
+    return {
+      tenantId: row.tenantId,
+      alertKey: row.alertKey,
+      alertType: row.alertType as StockAlertAckRecord["alertType"],
+      targetId: row.targetId,
+      acknowledgedAt: row.acknowledgedAt.toISOString(),
+      acknowledgedBy: row.acknowledgedBy,
+      note: row.note,
+    };
+  }
+  private async inTenant<T>(
+    tenantId: string,
+    callback: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    if (!this.prisma) throw new Error("Prisma bağlantısı bulunamadı");
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;
+      await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;
+      return callback(tx);
+    });
+  }
 }

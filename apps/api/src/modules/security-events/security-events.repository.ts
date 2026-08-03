@@ -1,11 +1,11 @@
 /**
- * @file SecurityEvent repository (in-memory).
+ * @file SecurityEvent repository (kalıcı kaynaklı indeks).
  * @module apps/api/modules/security-events/security-events.repository
  *
- * @description GOAL-105 (FAZ-10) güvenlik logları için in-memory
- * kayıt deposu. DB migration sonraya bırakıldı; production'a
- * geçişte Prisma `SecurityEvent` tablosu ile değiştirilecek
- * (API sözleşmesi sabit kalır).
+ * @description GOAL-105 (FAZ-10) güvenlik logları için hızlı bellek
+ * indeksi ve Prisma snapshot deposu. Uygulama açılışında kalıcı
+ * `SecurityEvent` satırları hydrate edilir; guard çağrıları senkron
+ * kalırken snapshot yazımı ana güvenlik akışını engellemez.
  *
  * Davranış:
  * - `recordEvent` aynı `fingerprint` için mevcut kayıt varsa
@@ -15,15 +15,24 @@
  * - `fingerprint` repo tarafından hesaplanmaz; servis katmanında
  *   üretilir.
  *
- * Tenant izolasyonu YOKTUR (SUPERADMIN cross-tenant görür);
- * ancak tenant filtresi ile sorgulanabilir.
+ * Tenant olayları fingerprint dahil tenant kapsamlı tutulur ve Prisma
+ * yazımı transaction-yerel RLS bağlamı altında yapılır. SUPERADMIN
+ * görünümü bellek indeksinden cross-tenant sorgu yapabilir.
  *
  * @since GOAL-105 (FAZ-10) güvenlik logları ve alarm kuralları core
  */
 
-import { Injectable } from "@nestjs/common";
+import { randomUUID } from "node:crypto";
+
+import { Injectable, OnModuleInit } from "@nestjs/common";
+
+import { PrismaService } from "../../prisma/prisma.service.js";
 
 import type { SecurityEventRecord } from "../../common/security-events/security-event.types.js";
+import type {
+  Prisma,
+  SecurityEvent as PrismaSecurityEvent,
+} from "@prisma/client";
 import type {
   SecurityEventCountry,
   SecurityEventModule,
@@ -52,17 +61,33 @@ export interface SecurityEventSearchFilters {
 }
 
 @Injectable()
-export class SecurityEventsRepository {
+export class SecurityEventsRepository implements OnModuleInit {
   /** key: id → security event. */
   private readonly byId = new Map<string, SecurityEventRecord>();
   /** fingerprint → id (sık karşılaşılan saldırıların hızlı tespiti). */
   private readonly byFingerprint = new Map<string, string>();
-  /** Global id counter. */
-  private readonly counter = { n: 0 };
+  /** Prisma olmayan birim testlerinde bellek içi adapter kullanılabilir. */
+  public constructor(private readonly prisma?: PrismaService) {}
+
+  /** Uygulama açılışında kalıcı olayları superadmin bağlamında hydrate eder. */
+  public async onModuleInit(): Promise<void> {
+    if (!this.prisma) return;
+    const rows = await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'true', true)`;
+      return tx.securityEvent.findMany({ orderBy: { lastSeenAt: "asc" } });
+    });
+    for (const row of rows) {
+      const record = this.fromPersistenceRecord(row);
+      this.byId.set(record.id, record);
+      this.byFingerprint.set(
+        this.fingerprintScopeKey(record.tenantId, record.fingerprint),
+        record.id,
+      );
+    }
+  }
 
   public nextId(): string {
-    this.counter.n += 1;
-    return `sec-${String(this.counter.n).padStart(10, "0")}`;
+    return randomUUID();
   }
 
   /**
@@ -90,7 +115,11 @@ export class SecurityEventsRepository {
     /** Mevcut kayıt yoksa default `alertSent=false`. */
     initialAlertSent?: boolean;
   }): SecurityEventRecord {
-    const existingId = this.byFingerprint.get(args.fingerprint);
+    const scopeKey = this.fingerprintScopeKey(
+      args.record.tenantId,
+      args.fingerprint,
+    );
+    const existingId = this.byFingerprint.get(scopeKey);
     if (existingId) {
       const existing = this.byId.get(existingId);
       if (existing) {
@@ -124,7 +153,7 @@ export class SecurityEventsRepository {
       alertSent: args.initialAlertSent ?? false,
     };
     this.byId.set(id, rec);
-    this.byFingerprint.set(args.fingerprint, id);
+    this.byFingerprint.set(scopeKey, id);
     return rec;
   }
 
@@ -132,10 +161,21 @@ export class SecurityEventsRepository {
     return this.byId.get(id) ?? null;
   }
 
-  public findByFingerprint(fingerprint: string): SecurityEventRecord | null {
-    const id = this.byFingerprint.get(fingerprint);
-    if (!id) return null;
-    return this.byId.get(id) ?? null;
+  public findByFingerprint(
+    fingerprint: string,
+    tenantId?: string | null,
+  ): SecurityEventRecord | null {
+    if (tenantId !== undefined) {
+      const id = this.byFingerprint.get(
+        this.fingerprintScopeKey(tenantId, fingerprint),
+      );
+      return id ? (this.byId.get(id) ?? null) : null;
+    }
+    return (
+      Array.from(this.byId.values()).find(
+        (record) => record.fingerprint === fingerprint,
+      ) ?? null
+    );
   }
 
   /**
@@ -194,13 +234,14 @@ export class SecurityEventsRepository {
    * tarafından gönderildikten sonra çağrılır; aynı fingerprint
    * için tekrar gönderim engellenir.
    */
-  public markAlertSent(fingerprint: string): boolean {
-    const id = this.byFingerprint.get(fingerprint);
-    if (!id) return false;
-    const rec = this.byId.get(id);
+  public markAlertSent(fingerprint: string, tenantId?: string | null): boolean {
+    const rec =
+      tenantId === undefined
+        ? this.findByFingerprint(fingerprint)
+        : this.findByFingerprint(fingerprint, tenantId);
     if (!rec) return false;
     rec.alertSent = true;
-    this.byId.set(id, rec);
+    this.byId.set(rec.id, rec);
     return true;
   }
 
@@ -210,7 +251,118 @@ export class SecurityEventsRepository {
   public clear(): void {
     this.byId.clear();
     this.byFingerprint.clear();
-    this.counter.n = 0;
+  }
+
+  /**
+   * Bellek içi aggregate'in PII maskeli kalıcı kopyasını yazar.
+   * @description Security guard ve exception akışını engellememek için
+   * service bu işlemi best-effort başlatır. Tenant olaylarında RLS tenant
+   * bağlamı, sistem olaylarında dar system-write bağlamı kurulur.
+   * @param record
+   */
+  public async persistSnapshot(record: SecurityEventRecord): Promise<void> {
+    if (!this.prisma) return;
+    const write = async (tx: Prisma.TransactionClient): Promise<void> => {
+      const existing = await tx.securityEvent.findFirst({
+        where: { tenantId: record.tenantId, fingerprint: record.fingerprint },
+        select: { id: true },
+      });
+      const data = this.toPersistenceData(record);
+      if (existing) {
+        await tx.securityEvent.update({ where: { id: existing.id }, data });
+        return;
+      }
+      // PostgreSQL'de failed INSERT sonrası aynı transaction içinde sorgu
+      // çalıştırılamaz. Bu nedenle çakışma, dıştaki best-effort çağrıda
+      // yeniden denemeye bırakılır; burada transaction abort edilmez.
+      await tx.securityEvent.create({ data: { id: record.id, ...data } });
+    };
+
+    if (record.tenantId) {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT set_config('app.tenant_id', ${record.tenantId}, true)`;
+        await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'false', true)`;
+        await write(tx);
+      });
+      return;
+    }
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'false', true)`;
+      await tx.$executeRaw`SELECT set_config('app.system_write', 'true', true)`;
+      await write(tx);
+    });
+  }
+
+  private fingerprintScopeKey(
+    tenantId: string | null,
+    fingerprint: string,
+  ): string {
+    return `${tenantId ?? "__system__"}|${fingerprint}`;
+  }
+
+  private toPersistenceData(
+    record: SecurityEventRecord,
+  ): Prisma.SecurityEventUncheckedCreateInput {
+    return {
+      requestId: record.requestId,
+      tenantId: record.tenantId,
+      branchId: record.branchId,
+      userId: record.userId,
+      actorType: record.actorType,
+      type: record.type,
+      module: record.module,
+      route: record.route,
+      release: record.release,
+      severity: record.severity,
+      fingerprint: record.fingerprint,
+      errorCode: record.errorCode,
+      message: record.message,
+      statusCode: record.statusCode,
+      ipAddress: record.ipAddress,
+      userAgentHash: record.userAgentHash,
+      context: record.context as Prisma.InputJsonValue,
+      country: record.country,
+      occurredAt: new Date(record.occurredAt),
+      firstSeenAt: new Date(record.firstSeenAt),
+      lastSeenAt: new Date(record.lastSeenAt),
+      occurrenceCount: record.occurrenceCount,
+      alertSent: record.alertSent,
+    };
+  }
+
+  private fromPersistenceRecord(row: PrismaSecurityEvent): SecurityEventRecord {
+    return {
+      id: row.id,
+      requestId: row.requestId,
+      tenantId: row.tenantId,
+      branchId: row.branchId,
+      userId: row.userId,
+      actorType: row.actorType as SecurityEventRecord["actorType"],
+      type: row.type as SecurityEventRecord["type"],
+      module: row.module as SecurityEventRecord["module"],
+      route: row.route,
+      release: row.release,
+      severity: row.severity as SecurityEventRecord["severity"],
+      fingerprint: row.fingerprint,
+      errorCode: row.errorCode as SecurityEventRecord["errorCode"],
+      message: row.message,
+      statusCode: row.statusCode,
+      ipAddress: row.ipAddress,
+      userAgentHash: row.userAgentHash,
+      context: this.toContextRecord(row.context),
+      country: row.country as SecurityEventRecord["country"],
+      occurredAt: row.occurredAt.toISOString(),
+      firstSeenAt: row.firstSeenAt.toISOString(),
+      lastSeenAt: row.lastSeenAt.toISOString(),
+      occurrenceCount: row.occurrenceCount,
+      alertSent: row.alertSent,
+    };
+  }
+
+  private toContextRecord(value: Prisma.JsonValue): Record<string, unknown> {
+    return value !== null && typeof value === "object" && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {};
   }
 
   /* ------------------------------------------------------------------------
@@ -241,9 +393,34 @@ export class SecurityEventsRepository {
       const rec = this.byId.get(id);
       if (!rec) continue;
       this.byId.delete(id);
-      this.byFingerprint.delete(rec.fingerprint);
+      this.byFingerprint.delete(
+        this.fingerprintScopeKey(rec.tenantId, rec.fingerprint),
+      );
     }
     return idsToDelete.length;
+  }
+
+  /**
+   * Kalıcı security event kayıtlarını ve bellek indeksini aynı cutoff ile
+   * süpürür. Retention işi bu metodu kullanır; aksi halde uygulama yeniden
+   * başladığında yalnızca bellekten silinen kayıtlar tekrar görünürdü.
+   */
+  public async expirePersistedOlderThan(args: {
+    cutoff: string;
+    tenantId?: string | null;
+  }): Promise<number> {
+    if (!this.prisma) return this.expireOlderThan(args);
+    const deleted = await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'true', true)`;
+      return tx.securityEvent.deleteMany({
+        where: {
+          ...(args.tenantId !== undefined ? { tenantId: args.tenantId } : {}),
+          lastSeenAt: { lte: new Date(args.cutoff) },
+        },
+      });
+    });
+    this.expireOlderThan(args);
+    return deleted.count;
   }
 
   /**

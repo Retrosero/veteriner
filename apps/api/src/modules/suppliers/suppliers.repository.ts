@@ -81,30 +81,109 @@ export class SuppliersRepository {
 
   public async persist(record: SupplierRecord): Promise<SupplierRecord> {
     if (!this.prisma) return this.insert(record);
-    const row = await this.inTenant(record.tenantId, (tx) => tx.supplierRecord.create({ data: { ...record, createdAt: new Date(record.createdAt), updatedAt: new Date(record.updatedAt), archivedAt: record.archivedAt ? new Date(record.archivedAt) : null } }));
+    const row = await this.inTenant(record.tenantId, (tx) =>
+      tx.supplierRecord.create({
+        data: {
+          ...record,
+          createdAt: new Date(record.createdAt),
+          updatedAt: new Date(record.updatedAt),
+          archivedAt: record.archivedAt ? new Date(record.archivedAt) : null,
+        },
+      }),
+    );
     return this.map(row);
   }
-  public async persistedById(tenantId: string, id: string): Promise<SupplierRecord | null> {
+  public async persistedById(
+    tenantId: string,
+    id: string,
+  ): Promise<SupplierRecord | null> {
     if (!this.prisma) return this.findById(tenantId, id);
-    const row = await this.inTenant(tenantId, (tx) => tx.supplierRecord.findFirst({ where: { tenantId, id } }));
+    const row = await this.inTenant(tenantId, (tx) =>
+      tx.supplierRecord.findFirst({ where: { tenantId, id } }),
+    );
     return row ? this.map(row) : null;
   }
-  public async persistedByCode(tenantId: string, code: string): Promise<SupplierRecord | null> {
+  public async persistedByCode(
+    tenantId: string,
+    code: string,
+  ): Promise<SupplierRecord | null> {
     if (!this.prisma) return this.findByCode(tenantId, code);
-    const row = await this.inTenant(tenantId, (tx) => tx.supplierRecord.findUnique({ where: { tenantId_code: { tenantId, code } } }));
+    const row = await this.inTenant(tenantId, (tx) =>
+      tx.supplierRecord.findUnique({
+        where: { tenantId_code: { tenantId, code } },
+      }),
+    );
     return row ? this.map(row) : null;
   }
-  public async persistedSearch(tenantId: string, filters: SupplierSearchFilters): Promise<{ items: SupplierRecord[]; total: number }> {
+  public async persistedSearch(
+    tenantId: string,
+    filters: SupplierSearchFilters,
+  ): Promise<{ items: SupplierRecord[]; total: number }> {
     if (!this.prisma) return this.search(tenantId, filters);
-    const where: Prisma.SupplierRecordWhereInput = { tenantId, ...(!filters.includeArchived ? { archivedAt: null } : {}), ...(filters.type ? { type: filters.type } : {}), ...(filters.active !== undefined ? { active: filters.active } : {}), ...(filters.search?.trim() ? { OR: ["name", "code", "taxId", "email"].map((field) => ({ [field]: { contains: filters.search!.trim(), mode: "insensitive" } })) } : {}) };
-    return this.inTenant(tenantId, async (tx) => { const [items, total] = await Promise.all([tx.supplierRecord.findMany({ where, orderBy: { createdAt: "desc" }, skip: filters.offset, take: filters.limit }), tx.supplierRecord.count({ where })]); return { items: items.map((row) => this.map(row)), total }; });
+    const where: Prisma.SupplierRecordWhereInput = {
+      tenantId,
+      ...(!filters.includeArchived ? { archivedAt: null } : {}),
+      ...(filters.type ? { type: filters.type } : {}),
+      ...(filters.active !== undefined ? { active: filters.active } : {}),
+      ...(filters.search?.trim()
+        ? {
+            OR: ["name", "code", "taxId", "email"].map((field) => ({
+              [field]: {
+                contains: filters.search!.trim(),
+                mode: "insensitive",
+              },
+            })),
+          }
+        : {}),
+    };
+    return this.inTenant(tenantId, async (tx) => {
+      const [items, total] = await Promise.all([
+        tx.supplierRecord.findMany({
+          where,
+          orderBy: { createdAt: "desc" },
+          skip: filters.offset,
+          take: filters.limit,
+        }),
+        tx.supplierRecord.count({ where }),
+      ]);
+      return { items: items.map((row) => this.map(row)), total };
+    });
   }
-  public async persistedUpdate(tenantId: string, id: string, patch: SupplierPatch): Promise<SupplierRecord | null> {
+  public async persistedUpdate(
+    tenantId: string,
+    id: string,
+    patch: SupplierPatch,
+  ): Promise<SupplierRecord | null> {
     if (!this.prisma) return this.update(tenantId, id, patch);
     const data: Prisma.SupplierRecordUpdateManyMutationInput = {
-      ...(patch.name !== undefined ? { name: patch.name } : {}), ...(patch.code !== undefined ? { code: patch.code } : {}), ...(patch.type !== undefined ? { type: patch.type } : {}), ...(patch.taxId !== undefined ? { taxId: patch.taxId } : {}), ...(patch.contactName !== undefined ? { contactName: patch.contactName } : {}), ...(patch.email !== undefined ? { email: patch.email } : {}), ...(patch.phone !== undefined ? { phone: patch.phone } : {}), ...(patch.address !== undefined ? { address: patch.address } : {}), ...(patch.notes !== undefined ? { notes: patch.notes } : {}), ...(patch.active !== undefined ? { active: patch.active } : {}), ...(patch.updatedAt !== undefined ? { updatedAt: new Date(patch.updatedAt) } : {}), ...(patch.archivedAt !== undefined ? { archivedAt: patch.archivedAt ? new Date(patch.archivedAt) : null } : {}), ...(patch.archivedBy !== undefined ? { archivedBy: patch.archivedBy } : {}), ...(patch.archiveReason !== undefined ? { archiveReason: patch.archiveReason } : {}),
+      ...(patch.name !== undefined ? { name: patch.name } : {}),
+      ...(patch.code !== undefined ? { code: patch.code } : {}),
+      ...(patch.type !== undefined ? { type: patch.type } : {}),
+      ...(patch.taxId !== undefined ? { taxId: patch.taxId } : {}),
+      ...(patch.contactName !== undefined
+        ? { contactName: patch.contactName }
+        : {}),
+      ...(patch.email !== undefined ? { email: patch.email } : {}),
+      ...(patch.phone !== undefined ? { phone: patch.phone } : {}),
+      ...(patch.address !== undefined ? { address: patch.address } : {}),
+      ...(patch.notes !== undefined ? { notes: patch.notes } : {}),
+      ...(patch.active !== undefined ? { active: patch.active } : {}),
+      ...(patch.updatedAt !== undefined
+        ? { updatedAt: new Date(patch.updatedAt) }
+        : {}),
+      ...(patch.archivedAt !== undefined
+        ? { archivedAt: patch.archivedAt ? new Date(patch.archivedAt) : null }
+        : {}),
+      ...(patch.archivedBy !== undefined
+        ? { archivedBy: patch.archivedBy }
+        : {}),
+      ...(patch.archiveReason !== undefined
+        ? { archiveReason: patch.archiveReason }
+        : {}),
     };
-    const updated = await this.inTenant(tenantId, (tx) => tx.supplierRecord.updateMany({ where: { tenantId, id }, data }));
+    const updated = await this.inTenant(tenantId, (tx) =>
+      tx.supplierRecord.updateMany({ where: { tenantId, id }, data }),
+    );
     return updated.count ? this.persistedById(tenantId, id) : null;
   }
 
@@ -195,6 +274,24 @@ export class SuppliersRepository {
   private codeKey(tenantId: string, code: string): string {
     return `${tenantId}|${code}`;
   }
-  private map(row: DbSupplier): SupplierRecord { return { ...row, type: row.type as SupplierType, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(), archivedAt: row.archivedAt?.toISOString() ?? null }; }
-  private async inTenant<T>(tenantId: string, callback: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> { if (!this.prisma) throw new Error("Prisma bağlantısı bulunamadı"); return this.prisma.$transaction(async (tx) => { await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`; await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`; return callback(tx); }); }
+  private map(row: DbSupplier): SupplierRecord {
+    return {
+      ...row,
+      type: row.type as SupplierType,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+      archivedAt: row.archivedAt?.toISOString() ?? null,
+    };
+  }
+  private async inTenant<T>(
+    tenantId: string,
+    callback: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    if (!this.prisma) throw new Error("Prisma bağlantısı bulunamadı");
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;
+      await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;
+      return callback(tx);
+    });
+  }
 }

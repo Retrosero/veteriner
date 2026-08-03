@@ -14,7 +14,10 @@
  */
 
 import { Injectable, Optional } from "@nestjs/common";
-import type { Prisma, VaccineProtocolRecord as DbProtocol } from "@prisma/client";
+import type {
+  Prisma,
+  VaccineProtocolRecord as DbProtocol,
+} from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { PrismaService } from "../../prisma/prisma.service.js";
 
@@ -57,10 +60,92 @@ export class VaccinesRepository {
     return `vacp-${tenantId.slice(0, 8)}-${String(n).padStart(6, "0")}`;
   }
 
-  public async persist(record:VaccineProtocolRecord):Promise<VaccineProtocolRecord>{if(!this.prisma)return this.insert(record);const row=await this.inTenant(record.tenantId,tx=>tx.vaccineProtocolRecord.create({data:{...record,defaultDose:record.defaultDose as Prisma.InputJsonValue,steps:record.steps as Prisma.InputJsonValue,createdAt:new Date(record.createdAt),updatedAt:new Date(record.updatedAt),archivedAt:record.archivedAt?new Date(record.archivedAt):null}}));this.insert(record);return this.map(row);}
-  public async persistedById(tenantId:string,id:string):Promise<VaccineProtocolRecord|null>{if(!this.prisma)return this.findById(tenantId,id);const row=await this.inTenant(tenantId,tx=>tx.vaccineProtocolRecord.findFirst({where:{tenantId,id}}));return row?this.map(row):null;}
-  public async persistedSearch(tenantId:string,f:Parameters<VaccinesRepository["search"]>[1]):Promise<{items:VaccineProtocolRecord[];total:number}>{if(!this.prisma)return this.search(tenantId,f);const where:Prisma.VaccineProtocolRecordWhereInput={tenantId,archivedAt:null,...(f.species?{species:f.species}:{}),...(f.category?{category:f.category}:{}),...(f.isCore!==undefined?{isCore:f.isCore}:{})};const[rows,total]=await this.inTenant(tenantId,tx=>Promise.all([tx.vaccineProtocolRecord.findMany({where,orderBy:{createdAt:"desc"},skip:f.offset,take:f.limit}),tx.vaccineProtocolRecord.count({where})]));return{items:rows.map(r=>this.map(r)),total};}
-  public async persistedUpdate(tenantId:string,id:string,p:VaccineProtocolPatch):Promise<VaccineProtocolRecord|null>{if(!this.prisma)return this.update(tenantId,id,p);const data:Prisma.VaccineProtocolRecordUpdateManyMutationInput={...(p.name!==undefined?{name:p.name}:{}),...(p.category!==undefined?{category:p.category}:{}),...(p.manufacturer!==undefined?{manufacturer:p.manufacturer}:{}),...(p.defaultDose!==undefined?{defaultDose:p.defaultDose as Prisma.InputJsonValue}:{}),...(p.steps!==undefined?{steps:p.steps as Prisma.InputJsonValue}:{}),...(p.totalDurationMonths!==undefined?{totalDurationMonths:p.totalDurationMonths}:{}),...(p.isCore!==undefined?{isCore:p.isCore}:{}),...(p.updatedAt!==undefined?{updatedAt:new Date(p.updatedAt)}:{}),...(p.archivedAt!==undefined?{archivedAt:p.archivedAt?new Date(p.archivedAt):null}:{})};const out=await this.inTenant(tenantId,tx=>tx.vaccineProtocolRecord.updateMany({where:{tenantId,id},data}));return out.count?this.persistedById(tenantId,id):null;}
+  public async persist(
+    record: VaccineProtocolRecord,
+  ): Promise<VaccineProtocolRecord> {
+    if (!this.prisma) return this.insert(record);
+    const row = await this.inTenant(record.tenantId, (tx) =>
+      tx.vaccineProtocolRecord.create({
+        data: {
+          ...record,
+          defaultDose: record.defaultDose as Prisma.InputJsonValue,
+          steps: record.steps as Prisma.InputJsonValue,
+          createdAt: new Date(record.createdAt),
+          updatedAt: new Date(record.updatedAt),
+          archivedAt: record.archivedAt ? new Date(record.archivedAt) : null,
+        },
+      }),
+    );
+    this.insert(record);
+    return this.map(row);
+  }
+  public async persistedById(
+    tenantId: string,
+    id: string,
+  ): Promise<VaccineProtocolRecord | null> {
+    if (!this.prisma) return this.findById(tenantId, id);
+    const row = await this.inTenant(tenantId, (tx) =>
+      tx.vaccineProtocolRecord.findFirst({ where: { tenantId, id } }),
+    );
+    return row ? this.map(row) : null;
+  }
+  public async persistedSearch(
+    tenantId: string,
+    f: Parameters<VaccinesRepository["search"]>[1],
+  ): Promise<{ items: VaccineProtocolRecord[]; total: number }> {
+    if (!this.prisma) return this.search(tenantId, f);
+    const where: Prisma.VaccineProtocolRecordWhereInput = {
+      tenantId,
+      archivedAt: null,
+      ...(f.species ? { species: f.species } : {}),
+      ...(f.category ? { category: f.category } : {}),
+      ...(f.isCore !== undefined ? { isCore: f.isCore } : {}),
+    };
+    const [rows, total] = await this.inTenant(tenantId, (tx) =>
+      Promise.all([
+        tx.vaccineProtocolRecord.findMany({
+          where,
+          orderBy: { createdAt: "desc" },
+          skip: f.offset,
+          take: f.limit,
+        }),
+        tx.vaccineProtocolRecord.count({ where }),
+      ]),
+    );
+    return { items: rows.map((r) => this.map(r)), total };
+  }
+  public async persistedUpdate(
+    tenantId: string,
+    id: string,
+    p: VaccineProtocolPatch,
+  ): Promise<VaccineProtocolRecord | null> {
+    if (!this.prisma) return this.update(tenantId, id, p);
+    const data: Prisma.VaccineProtocolRecordUpdateManyMutationInput = {
+      ...(p.name !== undefined ? { name: p.name } : {}),
+      ...(p.category !== undefined ? { category: p.category } : {}),
+      ...(p.manufacturer !== undefined ? { manufacturer: p.manufacturer } : {}),
+      ...(p.defaultDose !== undefined
+        ? { defaultDose: p.defaultDose as Prisma.InputJsonValue }
+        : {}),
+      ...(p.steps !== undefined
+        ? { steps: p.steps as Prisma.InputJsonValue }
+        : {}),
+      ...(p.totalDurationMonths !== undefined
+        ? { totalDurationMonths: p.totalDurationMonths }
+        : {}),
+      ...(p.isCore !== undefined ? { isCore: p.isCore } : {}),
+      ...(p.updatedAt !== undefined
+        ? { updatedAt: new Date(p.updatedAt) }
+        : {}),
+      ...(p.archivedAt !== undefined
+        ? { archivedAt: p.archivedAt ? new Date(p.archivedAt) : null }
+        : {}),
+    };
+    const out = await this.inTenant(tenantId, (tx) =>
+      tx.vaccineProtocolRecord.updateMany({ where: { tenantId, id }, data }),
+    );
+    return out.count ? this.persistedById(tenantId, id) : null;
+  }
 
   public insert(record: VaccineProtocolRecord): VaccineProtocolRecord {
     this.byId.set(record.id, record);
@@ -132,8 +217,29 @@ export class VaccinesRepository {
   public toRecord(args: VaccineProtocolRecord): VaccineProtocolRecord {
     return { ...args };
   }
-  private map(row:DbProtocol):VaccineProtocolRecord{return{...row,species:row.species as VaccineProtocolRecord["species"],category:row.category as VaccineProtocolRecord["category"],defaultDose:row.defaultDose as VaccineProtocolRecord["defaultDose"],steps:row.steps as unknown as VaccineProtocolRecord["steps"],createdAt:row.createdAt.toISOString(),updatedAt:row.updatedAt.toISOString(),archivedAt:row.archivedAt?.toISOString()??null};}
-  private async inTenant<T>(tenantId:string,callback:(tx:Prisma.TransactionClient)=>Promise<T>):Promise<T>{if(!this.prisma)throw new Error("Prisma bağlantısı bulunamadı");return this.prisma.$transaction(async tx=>{await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;return callback(tx);});}
+  private map(row: DbProtocol): VaccineProtocolRecord {
+    return {
+      ...row,
+      species: row.species as VaccineProtocolRecord["species"],
+      category: row.category as VaccineProtocolRecord["category"],
+      defaultDose: row.defaultDose as VaccineProtocolRecord["defaultDose"],
+      steps: row.steps as unknown as VaccineProtocolRecord["steps"],
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+      archivedAt: row.archivedAt?.toISOString() ?? null,
+    };
+  }
+  private async inTenant<T>(
+    tenantId: string,
+    callback: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    if (!this.prisma) throw new Error("Prisma bağlantısı bulunamadı");
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;
+      await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;
+      return callback(tx);
+    });
+  }
 }
 
 /** Record → public VaccineProtocol (API response). */

@@ -19,14 +19,17 @@ import type { Prisma } from "@prisma/client";
 
 const migratorUrl = process.env["DATABASE_MIGRATOR_URL"];
 const runtimeUrl = process.env["DATABASE_URL"];
-if (!migratorUrl || !runtimeUrl) throw new Error("DATABASE_URL ve DATABASE_MIGRATOR_URL zorunludur.");
+if (!migratorUrl || !runtimeUrl)
+  throw new Error("DATABASE_URL ve DATABASE_MIGRATOR_URL zorunludur.");
 
 const admin = new PrismaClient({ datasources: { db: { url: migratorUrl } } });
 const appRole = "vetniva_error_events_e2e_app";
 const appUrl = new URL(runtimeUrl);
 appUrl.username = appRole;
 appUrl.password = "vetniva-error-events-e2e-password";
-const app = new PrismaClient({ datasources: { db: { url: appUrl.toString() } } });
+const app = new PrismaClient({
+  datasources: { db: { url: appUrl.toString() } },
+});
 const repository = new ErrorEventsRepository(app as unknown as PrismaService);
 const tenantA = randomUUID();
 const tenantB = randomUUID();
@@ -44,7 +47,10 @@ async function dropTestRole(): Promise<void> {
   `);
 }
 
-async function asTenant<T>(tenantId: string, action: (tx: Tx) => Promise<T>): Promise<T> {
+async function asTenant<T>(
+  tenantId: string,
+  action: (tx: Tx) => Promise<T>,
+): Promise<T> {
   return app.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
     await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'false', true)`;
@@ -54,28 +60,68 @@ async function asTenant<T>(tenantId: string, action: (tx: Tx) => Promise<T>): Pr
 
 function record(tenantId: string): ErrorEventRecord {
   const now = new Date().toISOString();
-  return { id: randomUUID(), requestId: randomUUID(), tenantId, branchId: null, userId: null,
-    actorType: "system", module: "unknown", route: "/e2e/error-events", release: "e2e",
-    severity: "error", fingerprint, errorCode: "VET-SYSTEM-0001", message: "RLS proof",
-    statusCode: 500, stack: null, context: {}, country: "TR", occurredAt: now,
-    firstSeenAt: now, lastSeenAt: now, occurrenceCount: 1, status: "new", assignedToUserId: null };
+  return {
+    id: randomUUID(),
+    requestId: randomUUID(),
+    tenantId,
+    branchId: null,
+    userId: null,
+    actorType: "system",
+    module: "unknown",
+    route: "/e2e/error-events",
+    release: "e2e",
+    severity: "error",
+    fingerprint,
+    errorCode: "VET-SYSTEM-0001",
+    message: "RLS proof",
+    statusCode: 500,
+    stack: null,
+    context: {},
+    country: "TR",
+    occurredAt: now,
+    firstSeenAt: now,
+    lastSeenAt: now,
+    occurrenceCount: 1,
+    status: "new",
+    assignedToUserId: null,
+  };
 }
 
 describe("Error events PostgreSQL RLS", () => {
   beforeAll(async () => {
     await dropTestRole();
-    await admin.$executeRawUnsafe(`CREATE ROLE ${appRole} LOGIN PASSWORD 'vetniva-error-events-e2e-password' NOSUPERUSER NOBYPASSRLS`);
+    await admin.$executeRawUnsafe(
+      `CREATE ROLE ${appRole} LOGIN PASSWORD 'vetniva-error-events-e2e-password' NOSUPERUSER NOBYPASSRLS`,
+    );
     await admin.$executeRawUnsafe(`GRANT USAGE ON SCHEMA public TO ${appRole}`);
-    await admin.$executeRawUnsafe(`GRANT SELECT, INSERT, UPDATE ON error_events TO ${appRole}`);
-    await admin.tenant.createMany({ data: [
-      { id: tenantA, slug: `err-rls-a-${tenantA}`, name: "Error RLS A", country: "TR" },
-      { id: tenantB, slug: `err-rls-b-${tenantB}`, name: "Error RLS B", country: "TR" },
-    ] });
+    await admin.$executeRawUnsafe(
+      `GRANT SELECT, INSERT, UPDATE ON error_events TO ${appRole}`,
+    );
+    await admin.tenant.createMany({
+      data: [
+        {
+          id: tenantA,
+          slug: `err-rls-a-${tenantA}`,
+          name: "Error RLS A",
+          country: "TR",
+        },
+        {
+          id: tenantB,
+          slug: `err-rls-b-${tenantB}`,
+          name: "Error RLS B",
+          country: "TR",
+        },
+      ],
+    });
   });
 
   afterAll(async () => {
-    await admin.errorEvent.deleteMany({ where: { tenantId: { in: [tenantA, tenantB] } } });
-    await admin.tenant.deleteMany({ where: { id: { in: [tenantA, tenantB] } } });
+    await admin.errorEvent.deleteMany({
+      where: { tenantId: { in: [tenantA, tenantB] } },
+    });
+    await admin.tenant.deleteMany({
+      where: { id: { in: [tenantA, tenantB] } },
+    });
     await dropTestRole();
     await app.$disconnect();
     await admin.$disconnect();
@@ -85,9 +131,15 @@ describe("Error events PostgreSQL RLS", () => {
     await repository.persistSnapshot(record(tenantA));
     await repository.persistSnapshot(record(tenantB));
 
-    await expect(asTenant(tenantA, (tx) => tx.errorEvent.count())).resolves.toBe(1);
-    await expect(asTenant(tenantB, (tx) => tx.errorEvent.count())).resolves.toBe(1);
+    await expect(
+      asTenant(tenantA, (tx) => tx.errorEvent.count()),
+    ).resolves.toBe(1);
+    await expect(
+      asTenant(tenantB, (tx) => tx.errorEvent.count()),
+    ).resolves.toBe(1);
     await expect(app.errorEvent.count()).resolves.toBe(0);
-    await expect(admin.errorEvent.count({ where: { fingerprint } })).resolves.toBe(2);
+    await expect(
+      admin.errorEvent.count({ where: { fingerprint } }),
+    ).resolves.toBe(2);
   });
 });

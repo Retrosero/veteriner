@@ -708,32 +708,86 @@ export class VaccineApplicationsService {
       args.lot,
       actor,
     );
-    if (!lot || lot.expiryDate.slice(0, 10) !== args.expiryDate.slice(0, 10)) return null;
+    if (!lot || lot.expiryDate.slice(0, 10) !== args.expiryDate.slice(0, 10))
+      return null;
     const balance = await this.vaccineStockBalance(args, lot.id, actor);
     if (balance < args.quantity) return null;
     return this.stockMovements.createSystemMovement(
       args.tenantId,
-      { type: "vaccination", productId: args.stockProductId, lotId: lot.id, quantity: `-${args.quantity}`, occurredAt: new Date().toISOString() },
+      {
+        type: "vaccination",
+        productId: args.stockProductId,
+        lotId: lot.id,
+        quantity: `-${args.quantity}`,
+        occurredAt: new Date().toISOString(),
+      },
       actor,
-      { systemSourceType: "vaccine_application", systemSourceId: args.applicationId },
+      {
+        systemSourceType: "vaccine_application",
+        systemSourceId: args.applicationId,
+      },
     );
   }
 
-  private async reverseVaccineStock(tenantId: string, movementId: string, createdBy: string, reason: string, actor: ActorContext): Promise<{ id: string } | null> {
-    if (!this.stockMovements) return this.stock.reverse(tenantId, movementId, createdBy);
-    return this.stockMovements.reverseMovement(tenantId, movementId, { reason }, actor);
+  private async reverseVaccineStock(
+    tenantId: string,
+    movementId: string,
+    createdBy: string,
+    reason: string,
+    actor: ActorContext,
+  ): Promise<{ id: string } | null> {
+    if (!this.stockMovements)
+      return this.stock.reverse(tenantId, movementId, createdBy);
+    return this.stockMovements.reverseMovement(
+      tenantId,
+      movementId,
+      { reason },
+      actor,
+    );
   }
 
-  private async vaccineStockBalance(args: { tenantId: string; stockProductId: string; lot: string; expiryDate: string }, lotId?: string, actor?: ActorContext): Promise<number> {
-    if (!this.stockMovements || !this.inventory) return this.stock.getBalance(args);
-    const resolvedLot = lotId ? { id: lotId } : await this.inventory.getLotByProductAndNumber(args.tenantId, args.stockProductId, args.lot, actor ?? this.systemActor(args.tenantId, "system"));
+  private async vaccineStockBalance(
+    args: {
+      tenantId: string;
+      stockProductId: string;
+      lot: string;
+      expiryDate: string;
+    },
+    lotId?: string,
+    actor?: ActorContext,
+  ): Promise<number> {
+    if (!this.stockMovements || !this.inventory)
+      return this.stock.getBalance(args);
+    const resolvedLot = lotId
+      ? { id: lotId }
+      : await this.inventory.getLotByProductAndNumber(
+          args.tenantId,
+          args.stockProductId,
+          args.lot,
+          actor ?? this.systemActor(args.tenantId, "system"),
+        );
     if (!resolvedLot) return 0;
-    const balances = await this.stockMovements.listPersistentBalances(args.tenantId, actor ?? this.systemActor(args.tenantId, "system"), { productId: args.stockProductId, lotId: resolvedLot.id });
+    const balances = await this.stockMovements.listPersistentBalances(
+      args.tenantId,
+      actor ?? this.systemActor(args.tenantId, "system"),
+      { productId: args.stockProductId, lotId: resolvedLot.id },
+    );
     return Number(balances.items[0]?.netQuantity ?? "0");
   }
 
   private systemActor(tenantId: string, actorId: string): ActorContext {
-    return { actorId, actorType: "system", role: "STAFF", tenantId, branchId: null, isSuperadmin: false, correlationId: "vaccine-stock", ipAddress: null, userAgentHash: null, source: "system" };
+    return {
+      actorId,
+      actorType: "system",
+      role: "STAFF",
+      tenantId,
+      branchId: null,
+      isSuperadmin: false,
+      correlationId: "vaccine-stock",
+      ipAddress: null,
+      userAgentHash: null,
+      source: "system",
+    };
   }
 
   // -------------------------------------------------------------------------

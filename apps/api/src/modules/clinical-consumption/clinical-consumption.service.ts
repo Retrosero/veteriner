@@ -130,9 +130,9 @@ export class ClinicalConsumptionService {
     this.requireTenantScope(actor, tenantId);
     if (lines.length === 0) return null;
     // Idempotency: aynı prescription için zaten kayıt varsa yenisi oluşturma.
-    const existing = (await this.repo
-      .persistedByContextRef(tenantId, prescriptionId))
-      .find((r) => r.context === "prescription" && r.status === "recorded");
+    const existing = (
+      await this.repo.persistedByContextRef(tenantId, prescriptionId)
+    ).find((r) => r.context === "prescription" && r.status === "recorded");
     if (existing) return toClinicalConsumption(existing);
 
     return this.createInternal(
@@ -219,7 +219,14 @@ export class ClinicalConsumptionService {
         "cancel",
         this.actorToAuditActor(actor),
         "warning",
-        { context: rec.context, contextRefId: rec.contextRefId, patientId: rec.patientId, lineCount: rec.lines.length, stockMovementIds: rec.stockMovementIds, cancelReason: input.cancelReason },
+        {
+          context: rec.context,
+          contextRefId: rec.contextRefId,
+          patientId: rec.patientId,
+          lineCount: rec.lines.length,
+          stockMovementIds: rec.stockMovementIds,
+          cancelReason: input.cancelReason,
+        },
       );
       return toClinicalConsumption(atomicCancelled);
     }
@@ -253,9 +260,20 @@ export class ClinicalConsumptionService {
       cancelledBy: actor.actorId ?? "system",
       cancelReason: input.cancelReason,
     };
-    const persisted = await this.repo.persistedCancel(tenantId, rec.id, cancelled);
+    const persisted = await this.repo.persistedCancel(
+      tenantId,
+      rec.id,
+      cancelled,
+    );
     if (!persisted) {
-      throw new DomainError({ errorCode: "VET-CLINICAL_CONSUMPTION-0001", message: "Klinik tüketim kaydı bulunamadı", httpStatus: 404, severity: "warning", i18nKey: "error.VET-CLINICAL_CONSUMPTION-0001", details: { id } });
+      throw new DomainError({
+        errorCode: "VET-CLINICAL_CONSUMPTION-0001",
+        message: "Klinik tüketim kaydı bulunamadı",
+        httpStatus: 404,
+        severity: "warning",
+        i18nKey: "error.VET-CLINICAL_CONSUMPTION-0001",
+        details: { id },
+      });
     }
 
     await this.audit.recordSimple(
@@ -302,7 +320,10 @@ export class ClinicalConsumptionService {
     actor: ActorContext,
   ): Promise<ClinicalConsumptionListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = await this.repo.persistedSearch(tenantId, this.toSearchFilters(filters));
+    const result = await this.repo.persistedSearch(
+      tenantId,
+      this.toSearchFilters(filters),
+    );
     return {
       items: result.items.map((r) => toClinicalConsumption(r)),
       total: result.total,

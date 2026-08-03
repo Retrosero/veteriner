@@ -21,7 +21,11 @@
  */
 
 import { Injectable, Optional } from "@nestjs/common";
-import type { Prisma, PriceListItemRecord as DbItem, PriceListRecord as DbList } from "@prisma/client";
+import type {
+  Prisma,
+  PriceListItemRecord as DbItem,
+  PriceListRecord as DbList,
+} from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { PrismaService } from "../../prisma/prisma.service.js";
 
@@ -114,12 +118,126 @@ export class PricingRepository {
     this.listsById.set(record.id, record);
     return record;
   }
-  public async persistList(record: PriceListRecord): Promise<PriceListRecord> { if (!this.prisma) return this.insertList(record); const row = await this.inTenant(record.tenantId, (tx) => tx.priceListRecord.create({data:{...record,validFrom:record.validFrom?new Date(record.validFrom):null,validUntil:record.validUntil?new Date(record.validUntil):null,createdAt:new Date(record.createdAt),updatedAt:new Date(record.updatedAt),archivedAt:record.archivedAt?new Date(record.archivedAt):null}})); return this.mapList(row); }
-  public async persistedListById(tenantId:string,id:string):Promise<PriceListRecord|null>{if(!this.prisma)return this.findListById(tenantId,id);const row=await this.inTenant(tenantId,tx=>tx.priceListRecord.findFirst({where:{tenantId,id}}));return row?this.mapList(row):null;}
-  public async persistedUpdateList(tenantId:string,id:string,p:PriceListPatch):Promise<PriceListRecord|null>{if(!this.prisma)return this.updateList(tenantId,id,p);const data:Prisma.PriceListRecordUpdateManyMutationInput={...(p.name!==undefined?{name:p.name}:{}),...(p.description!==undefined?{description:p.description}:{}),...(p.taxProfile!==undefined?{taxProfile:p.taxProfile}:{}),...(p.validFrom!==undefined?{validFrom:p.validFrom?new Date(p.validFrom):null}:{}),...(p.validUntil!==undefined?{validUntil:p.validUntil?new Date(p.validUntil):null}:{}),...(p.status!==undefined?{status:p.status}:{}),...(p.updatedAt!==undefined?{updatedAt:new Date(p.updatedAt)}:{}),...(p.archivedAt!==undefined?{archivedAt:p.archivedAt?new Date(p.archivedAt):null}:{}),...(p.archivedBy!==undefined?{archivedBy:p.archivedBy}:{}),...(p.archiveReason!==undefined?{archiveReason:p.archiveReason}:{})};const r=await this.inTenant(tenantId,tx=>tx.priceListRecord.updateMany({where:{tenantId,id},data}));return r.count?this.persistedListById(tenantId,id):null;}
-  public async persistedItemCount(tenantId:string,priceListId:string):Promise<number>{if(!this.prisma)return this.countItemsForList(priceListId);return this.inTenant(tenantId,tx=>tx.priceListItemRecord.count({where:{tenantId,priceListId}}));}
-  public async persistedActiveItemCount(tenantId:string,priceListId:string):Promise<number>{if(!this.prisma)return this.countActiveItemsForList(priceListId);return this.inTenant(tenantId,tx=>tx.priceListItemRecord.count({where:{tenantId,priceListId,status:"active"}}));}
-  public async persistedSearchLists(tenantId:string,filters:PriceListSearchFilters):Promise<{items:PriceListRecord[];total:number}>{if(!this.prisma)return this.searchLists(tenantId,filters);const rows=await this.inTenant(tenantId,tx=>tx.priceListRecord.findMany({where:{tenantId},orderBy:{createdAt:"desc"}}));const needle=filters.search?.toLowerCase().trim();const all=rows.map(row=>this.mapList(row)).filter(rec=>{if(!filters.includeArchived&&rec.archivedAt!==null)return false;if(filters.type&&rec.type!==filters.type)return false;if(filters.status&&rec.status!==filters.status)return false;if(filters.customerId!==undefined&&rec.customerId!==filters.customerId)return false;if(filters.effectiveAt&&!this.isListEffectiveAt(rec,filters.effectiveAt))return false;return !needle||[rec.name,rec.description??""].join(" ").toLowerCase().includes(needle);});return{items:all.slice(filters.offset,filters.offset+filters.limit),total:all.length};}
+  public async persistList(record: PriceListRecord): Promise<PriceListRecord> {
+    if (!this.prisma) return this.insertList(record);
+    const row = await this.inTenant(record.tenantId, (tx) =>
+      tx.priceListRecord.create({
+        data: {
+          ...record,
+          validFrom: record.validFrom ? new Date(record.validFrom) : null,
+          validUntil: record.validUntil ? new Date(record.validUntil) : null,
+          createdAt: new Date(record.createdAt),
+          updatedAt: new Date(record.updatedAt),
+          archivedAt: record.archivedAt ? new Date(record.archivedAt) : null,
+        },
+      }),
+    );
+    return this.mapList(row);
+  }
+  public async persistedListById(
+    tenantId: string,
+    id: string,
+  ): Promise<PriceListRecord | null> {
+    if (!this.prisma) return this.findListById(tenantId, id);
+    const row = await this.inTenant(tenantId, (tx) =>
+      tx.priceListRecord.findFirst({ where: { tenantId, id } }),
+    );
+    return row ? this.mapList(row) : null;
+  }
+  public async persistedUpdateList(
+    tenantId: string,
+    id: string,
+    p: PriceListPatch,
+  ): Promise<PriceListRecord | null> {
+    if (!this.prisma) return this.updateList(tenantId, id, p);
+    const data: Prisma.PriceListRecordUpdateManyMutationInput = {
+      ...(p.name !== undefined ? { name: p.name } : {}),
+      ...(p.description !== undefined ? { description: p.description } : {}),
+      ...(p.taxProfile !== undefined ? { taxProfile: p.taxProfile } : {}),
+      ...(p.validFrom !== undefined
+        ? { validFrom: p.validFrom ? new Date(p.validFrom) : null }
+        : {}),
+      ...(p.validUntil !== undefined
+        ? { validUntil: p.validUntil ? new Date(p.validUntil) : null }
+        : {}),
+      ...(p.status !== undefined ? { status: p.status } : {}),
+      ...(p.updatedAt !== undefined
+        ? { updatedAt: new Date(p.updatedAt) }
+        : {}),
+      ...(p.archivedAt !== undefined
+        ? { archivedAt: p.archivedAt ? new Date(p.archivedAt) : null }
+        : {}),
+      ...(p.archivedBy !== undefined ? { archivedBy: p.archivedBy } : {}),
+      ...(p.archiveReason !== undefined
+        ? { archiveReason: p.archiveReason }
+        : {}),
+    };
+    const r = await this.inTenant(tenantId, (tx) =>
+      tx.priceListRecord.updateMany({ where: { tenantId, id }, data }),
+    );
+    return r.count ? this.persistedListById(tenantId, id) : null;
+  }
+  public async persistedItemCount(
+    tenantId: string,
+    priceListId: string,
+  ): Promise<number> {
+    if (!this.prisma) return this.countItemsForList(priceListId);
+    return this.inTenant(tenantId, (tx) =>
+      tx.priceListItemRecord.count({ where: { tenantId, priceListId } }),
+    );
+  }
+  public async persistedActiveItemCount(
+    tenantId: string,
+    priceListId: string,
+  ): Promise<number> {
+    if (!this.prisma) return this.countActiveItemsForList(priceListId);
+    return this.inTenant(tenantId, (tx) =>
+      tx.priceListItemRecord.count({
+        where: { tenantId, priceListId, status: "active" },
+      }),
+    );
+  }
+  public async persistedSearchLists(
+    tenantId: string,
+    filters: PriceListSearchFilters,
+  ): Promise<{ items: PriceListRecord[]; total: number }> {
+    if (!this.prisma) return this.searchLists(tenantId, filters);
+    const rows = await this.inTenant(tenantId, (tx) =>
+      tx.priceListRecord.findMany({
+        where: { tenantId },
+        orderBy: { createdAt: "desc" },
+      }),
+    );
+    const needle = filters.search?.toLowerCase().trim();
+    const all = rows
+      .map((row) => this.mapList(row))
+      .filter((rec) => {
+        if (!filters.includeArchived && rec.archivedAt !== null) return false;
+        if (filters.type && rec.type !== filters.type) return false;
+        if (filters.status && rec.status !== filters.status) return false;
+        if (
+          filters.customerId !== undefined &&
+          rec.customerId !== filters.customerId
+        )
+          return false;
+        if (
+          filters.effectiveAt &&
+          !this.isListEffectiveAt(rec, filters.effectiveAt)
+        )
+          return false;
+        return (
+          !needle ||
+          [rec.name, rec.description ?? ""]
+            .join(" ")
+            .toLowerCase()
+            .includes(needle)
+        );
+      });
+    return {
+      items: all.slice(filters.offset, filters.offset + filters.limit),
+      total: all.length,
+    };
+  }
 
   public findListById(tenantId: string, id: string): PriceListRecord | null {
     const rec = this.listsById.get(id);
@@ -205,12 +323,114 @@ export class PricingRepository {
     }
     return record;
   }
-  public async persistItem(record: PriceListItemRecord): Promise<PriceListItemRecord> { if (!this.prisma) return this.insertItem(record); const row=await this.inTenant(record.tenantId,tx=>tx.priceListItemRecord.create({data:{...record,validFrom:record.validFrom?new Date(record.validFrom):null,validUntil:record.validUntil?new Date(record.validUntil):null,createdAt:new Date(record.createdAt)}}));return this.mapItem(row); }
-  public async persistedItemsByProduct(tenantId:string,productId:string):Promise<PriceListItemRecord[]>{if(!this.prisma)return this.findActiveItemsByProduct(tenantId,productId);const rows=await this.inTenant(tenantId,tx=>tx.priceListItemRecord.findMany({where:{tenantId,productId,status:"active"},orderBy:{createdAt:"desc"}}));return rows.map(row=>this.mapItem(row));}
-  public async persistedItemById(tenantId:string,id:string):Promise<PriceListItemRecord|null>{if(!this.prisma)return this.findItemById(tenantId,id);const row=await this.inTenant(tenantId,tx=>tx.priceListItemRecord.findFirst({where:{tenantId,id}}));return row?this.mapItem(row):null;}
-  public async persistedUpdateItem(tenantId:string,id:string,p:PriceListItemPatch):Promise<PriceListItemRecord|null>{if(!this.prisma)return this.updateItem(tenantId,id,p);const data:Prisma.PriceListItemRecordUpdateManyMutationInput={...(p.status!==undefined?{status:p.status}:{}),...(p.notes!==undefined?{notes:p.notes}:{})};const r=await this.inTenant(tenantId,tx=>tx.priceListItemRecord.updateMany({where:{tenantId,id},data}));return r.count?this.persistedItemById(tenantId,id):null;}
-  public async persistedSearchItems(tenantId:string,filters:PriceListItemSearchFilters & {priceListId?:string|undefined}):Promise<{items:PriceListItemRecord[];total:number}>{if(!this.prisma){const result=this.searchItems(tenantId,filters);const all=result.items.filter(item=>!filters.priceListId||item.priceListId===filters.priceListId);return{items:all,total:all.length};}const rows=await this.inTenant(tenantId,tx=>tx.priceListItemRecord.findMany({where:{tenantId,...(filters.priceListId?{priceListId:filters.priceListId}:{}),...(filters.productId?{productId:filters.productId}:{}),...(filters.status?{status:filters.status}:{}),},orderBy:[{createdAt:"desc"},{supersedesId:"asc"}]}));const all=rows.map(row=>this.mapItem(row)).filter(rec=>!filters.effectiveAt||this.isItemEffectiveAt(rec,filters.effectiveAt));return{items:all.slice(filters.offset,filters.offset+filters.limit),total:all.length};}
-  public async persistedActiveItemByProductInList(tenantId:string,priceListId:string,productId:string):Promise<PriceListItemRecord|null>{if(!this.prisma)return this.findActiveItemByProductInList(tenantId,priceListId,productId);const row=await this.inTenant(tenantId,tx=>tx.priceListItemRecord.findFirst({where:{tenantId,priceListId,productId,status:"active"},orderBy:{createdAt:"desc"}}));return row?this.mapItem(row):null;}
+  public async persistItem(
+    record: PriceListItemRecord,
+  ): Promise<PriceListItemRecord> {
+    if (!this.prisma) return this.insertItem(record);
+    const row = await this.inTenant(record.tenantId, (tx) =>
+      tx.priceListItemRecord.create({
+        data: {
+          ...record,
+          validFrom: record.validFrom ? new Date(record.validFrom) : null,
+          validUntil: record.validUntil ? new Date(record.validUntil) : null,
+          createdAt: new Date(record.createdAt),
+        },
+      }),
+    );
+    return this.mapItem(row);
+  }
+  public async persistedItemsByProduct(
+    tenantId: string,
+    productId: string,
+  ): Promise<PriceListItemRecord[]> {
+    if (!this.prisma) return this.findActiveItemsByProduct(tenantId, productId);
+    const rows = await this.inTenant(tenantId, (tx) =>
+      tx.priceListItemRecord.findMany({
+        where: { tenantId, productId, status: "active" },
+        orderBy: { createdAt: "desc" },
+      }),
+    );
+    return rows.map((row) => this.mapItem(row));
+  }
+  public async persistedItemById(
+    tenantId: string,
+    id: string,
+  ): Promise<PriceListItemRecord | null> {
+    if (!this.prisma) return this.findItemById(tenantId, id);
+    const row = await this.inTenant(tenantId, (tx) =>
+      tx.priceListItemRecord.findFirst({ where: { tenantId, id } }),
+    );
+    return row ? this.mapItem(row) : null;
+  }
+  public async persistedUpdateItem(
+    tenantId: string,
+    id: string,
+    p: PriceListItemPatch,
+  ): Promise<PriceListItemRecord | null> {
+    if (!this.prisma) return this.updateItem(tenantId, id, p);
+    const data: Prisma.PriceListItemRecordUpdateManyMutationInput = {
+      ...(p.status !== undefined ? { status: p.status } : {}),
+      ...(p.notes !== undefined ? { notes: p.notes } : {}),
+    };
+    const r = await this.inTenant(tenantId, (tx) =>
+      tx.priceListItemRecord.updateMany({ where: { tenantId, id }, data }),
+    );
+    return r.count ? this.persistedItemById(tenantId, id) : null;
+  }
+  public async persistedSearchItems(
+    tenantId: string,
+    filters: PriceListItemSearchFilters & { priceListId?: string | undefined },
+  ): Promise<{ items: PriceListItemRecord[]; total: number }> {
+    if (!this.prisma) {
+      const result = this.searchItems(tenantId, filters);
+      const all = result.items.filter(
+        (item) =>
+          !filters.priceListId || item.priceListId === filters.priceListId,
+      );
+      return { items: all, total: all.length };
+    }
+    const rows = await this.inTenant(tenantId, (tx) =>
+      tx.priceListItemRecord.findMany({
+        where: {
+          tenantId,
+          ...(filters.priceListId ? { priceListId: filters.priceListId } : {}),
+          ...(filters.productId ? { productId: filters.productId } : {}),
+          ...(filters.status ? { status: filters.status } : {}),
+        },
+        orderBy: [{ createdAt: "desc" }, { supersedesId: "asc" }],
+      }),
+    );
+    const all = rows
+      .map((row) => this.mapItem(row))
+      .filter(
+        (rec) =>
+          !filters.effectiveAt ||
+          this.isItemEffectiveAt(rec, filters.effectiveAt),
+      );
+    return {
+      items: all.slice(filters.offset, filters.offset + filters.limit),
+      total: all.length,
+    };
+  }
+  public async persistedActiveItemByProductInList(
+    tenantId: string,
+    priceListId: string,
+    productId: string,
+  ): Promise<PriceListItemRecord | null> {
+    if (!this.prisma)
+      return this.findActiveItemByProductInList(
+        tenantId,
+        priceListId,
+        productId,
+      );
+    const row = await this.inTenant(tenantId, (tx) =>
+      tx.priceListItemRecord.findFirst({
+        where: { tenantId, priceListId, productId, status: "active" },
+        orderBy: { createdAt: "desc" },
+      }),
+    );
+    return row ? this.mapItem(row) : null;
+  }
 
   public findItemById(
     tenantId: string,
@@ -420,7 +640,39 @@ export class PricingRepository {
   private productKey(tenantId: string, productId: string): string {
     return `${tenantId}|${productId}`;
   }
-  private mapList(row:DbList):PriceListRecord{return{...row,type:row.type as PriceListRecord["type"],currency:row.currency as PriceListRecord["currency"],taxProfile:row.taxProfile as PriceListRecord["taxProfile"],status:row.status as PriceListRecord["status"],validFrom:row.validFrom?.toISOString()??null,validUntil:row.validUntil?.toISOString()??null,createdAt:row.createdAt.toISOString(),updatedAt:row.updatedAt.toISOString(),archivedAt:row.archivedAt?.toISOString()??null};}
-  private mapItem(row:DbItem):PriceListItemRecord{return{...row,taxProfile:row.taxProfile as PriceListItemRecord["taxProfile"],status:row.status as PriceListItemRecord["status"],validFrom:row.validFrom?.toISOString()??null,validUntil:row.validUntil?.toISOString()??null,createdAt:row.createdAt.toISOString()};}
-  private async inTenant<T>(tenantId:string,callback:(tx:Prisma.TransactionClient)=>Promise<T>):Promise<T>{if(!this.prisma)throw new Error("Prisma bağlantısı bulunamadı");return this.prisma.$transaction(async tx=>{await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;return callback(tx);});}
+  private mapList(row: DbList): PriceListRecord {
+    return {
+      ...row,
+      type: row.type as PriceListRecord["type"],
+      currency: row.currency as PriceListRecord["currency"],
+      taxProfile: row.taxProfile as PriceListRecord["taxProfile"],
+      status: row.status as PriceListRecord["status"],
+      validFrom: row.validFrom?.toISOString() ?? null,
+      validUntil: row.validUntil?.toISOString() ?? null,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+      archivedAt: row.archivedAt?.toISOString() ?? null,
+    };
+  }
+  private mapItem(row: DbItem): PriceListItemRecord {
+    return {
+      ...row,
+      taxProfile: row.taxProfile as PriceListItemRecord["taxProfile"],
+      status: row.status as PriceListItemRecord["status"],
+      validFrom: row.validFrom?.toISOString() ?? null,
+      validUntil: row.validUntil?.toISOString() ?? null,
+      createdAt: row.createdAt.toISOString(),
+    };
+  }
+  private async inTenant<T>(
+    tenantId: string,
+    callback: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    if (!this.prisma) throw new Error("Prisma bağlantısı bulunamadı");
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;
+      await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;
+      return callback(tx);
+    });
+  }
 }

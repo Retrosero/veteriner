@@ -295,7 +295,10 @@ export class VaccinesService {
     }
 
     const nowIso = new Date().toISOString();
-    await this.repo.persistedUpdate(tenantId, id, { archivedAt: nowIso, updatedAt: nowIso });
+    await this.repo.persistedUpdate(tenantId, id, {
+      archivedAt: nowIso,
+      updatedAt: nowIso,
+    });
 
     await this.audit.recordSimple(
       "audit:vaccine.protocol.archive",

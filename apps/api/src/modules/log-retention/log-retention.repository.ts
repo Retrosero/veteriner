@@ -3,10 +3,10 @@
  * @module apps/api/modules/log-retention/log-retention.repository
  *
  * @description GOAL-106 (FAZ-10) log retention policy ve sweep
- * kayıtları için in-memory depo. DB migration sonraya bırakıldı;
- * production'a geçişte Prisma `LogRetentionPolicy` ve
- * `LogRetentionSweep` tabloları ile değiştirilecek (API sözleşmesi
- * sabit kalır).
+ * kayıtları için hızlı bellek indeksi ve Prisma kalıcılığı. Uygulama
+ * başlangıcında `LogRetentionPolicy` ve `LogRetentionSweep` tabloları
+ * hydrate edilir; her policy/sweep değişikliği RLS-safe transaction ile
+ * PostgreSQL'e yansıtılır. API sözleşmesi sabit kalır.
  *
  * Davranış:
  * - `upsertPolicy` anahtarı `(tenantId, logType, severity)`. Aynı
@@ -27,7 +27,9 @@
  * @since GOAL-106 (FAZ-10) PII maskeleme ve log retention core
  */
 
-import { Injectable } from "@nestjs/common";
+import { randomUUID } from "node:crypto";
+
+import { Injectable, Logger, OnModuleInit, Optional } from "@nestjs/common";
 import {
   DEFAULT_ARCHIVE_AFTER_DAYS,
   DEFAULT_ARCHIVE_STORAGE,
@@ -42,6 +44,13 @@ import {
   type RetentionPolicyRecord,
   type RetentionSweepRecord,
 } from "../../common/logging/log-retention.types.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
+
+import type {
+  LogRetentionPolicy,
+  LogRetentionSweep,
+  Prisma,
+} from "@prisma/client";
 
 /** Policy filtreleri. */
 export interface RetentionPolicyRepoFilters {
@@ -74,24 +83,38 @@ function policyKey(
 }
 
 @Injectable()
-export class LogRetentionRepository {
+export class LogRetentionRepository implements OnModuleInit {
+  private readonly logger = new Logger(LogRetentionRepository.name);
   /** key: composite(tenantId, logType, severity) → record. */
   private readonly byKey = new Map<string, RetentionPolicyRecord>();
   /** key: id → policy. */
   private readonly byId = new Map<string, RetentionPolicyRecord>();
   /** key: id → sweep. */
   private readonly sweepById = new Map<string, RetentionSweepRecord>();
-  /** Global counter'lar. */
-  private readonly counter = { policy: 0, sweep: 0 };
+  public constructor(@Optional() private readonly prisma?: PrismaService) {}
 
+  /** Uygulama yeniden başladığında yönetim kayıtlarını kalıcı depodan yükler. */
+  public async onModuleInit(): Promise<void> {
+    if (!this.prisma) return;
+    const [policies, sweeps] = await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'true', true)`;
+      return Promise.all([
+        tx.logRetentionPolicy.findMany(),
+        tx.logRetentionSweep.findMany({ orderBy: { startedAt: "desc" } }),
+      ]);
+    });
+    for (const row of policies) this.indexPolicy(this.fromPolicyRow(row));
+    for (const row of sweeps) {
+      const record = this.fromSweepRow(row);
+      this.sweepById.set(record.id, record);
+    }
+  }
   public nextPolicyId(): string {
-    this.counter.policy += 1;
-    return `lret-pol-${String(this.counter.policy).padStart(8, "0")}`;
+    return randomUUID();
   }
 
   public nextSweepId(): string {
-    this.counter.sweep += 1;
-    return `lret-swp-${String(this.counter.sweep).padStart(8, "0")}`;
+    return randomUUID();
   }
 
   /**
@@ -123,6 +146,7 @@ export class LogRetentionRepository {
       existing.updatedAt = args.now;
       this.byKey.set(key, existing);
       this.byId.set(existing.id, existing);
+      void this.persistPolicy(existing);
       return existing;
     }
     const id = this.nextPolicyId();
@@ -140,8 +164,8 @@ export class LogRetentionRepository {
       updatedById: args.actorId,
       updatedAt: args.now,
     };
-    this.byKey.set(key, rec);
-    this.byId.set(id, rec);
+    this.indexPolicy(rec);
+    void this.persistPolicy(rec);
     return rec;
   }
 
@@ -280,6 +304,7 @@ export class LogRetentionRepository {
     const key = policyKey(rec.tenantId, rec.logType, rec.severity);
     this.byId.delete(id);
     this.byKey.delete(key);
+    void this.deletePersistedPolicy(id);
     return true;
   }
 
@@ -294,6 +319,7 @@ export class LogRetentionRepository {
    */
   public recordSweep(rec: RetentionSweepRecord): RetentionSweepRecord {
     this.sweepById.set(rec.id, rec);
+    void this.persistSweep(rec);
     return rec;
   }
 
@@ -329,7 +355,99 @@ export class LogRetentionRepository {
     this.byKey.clear();
     this.byId.clear();
     this.sweepById.clear();
-    this.counter.policy = 0;
-    this.counter.sweep = 0;
+  }
+
+  private indexPolicy(rec: RetentionPolicyRecord): void {
+    this.byKey.set(policyKey(rec.tenantId, rec.logType, rec.severity), rec);
+    this.byId.set(rec.id, rec);
+  }
+
+  private async persistPolicy(rec: RetentionPolicyRecord): Promise<void> {
+    if (!this.prisma) return;
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'true', true)`;
+        await tx.logRetentionPolicy.upsert({
+          where: { id: rec.id },
+          create: this.toPolicyData(rec),
+          update: this.toPolicyData(rec),
+        });
+      });
+    } catch (error) {
+      this.logger.error(
+        `Retention policy kalıcı yazımı başarısız: ${error instanceof Error ? error.name : "unknown"}`,
+      );
+    }
+  }
+
+  private async deletePersistedPolicy(id: string): Promise<void> {
+    if (!this.prisma) return;
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'true', true)`;
+        await tx.logRetentionPolicy.deleteMany({ where: { id } });
+      });
+    } catch (error) {
+      this.logger.error(
+        `Retention policy silme kalıcılığı başarısız: ${error instanceof Error ? error.name : "unknown"}`,
+      );
+    }
+  }
+
+  private async persistSweep(rec: RetentionSweepRecord): Promise<void> {
+    if (!this.prisma) return;
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'true', true)`;
+        await tx.logRetentionSweep.create({ data: this.toSweepData(rec) });
+      });
+    } catch (error) {
+      this.logger.error(
+        `Retention sweep kalıcı yazımı başarısız: ${error instanceof Error ? error.name : "unknown"}`,
+      );
+    }
+  }
+
+  private toPolicyData(
+    rec: RetentionPolicyRecord,
+  ): Prisma.LogRetentionPolicyUncheckedCreateInput {
+    return {
+      ...rec,
+      createdAt: new Date(rec.createdAt),
+      updatedAt: new Date(rec.updatedAt),
+    };
+  }
+
+  private toSweepData(
+    rec: RetentionSweepRecord,
+  ): Prisma.LogRetentionSweepUncheckedCreateInput {
+    return {
+      ...rec,
+      buckets: rec.buckets as Prisma.InputJsonValue,
+      startedAt: new Date(rec.startedAt),
+      finishedAt: new Date(rec.finishedAt),
+    };
+  }
+
+  private fromPolicyRow(row: LogRetentionPolicy): RetentionPolicyRecord {
+    return {
+      ...row,
+      logType: row.logType as LogType,
+      severity: row.severity as LogRetentionSeverity,
+      archiveStorage:
+        row.archiveStorage as RetentionPolicyRecord["archiveStorage"],
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+    };
+  }
+
+  private fromSweepRow(row: LogRetentionSweep): RetentionSweepRecord {
+    return {
+      ...row,
+      triggeredBy: row.triggeredBy as RetentionSweepRecord["triggeredBy"],
+      buckets: row.buckets as unknown as RetentionSweepRecord["buckets"],
+      startedAt: row.startedAt.toISOString(),
+      finishedAt: row.finishedAt.toISOString(),
+    };
   }
 }

@@ -130,7 +130,7 @@ export class AnesthesiaService {
     }
 
     // Aynı plan için mevcut anesthesia reddedilir.
-    const existing = this.repo.findBySurgeryPlanId(
+    const existing = await this.repo.persistedBySurgeryPlanId(
       tenantId,
       input.surgeryPlanId,
     );
@@ -167,7 +167,7 @@ export class AnesthesiaService {
       createdBy: actor.actorId ?? "system",
       updatedAt: nowIso,
     };
-    this.repo.insert(record);
+    await this.repo.persist(record);
 
     await this.audit.recordSimple(
       "audit:anesthesia.create",
@@ -196,7 +196,7 @@ export class AnesthesiaService {
     actor: ActorContext,
   ): Promise<AnesthesiaListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.search(tenantId, {
+    const result = await this.repo.persistedSearch(tenantId, {
       status: filters.status,
       patientId: filters.patientId,
       surgeryPlanId: filters.surgeryPlanId,
@@ -220,18 +220,22 @@ export class AnesthesiaService {
     actor: ActorContext,
   ): Promise<AnesthesiaDetail | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findById(tenantId, id);
+    const rec = await this.repo.persistedById(tenantId, id);
     if (!rec) return null;
     return {
       anesthesia: toAnesthesia(rec),
-      medications: this.repo
-        .listMedications(tenantId, id)
-        .map(toAnesthesiaMedication),
-      vitals: this.repo.listVitals(tenantId, id).map(toAnesthesiaVital),
-      complications: this.repo
-        .listComplications(tenantId, id)
-        .map(toAnesthesiaComplication),
-      staff: this.repo.listStaff(tenantId, id).map(toAnesthesiaStaff),
+      medications: (await this.repo.persistedMedications(tenantId, id)).map(
+        toAnesthesiaMedication,
+      ),
+      vitals: (await this.repo.persistedVitals(tenantId, id)).map(
+        toAnesthesiaVital,
+      ),
+      complications: (await this.repo.persistedComplications(tenantId, id)).map(
+        toAnesthesiaComplication,
+      ),
+      staff: (await this.repo.persistedStaff(tenantId, id)).map(
+        toAnesthesiaStaff,
+      ),
     };
   }
 
@@ -246,7 +250,7 @@ export class AnesthesiaService {
     actor: ActorContext,
   ): Promise<AnesthesiaMedication> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.requireDraftAnesthesia(tenantId, id, "ilaç");
+    const existing = await this.requireDraftAnesthesia(tenantId, id, "ilaç");
     const nowIso = new Date().toISOString();
     const subId = this.repo.nextSubId(tenantId, "anm");
     const rec: AnesthesiaMedicationRecord = {
@@ -261,8 +265,8 @@ export class AnesthesiaService {
       notes: input.notes ?? null,
       createdAt: nowIso,
     };
-    this.repo.insertMedication(rec);
-    this.repo.update(tenantId, id, { updatedAt: nowIso });
+    await this.repo.persistMedication(rec);
+    await this.repo.persistedUpdate(tenantId, id, { updatedAt: nowIso });
 
     await this.audit.recordSimple(
       "audit:anesthesia.medication_add",
@@ -293,7 +297,7 @@ export class AnesthesiaService {
     actor: ActorContext,
   ): Promise<AnesthesiaVital> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.requireDraftAnesthesia(tenantId, id, "vital");
+    const existing = await this.requireDraftAnesthesia(tenantId, id, "vital");
     const nowIso = new Date().toISOString();
     const subId = this.repo.nextSubId(tenantId, "anv");
     const rec: AnesthesiaVitalRecord = {
@@ -308,8 +312,8 @@ export class AnesthesiaService {
       notes: input.notes ?? null,
       createdAt: nowIso,
     };
-    this.repo.insertVital(rec);
-    this.repo.update(tenantId, id, { updatedAt: nowIso });
+    await this.repo.persistVital(rec);
+    await this.repo.persistedUpdate(tenantId, id, { updatedAt: nowIso });
 
     await this.audit.recordSimple(
       "audit:anesthesia.vital_add",
@@ -340,7 +344,11 @@ export class AnesthesiaService {
     actor: ActorContext,
   ): Promise<AnesthesiaComplication> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.requireDraftAnesthesia(tenantId, id, "komplikasyon");
+    const existing = await this.requireDraftAnesthesia(
+      tenantId,
+      id,
+      "komplikasyon",
+    );
     const nowIso = new Date().toISOString();
     const subId = this.repo.nextSubId(tenantId, "anc");
     const rec: AnesthesiaComplicationRecord = {
@@ -355,8 +363,8 @@ export class AnesthesiaService {
       action: input.action ?? null,
       createdAt: nowIso,
     };
-    this.repo.insertComplication(rec);
-    this.repo.update(tenantId, id, { updatedAt: nowIso });
+    await this.repo.persistComplication(rec);
+    await this.repo.persistedUpdate(tenantId, id, { updatedAt: nowIso });
 
     await this.audit.recordSimple(
       "audit:anesthesia.complication_add",
@@ -385,7 +393,11 @@ export class AnesthesiaService {
     actor: ActorContext,
   ): Promise<AnesthesiaStaff> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.requireDraftAnesthesia(tenantId, id, "personel");
+    const existing = await this.requireDraftAnesthesia(
+      tenantId,
+      id,
+      "personel",
+    );
     const nowIso = new Date().toISOString();
     const subId = this.repo.nextSubId(tenantId, "ans");
     const rec: AnesthesiaStaffRecord = {
@@ -399,8 +411,8 @@ export class AnesthesiaService {
       notes: input.notes ?? null,
       createdAt: nowIso,
     };
-    this.repo.insertStaff(rec);
-    this.repo.update(tenantId, id, { updatedAt: nowIso });
+    await this.repo.persistStaff(rec);
+    await this.repo.persistedUpdate(tenantId, id, { updatedAt: nowIso });
 
     await this.audit.recordSimple(
       "audit:anesthesia.staff_assign",
@@ -430,7 +442,7 @@ export class AnesthesiaService {
     actor: ActorContext,
   ): Promise<Anesthesia> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.persistedById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-ANESTHESIA-0001",
@@ -453,7 +465,7 @@ export class AnesthesiaService {
     }
 
     const nowIso = new Date().toISOString();
-    this.repo.update(tenantId, id, {
+    await this.repo.persistedUpdate(tenantId, id, {
       status: "finalized",
       recoveryAt: input.recoveryAt ?? nowIso,
       finalizedAt: nowIso,
@@ -475,7 +487,7 @@ export class AnesthesiaService {
       },
     );
 
-    const updated = this.repo.findById(tenantId, id);
+    const updated = await this.repo.persistedById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-ANESTHESIA-0001",
@@ -496,12 +508,12 @@ export class AnesthesiaService {
    * @param id
    * @param subType
    */
-  private requireDraftAnesthesia(
+  private async requireDraftAnesthesia(
     tenantId: string,
     id: string,
     subType: string,
-  ): AnesthesiaRecord {
-    const rec = this.repo.findById(tenantId, id);
+  ): Promise<AnesthesiaRecord> {
+    const rec = await this.repo.persistedById(tenantId, id);
     if (!rec) {
       throw new DomainError({
         errorCode: "VET-ANESTHESIA-0001",

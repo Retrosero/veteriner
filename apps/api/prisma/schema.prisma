@@ -1375,6 +1375,248 @@ model ConsentRecord {
   @@map("consents")
 }
 
+model CageRecord {
+  id          String                 @id @db.VarChar(100)
+  tenantId    String                 @map("tenant_id") @db.Uuid
+  code        String                 @db.VarChar(100)
+  name        String?                @db.VarChar(300)
+  kind        String                 @db.VarChar(50)
+  capacity    Int
+  active      Boolean
+  notes       String?                @db.Text
+  createdAt   DateTime               @map("created_at") @db.Timestamptz(6)
+  createdBy   String                 @map("created_by") @db.VarChar(100)
+  updatedAt   DateTime               @map("updated_at") @db.Timestamptz(6)
+  assignments CageAssignmentRecord[]
+
+  @@unique([tenantId, code])
+  @@map("cages")
+}
+
+model HospitalizationRecord {
+  id           String                 @id @db.VarChar(100)
+  tenantId     String                 @map("tenant_id") @db.Uuid
+  patientId    String                 @map("patient_id") @db.Uuid
+  status       String                 @db.VarChar(30)
+  plannedAt    DateTime?              @map("planned_at") @db.Timestamptz(6)
+  admittedAt   DateTime?              @map("admitted_at") @db.Timestamptz(6)
+  admittedBy   String?                @map("admitted_by") @db.VarChar(100)
+  dischargedAt DateTime?              @map("discharged_at") @db.Timestamptz(6)
+  dischargedBy String?                @map("discharged_by") @db.VarChar(100)
+  cancelReason String?                @map("cancel_reason") @db.Text
+  reason       String?                @db.Text
+  notes        String?                @db.Text
+  createdAt    DateTime               @map("created_at") @db.Timestamptz(6)
+  createdBy    String                 @map("created_by") @db.VarChar(100)
+  updatedAt    DateTime               @map("updated_at") @db.Timestamptz(6)
+  assignments  CageAssignmentRecord[]
+
+  @@index([tenantId, patientId, status])
+  @@map("hospitalizations")
+}
+
+model CageAssignmentRecord {
+  id                String                @id @db.VarChar(100)
+  tenantId          String                @map("tenant_id") @db.Uuid
+  hospitalizationId String                @map("hospitalization_id") @db.VarChar(100)
+  cageId            String                @map("cage_id") @db.VarChar(100)
+  from              DateTime              @db.Timestamptz(6)
+  to                DateTime?             @db.Timestamptz(6)
+  endedBy           String?               @map("ended_by") @db.VarChar(100)
+  notes             String?               @db.Text
+  createdAt         DateTime              @map("created_at") @db.Timestamptz(6)
+  createdBy         String                @map("created_by") @db.VarChar(100)
+  hospitalization   HospitalizationRecord @relation(fields: [hospitalizationId], references: [id], onDelete: Restrict)
+  cage              CageRecord            @relation(fields: [cageId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, cageId, from, to])
+  @@index([tenantId, hospitalizationId, from])
+  @@map("cage_assignments")
+}
+
+// -----------------------------------------------------------------------------
+// ANESTHESIA — Faz 8 ameliyat içi takip. Alt kayıtlar klinik defterdir;
+// fiziksel silme ve finalize sonrası ekleme uygulama katmanında yasaktır.
+// -----------------------------------------------------------------------------
+
+model AnesthesiaRecord {
+  id            String                         @id @db.VarChar(100)
+  tenantId      String                         @map("tenant_id") @db.Uuid
+  surgeryPlanId String                         @map("surgery_plan_id") @db.VarChar(100)
+  patientId     String                         @map("patient_id") @db.Uuid
+  protocol      String                         @db.VarChar(300)
+  protocolNotes String?                        @map("protocol_notes") @db.Text
+  status        String                         @db.VarChar(30)
+  inductionAt   DateTime?                      @map("induction_at") @db.Timestamptz(6)
+  recoveryAt    DateTime?                      @map("recovery_at") @db.Timestamptz(6)
+  finalizedAt   DateTime?                      @map("finalized_at") @db.Timestamptz(6)
+  finalizedBy   String?                        @map("finalized_by") @db.VarChar(100)
+  notes         String?                        @db.Text
+  createdAt     DateTime                       @map("created_at") @db.Timestamptz(6)
+  createdBy     String                         @map("created_by") @db.VarChar(100)
+  updatedAt     DateTime                       @map("updated_at") @db.Timestamptz(6)
+  medications   AnesthesiaMedicationRecord[]
+  vitals        AnesthesiaVitalRecord[]
+  complications AnesthesiaComplicationRecord[]
+  staff         AnesthesiaStaffRecord[]
+
+  @@unique([tenantId, surgeryPlanId])
+  @@index([tenantId, patientId, status])
+  @@map("anesthesias")
+}
+
+model AnesthesiaMedicationRecord {
+  id                   String           @id @db.VarChar(100)
+  tenantId             String           @map("tenant_id") @db.Uuid
+  anesthesiaId         String           @map("anesthesia_id") @db.VarChar(100)
+  medicationName       String           @map("medication_name") @db.VarChar(300)
+  dose                 String           @db.VarChar(100)
+  route                String           @db.VarChar(30)
+  administeredAt       DateTime         @map("administered_at") @db.Timestamptz(6)
+  administeredByUserId String           @map("administered_by_user_id") @db.VarChar(100)
+  notes                String?          @db.Text
+  createdAt            DateTime         @map("created_at") @db.Timestamptz(6)
+  anesthesia           AnesthesiaRecord @relation(fields: [anesthesiaId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, anesthesiaId, administeredAt])
+  @@map("anesthesia_medications")
+}
+
+model AnesthesiaVitalRecord {
+  id               String           @id @db.VarChar(100)
+  tenantId         String           @map("tenant_id") @db.Uuid
+  anesthesiaId     String           @map("anesthesia_id") @db.VarChar(100)
+  kind             String           @db.VarChar(50)
+  value            String           @db.VarChar(100)
+  unit             String           @db.VarChar(50)
+  observedAt       DateTime         @map("observed_at") @db.Timestamptz(6)
+  observedByUserId String           @map("observed_by_user_id") @db.VarChar(100)
+  notes            String?          @db.Text
+  createdAt        DateTime         @map("created_at") @db.Timestamptz(6)
+  anesthesia       AnesthesiaRecord @relation(fields: [anesthesiaId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, anesthesiaId, observedAt])
+  @@map("anesthesia_vitals")
+}
+
+model AnesthesiaComplicationRecord {
+  id               String           @id @db.VarChar(100)
+  tenantId         String           @map("tenant_id") @db.Uuid
+  anesthesiaId     String           @map("anesthesia_id") @db.VarChar(100)
+  description      String           @db.Text
+  severity         String           @db.VarChar(30)
+  occurredAt       DateTime         @map("occurred_at") @db.Timestamptz(6)
+  resolvedAt       DateTime?        @map("resolved_at") @db.Timestamptz(6)
+  reportedByUserId String           @map("reported_by_user_id") @db.VarChar(100)
+  action           String?          @db.Text
+  createdAt        DateTime         @map("created_at") @db.Timestamptz(6)
+  anesthesia       AnesthesiaRecord @relation(fields: [anesthesiaId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, anesthesiaId, occurredAt])
+  @@map("anesthesia_complications")
+}
+
+model AnesthesiaStaffRecord {
+  id           String           @id @db.VarChar(100)
+  tenantId     String           @map("tenant_id") @db.Uuid
+  anesthesiaId String           @map("anesthesia_id") @db.VarChar(100)
+  userId       String           @map("user_id") @db.VarChar(100)
+  role         String           @db.VarChar(50)
+  assignedAt   DateTime         @map("assigned_at") @db.Timestamptz(6)
+  endedAt      DateTime?        @map("ended_at") @db.Timestamptz(6)
+  notes        String?          @db.Text
+  createdAt    DateTime         @map("created_at") @db.Timestamptz(6)
+  anesthesia   AnesthesiaRecord @relation(fields: [anesthesiaId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, anesthesiaId, assignedAt])
+  @@map("anesthesia_staff")
+}
+
+model HospitalizationOrderRecord {
+  id                String                               @id @db.VarChar(100)
+  tenantId          String                               @map("tenant_id") @db.Uuid
+  hospitalizationId String                               @map("hospitalization_id") @db.VarChar(100)
+  orderType         String                               @map("order_type") @db.VarChar(50)
+  instructions      String                               @db.Text
+  frequency         String?                              @db.VarChar(100)
+  priority          String                               @db.VarChar(30)
+  status            String                               @db.VarChar(30)
+  startsAt          DateTime                             @map("starts_at") @db.Timestamptz(6)
+  endsAt            DateTime?                            @map("ends_at") @db.Timestamptz(6)
+  cancelledAt       DateTime?                            @map("cancelled_at") @db.Timestamptz(6)
+  cancelledBy       String?                              @map("cancelled_by") @db.VarChar(100)
+  cancelReason      String?                              @map("cancel_reason") @db.Text
+  notes             String?                              @db.Text
+  createdAt         DateTime                             @map("created_at") @db.Timestamptz(6)
+  createdBy         String                               @map("created_by") @db.VarChar(100)
+  updatedAt         DateTime                             @map("updated_at") @db.Timestamptz(6)
+  schedules         HospitalizationOrderScheduleRecord[]
+
+  @@index([tenantId, hospitalizationId, status])
+  @@map("hospitalization_orders")
+}
+
+model HospitalizationOrderScheduleRecord {
+  id              String                     @id @db.VarChar(100)
+  tenantId        String                     @map("tenant_id") @db.Uuid
+  orderId         String                     @map("order_id") @db.VarChar(100)
+  scheduledFor    DateTime                   @map("scheduled_for") @db.Timestamptz(6)
+  appliedAt       DateTime?                  @map("applied_at") @db.Timestamptz(6)
+  appliedByUserId String?                    @map("applied_by_user_id") @db.VarChar(100)
+  skippedAt       DateTime?                  @map("skipped_at") @db.Timestamptz(6)
+  skippedByUserId String?                    @map("skipped_by_user_id") @db.VarChar(100)
+  skipReason      String?                    @map("skip_reason") @db.Text
+  notes           String?                    @db.Text
+  createdAt       DateTime                   @map("created_at") @db.Timestamptz(6)
+  order           HospitalizationOrderRecord @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, orderId, scheduledFor])
+  @@map("hospitalization_order_schedules")
+}
+
+model ObservationRecord {
+  id                String   @id @db.VarChar(100)
+  tenantId          String   @map("tenant_id") @db.Uuid
+  hospitalizationId String   @map("hospitalization_id") @db.VarChar(100)
+  kind              String   @db.VarChar(50)
+  observedAt        DateTime @map("observed_at") @db.Timestamptz(6)
+  value             String   @db.Text
+  notes             String?  @db.Text
+  createdAt         DateTime @map("created_at") @db.Timestamptz(6)
+  createdBy         String   @map("created_by") @db.VarChar(100)
+
+  @@index([tenantId, hospitalizationId, observedAt])
+  @@map("observations")
+}
+
+model DischargeSummaryRecord {
+  id                String    @id @db.VarChar(100)
+  tenantId          String    @map("tenant_id") @db.Uuid
+  hospitalizationId String    @map("hospitalization_id") @db.VarChar(100)
+  status            String    @db.VarChar(30)
+  clinicalSummary   String    @map("clinical_summary") @db.Text
+  treatments        String?   @db.Text
+  homeInstructions  String?   @map("home_instructions") @db.Text
+  medications       Json      @default("[]")
+  followUpDate      DateTime? @map("follow_up_date") @db.Timestamptz(6)
+  portalShared      Boolean   @default(false) @map("portal_shared")
+  portalSharedAt    DateTime? @map("portal_shared_at") @db.Timestamptz(6)
+  pdfGenerated      Boolean   @default(false) @map("pdf_generated")
+  pdfGeneratedAt    DateTime? @map("pdf_generated_at") @db.Timestamptz(6)
+  finalizedAt       DateTime? @map("finalized_at") @db.Timestamptz(6)
+  finalizedBy       String?   @map("finalized_by") @db.VarChar(100)
+  amendsSummaryId   String?   @map("amends_summary_id") @db.VarChar(100)
+  amendmentReason   String?   @map("amendment_reason") @db.Text
+  notes             String?   @db.Text
+  createdAt         DateTime  @map("created_at") @db.Timestamptz(6)
+  createdBy         String    @map("created_by") @db.VarChar(100)
+  updatedAt         DateTime  @map("updated_at") @db.Timestamptz(6)
+
+  @@index([tenantId, hospitalizationId, status])
+  @@index([tenantId, amendsSummaryId])
+  @@map("discharge_summaries")
+}
+
 // -----------------------------------------------------------------------------
 // VACCINATION — Faz 5 protokol, uygulama, portal kartı ve hatırlatmalar.
 // Uygulama düzeltme/iptal bilgisi saklanır; stok hareketi bağlantısı JSON
@@ -1553,4 +1795,80 @@ model JobRun {
   @@index([queueName, status, startedAt])
   @@index([correlationId])
   @@map("job_runs")
+}
+
+// -----------------------------------------------------------------------------
+// SECURITY_EVENTS + LOG_RETENTION — Faz 10 güvenlik ve veri yaşam döngüsü.
+// Güvenlik olayları tenant RLS ile korunur; retention policy yalnız
+// SUPERADMIN tarafından yönetilir. Sweep geçmişi append-only kayıt niteliğindedir.
+// -----------------------------------------------------------------------------
+
+model SecurityEvent {
+  id              String    @id @default(uuid()) @db.Uuid
+  requestId       String    @map("request_id") @db.VarChar(100)
+  tenantId        String?   @map("tenant_id") @db.Uuid
+  branchId        String?   @map("branch_id") @db.Uuid
+  userId          String?   @map("user_id") @db.Uuid
+  actorType       String    @map("actor_type") @db.VarChar(20)
+  type            String    @db.VarChar(50)
+  module          String    @db.VarChar(50)
+  route           String    @db.VarChar(500)
+  release         String    @db.VarChar(100)
+  severity        String    @db.VarChar(10)
+  fingerprint     String    @db.Char(16)
+  errorCode       String?   @map("error_code") @db.VarChar(64)
+  message         String    @db.VarChar(2000)
+  statusCode      Int?      @map("status_code")
+  ipAddress       String?   @map("ip_address") @db.VarChar(64)
+  userAgentHash   String?   @map("user_agent_hash") @db.Char(16)
+  context         Json      @default("{}")
+  country         String    @db.VarChar(10)
+  occurredAt      DateTime  @map("occurred_at") @db.Timestamptz(6)
+  firstSeenAt     DateTime  @map("first_seen_at") @db.Timestamptz(6)
+  lastSeenAt      DateTime  @map("last_seen_at") @db.Timestamptz(6)
+  occurrenceCount Int       @default(1) @map("occurrence_count")
+  alertSent       Boolean   @default(false) @map("alert_sent")
+
+  @@index([tenantId, lastSeenAt])
+  @@index([fingerprint, lastSeenAt])
+  @@index([severity, lastSeenAt])
+  @@index([type, lastSeenAt])
+  @@map("security_events")
+}
+
+model LogRetentionPolicy {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId         String?  @map("tenant_id") @db.Uuid
+  logType          String   @map("log_type") @db.VarChar(30)
+  severity         String   @db.VarChar(10)
+  retentionDays    Int      @map("retention_days")
+  archiveAfterDays Int      @map("archive_after_days")
+  archiveStorage   String   @map("archive_storage") @db.VarChar(10)
+  redactPii        Boolean  @default(true) @map("redact_pii")
+  createdById      String   @map("created_by_id") @db.VarChar(100)
+  createdAt        DateTime @map("created_at") @db.Timestamptz(6)
+  updatedById      String   @map("updated_by_id") @db.VarChar(100)
+  updatedAt        DateTime @map("updated_at") @db.Timestamptz(6)
+
+  @@index([tenantId, logType, severity])
+  @@map("log_retention_policies")
+}
+
+model LogRetentionSweep {
+  id             String   @id @default(uuid()) @db.Uuid
+  triggeredBy    String   @map("triggered_by") @db.VarChar(20)
+  triggeredById  String?  @map("triggered_by_id") @db.VarChar(100)
+  startedAt      DateTime @map("started_at") @db.Timestamptz(6)
+  finishedAt     DateTime @map("finished_at") @db.Timestamptz(6)
+  totalScanned   Int      @map("total_scanned")
+  totalArchived  Int      @map("total_archived")
+  totalDeleted   Int      @map("total_deleted")
+  totalErrors    Int      @map("total_errors")
+  buckets        Json     @default("[]")
+  dryRun         Boolean  @default(false) @map("dry_run")
+  note           String?  @db.Text
+
+  @@index([startedAt])
+  @@index([triggeredBy, startedAt])
+  @@map("log_retention_sweeps")
 }

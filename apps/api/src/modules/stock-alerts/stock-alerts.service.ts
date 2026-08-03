@@ -238,7 +238,11 @@ export class StockAlertsService {
 
     // Idempotent: mevcut ack varsa orijinal acknowledgedAt
     // korunur; yoksa yeni timestamp üretilir.
-    const existingAck = await this.acks.persistedFind(tenantId, "lowStock", productId);
+    const existingAck = await this.acks.persistedFind(
+      tenantId,
+      "lowStock",
+      productId,
+    );
     const acknowledgedAt =
       existingAck?.acknowledgedAt ?? new Date().toISOString();
     await this.acks.persistedUpsert({
@@ -318,7 +322,11 @@ export class StockAlertsService {
 
     // Idempotent: mevcut ack varsa orijinal acknowledgedAt
     // korunur; yoksa yeni timestamp üretilir.
-    const existingAck = await this.acks.persistedFind(tenantId, "expiring", lotId);
+    const existingAck = await this.acks.persistedFind(
+      tenantId,
+      "expiring",
+      lotId,
+    );
     const acknowledgedAt =
       existingAck?.acknowledgedAt ?? new Date().toISOString();
     await this.acks.persistedUpsert({

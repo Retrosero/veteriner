@@ -294,7 +294,10 @@ export class VaccineRemindersService {
     actor: ActorContext,
   ): Promise<number> {
     this.requireTenantScope(actor, tenantId);
-    const cancelled = await this.repo.persistedCancelForApplication(tenantId, applicationId);
+    const cancelled = await this.repo.persistedCancelForApplication(
+      tenantId,
+      applicationId,
+    );
     if (cancelled > 0) {
       await this.audit.recordSimple(
         "audit:vaccine.reminder.cancel",
@@ -323,7 +326,10 @@ export class VaccineRemindersService {
     actor: ActorContext,
   ): Promise<number> {
     this.requireTenantScope(actor, tenantId);
-    const cancelled = await this.repo.persistedCancelForPatient(tenantId, patientId);
+    const cancelled = await this.repo.persistedCancelForPatient(
+      tenantId,
+      patientId,
+    );
     if (cancelled > 0) {
       await this.audit.recordSimple(
         "audit:vaccine.reminder.cancel_patient",
@@ -669,7 +675,9 @@ export class VaccineRemindersService {
    * Tenant config'ini çözer. Override varsa onu, yoksa default'u
    * döner.
    */
-  private async resolveConfig(tenantId: string): Promise<VaccineReminderConfig> {
+  private async resolveConfig(
+    tenantId: string,
+  ): Promise<VaccineReminderConfig> {
     const cfg = await this.repo.persistedGetTenantConfig(tenantId);
     if (cfg) {
       return {

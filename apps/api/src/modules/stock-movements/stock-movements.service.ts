@@ -137,7 +137,10 @@ export class StockMovementsService {
     actor: ActorContext,
   ): Promise<StockMovementListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = await this.repo.persistedSearch(tenantId, this.toSearchFilters(filters));
+    const result = await this.repo.persistedSearch(
+      tenantId,
+      this.toSearchFilters(filters),
+    );
     return {
       items: result.items.map((r) => toStockMovement(r)),
       total: result.total,
@@ -311,18 +314,38 @@ export class StockMovementsService {
     filters?: { productId?: string; lotId?: string },
   ): Promise<StockBalanceListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const rows = (await this.repo.persistedSearch(tenantId, {
-      limit: 10000, offset: 0, productId: filters?.productId, lotId: filters?.lotId,
-    })).items;
-    const map = new Map<string, { productId: string; lotId: string | null; net: string; count: number }>();
+    const rows = (
+      await this.repo.persistedSearch(tenantId, {
+        limit: 10000,
+        offset: 0,
+        productId: filters?.productId,
+        lotId: filters?.lotId,
+      })
+    ).items;
+    const map = new Map<
+      string,
+      { productId: string; lotId: string | null; net: string; count: number }
+    >();
     for (const rec of rows) {
       const key = `${rec.productId}|${rec.lotId ?? "null"}`;
-      const entry = map.get(key) ?? { productId: rec.productId, lotId: rec.lotId, net: "0", count: 0 };
+      const entry = map.get(key) ?? {
+        productId: rec.productId,
+        lotId: rec.lotId,
+        net: "0",
+        count: 0,
+      };
       entry.net = addSignedDecimals(entry.net, rec.quantity) ?? rec.quantity;
       entry.count += 1;
       map.set(key, entry);
     }
-    return { items: Array.from(map.values()).map((entry) => ({ productId: entry.productId, lotId: entry.lotId, netQuantity: entry.net, movementCount: entry.count })) };
+    return {
+      items: Array.from(map.values()).map((entry) => ({
+        productId: entry.productId,
+        lotId: entry.lotId,
+        netQuantity: entry.net,
+        movementCount: entry.count,
+      })),
+    };
   }
 
   // =========================================================================

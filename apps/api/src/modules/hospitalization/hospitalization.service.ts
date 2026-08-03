@@ -81,7 +81,7 @@ export class HospitalizationService {
   ): Promise<Cage> {
     this.requireTenantScope(actor, tenantId);
 
-    const existing = this.repo.findCageByCode(tenantId, input.code);
+    const existing = await this.repo.persistedCageByCode(tenantId, input.code);
     if (existing) {
       throw new DomainError({
         errorCode: "VET-HOSP-0006",
@@ -108,7 +108,7 @@ export class HospitalizationService {
       createdBy: actor.actorId ?? "system",
       updatedAt: nowIso,
     };
-    this.repo.insertCage(rec);
+    await this.repo.persistCage(rec);
 
     await this.audit.recordSimple(
       "audit:cage.create",
@@ -129,7 +129,7 @@ export class HospitalizationService {
     actor: ActorContext,
   ): Promise<CageListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.searchCages(tenantId, {
+    const result = await this.repo.persistedSearchCages(tenantId, {
       kind: filters.kind,
       active: filters.active,
       sort: filters.sort,
@@ -148,7 +148,7 @@ export class HospitalizationService {
     actor: ActorContext,
   ): Promise<Cage | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findCageById(tenantId, id);
+    const rec = await this.repo.persistedCageById(tenantId, id);
     return rec ? toCage(rec) : null;
   }
 
@@ -159,7 +159,7 @@ export class HospitalizationService {
     actor: ActorContext,
   ): Promise<Cage> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findCageById(tenantId, id);
+    const existing = await this.repo.persistedCageById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-HOSP-0001",
@@ -171,7 +171,7 @@ export class HospitalizationService {
       });
     }
     const nowIso = new Date().toISOString();
-    this.repo.updateCage(tenantId, id, {
+    await this.repo.persistedUpdateCage(tenantId, id, {
       name: input.name,
       kind: input.kind,
       capacity: input.capacity,
@@ -190,7 +190,7 @@ export class HospitalizationService {
       { fieldsChanged: Object.keys(input) },
     );
 
-    const updated = this.repo.findCageById(tenantId, id);
+    const updated = await this.repo.persistedCageById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-HOSP-0001",
@@ -213,7 +213,10 @@ export class HospitalizationService {
     this.requireTenantScope(actor, tenantId);
 
     // Aynı patient için aktif yatış kontrolü.
-    const existing = this.repo.findActiveByPatient(tenantId, input.patientId);
+    const existing = await this.repo.persistedActiveByPatient(
+      tenantId,
+      input.patientId,
+    );
     if (existing) {
       throw new DomainError({
         errorCode: "VET-HOSP-0007",
@@ -248,7 +251,7 @@ export class HospitalizationService {
       createdBy: actor.actorId ?? "system",
       updatedAt: nowIso,
     };
-    this.repo.insertHospitalization(rec);
+    await this.repo.persistHospitalization(rec);
 
     await this.audit.recordSimple(
       "audit:hospitalization.create",
@@ -289,13 +292,13 @@ export class HospitalizationService {
     actor: ActorContext,
   ): Promise<HospitalizationDetail | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findHospitalizationById(tenantId, id);
+    const rec = await this.repo.persistedHospitalizationById(tenantId, id);
     if (!rec) return null;
     return {
       hospitalization: toHospitalization(rec),
-      cageAssignments: this.repo
-        .listCageAssignments(tenantId, id)
-        .map(toCageAssignment),
+      cageAssignments: (await this.repo.persistedAssignments(tenantId, id)).map(
+        toCageAssignment,
+      ),
     };
   }
 
@@ -306,7 +309,7 @@ export class HospitalizationService {
     actor: ActorContext,
   ): Promise<Hospitalization> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findHospitalizationById(tenantId, id);
+    const existing = await this.repo.persistedHospitalizationById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-HOSP-0001",
@@ -328,7 +331,7 @@ export class HospitalizationService {
       });
     }
     const nowIso = new Date().toISOString();
-    this.repo.updateHospitalization(tenantId, id, {
+    await this.repo.persistedUpdateHospitalization(tenantId, id, {
       plannedAt: input.plannedAt,
       reason: input.reason,
       notes: input.notes,
@@ -345,7 +348,7 @@ export class HospitalizationService {
       { fieldsChanged: Object.keys(input) },
     );
 
-    const updated = this.repo.findHospitalizationById(tenantId, id);
+    const updated = await this.repo.persistedHospitalizationById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-HOSP-0001",
@@ -363,7 +366,7 @@ export class HospitalizationService {
     actor: ActorContext,
   ): Promise<Hospitalization> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findHospitalizationById(tenantId, id);
+    const existing = await this.repo.persistedHospitalizationById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-HOSP-0001",
@@ -385,7 +388,7 @@ export class HospitalizationService {
       });
     }
     const nowIso = new Date().toISOString();
-    this.repo.updateHospitalization(tenantId, id, {
+    await this.repo.persistedUpdateHospitalization(tenantId, id, {
       status: "admitted",
       admittedAt: input.admittedAt ?? nowIso,
       admittedBy: actor.actorId ?? "system",
@@ -402,7 +405,7 @@ export class HospitalizationService {
       { patientId: existing.patientId },
     );
 
-    const updated = this.repo.findHospitalizationById(tenantId, id);
+    const updated = await this.repo.persistedHospitalizationById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-HOSP-0001",
@@ -420,7 +423,7 @@ export class HospitalizationService {
     actor: ActorContext,
   ): Promise<Hospitalization> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findHospitalizationById(tenantId, id);
+    const existing = await this.repo.persistedHospitalizationById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-HOSP-0001",
@@ -442,7 +445,7 @@ export class HospitalizationService {
       });
     }
     const nowIso = new Date().toISOString();
-    this.repo.updateHospitalization(tenantId, id, {
+    await this.repo.persistedUpdateHospitalization(tenantId, id, {
       status: "discharged",
       dischargedAt: input.dischargedAt ?? nowIso,
       dischargedBy: actor.actorId ?? "system",
@@ -452,10 +455,10 @@ export class HospitalizationService {
     });
 
     // Tüm açık cage assignment'ları sonlandır.
-    const assignments = this.repo.listCageAssignments(tenantId, id);
+    const assignments = await this.repo.persistedAssignments(tenantId, id);
     for (const a of assignments) {
       if (a.to === null) {
-        this.repo.updateCageAssignment(tenantId, a.id, {
+        await this.repo.persistedUpdateAssignment(tenantId, a.id, {
           to: input.dischargedAt ?? nowIso,
         });
       }
@@ -474,7 +477,7 @@ export class HospitalizationService {
       },
     );
 
-    const updated = this.repo.findHospitalizationById(tenantId, id);
+    const updated = await this.repo.persistedHospitalizationById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-HOSP-0001",
@@ -492,7 +495,7 @@ export class HospitalizationService {
     actor: ActorContext,
   ): Promise<Hospitalization> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findHospitalizationById(tenantId, id);
+    const existing = await this.repo.persistedHospitalizationById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-HOSP-0001",
@@ -514,7 +517,7 @@ export class HospitalizationService {
       });
     }
     const nowIso = new Date().toISOString();
-    this.repo.updateHospitalization(tenantId, id, {
+    await this.repo.persistedUpdateHospitalization(tenantId, id, {
       status: "cancelled",
       cancelReason: input.reason,
       updatedAt: nowIso,
@@ -530,7 +533,7 @@ export class HospitalizationService {
       { reason: input.reason, previousStatus: existing.status },
     );
 
-    const updated = this.repo.findHospitalizationById(tenantId, id);
+    const updated = await this.repo.persistedHospitalizationById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-HOSP-0001",
@@ -552,7 +555,7 @@ export class HospitalizationService {
     actor: ActorContext,
   ): Promise<CageAssignment> {
     this.requireTenantScope(actor, tenantId);
-    const hospitalization = this.repo.findHospitalizationById(
+    const hospitalization = await this.repo.persistedHospitalizationById(
       tenantId,
       hospitalizationId,
     );
@@ -583,7 +586,7 @@ export class HospitalizationService {
       });
     }
     // Cage mevcut ve aktif mi?
-    const cage = this.repo.findCageById(tenantId, input.cageId);
+    const cage = await this.repo.persistedCageById(tenantId, input.cageId);
     if (!cage) {
       throw new DomainError({
         errorCode: "VET-HOSP-0001",
@@ -605,7 +608,7 @@ export class HospitalizationService {
       });
     }
     // Aynı hospitalization için açık cage assignment var mı?
-    const existingAssignments = this.repo.listCageAssignments(
+    const existingAssignments = await this.repo.persistedAssignments(
       tenantId,
       hospitalizationId,
     );
@@ -624,7 +627,7 @@ export class HospitalizationService {
       });
     }
     // Aynı kafeste çakışma var mı?
-    const overlap = this.repo.findOverlappingAssignment(
+    const overlap = await this.repo.persistedOverlappingAssignment(
       tenantId,
       input.cageId,
       input.from,
@@ -671,14 +674,18 @@ export class HospitalizationService {
       createdAt: nowIso,
       createdBy: actor.actorId ?? "system",
     };
-    this.repo.insertCageAssignment(rec);
+    await this.repo.persistCageAssignment(rec);
 
     // planned → active geçişi (kabul gerçekleşmiş ama kafes atanmamışsa).
     if (hospitalization.status === "admitted") {
-      this.repo.updateHospitalization(tenantId, hospitalizationId, {
-        status: "active",
-        updatedAt: nowIso,
-      });
+      await this.repo.persistedUpdateHospitalization(
+        tenantId,
+        hospitalizationId,
+        {
+          status: "active",
+          updatedAt: nowIso,
+        },
+      );
     }
 
     await this.audit.recordSimple(
@@ -706,7 +713,10 @@ export class HospitalizationService {
     actor: ActorContext,
   ): Promise<CageAssignment> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findCageAssignmentById(tenantId, assignmentId);
+    const existing = await this.repo.persistedAssignmentById(
+      tenantId,
+      assignmentId,
+    );
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-HOSP-0001",
@@ -738,7 +748,7 @@ export class HospitalizationService {
       });
     }
 
-    this.repo.updateCageAssignment(tenantId, assignmentId, {
+    await this.repo.persistedUpdateAssignment(tenantId, assignmentId, {
       to: input.to,
       endedBy: actor.actorId ?? "system",
     });
@@ -756,7 +766,10 @@ export class HospitalizationService {
       },
     );
 
-    const updated = this.repo.findCageAssignmentById(tenantId, assignmentId);
+    const updated = await this.repo.persistedAssignmentById(
+      tenantId,
+      assignmentId,
+    );
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-HOSP-0001",

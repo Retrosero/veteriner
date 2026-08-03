@@ -397,7 +397,10 @@ export class PurchaseOrdersService {
         }
         totalAmount = sum;
       }
-      await this.repo.persistedUpdate(tenantId, id, { totalAmount, updatedAt: nowIso });
+      await this.repo.persistedUpdate(tenantId, id, {
+        totalAmount,
+        updatedAt: nowIso,
+      });
       await this.repo.persistedReplaceLines(tenantId, id, replacementLines);
     }
 

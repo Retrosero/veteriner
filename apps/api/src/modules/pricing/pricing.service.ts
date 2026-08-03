@@ -208,7 +208,14 @@ export class PricingService {
       offset: filters.offset,
     });
     return {
-      items: await Promise.all(result.items.map(async (rec) => toPriceList(rec, await this.repo.persistedActiveItemCount(tenantId, rec.id)))),
+      items: await Promise.all(
+        result.items.map(async (rec) =>
+          toPriceList(
+            rec,
+            await this.repo.persistedActiveItemCount(tenantId, rec.id),
+          ),
+        ),
+      ),
       total: result.total,
     };
   }
@@ -225,7 +232,10 @@ export class PricingService {
     this.requireTenantScope(actor, tenantId);
     const rec = await this.repo.persistedListById(tenantId, id);
     if (!rec) return null;
-    return toPriceList(rec, await this.repo.persistedActiveItemCount(tenantId, rec.id));
+    return toPriceList(
+      rec,
+      await this.repo.persistedActiveItemCount(tenantId, rec.id),
+    );
   }
 
   // ===========================================================================

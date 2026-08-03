@@ -9,9 +9,9 @@
  *
  * `expireOlderThan` iki modlu çalışır:
  * - `archive=true`  : cutoff'tan eski kayıtlar `archiveStorage`
- *   katmanına taşınır (in-memory MVP'de silinir + sayaç artırılır;
- *   production'da cold storage adapter çağrılır).
- * - `archive=false` : cutoff'tan eski kayıtlar kalıcı silinir.
+ *   katmanına taşınır (cold storage adapter sonraki teslimatta
+ *   bağlanacaktır).
+ * - `archive=false` : cutoff'tan eski kayıtlar kalıcı depodan silinir.
  *
  * `redactPii=true` ise archive öncesi payload `masker.mask(...)`
  * ile mask'lenir (PII tespit edilebilen alanlar `[redacted]`,
@@ -59,7 +59,7 @@ export interface LogRetentionTarget {
   /** Bilinen tenantId listesi (sweep için). null dahil. */
   listTenantIds(): Array<string | null>;
   /** Cutoff'tan eski kayıtları arşivle/sil. Etkilenen kayıt sayısı. */
-  expireOlderThan(args: ExpireOlderThanArgs): number;
+  expireOlderThan(args: ExpireOlderThanArgs): number | Promise<number>;
   /** Dry-run sayımı. */
   countOlderThan(args: CountOlderThanArgs): number;
 }

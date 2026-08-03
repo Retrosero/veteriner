@@ -116,7 +116,7 @@ export class DischargeSummariesService {
       createdAt: nowIso,
       createdBy: actor.actorId ?? "system",
     };
-    this.repo.insertObservation(rec);
+    await this.repo.persistObservation(rec);
 
     await this.audit.recordSimple(
       "audit:observation.create",
@@ -140,7 +140,7 @@ export class DischargeSummariesService {
     actor: ActorContext,
   ): Promise<ObservationListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.searchObservations(tenantId, {
+    const result = await this.repo.persistedObservations(tenantId, {
       hospitalizationId: filters.hospitalizationId,
       kind: filters.kind,
       from: filters.from,
@@ -195,7 +195,7 @@ export class DischargeSummariesService {
       });
     }
     // Aynı yatış için aktif (draft/finalized) summary var mı?
-    const existing = this.repo.findActiveSummaryByHosp(
+    const existing = await this.repo.persistedActiveSummary(
       tenantId,
       hospitalizationId,
     );
@@ -239,7 +239,7 @@ export class DischargeSummariesService {
       createdBy: actor.actorId ?? "system",
       updatedAt: nowIso,
     };
-    this.repo.insertSummary(rec);
+    await this.repo.persistSummary(rec);
 
     await this.audit.recordSimple(
       "audit:discharge_summary.create",
@@ -263,7 +263,10 @@ export class DischargeSummariesService {
     actor: ActorContext,
   ): Promise<DischargeSummary | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findActiveSummaryByHosp(tenantId, hospitalizationId);
+    const rec = await this.repo.persistedActiveSummary(
+      tenantId,
+      hospitalizationId,
+    );
     return rec ? toDischargeSummary(rec) : null;
   }
 
@@ -274,7 +277,7 @@ export class DischargeSummariesService {
     actor: ActorContext,
   ): Promise<DischargeSummary> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findActiveSummaryByHosp(
+    const existing = await this.repo.persistedActiveSummary(
       tenantId,
       hospitalizationId,
     );
@@ -302,7 +305,7 @@ export class DischargeSummariesService {
       });
     }
     const nowIso = new Date().toISOString();
-    this.repo.updateSummary(tenantId, existing.id, {
+    await this.repo.persistedUpdateSummary(tenantId, existing.id, {
       clinicalSummary: input.clinicalSummary,
       treatments: input.treatments,
       homeInstructions: input.homeInstructions,
@@ -322,7 +325,7 @@ export class DischargeSummariesService {
       { fieldsChanged: Object.keys(input) },
     );
 
-    const updated = this.repo.findSummaryById(tenantId, existing.id);
+    const updated = await this.repo.persistedSummaryById(tenantId, existing.id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-DSUM-0002",
@@ -340,7 +343,7 @@ export class DischargeSummariesService {
     actor: ActorContext,
   ): Promise<DischargeSummary> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findActiveSummaryByHosp(
+    const existing = await this.repo.persistedActiveSummary(
       tenantId,
       hospitalizationId,
     );
@@ -368,7 +371,7 @@ export class DischargeSummariesService {
       });
     }
     const nowIso = new Date().toISOString();
-    this.repo.updateSummary(tenantId, existing.id, {
+    await this.repo.persistedUpdateSummary(tenantId, existing.id, {
       status: "finalized",
       finalizedAt: nowIso,
       finalizedBy: actor.actorId ?? "system",
@@ -388,7 +391,7 @@ export class DischargeSummariesService {
       { medicationCount: existing.medications.length },
     );
 
-    const updated = this.repo.findSummaryById(tenantId, existing.id);
+    const updated = await this.repo.persistedSummaryById(tenantId, existing.id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-DSUM-0002",
@@ -406,7 +409,7 @@ export class DischargeSummariesService {
     actor: ActorContext,
   ): Promise<DischargeSummary> {
     this.requireTenantScope(actor, tenantId);
-    const original = this.repo.findActiveSummaryByHosp(
+    const original = await this.repo.persistedActiveSummary(
       tenantId,
       hospitalizationId,
     );
@@ -434,7 +437,7 @@ export class DischargeSummariesService {
     const nowIso = new Date().toISOString();
 
     // Orijinali amended işaretle.
-    this.repo.updateSummary(tenantId, original.id, {
+    await this.repo.persistedUpdateSummary(tenantId, original.id, {
       status: "amended",
       updatedAt: nowIso,
     });
@@ -464,7 +467,7 @@ export class DischargeSummariesService {
       createdBy: actor.actorId ?? "system",
       updatedAt: nowIso,
     };
-    this.repo.insertSummary(amendment);
+    await this.repo.persistSummary(amendment);
 
     await this.audit.recordSimple(
       "audit:discharge_summary.amend",
@@ -488,7 +491,7 @@ export class DischargeSummariesService {
     actor: ActorContext,
   ): Promise<DischargeSummary> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findActiveSummaryByHosp(
+    const existing = await this.repo.persistedActiveSummary(
       tenantId,
       hospitalizationId,
     );
@@ -513,7 +516,7 @@ export class DischargeSummariesService {
       });
     }
     const nowIso = new Date().toISOString();
-    this.repo.updateSummary(tenantId, existing.id, {
+    await this.repo.persistedUpdateSummary(tenantId, existing.id, {
       portalShared: true,
       portalSharedAt: nowIso,
       updatedAt: nowIso,
@@ -529,7 +532,7 @@ export class DischargeSummariesService {
       { patientId: undefined },
     );
 
-    const updated = this.repo.findSummaryById(tenantId, existing.id);
+    const updated = await this.repo.persistedSummaryById(tenantId, existing.id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-DSUM-0002",

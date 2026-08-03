@@ -415,6 +415,25 @@ export class JobRunsRepository implements OnModuleInit, OnModuleDestroy {
     return idsToDelete.length;
   }
 
+  /** Kalıcı JobRun satırlarını ve API indeksini birlikte temizler. */
+  public async expirePersistedOlderThan(args: {
+    cutoff: string;
+    tenantId?: string | null;
+  }): Promise<number> {
+    if (!this.prisma) return this.expireOlderThan(args);
+    const deleted = await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'true', true)`;
+      return tx.jobRun.deleteMany({
+        where: {
+          ...(args.tenantId !== undefined ? { tenantId: args.tenantId } : {}),
+          startedAt: { lte: new Date(args.cutoff) },
+        },
+      });
+    });
+    this.expireOlderThan(args);
+    return deleted.count;
+  }
+
   /**
    * `startedAt` alanı `cutoff` değerinden küçük veya eşit olan
    * (yani cutoff'a kadar olan) job run kayıtlarını sayar. Tenant

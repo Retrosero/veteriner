@@ -62,10 +62,107 @@ export class SurgeryPlansRepository {
     this.byId.set(record.id, record);
     return record;
   }
-  public async persist(record:SurgeryPlanRecord):Promise<SurgeryPlanRecord>{if(!this.prisma)return this.insert(record);const row=await this.inTenant(record.tenantId,tx=>tx.surgeryPlanRecord.create({data:{...record,scheduledAt:new Date(record.scheduledAt),startedAt:record.startedAt?new Date(record.startedAt):null,completedAt:record.completedAt?new Date(record.completedAt):null,cancelledAt:record.cancelledAt?new Date(record.cancelledAt):null,createdAt:new Date(record.createdAt),updatedAt:new Date(record.updatedAt)}}));return this.map(row);}
-  public async persistedById(tenantId:string,id:string):Promise<SurgeryPlanRecord|null>{if(!this.prisma)return this.findById(tenantId,id);const row=await this.inTenant(tenantId,tx=>tx.surgeryPlanRecord.findFirst({where:{tenantId,id}}));return row?this.map(row):null;}
-  public async persistedUpdate(tenantId:string,id:string,p:SurgeryPlanPatch):Promise<SurgeryPlanRecord|null>{if(!this.prisma)return this.update(tenantId,id,p);const data:Prisma.SurgeryPlanRecordUpdateManyMutationInput={...(p.operationType!==undefined?{operationType:p.operationType}:{}),...(p.scheduledAt!==undefined?{scheduledAt:new Date(p.scheduledAt)}:{}),...(p.appointmentId!==undefined?{appointmentId:p.appointmentId}:{}),...(p.notes!==undefined?{notes:p.notes}:{}),...(p.status!==undefined?{status:p.status}:{}),...(p.startedAt!==undefined?{startedAt:p.startedAt?new Date(p.startedAt):null}:{}),...(p.startedBy!==undefined?{startedBy:p.startedBy}:{}),...(p.completedAt!==undefined?{completedAt:p.completedAt?new Date(p.completedAt):null}:{}),...(p.completedBy!==undefined?{completedBy:p.completedBy}:{}),...(p.cancelledAt!==undefined?{cancelledAt:p.cancelledAt?new Date(p.cancelledAt):null}:{}),...(p.cancelledBy!==undefined?{cancelledBy:p.cancelledBy}:{}),...(p.cancelReason!==undefined?{cancelReason:p.cancelReason}:{}),...(p.updatedAt!==undefined?{updatedAt:new Date(p.updatedAt)}:{})};const result=await this.inTenant(tenantId,tx=>tx.surgeryPlanRecord.updateMany({where:{tenantId,id},data}));return result.count?this.persistedById(tenantId,id):null;}
-  public async persistedSearch(tenantId:string,f:SurgeryPlanSearchFilters):Promise<{items:SurgeryPlanRecord[];total:number}>{if(!this.prisma)return this.search(tenantId,f);const where:Prisma.SurgeryPlanRecordWhereInput={tenantId,...(f.status?{status:f.status}:{}),...(f.patientId?{patientId:f.patientId}:{}),...(f.leadSurgeonUserId?{leadSurgeonUserId:f.leadSurgeonUserId}:{}),...(f.from||f.to?{scheduledAt:{...(f.from?{gte:new Date(`${f.from}T00:00:00.000Z`)}:{}),...(f.to?{lte:new Date(`${f.to}T23:59:59.999Z`)}:{})}}:{})};return this.inTenant(tenantId,async tx=>{const[items,total]=await Promise.all([tx.surgeryPlanRecord.findMany({where,orderBy:{scheduledAt:f.sort??"desc"},skip:f.offset,take:f.limit}),tx.surgeryPlanRecord.count({where})]);return{items:items.map(row=>this.map(row)),total};});}
+  public async persist(record: SurgeryPlanRecord): Promise<SurgeryPlanRecord> {
+    if (!this.prisma) return this.insert(record);
+    const row = await this.inTenant(record.tenantId, (tx) =>
+      tx.surgeryPlanRecord.create({
+        data: {
+          ...record,
+          scheduledAt: new Date(record.scheduledAt),
+          startedAt: record.startedAt ? new Date(record.startedAt) : null,
+          completedAt: record.completedAt ? new Date(record.completedAt) : null,
+          cancelledAt: record.cancelledAt ? new Date(record.cancelledAt) : null,
+          createdAt: new Date(record.createdAt),
+          updatedAt: new Date(record.updatedAt),
+        },
+      }),
+    );
+    return this.map(row);
+  }
+  public async persistedById(
+    tenantId: string,
+    id: string,
+  ): Promise<SurgeryPlanRecord | null> {
+    if (!this.prisma) return this.findById(tenantId, id);
+    const row = await this.inTenant(tenantId, (tx) =>
+      tx.surgeryPlanRecord.findFirst({ where: { tenantId, id } }),
+    );
+    return row ? this.map(row) : null;
+  }
+  public async persistedUpdate(
+    tenantId: string,
+    id: string,
+    p: SurgeryPlanPatch,
+  ): Promise<SurgeryPlanRecord | null> {
+    if (!this.prisma) return this.update(tenantId, id, p);
+    const data: Prisma.SurgeryPlanRecordUpdateManyMutationInput = {
+      ...(p.operationType !== undefined
+        ? { operationType: p.operationType }
+        : {}),
+      ...(p.scheduledAt !== undefined
+        ? { scheduledAt: new Date(p.scheduledAt) }
+        : {}),
+      ...(p.appointmentId !== undefined
+        ? { appointmentId: p.appointmentId }
+        : {}),
+      ...(p.notes !== undefined ? { notes: p.notes } : {}),
+      ...(p.status !== undefined ? { status: p.status } : {}),
+      ...(p.startedAt !== undefined
+        ? { startedAt: p.startedAt ? new Date(p.startedAt) : null }
+        : {}),
+      ...(p.startedBy !== undefined ? { startedBy: p.startedBy } : {}),
+      ...(p.completedAt !== undefined
+        ? { completedAt: p.completedAt ? new Date(p.completedAt) : null }
+        : {}),
+      ...(p.completedBy !== undefined ? { completedBy: p.completedBy } : {}),
+      ...(p.cancelledAt !== undefined
+        ? { cancelledAt: p.cancelledAt ? new Date(p.cancelledAt) : null }
+        : {}),
+      ...(p.cancelledBy !== undefined ? { cancelledBy: p.cancelledBy } : {}),
+      ...(p.cancelReason !== undefined ? { cancelReason: p.cancelReason } : {}),
+      ...(p.updatedAt !== undefined
+        ? { updatedAt: new Date(p.updatedAt) }
+        : {}),
+    };
+    const result = await this.inTenant(tenantId, (tx) =>
+      tx.surgeryPlanRecord.updateMany({ where: { tenantId, id }, data }),
+    );
+    return result.count ? this.persistedById(tenantId, id) : null;
+  }
+  public async persistedSearch(
+    tenantId: string,
+    f: SurgeryPlanSearchFilters,
+  ): Promise<{ items: SurgeryPlanRecord[]; total: number }> {
+    if (!this.prisma) return this.search(tenantId, f);
+    const where: Prisma.SurgeryPlanRecordWhereInput = {
+      tenantId,
+      ...(f.status ? { status: f.status } : {}),
+      ...(f.patientId ? { patientId: f.patientId } : {}),
+      ...(f.leadSurgeonUserId
+        ? { leadSurgeonUserId: f.leadSurgeonUserId }
+        : {}),
+      ...(f.from || f.to
+        ? {
+            scheduledAt: {
+              ...(f.from ? { gte: new Date(`${f.from}T00:00:00.000Z`) } : {}),
+              ...(f.to ? { lte: new Date(`${f.to}T23:59:59.999Z`) } : {}),
+            },
+          }
+        : {}),
+    };
+    return this.inTenant(tenantId, async (tx) => {
+      const [items, total] = await Promise.all([
+        tx.surgeryPlanRecord.findMany({
+          where,
+          orderBy: { scheduledAt: f.sort ?? "desc" },
+          skip: f.offset,
+          take: f.limit,
+        }),
+        tx.surgeryPlanRecord.count({ where }),
+      ]);
+      return { items: items.map((row) => this.map(row)), total };
+    });
+  }
 
   public findById(tenantId: string, id: string): SurgeryPlanRecord | null {
     const rec = this.byId.get(id);
@@ -127,6 +224,27 @@ export class SurgeryPlansRepository {
   public clear(): void {
     this.byId.clear();
   }
-  private map(row:DbPlan):SurgeryPlanRecord{return{...row,status:row.status as SurgeryPlanStatus,scheduledAt:row.scheduledAt.toISOString(),startedAt:row.startedAt?.toISOString()??null,completedAt:row.completedAt?.toISOString()??null,cancelledAt:row.cancelledAt?.toISOString()??null,createdAt:row.createdAt.toISOString(),updatedAt:row.updatedAt.toISOString()};}
-  private async inTenant<T>(tenantId:string,callback:(tx:Prisma.TransactionClient)=>Promise<T>):Promise<T>{if(!this.prisma)throw new Error("Prisma bağlantısı bulunamadı");return this.prisma.$transaction(async tx=>{await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;return callback(tx);});}
+  private map(row: DbPlan): SurgeryPlanRecord {
+    return {
+      ...row,
+      status: row.status as SurgeryPlanStatus,
+      scheduledAt: row.scheduledAt.toISOString(),
+      startedAt: row.startedAt?.toISOString() ?? null,
+      completedAt: row.completedAt?.toISOString() ?? null,
+      cancelledAt: row.cancelledAt?.toISOString() ?? null,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+    };
+  }
+  private async inTenant<T>(
+    tenantId: string,
+    callback: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    if (!this.prisma) throw new Error("Prisma bağlantısı bulunamadı");
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;
+      await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;
+      return callback(tx);
+    });
+  }
 }

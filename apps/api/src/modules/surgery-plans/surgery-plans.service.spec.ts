@@ -128,7 +128,9 @@ describe("SurgeryPlansService", () => {
   describe("createPlan", () => {
     it("yeni plan oluşturur (scheduled)", async () => {
       const out = await service.createPlan(TENANT_A, makeCreateInput(), VET_A);
-      expect(out.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+      expect(out.id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+      );
       expect(out.status).toBe("scheduled");
       expect(out.operationType).toBe("ovariohysterectomy");
       expect(audit.recordSimple).toHaveBeenCalledWith(

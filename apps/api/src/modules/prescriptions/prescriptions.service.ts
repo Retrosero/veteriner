@@ -244,7 +244,11 @@ export class PrescriptionsService {
     const consumptionLines: ClinicalConsumptionLine[] = [];
     for (const item of existing.items) {
       if (item.productId && item.dispensedQuantity) {
-        consumptionLines.push({ productId: item.productId, quantity: item.dispensedQuantity, ...(item.dispensedLotId ? { lotId: item.dispensedLotId } : {}) });
+        consumptionLines.push({
+          productId: item.productId,
+          quantity: item.dispensedQuantity,
+          ...(item.dispensedLotId ? { lotId: item.dispensedLotId } : {}),
+        });
       }
     }
     let updated = await this.repo.dispenseWithConsumption(
@@ -259,13 +263,29 @@ export class PrescriptionsService {
       // sözleşme testleri için korunur. Çalışma zamanında yukarıdaki
       // transaction yolu kullanılır.
       updated = await this.repo.persistedUpdate(tenantId, id, {
-        status: "dispensed", dispensedAt: now, dispensedBy: actor.actorId, updatedAt: now,
+        status: "dispensed",
+        dispensedAt: now,
+        dispensedBy: actor.actorId,
+        updatedAt: now,
       });
       if (!updated) {
-        throw new DomainError({ errorCode: "VET-CLINIC-0001", message: "Reçete bulunamadı veya dağıtıma uygun değil", httpStatus: 409, severity: "warning", i18nKey: "error.VET-CLINIC-0001", details: { id } });
+        throw new DomainError({
+          errorCode: "VET-CLINIC-0001",
+          message: "Reçete bulunamadı veya dağıtıma uygun değil",
+          httpStatus: 409,
+          severity: "warning",
+          i18nKey: "error.VET-CLINIC-0001",
+          details: { id },
+        });
       }
       if (consumptionLines.length > 0) {
-        await this.clinicalConsumption.recordForPrescription(tenantId, updated.id, updated.patientId, consumptionLines, actor);
+        await this.clinicalConsumption.recordForPrescription(
+          tenantId,
+          updated.id,
+          updated.patientId,
+          consumptionLines,
+          actor,
+        );
       }
     }
 

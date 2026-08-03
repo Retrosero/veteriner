@@ -257,6 +257,7 @@ export class SecurityEventsService {
           occurredAt,
         },
       });
+      void this.persistSnapshot(rec);
 
       const event = toSecurityEvent(rec);
 
@@ -352,7 +353,12 @@ export class SecurityEventsService {
     try {
       const result = await this.alertAdapter.sendAlert(event);
       if (result.success) {
-        this.repo.markAlertSent(event.fingerprint);
+        this.repo.markAlertSent(event.fingerprint, event.tenantId);
+        const updated = this.repo.findByFingerprint(
+          event.fingerprint,
+          event.tenantId,
+        );
+        if (updated) void this.persistSnapshot(updated);
       } else {
         this.logger.warn(
           `[${event.type}] security alert başarısız: ${result.errorMessage ?? "unknown"}`,
@@ -598,5 +604,18 @@ export class SecurityEventsService {
       severity: "warning",
       i18nKey: "error.VET-AUTHZ-0001",
     });
+  }
+
+  /** Kalıcılık hatasını ana güvenlik/guard akışından ayırır. */
+  private async persistSnapshot(record: SecurityEventRecord): Promise<void> {
+    try {
+      await this.repo.persistSnapshot(record);
+    } catch (error) {
+      this.logger.error(
+        `SecurityEvent kalıcılığı başarısız: ${
+          error instanceof Error ? error.name : "UnknownError"
+        }`,
+      );
+    }
   }
 }

@@ -107,7 +107,10 @@ export class InventoryService {
     this.requireTenantScope(actor, tenantId);
 
     // Code unique kontrolü.
-    const existing = await this.repo.persistedWarehouseByCode(tenantId, input.code);
+    const existing = await this.repo.persistedWarehouseByCode(
+      tenantId,
+      input.code,
+    );
     if (existing && existing.archivedAt === null) {
       throw new DomainError({
         errorCode: "VET-INV-0004",
@@ -204,7 +207,10 @@ export class InventoryService {
     }
 
     if (input.code !== undefined && input.code !== existing.code) {
-      const dupe = await this.repo.persistedWarehouseByCode(tenantId, input.code);
+      const dupe = await this.repo.persistedWarehouseByCode(
+        tenantId,
+        input.code,
+      );
       if (dupe && dupe.id !== id && dupe.archivedAt === null) {
         throw new DomainError({
           errorCode: "VET-INV-0004",
@@ -226,7 +232,11 @@ export class InventoryService {
     if (input.active !== undefined) patch.active = input.active;
     patch.updatedAt = new Date().toISOString();
 
-    const updated = await this.repo.persistedWarehouseUpdate(tenantId, id, patch);
+    const updated = await this.repo.persistedWarehouseUpdate(
+      tenantId,
+      id,
+      patch,
+    );
     if (!updated) throw this.notFoundWarehouseError(id);
 
     await this.audit.recordSimple(
@@ -322,7 +332,10 @@ export class InventoryService {
   ): Promise<Shelf> {
     this.requireTenantScope(actor, tenantId);
 
-    const warehouse = await this.repo.persistedWarehouseById(tenantId, input.warehouseId);
+    const warehouse = await this.repo.persistedWarehouseById(
+      tenantId,
+      input.warehouseId,
+    );
     if (!warehouse) {
       throw this.notFoundWarehouseError(input.warehouseId);
     }
@@ -507,7 +520,10 @@ export class InventoryService {
       throw this.archivedCannotArchiveError("raf");
 
     // Aktif lot varsa arşivlenemez.
-    const activeLots = await this.repo.persistedActiveLotsForShelf(tenantId, id);
+    const activeLots = await this.repo.persistedActiveLotsForShelf(
+      tenantId,
+      id,
+    );
     if (activeLots > 0) {
       throw new DomainError({
         errorCode: "VET-INV-0010",
@@ -778,7 +794,10 @@ export class InventoryService {
     // shelfId değişirse mevcut kontrolü.
     if (input.shelfId !== undefined && input.shelfId !== existing.shelfId) {
       if (input.shelfId !== null) {
-        const shelf = await this.repo.persistedShelfById(tenantId, input.shelfId);
+        const shelf = await this.repo.persistedShelfById(
+          tenantId,
+          input.shelfId,
+        );
         if (!shelf) throw this.notFoundShelfError(input.shelfId);
         if (shelf.archivedAt !== null) {
           throw new DomainError({

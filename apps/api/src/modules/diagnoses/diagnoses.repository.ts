@@ -12,7 +12,10 @@
 
 import { Injectable, Optional } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service.js";
-import type { DiagnosisRecord as PrismaDiagnosis, Prisma } from "@prisma/client";
+import type {
+  DiagnosisRecord as PrismaDiagnosis,
+  Prisma,
+} from "@prisma/client";
 
 import {
   toDiagnosis,
@@ -35,13 +38,126 @@ export class DiagnosesRepository {
   /** Her tenant için id counter. */
   private readonly counters = new Map<string, number>();
   public constructor(@Optional() private readonly prisma?: PrismaService) {}
-  public async persist(r:DiagnosisRecord):Promise<DiagnosisRecord>{if(!this.prisma)return this.insert(r);this.insert(r);const x=await this.ctx(r.tenantId,tx=>tx.diagnosisRecord.create({data:{id:r.id,tenantId:r.tenantId,examinationId:r.examinationId,patientId:r.patientId,code:r.code,name:r.name,category:r.category,status:r.status,notes:r.notes,createdAt:new Date(r.createdAt),createdBy:r.createdBy,resolvedAt:r.resolvedAt?new Date(r.resolvedAt):null,archivedAt:r.archivedAt?new Date(r.archivedAt):null}}));return this.map(x);}
-  public async persistedId(t:string,id:string):Promise<DiagnosisRecord|null>{if(!this.prisma)return this.findById(t,id);const x=await this.ctx(t,tx=>tx.diagnosisRecord.findUnique({where:{id}}));return x?this.map(x):null;}
-  public async persistedByExam(t:string,examinationId:string):Promise<DiagnosisRecord[]>{if(!this.prisma)return this.findByExaminationId(t,examinationId);const x=await this.ctx(t,tx=>tx.diagnosisRecord.findMany({where:{tenantId:t,examinationId,archivedAt:null},orderBy:{createdAt:'asc'}}));return x.map(y=>this.map(y));}
-  public async persistedByPatient(t:string,patientId:string,f:{status?:DiagnosisStatus|undefined;includeArchived?:boolean|undefined}={}):Promise<DiagnosisRecord[]>{if(!this.prisma)return this.findByPatientId(t,patientId,f);const x=await this.ctx(t,tx=>tx.diagnosisRecord.findMany({where:{tenantId:t,patientId,...(f.status?{status:f.status}:{}),...(f.includeArchived?{}:{archivedAt:null})},orderBy:{createdAt:'desc'}}));return x.map(y=>this.map(y));}
-  public async persistedUpdate(t:string,id:string,p:Parameters<DiagnosesRepository['update']>[2]):Promise<DiagnosisRecord|null>{if(!this.prisma)return this.update(t,id,p);const d:Prisma.DiagnosisRecordUpdateManyMutationInput={...(p.status!==undefined?{status:p.status}:{}),...(p.category!==undefined?{category:p.category}:{}),...(p.notes!==undefined?{notes:p.notes}:{}),...(p.code!==undefined?{code:p.code}:{}),...(p.resolvedAt!==undefined?{resolvedAt:p.resolvedAt?new Date(p.resolvedAt):null}:{}),...(p.archivedAt!==undefined?{archivedAt:p.archivedAt?new Date(p.archivedAt):null}:{})};const c=await this.ctx(t,tx=>tx.diagnosisRecord.updateMany({where:{id,tenantId:t},data:d}));return c.count?this.persistedId(t,id):null;}
-  private async ctx<T>(t:string,f:(tx:Prisma.TransactionClient)=>Promise<T>):Promise<T>{if(!this.prisma)throw new Error('Prisma bağlantısı bulunamadı');return this.prisma.$transaction(async x=>{await x.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;await x.$executeRaw`SELECT set_config('app.tenant_id',${t},true)`;return f(x);});}
-  private map(x:PrismaDiagnosis):DiagnosisRecord{return{id:x.id,tenantId:x.tenantId,examinationId:x.examinationId,patientId:x.patientId,code:x.code,name:x.name,category:x.category as DiagnosisCategory,status:x.status as DiagnosisStatus,notes:x.notes,createdAt:x.createdAt.toISOString(),createdBy:x.createdBy,resolvedAt:x.resolvedAt?.toISOString()??null,archivedAt:x.archivedAt?.toISOString()??null};}
+  public async persist(r: DiagnosisRecord): Promise<DiagnosisRecord> {
+    if (!this.prisma) return this.insert(r);
+    this.insert(r);
+    const x = await this.ctx(r.tenantId, (tx) =>
+      tx.diagnosisRecord.create({
+        data: {
+          id: r.id,
+          tenantId: r.tenantId,
+          examinationId: r.examinationId,
+          patientId: r.patientId,
+          code: r.code,
+          name: r.name,
+          category: r.category,
+          status: r.status,
+          notes: r.notes,
+          createdAt: new Date(r.createdAt),
+          createdBy: r.createdBy,
+          resolvedAt: r.resolvedAt ? new Date(r.resolvedAt) : null,
+          archivedAt: r.archivedAt ? new Date(r.archivedAt) : null,
+        },
+      }),
+    );
+    return this.map(x);
+  }
+  public async persistedId(
+    t: string,
+    id: string,
+  ): Promise<DiagnosisRecord | null> {
+    if (!this.prisma) return this.findById(t, id);
+    const x = await this.ctx(t, (tx) =>
+      tx.diagnosisRecord.findUnique({ where: { id } }),
+    );
+    return x ? this.map(x) : null;
+  }
+  public async persistedByExam(
+    t: string,
+    examinationId: string,
+  ): Promise<DiagnosisRecord[]> {
+    if (!this.prisma) return this.findByExaminationId(t, examinationId);
+    const x = await this.ctx(t, (tx) =>
+      tx.diagnosisRecord.findMany({
+        where: { tenantId: t, examinationId, archivedAt: null },
+        orderBy: { createdAt: "asc" },
+      }),
+    );
+    return x.map((y) => this.map(y));
+  }
+  public async persistedByPatient(
+    t: string,
+    patientId: string,
+    f: {
+      status?: DiagnosisStatus | undefined;
+      includeArchived?: boolean | undefined;
+    } = {},
+  ): Promise<DiagnosisRecord[]> {
+    if (!this.prisma) return this.findByPatientId(t, patientId, f);
+    const x = await this.ctx(t, (tx) =>
+      tx.diagnosisRecord.findMany({
+        where: {
+          tenantId: t,
+          patientId,
+          ...(f.status ? { status: f.status } : {}),
+          ...(f.includeArchived ? {} : { archivedAt: null }),
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+    );
+    return x.map((y) => this.map(y));
+  }
+  public async persistedUpdate(
+    t: string,
+    id: string,
+    p: Parameters<DiagnosesRepository["update"]>[2],
+  ): Promise<DiagnosisRecord | null> {
+    if (!this.prisma) return this.update(t, id, p);
+    const d: Prisma.DiagnosisRecordUpdateManyMutationInput = {
+      ...(p.status !== undefined ? { status: p.status } : {}),
+      ...(p.category !== undefined ? { category: p.category } : {}),
+      ...(p.notes !== undefined ? { notes: p.notes } : {}),
+      ...(p.code !== undefined ? { code: p.code } : {}),
+      ...(p.resolvedAt !== undefined
+        ? { resolvedAt: p.resolvedAt ? new Date(p.resolvedAt) : null }
+        : {}),
+      ...(p.archivedAt !== undefined
+        ? { archivedAt: p.archivedAt ? new Date(p.archivedAt) : null }
+        : {}),
+    };
+    const c = await this.ctx(t, (tx) =>
+      tx.diagnosisRecord.updateMany({ where: { id, tenantId: t }, data: d }),
+    );
+    return c.count ? this.persistedId(t, id) : null;
+  }
+  private async ctx<T>(
+    t: string,
+    f: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    if (!this.prisma) throw new Error("Prisma bağlantısı bulunamadı");
+    return this.prisma.$transaction(async (x) => {
+      await x.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;
+      await x.$executeRaw`SELECT set_config('app.tenant_id',${t},true)`;
+      return f(x);
+    });
+  }
+  private map(x: PrismaDiagnosis): DiagnosisRecord {
+    return {
+      id: x.id,
+      tenantId: x.tenantId,
+      examinationId: x.examinationId,
+      patientId: x.patientId,
+      code: x.code,
+      name: x.name,
+      category: x.category as DiagnosisCategory,
+      status: x.status as DiagnosisStatus,
+      notes: x.notes,
+      createdAt: x.createdAt.toISOString(),
+      createdBy: x.createdBy,
+      resolvedAt: x.resolvedAt?.toISOString() ?? null,
+      archivedAt: x.archivedAt?.toISOString() ?? null,
+    };
+  }
 
   public nextId(tenantId: string): string {
     const n = (this.counters.get(tenantId) ?? 0) + 1;

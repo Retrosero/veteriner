@@ -700,7 +700,9 @@ describe("LogRetentionService", () => {
     it("system actor ile çalışır, triggeredBy=manual kaydeder", async () => {
       const result = await harness.service.runScheduledSweep();
       expect(result.triggeredBy).toBe("manual");
-      expect(result.sweepId).toMatch(/^lret-swp-/);
+      expect(result.sweepId).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+      );
     });
   });
 

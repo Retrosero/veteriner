@@ -38,11 +38,74 @@ export class VitalsRepository {
   /** Her tenant için id counter. */
   private readonly counters = new Map<string, number>();
   public constructor(@Optional() private readonly prisma?: PrismaService) {}
-  public async persist(r:VitalsPersistRecord):Promise<VitalsPersistRecord>{if(!this.prisma)return this.insert(r);this.insert(r);const x=await this.ctx(r.tenantId,tx=>tx.vitalRecord.create({data:{id:r.id,tenantId:r.tenantId,examinationId:r.examinationId,patientId:r.patientId,veterinarianId:r.veterinarianId,vitalSigns:r.vitalSigns as unknown as Prisma.InputJsonValue,takenAt:new Date(r.takenAt),recordedBy:r.recordedBy}}));return this.map(x);}
-  public async persistedByExam(tenantId:string,examinationId:string):Promise<VitalsPersistRecord[]>{if(!this.prisma)return this.findByExamination(tenantId,examinationId);const x=await this.ctx(tenantId,tx=>tx.vitalRecord.findMany({where:{tenantId,examinationId},orderBy:{takenAt:'desc'}}));return x.map(y=>this.map(y));}
-  public async persistedLatest(tenantId:string,patientId:string):Promise<VitalsPersistRecord|null>{if(!this.prisma)return this.latestForPatient(tenantId,patientId);const x=await this.ctx(tenantId,tx=>tx.vitalRecord.findFirst({where:{tenantId,patientId},orderBy:{takenAt:'desc'}}));return x?this.map(x):null;}
-  private async ctx<T>(tenantId:string,fn:(tx:Prisma.TransactionClient)=>Promise<T>):Promise<T>{if(!this.prisma)throw new Error('Prisma bağlantısı bulunamadı');return this.prisma.$transaction(async tx=>{await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;return fn(tx);});}
-  private map(x:PrismaVitalRecord):VitalsPersistRecord{return{id:x.id,tenantId:x.tenantId,examinationId:x.examinationId,patientId:x.patientId,veterinarianId:x.veterinarianId,vitalSigns:x.vitalSigns as unknown as VitalSigns,takenAt:x.takenAt.toISOString(),recordedBy:x.recordedBy};}
+  public async persist(r: VitalsPersistRecord): Promise<VitalsPersistRecord> {
+    if (!this.prisma) return this.insert(r);
+    this.insert(r);
+    const x = await this.ctx(r.tenantId, (tx) =>
+      tx.vitalRecord.create({
+        data: {
+          id: r.id,
+          tenantId: r.tenantId,
+          examinationId: r.examinationId,
+          patientId: r.patientId,
+          veterinarianId: r.veterinarianId,
+          vitalSigns: r.vitalSigns as unknown as Prisma.InputJsonValue,
+          takenAt: new Date(r.takenAt),
+          recordedBy: r.recordedBy,
+        },
+      }),
+    );
+    return this.map(x);
+  }
+  public async persistedByExam(
+    tenantId: string,
+    examinationId: string,
+  ): Promise<VitalsPersistRecord[]> {
+    if (!this.prisma) return this.findByExamination(tenantId, examinationId);
+    const x = await this.ctx(tenantId, (tx) =>
+      tx.vitalRecord.findMany({
+        where: { tenantId, examinationId },
+        orderBy: { takenAt: "desc" },
+      }),
+    );
+    return x.map((y) => this.map(y));
+  }
+  public async persistedLatest(
+    tenantId: string,
+    patientId: string,
+  ): Promise<VitalsPersistRecord | null> {
+    if (!this.prisma) return this.latestForPatient(tenantId, patientId);
+    const x = await this.ctx(tenantId, (tx) =>
+      tx.vitalRecord.findFirst({
+        where: { tenantId, patientId },
+        orderBy: { takenAt: "desc" },
+      }),
+    );
+    return x ? this.map(x) : null;
+  }
+  private async ctx<T>(
+    tenantId: string,
+    fn: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    if (!this.prisma) throw new Error("Prisma bağlantısı bulunamadı");
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;
+      await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;
+      return fn(tx);
+    });
+  }
+  private map(x: PrismaVitalRecord): VitalsPersistRecord {
+    return {
+      id: x.id,
+      tenantId: x.tenantId,
+      examinationId: x.examinationId,
+      patientId: x.patientId,
+      veterinarianId: x.veterinarianId,
+      vitalSigns: x.vitalSigns as unknown as VitalSigns,
+      takenAt: x.takenAt.toISOString(),
+      recordedBy: x.recordedBy,
+    };
+  }
 
   public nextId(tenantId: string): string {
     const n = (this.counters.get(tenantId) ?? 0) + 1;

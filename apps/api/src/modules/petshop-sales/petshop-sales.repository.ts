@@ -11,7 +11,11 @@
  */
 
 import { Injectable, Optional } from "@nestjs/common";
-import type { Prisma, PetshopSaleLineRecord as DbLine, PetshopSaleRecord as DbSale } from "@prisma/client";
+import type {
+  Prisma,
+  PetshopSaleLineRecord as DbLine,
+  PetshopSaleRecord as DbSale,
+} from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { PrismaService } from "../../prisma/prisma.service.js";
 
@@ -94,12 +98,163 @@ export class PetshopSalesRepository {
     this.linesBySale.set(record.id, []);
     return record;
   }
-  public async persistSaleWithLines(sale: PetshopSaleRecord, lines: PetshopSaleLineRecord[]): Promise<void> { if (!this.prisma) { this.insert(sale); for (const line of lines) this.insertLine(line); return; } await this.inTenant(sale.tenantId, async (tx) => { await tx.petshopSaleRecord.create({ data: this.saleData(sale) }); if (lines.length) await tx.petshopSaleLineRecord.createMany({ data: lines.map((line) => this.lineData(line)) }); }); }
-  public async persistedById(tenantId: string, id: string): Promise<PetshopSaleRecord | null> { if (!this.prisma) return this.findById(tenantId,id); const row = await this.inTenant(tenantId,(tx)=>tx.petshopSaleRecord.findFirst({where:{tenantId,id}})); return row ? this.mapSale(row) : null; }
-  public async persistedLines(tenantId: string, saleId: string): Promise<PetshopSaleLineRecord[]> { if (!this.prisma) return this.listLinesBySale(tenantId,saleId); const rows = await this.inTenant(tenantId,(tx)=>tx.petshopSaleLineRecord.findMany({where:{tenantId,saleId},orderBy:{createdAt:"asc"}})); return rows.map((row)=>this.mapLine(row)); }
-  public async persistedSearch(tenantId: string, filters: PetshopSaleSearchFilters): Promise<{items:PetshopSaleRecord[];total:number}> { if (!this.prisma) return this.search(tenantId,filters); const where: Prisma.PetshopSaleRecordWhereInput = { tenantId, ...(filters.status ? {status:filters.status}:{}), ...(filters.customerOwnerId ? {customerOwnerId:filters.customerOwnerId}:{}), ...(filters.customerPatientId ? {customerPatientId:filters.customerPatientId}:{}), ...(filters.paymentMethod ? {paymentMethod:filters.paymentMethod}:{}), ...(filters.search?.trim() ? {OR:[{id:{contains:filters.search.trim()}},{notes:{contains:filters.search.trim(),mode:"insensitive"}}]}:{}) }; return this.inTenant(tenantId,async(tx)=>{const[items,total]=await Promise.all([tx.petshopSaleRecord.findMany({where,orderBy:{createdAt:filters.sort??"desc"},skip:filters.offset,take:filters.limit}),tx.petshopSaleRecord.count({where})]);return{items:items.map((row)=>this.mapSale(row)),total};}); }
-  public async persistedUpdate(tenantId: string,id:string,patch:PetshopSalePatch):Promise<PetshopSaleRecord|null>{if(!this.prisma)return this.update(tenantId,id,patch);const data:Prisma.PetshopSaleRecordUpdateManyMutationInput={...(patch.status!==undefined?{status:patch.status}:{}),...(patch.customerOwnerId!==undefined?{customerOwnerId:patch.customerOwnerId}:{}),...(patch.customerPatientId!==undefined?{customerPatientId:patch.customerPatientId}:{}),...(patch.paymentMethod!==undefined?{paymentMethod:patch.paymentMethod}:{}),...(patch.paidAmount!==undefined?{paidAmount:patch.paidAmount}:{}),...(patch.totalAmount!==undefined?{totalAmount:patch.totalAmount}:{}),...(patch.globalDiscountPercent!==undefined?{globalDiscountPercent:patch.globalDiscountPercent}:{}),...(patch.netAmount!==undefined?{netAmount:patch.netAmount}:{}),...(patch.notes!==undefined?{notes:patch.notes}:{}),...(patch.completedAt!==undefined?{completedAt:patch.completedAt?new Date(patch.completedAt):null}:{}),...(patch.completedBy!==undefined?{completedBy:patch.completedBy}:{}),...(patch.cancelledAt!==undefined?{cancelledAt:patch.cancelledAt?new Date(patch.cancelledAt):null}:{}),...(patch.cancelledBy!==undefined?{cancelledBy:patch.cancelledBy}:{}),...(patch.cancelReason!==undefined?{cancelReason:patch.cancelReason}:{}),...(patch.updatedAt!==undefined?{updatedAt:new Date(patch.updatedAt)}:{})};const r=await this.inTenant(tenantId,(tx)=>tx.petshopSaleRecord.updateMany({where:{tenantId,id},data}));return r.count?this.persistedById(tenantId,id):null;}
-  public async persistedReplaceLines(tenantId: string, saleId: string, lines: PetshopSaleLineRecord[]): Promise<void> { if (!this.prisma) { this.linesBySale.set(saleId, []); for (const line of lines) this.insertLine(line); return; } await this.inTenant(tenantId, async (tx) => { await tx.petshopSaleLineRecord.deleteMany({ where: { tenantId, saleId } }); if (lines.length) await tx.petshopSaleLineRecord.createMany({ data: lines.map((line) => this.lineData(line)) }); }); }
+  public async persistSaleWithLines(
+    sale: PetshopSaleRecord,
+    lines: PetshopSaleLineRecord[],
+  ): Promise<void> {
+    if (!this.prisma) {
+      this.insert(sale);
+      for (const line of lines) this.insertLine(line);
+      return;
+    }
+    await this.inTenant(sale.tenantId, async (tx) => {
+      await tx.petshopSaleRecord.create({ data: this.saleData(sale) });
+      if (lines.length)
+        await tx.petshopSaleLineRecord.createMany({
+          data: lines.map((line) => this.lineData(line)),
+        });
+    });
+  }
+  public async persistedById(
+    tenantId: string,
+    id: string,
+  ): Promise<PetshopSaleRecord | null> {
+    if (!this.prisma) return this.findById(tenantId, id);
+    const row = await this.inTenant(tenantId, (tx) =>
+      tx.petshopSaleRecord.findFirst({ where: { tenantId, id } }),
+    );
+    return row ? this.mapSale(row) : null;
+  }
+  public async persistedLines(
+    tenantId: string,
+    saleId: string,
+  ): Promise<PetshopSaleLineRecord[]> {
+    if (!this.prisma) return this.listLinesBySale(tenantId, saleId);
+    const rows = await this.inTenant(tenantId, (tx) =>
+      tx.petshopSaleLineRecord.findMany({
+        where: { tenantId, saleId },
+        orderBy: { createdAt: "asc" },
+      }),
+    );
+    return rows.map((row) => this.mapLine(row));
+  }
+  public async persistedSearch(
+    tenantId: string,
+    filters: PetshopSaleSearchFilters,
+  ): Promise<{ items: PetshopSaleRecord[]; total: number }> {
+    if (!this.prisma) return this.search(tenantId, filters);
+    const where: Prisma.PetshopSaleRecordWhereInput = {
+      tenantId,
+      ...(filters.status ? { status: filters.status } : {}),
+      ...(filters.customerOwnerId
+        ? { customerOwnerId: filters.customerOwnerId }
+        : {}),
+      ...(filters.customerPatientId
+        ? { customerPatientId: filters.customerPatientId }
+        : {}),
+      ...(filters.paymentMethod
+        ? { paymentMethod: filters.paymentMethod }
+        : {}),
+      ...(filters.search?.trim()
+        ? {
+            OR: [
+              { id: { contains: filters.search.trim() } },
+              {
+                notes: { contains: filters.search.trim(), mode: "insensitive" },
+              },
+            ],
+          }
+        : {}),
+    };
+    return this.inTenant(tenantId, async (tx) => {
+      const [items, total] = await Promise.all([
+        tx.petshopSaleRecord.findMany({
+          where,
+          orderBy: { createdAt: filters.sort ?? "desc" },
+          skip: filters.offset,
+          take: filters.limit,
+        }),
+        tx.petshopSaleRecord.count({ where }),
+      ]);
+      return { items: items.map((row) => this.mapSale(row)), total };
+    });
+  }
+  public async persistedUpdate(
+    tenantId: string,
+    id: string,
+    patch: PetshopSalePatch,
+  ): Promise<PetshopSaleRecord | null> {
+    if (!this.prisma) return this.update(tenantId, id, patch);
+    const data: Prisma.PetshopSaleRecordUpdateManyMutationInput = {
+      ...(patch.status !== undefined ? { status: patch.status } : {}),
+      ...(patch.customerOwnerId !== undefined
+        ? { customerOwnerId: patch.customerOwnerId }
+        : {}),
+      ...(patch.customerPatientId !== undefined
+        ? { customerPatientId: patch.customerPatientId }
+        : {}),
+      ...(patch.paymentMethod !== undefined
+        ? { paymentMethod: patch.paymentMethod }
+        : {}),
+      ...(patch.paidAmount !== undefined
+        ? { paidAmount: patch.paidAmount }
+        : {}),
+      ...(patch.totalAmount !== undefined
+        ? { totalAmount: patch.totalAmount }
+        : {}),
+      ...(patch.globalDiscountPercent !== undefined
+        ? { globalDiscountPercent: patch.globalDiscountPercent }
+        : {}),
+      ...(patch.netAmount !== undefined ? { netAmount: patch.netAmount } : {}),
+      ...(patch.notes !== undefined ? { notes: patch.notes } : {}),
+      ...(patch.completedAt !== undefined
+        ? {
+            completedAt: patch.completedAt ? new Date(patch.completedAt) : null,
+          }
+        : {}),
+      ...(patch.completedBy !== undefined
+        ? { completedBy: patch.completedBy }
+        : {}),
+      ...(patch.cancelledAt !== undefined
+        ? {
+            cancelledAt: patch.cancelledAt ? new Date(patch.cancelledAt) : null,
+          }
+        : {}),
+      ...(patch.cancelledBy !== undefined
+        ? { cancelledBy: patch.cancelledBy }
+        : {}),
+      ...(patch.cancelReason !== undefined
+        ? { cancelReason: patch.cancelReason }
+        : {}),
+      ...(patch.updatedAt !== undefined
+        ? { updatedAt: new Date(patch.updatedAt) }
+        : {}),
+    };
+    const r = await this.inTenant(tenantId, (tx) =>
+      tx.petshopSaleRecord.updateMany({ where: { tenantId, id }, data }),
+    );
+    return r.count ? this.persistedById(tenantId, id) : null;
+  }
+  public async persistedReplaceLines(
+    tenantId: string,
+    saleId: string,
+    lines: PetshopSaleLineRecord[],
+  ): Promise<void> {
+    if (!this.prisma) {
+      this.linesBySale.set(saleId, []);
+      for (const line of lines) this.insertLine(line);
+      return;
+    }
+    await this.inTenant(tenantId, async (tx) => {
+      await tx.petshopSaleLineRecord.deleteMany({
+        where: { tenantId, saleId },
+      });
+      if (lines.length)
+        await tx.petshopSaleLineRecord.createMany({
+          data: lines.map((line) => this.lineData(line)),
+        });
+    });
+  }
 
   public insertLine(record: PetshopSaleLineRecord): PetshopSaleLineRecord {
     this.lineById.set(record.id, record);
@@ -215,9 +370,53 @@ export class PetshopSalesRepository {
     this.counters.clear();
     this.lineCounters.clear();
   }
-  private saleData(s: PetshopSaleRecord): Prisma.PetshopSaleRecordUncheckedCreateInput { return {...s, completedAt:s.completedAt?new Date(s.completedAt):null,cancelledAt:s.cancelledAt?new Date(s.cancelledAt):null,createdAt:new Date(s.createdAt),updatedAt:new Date(s.updatedAt)}; }
-  private lineData(l: PetshopSaleLineRecord): Prisma.PetshopSaleLineRecordUncheckedCreateInput { return {...l,createdAt:new Date(l.createdAt),updatedAt:new Date(l.updatedAt)}; }
-  private mapSale(r:DbSale):PetshopSaleRecord{return{...r,status:r.status as PetshopSaleStatus,paymentMethod:r.paymentMethod as PetshopPaymentMethod,completedAt:r.completedAt?.toISOString()??null,cancelledAt:r.cancelledAt?.toISOString()??null,createdAt:r.createdAt.toISOString(),updatedAt:r.updatedAt.toISOString()};}
-  private mapLine(r:DbLine):PetshopSaleLineRecord{return{...r,createdAt:r.createdAt.toISOString(),updatedAt:r.updatedAt.toISOString()};}
-  private async inTenant<T>(tenantId:string,callback:(tx:Prisma.TransactionClient)=>Promise<T>):Promise<T>{if(!this.prisma)throw new Error("Prisma bağlantısı bulunamadı");return this.prisma.$transaction(async tx=>{await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;return callback(tx);});}
+  private saleData(
+    s: PetshopSaleRecord,
+  ): Prisma.PetshopSaleRecordUncheckedCreateInput {
+    return {
+      ...s,
+      completedAt: s.completedAt ? new Date(s.completedAt) : null,
+      cancelledAt: s.cancelledAt ? new Date(s.cancelledAt) : null,
+      createdAt: new Date(s.createdAt),
+      updatedAt: new Date(s.updatedAt),
+    };
+  }
+  private lineData(
+    l: PetshopSaleLineRecord,
+  ): Prisma.PetshopSaleLineRecordUncheckedCreateInput {
+    return {
+      ...l,
+      createdAt: new Date(l.createdAt),
+      updatedAt: new Date(l.updatedAt),
+    };
+  }
+  private mapSale(r: DbSale): PetshopSaleRecord {
+    return {
+      ...r,
+      status: r.status as PetshopSaleStatus,
+      paymentMethod: r.paymentMethod as PetshopPaymentMethod,
+      completedAt: r.completedAt?.toISOString() ?? null,
+      cancelledAt: r.cancelledAt?.toISOString() ?? null,
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+    };
+  }
+  private mapLine(r: DbLine): PetshopSaleLineRecord {
+    return {
+      ...r,
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+    };
+  }
+  private async inTenant<T>(
+    tenantId: string,
+    callback: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    if (!this.prisma) throw new Error("Prisma bağlantısı bulunamadı");
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;
+      await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;
+      return callback(tx);
+    });
+  }
 }

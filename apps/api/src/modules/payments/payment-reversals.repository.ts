@@ -19,7 +19,10 @@
  */
 
 import { Injectable, Optional } from "@nestjs/common";
-import type { PaymentReversalRecord as DbReversal, Prisma } from "@prisma/client";
+import type {
+  PaymentReversalRecord as DbReversal,
+  Prisma,
+} from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { PrismaService } from "../../prisma/prisma.service.js";
 
@@ -60,7 +63,7 @@ export class PaymentReversalsRepository {
   public constructor(@Optional() private readonly prisma?: PrismaService) {}
 
   public nextId(tenantId: string): string {
-    if(this.prisma)return `pr-${tenantId.slice(0,8)}-${randomUUID()}`;
+    if (this.prisma) return `pr-${tenantId.slice(0, 8)}-${randomUUID()}`;
     const n = (this.counters.get(tenantId) ?? 0) + 1;
     this.counters.set(tenantId, n);
     return `pr-${tenantId.slice(0, 8)}-${String(n).padStart(6, "0")}`;
@@ -88,10 +91,84 @@ export class PaymentReversalsRepository {
     set2.add(record.id);
     return record;
   }
-  public async persist(record:PaymentReversalRecord):Promise<PaymentReversalRecord>{if(!this.prisma)return this.insert(record);const row=await this.inTenant(record.tenantId,tx=>tx.paymentReversalRecord.create({data:{...record,amount:record.amount,reversedAt:new Date(record.reversedAt),createdAt:new Date(record.createdAt)}}));return this.map(row);}
-  public async persistedById(tenantId:string,id:string):Promise<PaymentReversalRecord|null>{if(!this.prisma)return this.findById(tenantId,id);const row=await this.inTenant(tenantId,tx=>tx.paymentReversalRecord.findFirst({where:{tenantId,id}}));return row?this.map(row):null;}
-  public async persistedSumReversedForPayment(tenantId:string,paymentId:string):Promise<string>{if(!this.prisma)return this.sumReversedForPayment(tenantId,paymentId);const rows=await this.inTenant(tenantId,tx=>tx.paymentReversalRecord.findMany({where:{tenantId,paymentId},select:{amount:true}}));return scaledBigIntToReversalAmount(rows.reduce((sum,row)=>sum+(reversalAmountToScaled(row.amount.toString())??BigInt(0)),BigInt(0)));}
-  public async persistedSearch(tenantId:string,f:PaymentReversalSearchFilters):Promise<{items:PaymentReversalRecord[];total:number}>{if(!this.prisma)return this.search(tenantId,f);const where:Prisma.PaymentReversalRecordWhereInput={tenantId,...(f.paymentId?{paymentId:f.paymentId}:{}),...(f.sourceType?{sourceType:f.sourceType}:{}),...(f.sourceId?{sourceId:f.sourceId}:{}),...(f.reason?{reason:f.reason}:{}),...(f.from||f.to?{reversedAt:{...(f.from?{gte:new Date(f.from)}:{}),...(f.to?{lte:new Date(f.to)}:{})}}:{})};return this.inTenant(tenantId,async tx=>{const[items,total]=await Promise.all([tx.paymentReversalRecord.findMany({where,orderBy:{reversedAt:f.sort??"desc"},skip:f.offset,take:f.limit}),tx.paymentReversalRecord.count({where})]);return{items:items.map(row=>this.map(row)),total};});}
+  public async persist(
+    record: PaymentReversalRecord,
+  ): Promise<PaymentReversalRecord> {
+    if (!this.prisma) return this.insert(record);
+    const row = await this.inTenant(record.tenantId, (tx) =>
+      tx.paymentReversalRecord.create({
+        data: {
+          ...record,
+          amount: record.amount,
+          reversedAt: new Date(record.reversedAt),
+          createdAt: new Date(record.createdAt),
+        },
+      }),
+    );
+    return this.map(row);
+  }
+  public async persistedById(
+    tenantId: string,
+    id: string,
+  ): Promise<PaymentReversalRecord | null> {
+    if (!this.prisma) return this.findById(tenantId, id);
+    const row = await this.inTenant(tenantId, (tx) =>
+      tx.paymentReversalRecord.findFirst({ where: { tenantId, id } }),
+    );
+    return row ? this.map(row) : null;
+  }
+  public async persistedSumReversedForPayment(
+    tenantId: string,
+    paymentId: string,
+  ): Promise<string> {
+    if (!this.prisma) return this.sumReversedForPayment(tenantId, paymentId);
+    const rows = await this.inTenant(tenantId, (tx) =>
+      tx.paymentReversalRecord.findMany({
+        where: { tenantId, paymentId },
+        select: { amount: true },
+      }),
+    );
+    return scaledBigIntToReversalAmount(
+      rows.reduce(
+        (sum, row) =>
+          sum + (reversalAmountToScaled(row.amount.toString()) ?? BigInt(0)),
+        BigInt(0),
+      ),
+    );
+  }
+  public async persistedSearch(
+    tenantId: string,
+    f: PaymentReversalSearchFilters,
+  ): Promise<{ items: PaymentReversalRecord[]; total: number }> {
+    if (!this.prisma) return this.search(tenantId, f);
+    const where: Prisma.PaymentReversalRecordWhereInput = {
+      tenantId,
+      ...(f.paymentId ? { paymentId: f.paymentId } : {}),
+      ...(f.sourceType ? { sourceType: f.sourceType } : {}),
+      ...(f.sourceId ? { sourceId: f.sourceId } : {}),
+      ...(f.reason ? { reason: f.reason } : {}),
+      ...(f.from || f.to
+        ? {
+            reversedAt: {
+              ...(f.from ? { gte: new Date(f.from) } : {}),
+              ...(f.to ? { lte: new Date(f.to) } : {}),
+            },
+          }
+        : {}),
+    };
+    return this.inTenant(tenantId, async (tx) => {
+      const [items, total] = await Promise.all([
+        tx.paymentReversalRecord.findMany({
+          where,
+          orderBy: { reversedAt: f.sort ?? "desc" },
+          skip: f.offset,
+          take: f.limit,
+        }),
+        tx.paymentReversalRecord.count({ where }),
+      ]);
+      return { items: items.map((row) => this.map(row)), total };
+    });
+  }
 
   public findById(tenantId: string, id: string): PaymentReversalRecord | null {
     const rec = this.byId.get(id);
@@ -162,6 +239,27 @@ export class PaymentReversalsRepository {
   ): string {
     return `${tenantId}|${sourceType}|${sourceId}`;
   }
-  private map(row:DbReversal):PaymentReversalRecord{return{...row,sourceType:row.sourceType as PaymentReversalRecord["sourceType"],method:row.method as PaymentReversalRecord["method"],currency:row.currency as PaymentReversalRecord["currency"],reason:row.reason as PaymentReversalRecord["reason"],amount:row.amount.toString(),reversedAt:row.reversedAt.toISOString(),createdAt:row.createdAt.toISOString()};}
-  private async inTenant<T>(tenantId:string,callback:(tx:Prisma.TransactionClient)=>Promise<T>):Promise<T>{if(!this.prisma)throw new Error("Prisma bağlantısı bulunamadı");return this.prisma.$transaction(async tx=>{await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;return callback(tx);});}
+  private map(row: DbReversal): PaymentReversalRecord {
+    return {
+      ...row,
+      sourceType: row.sourceType as PaymentReversalRecord["sourceType"],
+      method: row.method as PaymentReversalRecord["method"],
+      currency: row.currency as PaymentReversalRecord["currency"],
+      reason: row.reason as PaymentReversalRecord["reason"],
+      amount: row.amount.toString(),
+      reversedAt: row.reversedAt.toISOString(),
+      createdAt: row.createdAt.toISOString(),
+    };
+  }
+  private async inTenant<T>(
+    tenantId: string,
+    callback: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    if (!this.prisma) throw new Error("Prisma bağlantısı bulunamadı");
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin','false',true)`;
+      await tx.$executeRaw`SELECT set_config('app.tenant_id',${tenantId},true)`;
+      return callback(tx);
+    });
+  }
 }

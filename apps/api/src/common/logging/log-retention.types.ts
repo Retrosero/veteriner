@@ -3,9 +3,9 @@
  * @module apps/api/common/logging/log-retention.types
  *
  * @description GOAL-106 (FAZ-10) PII maskeleme ve log retention
- * için iç kayıt tipleri. In-memory Map'te tutulur; production'a
- * geçişte Prisma `LogRetentionPolicy` ve `LogRetentionSweep`
- * tabloları ile değiştirilecek (API sözleşmesi sabit kalır).
+ * için iç kayıt tipleri. Hızlı sorgu için bellek indeksinde tutulur ve
+ * Prisma `LogRetentionPolicy` ile `LogRetentionSweep` tablolarına
+ * kalıcı olarak yansıtılır (API sözleşmesi sabit kalır).
  *
  * `RetentionPolicyRecord` ile `RetentionPolicy` ayrılmıştır:
  * record repository içi tam yapı (createdById/createdAt/updatedById/
