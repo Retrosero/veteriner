@@ -27058,4 +27058,3 @@ entities:
         description_en: "Total scenario count (before filters)."
         validation: "GOAL-117 onboarding"
         version: "1.0.0"
-

@@ -2,3 +2,11 @@ packages:
   - "apps/*"
   - "packages/*"
   - "tools/*"
+
+# pnpm isolated mode'da tools/* ve packages/* icindeki tsc, prettier
+# gibi dev bagimliliklarin tum paketlerde semlink zinciri olusturmasi
+# (özellikle OneDrive senkronizasyonu altinda) yavas ve hatalara
+# acik. nodeLinker: hoisted ile tum dependencies root node_modules'a
+# kaldirilir; paketler oldugu gibi build yapar. AGENTS.md'de de
+# onerilen fallback.
+nodeLinker: hoisted

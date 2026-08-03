@@ -15,9 +15,9 @@ alindi. Faz 12+ ile vector DB (Qdrant/pgvector) gecisi planli.
   processor + Zod payload semasi. `tools/rag-chunk-producer`
   CLI'ini `tsx` ile spawn eder; stdout'tan istatistik parse eder.
 - `src/queues/rag-chunk.queue.ts` (yeni) — `rag-chunk` queue
-  + `RAG_CHUNK_CRON_SCHEDULE = "0 */6 * * *"` constant.
+  - `RAG_CHUNK_CRON_SCHEDULE = "0 */6 * * *"` constant.
 - `src/workers/rag-chunk.worker.ts` (yeni) — BullMQ Worker
-  + JobRun reporter entegrasyonu.
+  - JobRun reporter entegrasyonu.
 - `src/workers/rag-chunk.worker.spec.ts` (yeni) — 6 unit test
   (gecerli payload, payload validation, bos kaynak, ornek workflow,
   idempotency, en-GB locale).

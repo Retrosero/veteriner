@@ -36,8 +36,8 @@ ayni mesaji kullaniciya gosterir.
   OnboardingScenarioListResponse, OnboardingGenerationSource).
 - `src/index.ts` — `onboarding` export.
 - `dist/onboarding.d.ts` + `dist/onboarding.js` + `dist/index.d.ts`
-  + `dist/index.js` — Build artifact'lari (offline pnpm store
-  kisiti nedeniyle manuel eklendi).
+  - `dist/index.js` — Build artifact'lari (offline pnpm store
+    kisiti nedeniyle manuel eklendi).
 
 ### Docs
 
@@ -61,8 +61,8 @@ ayni mesaji kullaniciya gosterir.
    (Step1Role, Step2Ask, Step3Result) ile izole edilir.
 
 3. **Tibbi reddi (medical refusal)**: Backend `generationSource:
-   "refusal"` ve `refusalReason: "medical" | "dosage" |
-   "diagnosis" | "treatment"` alanlari ile reddeder; frontend
+"refusal"` ve `refusalReason: "medical" | "dosage" |
+"diagnosis" | "treatment"` alanlari ile reddeder; frontend
    ayni mesaji kullaniciya gosterir. Tasarim karari: sadece
    tek tip mesaj ("Bu konuda yardimci olamam, veterinerinize
    danisin") gosterilir; UI'da kategori detayi gostermiyoruz
