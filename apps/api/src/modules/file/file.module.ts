@@ -43,7 +43,11 @@ export function resolveStorageDriver(
   if (driver !== "local" && driver !== "s3") {
     throw new Error(`file-storage-driver-invalid-${driver}`);
   }
-  if (process.env["NODE_ENV"] === "production" && driver !== "s3") {
+  if (
+    process.env["NODE_ENV"] === "production" &&
+    driver !== "s3" &&
+    process.env["STORAGE_ALLOW_LOCAL"] !== "true"
+  ) {
     throw new Error("file-storage-driver-production-requires-s3");
   }
   return driver;
@@ -57,7 +61,11 @@ export function resolveScanDriver(
   if (driver !== "noop" && driver !== "clamav") {
     throw new Error(`file-scan-driver-invalid-${driver}`);
   }
-  if (process.env["NODE_ENV"] === "production" && driver !== "clamav") {
+  if (
+    process.env["NODE_ENV"] === "production" &&
+    driver !== "clamav" &&
+    process.env["SCAN_ALLOW_NOOP"] !== "true"
+  ) {
     throw new Error("file-scan-driver-production-requires-clamav");
   }
   return driver;

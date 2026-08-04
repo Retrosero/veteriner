@@ -27,6 +27,8 @@ describe("FileModule production driver policy", () => {
 
   it("production için S3 ve ClamAV zorunludur", () => {
     process.env["NODE_ENV"] = "production";
+    delete process.env["STORAGE_ALLOW_LOCAL"];
+    delete process.env["SCAN_ALLOW_NOOP"];
     expect(() => resolveStorageDriver("local")).toThrow(
       "file-storage-driver-production-requires-s3",
     );
@@ -35,6 +37,16 @@ describe("FileModule production driver policy", () => {
     );
     expect(resolveStorageDriver("s3")).toBe("s3");
     expect(resolveScanDriver("clamav")).toBe("clamav");
+  });
+
+  it("STORAGE_ALLOW_LOCAL=true ve SCAN_ALLOW_NOOP=true pilot için local+noop'a izin verir", () => {
+    process.env["NODE_ENV"] = "production";
+    process.env["STORAGE_ALLOW_LOCAL"] = "true";
+    process.env["SCAN_ALLOW_NOOP"] = "true";
+    expect(resolveStorageDriver("local")).toBe("local");
+    expect(resolveScanDriver("noop")).toBe("noop");
+    delete process.env["STORAGE_ALLOW_LOCAL"];
+    delete process.env["SCAN_ALLOW_NOOP"];
   });
 
   it("tanınmayan sürücü adını fail-fast reddeder", () => {
