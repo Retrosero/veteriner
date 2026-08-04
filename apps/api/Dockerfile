@@ -39,4 +39,8 @@ RUN mkdir -p node_modules/@vetniva \
   && ln -sfn ../../packages/contracts node_modules/@vetniva/contracts
 EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -qO- http://127.0.0.1:3001/api/v1/health || exit 1
-CMD ["node", "apps/api/dist/main.js"]
+# Pilot: veritabanı şeması uygulanmamışsa API ayağa kalkamaz (error_events
+# tablosu yok gibi P2021 alır). Container başlarken `migrate deploy` ile
+# şemayı uygula, sonra API'yi başlat. Retry'li yapı geçici DB hazır olmama
+# durumlarını tolere eder.
+CMD ["sh", "-c", "for i in 1 2 3 4 5 6 7 8 9 10; do pnpm --filter @vetniva/api exec prisma migrate deploy && break; echo 'Migration failed, retrying in 5s...'; sleep 5; done; node apps/api/dist/main.js"]
