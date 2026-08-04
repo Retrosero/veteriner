@@ -32,6 +32,9 @@ COPY packages/contracts packages/contracts
 COPY packages/i18n packages/i18n
 COPY packages/ui packages/ui
 COPY apps/web apps/web
+# Next.js public klasörü opsiyoneldir; runner aşamasındaki COPY'nin
+# deterministik olması için boş olsa bile builder içinde bulunur.
+RUN mkdir -p apps/web/public
 # Önce workspace paketlerini derle (turbo yerine sıralı)
 RUN pnpm --filter @vetniva/config build || true
 RUN pnpm --filter @vetniva/contracts build
@@ -45,8 +48,7 @@ RUN rm -rf node_modules/@vetniva/ui node_modules/@vetniva/contracts node_modules
   && ln -sfn ../../packages/contracts node_modules/@vetniva/contracts \
   && ln -sfn ../../packages/i18n node_modules/@vetniva/i18n
 RUN test -f node_modules/@vetniva/ui/package.json \
-  && test -f node_modules/@vetniva/ui/dist/index.js \
-  && node -e "console.log(require.resolve('@vetniva/ui/package.json'))"
+  && test -f node_modules/@vetniva/ui/dist/index.js
 # Next.js standalone build
 RUN pnpm --filter @vetniva/web build
 

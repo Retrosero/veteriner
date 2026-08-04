@@ -21,7 +21,7 @@ import { cn } from "@vetniva/ui";
 import {
   OnboardingWizard,
   type OnboardingLabels,
-} from "../onboarding/onboarding-wizard.js";
+} from "../onboarding/onboarding-wizard";
 
 /**
  * Yardim butonu ozellikleri.

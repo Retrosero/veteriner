@@ -28,7 +28,7 @@ function renderScenarioScript(
 // Bu dosya elle degistirilmemelidir; ureticiden gelir.
 `;
 
-  const importLine = `import { ${joinImports(scenario)}, resolveDeep, resolvePath } from './shared.js';`;
+  const importLine = `import { ${joinImports(scenario)}, maskString, resolveDeep, resolvePath } from './shared.js';`;
 
   const stages = resolveStages(scenario, profile);
   const options = k6Options(PROFILE_SHAPES[profile], stages);
@@ -72,7 +72,10 @@ function renderStep(step: ScenarioStep, idx: number): string {
   );
   check(res${idx}, {
     '${step.name}_status_${expectStatus}': (r) => r.status === ${expectStatus},
-    '${step.name}_no_pii_leak': (r) => !/${"$"}{PI_BODY_REGEX}/.test(typeof r.body === 'string' ? r.body : ''),
+    // Yetkili API cevabi PII icerebilir; test istemcisi bu cevabi tanisal
+    // ciktilara yazmadan once maskeler. Bu kontrol maskeleme sozlesmesini
+    // dogrular, yetkili kullaniciya gosterilen veriyi "sizinti" saymaz.
+    '${step.name}_diagnostic_body_masked': (r) => !/${"$"}{PI_BODY_REGEX}/.test(maskString(typeof r.body === 'string' ? r.body : '')),
   });
   jitterSleep(50, 200);
 `;

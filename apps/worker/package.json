@@ -10,11 +10,11 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "node ../../node_modules/typescript/lib/tsc.js -p tsconfig.json",
     "dev": "tsx watch src/main.ts",
     "start": "node dist/main.js",
     "lint": "eslint src --max-warnings=0",
-    "type-check": "tsc -p tsconfig.json --noEmit",
+    "type-check": "node ../../node_modules/typescript/lib/tsc.js -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "clean": "rimraf dist .turbo"

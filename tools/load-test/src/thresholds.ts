@@ -29,7 +29,11 @@ export function readMetricNumber(
 ): number | null {
   const m = summary.metrics[metricName];
   if (!m) return null;
-  const raw = m.value;
+  // k6 v0.x "value" alanini bazi metriklerde kullanirken, k6 v2
+  // percentile ve sayaclari dogrudan "p(95)", "count" ve "rate"
+  // alanlariyla yazar. Her iki formati da destekle.
+  const raw =
+    subKey && m[subKey] !== undefined ? m[subKey] : m.value;
   if (raw === null || raw === undefined) return null;
   const n = typeof raw === "number" ? raw : Number(raw);
   if (!Number.isFinite(n)) return null;

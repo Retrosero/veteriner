@@ -113,14 +113,15 @@ flag, monitoring ve rollback prosedürü.
      --task-definition vetniva-api:v0.x.(y-1)
    ```
 
-3. **DB rollback (eğer migration uygulandıysa):**
+3. **Veritabanı geri alma (migration uygulandıysa):**
 
-   ```bash
-   pnpm db:migrate --rollback
-   # NOT: yalnızca forward-compatible migration'lar
-   # otomatik rollback edilebilir; breaking change'ler
-   # için ayrı geri alma planı gerekir.
-   ```
+   Prisma migration altyapısında otomatik `--rollback` / down migration
+   komutu yoktur. Bu nedenle yayın migration'ları forward-compatible
+   olmalı; uygulama sürümü geri alınırken şema değişikliği yerinde kalır.
+   Veri düzeltmesi gerekirse önce onaylı yedekten geri dönüş prosedürü
+   (`BACKUP_RESTORE.md`) uygulanır, ardından ayrı ve denetlenebilir bir
+   düzeltme migration'ı hazırlanır. Canlı veritabanında migration tablosu
+   elle değiştirilmez.
 
 4. **İzleme:**
    - 15 dakika boyunca metrikleri izle.

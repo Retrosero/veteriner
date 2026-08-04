@@ -192,12 +192,10 @@ type SidebarProps = {
  */
 function isItemActive(pathname: string | null, itemHref: string): boolean {
   if (!pathname) return false;
-  // Aktif route'un segment karşılaştırması: /tr-TR/patients/123 → patients
-  const segments = pathname.split("/").filter(Boolean);
-  const itemSegments = itemHref.split("/").filter(Boolean);
-  if (itemSegments.length === 0) return false;
-  // Pathname'in son segmenti item'ın path segmentini içeriyorsa aktif
-  return segments.some((s) => itemSegments.includes(s));
+  // Tam eşleşme veya alt rota eşleşmesi: /tr-TR/patients/123 → Hastalar.
+  // Locale segmenti tüm menü bağlantılarında ortak olduğundan, yalnızca
+  // segment dizilerini karşılaştırmak bütün öğeleri aktif gösterirdi.
+  return pathname === itemHref || pathname.startsWith(`${itemHref}/`);
 }
 
 /**
@@ -231,7 +229,9 @@ export function Sidebar({ locale, open, onClose }: SidebarProps): JSX.Element {
    * @param item
    */
   function itemHref(item: (typeof PRIMARY_ITEMS)[number]): string {
-    if (item.id === "dashboard") return `/${locale}`;
+    // `/${locale}` herkese açık landing sayfasıdır; uygulama içi ana
+    // navigasyon oturumlu kullanıcının dashboard'una gitmelidir.
+    if (item.id === "dashboard") return `/${locale}/dashboard`;
     return `/${locale}/${item.id}`;
   }
 

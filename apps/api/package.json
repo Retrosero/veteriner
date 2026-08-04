@@ -10,7 +10,7 @@
     "start": "node dist/main.js",
     "start:debug": "nest start --debug --watch",
     "lint": "eslint src test --max-warnings=0",
-    "type-check": "tsc -p tsconfig.json && tsc -p tsconfig.test.json",
+    "type-check": "node ../../node_modules/typescript/lib/tsc.js -p tsconfig.json && tsc -p tsconfig.test.json",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "e2e:smoke": "vitest run --config vitest.e2e.config.ts",

@@ -9,7 +9,7 @@
     "dev": "next dev -p ${PORT_WEB:-3000}",
     "start": "next start -p ${PORT_WEB:-3000}",
     "lint": "eslint app src --max-warnings=0",
-    "type-check": "tsc -p tsconfig.json --noEmit",
+    "type-check": "node ../../node_modules/typescript/lib/tsc.js -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "clean": "rimraf .next .turbo"

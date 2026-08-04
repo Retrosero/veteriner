@@ -40,6 +40,7 @@ interface Args {
   outJson: string;
   outMd: string;
   durationMs: number | null;
+  scenario: ScenarioConfig["key"] | "all";
 }
 
 function parseArgs(argv: ReadonlyArray<string>): Args {
@@ -50,6 +51,7 @@ function parseArgs(argv: ReadonlyArray<string>): Args {
     outJson: "./load-test-report.json",
     outMd: "./load-test-report.md",
     durationMs: null,
+    scenario: "all",
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -103,6 +105,16 @@ function parseArgs(argv: ReadonlyArray<string>): Args {
         const n = Number(v);
         if (Number.isFinite(n) && n > 0) args.durationMs = n;
       }
+    } else if (a === "--scenario") {
+      const v = next();
+      if (v === "all" || SCENARIOS.some((s) => s.key === v)) {
+        args.scenario = v as Args["scenario"];
+      }
+    } else if (a.startsWith("--scenario=")) {
+      const v = a.split("=")[1];
+      if (v === "all" || SCENARIOS.some((s) => s.key === v)) {
+        args.scenario = v as Args["scenario"];
+      }
     }
   }
   return args;
@@ -114,7 +126,14 @@ async function main(): Promise<void> {
   const raw = await readFile(summaryPath, "utf8");
   const summary = JSON.parse(raw) as K6Summary;
 
-  const results: ScenarioResult[] = SCENARIOS.map((s) => {
+  // Tek k6 dosyasi calistirildiysa, yalniz o senaryoyu raporla.
+  // Tum katalog icin "all" ancak her senaryoya ait ayri summary ile
+  // cagrilacak toplayici akista kullanilmalidir.
+  const selectedScenarios =
+    args.scenario === "all"
+      ? SCENARIOS
+      : SCENARIOS.filter((s) => s.key === args.scenario);
+  const results: ScenarioResult[] = selectedScenarios.map((s) => {
     // Env override uygulanmis threshold ile karsilastir.
     const effective: ScenarioConfig = {
       ...s,

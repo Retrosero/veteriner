@@ -92,6 +92,8 @@ export interface K6MetricSummary {
   value: number | null;
   /** k6 "passes" / "fails" sadece threshold check'lerinde. */
   thresholds?: ReadonlyArray<{ source: string; ok: boolean }>;
+  /** k6 summary-export percentile/count/rate alanlari (k6 v2 dahil). */
+  [key: string]: unknown;
 }
 
 /** k6 summary JSON ciktisinin bizim icin lazim olan parcasi. */

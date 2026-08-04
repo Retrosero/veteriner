@@ -30,10 +30,10 @@
     "src"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "dev": "tsc -p tsconfig.build.json --watch",
+    "build": "node ../../node_modules/typescript/lib/tsc.js -p tsconfig.build.json",
+    "dev": "node ../../node_modules/typescript/lib/tsc.js -p tsconfig.build.json --watch",
     "lint": "eslint src --max-warnings=0",
-    "type-check": "tsc -p tsconfig.json",
+    "type-check": "node ../../node_modules/typescript/lib/tsc.js -p tsconfig.json",
     "test": "vitest run",
     "clean": "rimraf dist .turbo"
   },
