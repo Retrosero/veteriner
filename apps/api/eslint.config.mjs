@@ -92,6 +92,21 @@ export default [
     },
   },
   {
+    // W1.2 (lab/imaging Prisma persistence) ve W1.4 (RLS transaction-yerel
+    // context) work-item referanslari `@since` ile ayni JSDoc blogunda takip
+    // amacli kullaniliyor; bunlar proje-internal takip isimleri oldugu icin
+    // `jsdoc/check-tag-names` kuralinin `definedTags` opsiyonuna eklenir.
+    // Aksi halde her modulde 1-2 gereksiz suppression satirina ihtiyac duyulur
+    // ve takip bilgisi kaybi olusur.
+    files: ["src/**/*.ts", "test/**/*.ts"],
+    rules: {
+      "jsdoc/check-tag-names": [
+        "warn",
+        { definedTags: ["w1.2a", "w1.2b", "w1.2c", "w1.2d", "w1.4", "note"] },
+      ],
+    },
+  },
+  {
     // Unit testlerde Vitest mock'ları kasıtlı olarak `async`, type assertion
     // ve method referansı kullanabilir. Bu kurallar production kaynaklarında
     // aynen uygulanır; test davranışını ve gerçek güvenlik kontrollerini
