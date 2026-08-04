@@ -14,13 +14,21 @@
  * @since GOAL-093 (FAZ-9) görüntüleme isteği ve raporu core
  */
 
+import { randomUUID } from "node:crypto";
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ImagingOrdersRepository } from "./imaging-orders.repository.js";
 import { ImagingOrdersService } from "./imaging-orders.service.js";
 
+import type {
+  ImagingOrderInsertInput,
+  ImagingOrderPatch,
+  ImagingOrderSearchFilters,
+  ImagingOrdersRepository,
+} from "./imaging-orders.repository.js";
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
+import type { ImagingOrderRecord } from "../../common/imaging-orders/imaging-order.types.js";
 import type {
   ImagingOrderAmendReportInput,
   ImagingOrderApproveReportInput,
@@ -110,13 +118,133 @@ function makeCreateInput(
   } as ImagingOrderCreateInput;
 }
 
+/**
+ * W1.2d: Service testlerini DB'den izole etmek için stateful test double.
+ * Production'da `ImagingOrdersRepository` PrismaService ile çalışır; burada
+ * aynı sözleşmeyi sağlayan in-memory bir uygulama kullanılır.
+ */
+class ImagingOrdersRepositoryTestDouble {
+  private readonly byId = new Map<string, ImagingOrderRecord>();
+
+  public async findById(
+    tenantId: string,
+    id: string,
+  ): Promise<ImagingOrderRecord | null> {
+    const rec = this.byId.get(id);
+    if (!rec || rec.tenantId !== tenantId) return null;
+    return rec;
+  }
+
+  public async insert(
+    input: ImagingOrderInsertInput,
+  ): Promise<ImagingOrderRecord> {
+    const id = randomUUID();
+    const now = new Date().toISOString();
+    const record: ImagingOrderRecord = {
+      id,
+      tenantId: input.tenantId,
+      patientId: input.patientId,
+      imagingTestId: input.imagingTestId,
+      imagingTestCode: input.imagingTestCode,
+      imagingTestName: input.imagingTestName,
+      modality: input.modality,
+      bodyPart: input.bodyPart,
+      price: input.price,
+      sourceType: input.sourceType,
+      sourceId: input.sourceId,
+      priority: input.priority,
+      status: "ordered",
+      scheduledAt: null,
+      scheduledLocation: null,
+      performedAt: null,
+      performedByUserId: null,
+      contrastUse: null,
+      clinicalInfo: null,
+      attachments: [],
+      reportRevisions: [],
+      cancelledAt: null,
+      cancelledBy: null,
+      cancelReason: null,
+      notes: input.notes,
+      createdAt: now,
+      createdBy: input.createdBy,
+      updatedAt: now,
+    };
+    this.byId.set(id, record);
+    return record;
+  }
+
+  public async update(
+    tenantId: string,
+    id: string,
+    patch: ImagingOrderPatch,
+  ): Promise<ImagingOrderRecord | null> {
+    const rec = this.byId.get(id);
+    if (!rec || rec.tenantId !== tenantId) return null;
+    const toIso = (
+      v: string | Date | null | undefined,
+    ): string | null => {
+      if (v === null || v === undefined) return null;
+      return v instanceof Date ? v.toISOString() : v;
+    };
+    if (patch.status !== undefined) rec.status = patch.status;
+    if (patch.scheduledAt !== undefined)
+      rec.scheduledAt = toIso(patch.scheduledAt);
+    if (patch.scheduledLocation !== undefined)
+      rec.scheduledLocation = patch.scheduledLocation;
+    if (patch.performedAt !== undefined)
+      rec.performedAt = toIso(patch.performedAt);
+    if (patch.performedByUserId !== undefined)
+      rec.performedByUserId = patch.performedByUserId;
+    if (patch.contrastUse !== undefined) rec.contrastUse = patch.contrastUse;
+    if (patch.clinicalInfo !== undefined)
+      rec.clinicalInfo = patch.clinicalInfo;
+    if (patch.attachments !== undefined) rec.attachments = patch.attachments;
+    if (patch.reportRevisions !== undefined)
+      rec.reportRevisions = patch.reportRevisions;
+    if (patch.cancelledAt !== undefined)
+      rec.cancelledAt = toIso(patch.cancelledAt);
+    if (patch.cancelledBy !== undefined) rec.cancelledBy = patch.cancelledBy;
+    if (patch.cancelReason !== undefined) rec.cancelReason = patch.cancelReason;
+    if (patch.notes !== undefined) rec.notes = patch.notes;
+    rec.updatedAt = new Date().toISOString();
+    return rec;
+  }
+
+  public async search(
+    tenantId: string,
+    filters: ImagingOrderSearchFilters,
+  ): Promise<{ items: ImagingOrderRecord[]; total: number }> {
+    const all: ImagingOrderRecord[] = [];
+    for (const rec of this.byId.values()) {
+      if (rec.tenantId !== tenantId) continue;
+      if (filters.status && rec.status !== filters.status) continue;
+      if (filters.modality && rec.modality !== filters.modality) continue;
+      if (filters.patientId && rec.patientId !== filters.patientId) continue;
+      if (filters.sourceType && rec.sourceType !== filters.sourceType) continue;
+      if (filters.sourceId && rec.sourceId !== filters.sourceId) continue;
+      if (filters.dateFrom && rec.createdAt < filters.dateFrom) continue;
+      if (filters.dateTo && rec.createdAt > filters.dateTo) continue;
+      all.push(rec);
+    }
+    const sort = filters.sort ?? "desc";
+    all.sort((a, b) => {
+      const cmp = a.createdAt.localeCompare(b.createdAt);
+      return sort === "desc" ? -cmp : cmp;
+    });
+    const total = all.length;
+    const items = all.slice(filters.offset, filters.offset + filters.limit);
+    return { items, total };
+  }
+}
+
 describe("ImagingOrdersService", () => {
   let service: ImagingOrdersService;
   let repo: ImagingOrdersRepository;
   let audit: AuditService;
 
   beforeEach(() => {
-    repo = new ImagingOrdersRepository();
+    repo = new ImagingOrdersRepositoryTestDouble() as unknown as ImagingOrdersRepository;
     audit = makeAudit();
     service = new ImagingOrdersService(repo, audit);
   });
@@ -132,7 +260,9 @@ describe("ImagingOrdersService", () => {
         makeCreateInput(),
         VET_A,
       );
-      expect(out.id).toMatch(/^io-/);
+      expect(out.id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+      );
       expect(out.status).toBe("ordered");
       expect(out.imagingTestCode).toBe("XR-THX");
       expect(out.imagingTestName).toBe("Toraks röntgeni (iki yönlü)");

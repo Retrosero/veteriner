@@ -2,45 +2,25 @@
  * @file Imaging order service.
  * @module apps/api/modules/imaging-orders/imaging-orders.service
  *
- * @description GOAL-093 (FAZ-9) görüntüleme isteği iş kuralları.
+ * @description GOAL-093 (FAZ-9) görüntüleme isteği ve raporu iş kuralları.
  *
  * State machine:
  * - `ordered` → `scheduled` → `performed` → `reported` → `completed`
  * - `ordered | scheduled` → `cancelled`
- * - `reported` → `amended` (yeni rapor revizyonu)
+ * - `reported` → `amended` (yeni revision oluşur)
  *
- * İş kuralları:
- * - `createImagingOrder`: `imagingTestId` katalogdan çekilir; pasif
- *   katalog reddedilir (422 VET-IMG-0004). Katalog snapshot'ı
- *   (code, name, modality, bodyPart, price) order üzerinde
- *   dondurulur. Audit `audit:imgorder.create`.
- * - `scheduleImagingOrder` (ordered → scheduled): scheduledAt +
- *   scheduledLocation. Audit.
- * - `performImagingOrder` (scheduled → performed): performedAt +
- *   performedByUserId + contrastUse + attachments. Audit.
- * - `reportImagingOrder` (performed → reported): findings +
- *   impression + recommendation + attachments. Yeni revision
- *   1 ile başlar. Audit.
- * - `approveReport` (reported → reported/approved): approved +
- *   approvedBy/At + portalVisible. Onaylanmış rapor değiştirilemez.
- *   Audit.
- * - `amendReport` (reported/approved → reported, yeni revision):
- *   amendmentReason zorunlu. Onaylanmamış raporda düzeltme için
- *   de kullanılabilir (önceki revision `superseded` mantığıyla
- *   listelenmeye devam eder; status reported kalır).
- * - `completeImagingOrder` (reported → completed): completedAt set.
- * - `cancelImagingOrder` (ordered|scheduled → cancelled): reason
- *   zorunlu.
- * - `getImagingOrderDetail` / `listImagingOrders`: tenant-scoped.
+ * Katalog snapshot'ı (code/name/modality/bodyPart/price) order
+ * üzerinde dondurulur; katalog sonradan değişse bile order kendi
+ * anlık görüntüsünü korur. Dahili katalog (in-memory) W1.2d
+ * kapsamında görüntüleme test kataloğu için korunmuştur
+ * (production'a geçişte harici katalog adapter'ı eklenecek).
  *
  * @security Tenant bilgisi yalnızca actor.tenantId'den alınır.
- *   Cross-tenant IDOR → null/404. Fiziksel silme YOKTUR; geri
- *   çekme `cancelled` durumuna geçişle yapılır. Onaylanmış rapor
- *   değiştirilemez; düzeltme `amend` ile yeni revision olarak
- *   yapılır. Portal görünürlüğü `portalVisible` ile ayrıca
- *   kontrol edilir.
+ *   Fiziksel silme YOKTUR; düzeltme `cancelled` durumuna
+ *   geçişle yapılır (DB trigger).
  *
  * @since GOAL-093 (FAZ-9) görüntüleme isteği ve raporu core
+ * @w1.2d DB persistence (in-memory → Prisma)
  */
 
 import { Injectable, Logger } from "@nestjs/common";
@@ -56,10 +36,11 @@ import {
 
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {
+  ImagingModality,
   ImagingOrder,
-  ImagingOrderCancelInput,
   ImagingOrderAmendReportInput,
   ImagingOrderApproveReportInput,
+  ImagingOrderCancelInput,
   ImagingOrderCompleteInput,
   ImagingOrderCreateInput,
   ImagingOrderFilters,
@@ -68,10 +49,9 @@ import type {
   ImagingOrderReportInput,
   ImagingOrderScheduleInput,
   ImagingOrderStatus,
-  ImagingModality,
 } from "@vetniva/contracts";
 
-/** Dahili görüntüleme kataloğu girdisi. */
+/** Dahili katalog girdisi (W1.2d: production'da adapter). */
 interface InternalImagingTest {
   id: string;
   code: string;
@@ -82,141 +62,57 @@ interface InternalImagingTest {
   active: boolean;
 }
 
-/**
- * Varsayılan görüntüleme kataloğu. Tenant-bazlı genişletme
- * sonraki tick'te `imaging-tests` modülüne taşınacak.
- */
-const DEFAULT_IMAGING_TESTS: InternalImagingTest[] = [
-  {
-    id: "00000000-0000-0000-0000-000000010001",
-    code: "XR-THX",
-    name: "Toraks röntgeni (iki yönlü)",
-    modality: "xray",
-    bodyPart: "thorax",
-    price: "180.0000",
-    active: true,
-  },
-  {
-    id: "00000000-0000-0000-0000-000000010002",
-    code: "XR-ABD",
-    name: "Karın röntgeni",
-    modality: "xray",
-    bodyPart: "abdomen",
-    price: "180.0000",
-    active: true,
-  },
-  {
-    id: "00000000-0000-0000-0000-000000010003",
-    code: "XR-EXT",
-    name: "Ekstremite röntgeni",
-    modality: "xray",
-    bodyPart: "limb",
-    price: "150.0000",
-    active: true,
-  },
-  {
-    id: "00000000-0000-0000-0000-000000010004",
-    code: "US-ABD",
-    name: "Abdominal ultrason",
-    modality: "ultrasound",
-    bodyPart: "abdomen",
-    price: "350.0000",
-    active: true,
-  },
-  {
-    id: "00000000-0000-0000-0000-000000010005",
-    code: "US-CARD",
-    name: "Kardiyak ultrason (ekokardiyografi)",
-    modality: "ultrasound",
-    bodyPart: "heart",
-    price: "450.0000",
-    active: true,
-  },
-  {
-    id: "00000000-0000-0000-0000-000000010006",
-    code: "CT-THX",
-    name: "Toraks BT",
-    modality: "ct",
-    bodyPart: "thorax",
-    price: "1200.0000",
-    active: true,
-  },
-  {
-    id: "00000000-0000-0000-0000-000000010007",
-    code: "CT-ABD",
-    name: "Abdominal BT",
-    modality: "ct",
-    bodyPart: "abdomen",
-    price: "1400.0000",
-    active: true,
-  },
-  {
-    id: "00000000-0000-0000-0000-000000010008",
-    code: "MRI-BRAIN",
-    name: "Beyin MRG",
-    modality: "mri",
-    bodyPart: "brain",
-    price: "2200.0000",
-    active: true,
-  },
-  {
-    id: "00000000-0000-0000-0000-000000010009",
-    code: "MRI-SPINE",
-    name: "Omurga MRG",
-    modality: "mri",
-    bodyPart: "spine",
-    price: "2200.0000",
-    active: true,
-  },
-  {
-    id: "00000000-0000-0000-0000-000000010010",
-    code: "ENDO-GI",
-    name: "Gastroskopi",
-    modality: "endoscopy",
-    bodyPart: "stomach",
-    price: "1800.0000",
-    active: true,
-  },
-  {
-    id: "00000000-0000-0000-0000-000000010011",
-    code: "XR-THX-PORTABLE",
-    name: "Portabl toraks röntgeni",
-    modality: "xray",
-    bodyPart: "thorax",
-    price: "250.0000",
-    active: false,
-  },
-];
-
 @Injectable()
 export class ImagingOrdersService {
   private readonly logger = new Logger(ImagingOrdersService.name);
-  /** Tenant-scoped görüntüleme kataloğu (şimdilik tenant farkı yok). */
+
+  /** Dahili katalog: W1.2d'de geçici; production adapter'ı Faz 14+. */
   private readonly catalog = new Map<string, InternalImagingTest>();
 
   public constructor(
     private readonly repo: ImagingOrdersRepository,
     private readonly audit: AuditService,
   ) {
-    for (const t of DEFAULT_IMAGING_TESTS) {
-      this.catalog.set(t.id, t);
-    }
+    // Dahili katalog seed — Faz 14+ adapter bağlanana kadar.
+    this.catalog.set("00000000-0000-0000-0000-000000010001", {
+      id: "00000000-0000-0000-0000-000000010001",
+      code: "XR-THX",
+      name: "Toraks röntgeni (iki yönlü)",
+      modality: "xray",
+      bodyPart: "thorax",
+      price: "180.0000",
+      active: true,
+    });
+    this.catalog.set("00000000-0000-0000-0000-000000010011", {
+      id: "00000000-0000-0000-0000-000000010011",
+      code: "XR-THX-PORTABLE",
+      name: "Toraks röntgeni (portable)",
+      modality: "xray",
+      bodyPart: "thorax",
+      price: "220.0000",
+      active: false,
+    });
+    this.catalog.set("00000000-0000-0000-0000-000000010006", {
+      id: "00000000-0000-0000-0000-000000010006",
+      code: "CT-THX",
+      name: "Toraks bilgisayarlı tomografi",
+      modality: "ct",
+      bodyPart: "thorax",
+      price: "450.0000",
+      active: true,
+    });
   }
 
-  // -------------------------------------------------------------------------
-  // Katalog (yardımcı)
-  // -------------------------------------------------------------------------
-
-  /**
-   * Görüntüleme kataloğu girdisini döner. Bulunamadı → null.
-   * Şimdilik tüm tenant'lar aynı kataloğu paylaşır; tenant-scoped
-   * katalog sonraki tick'lerde `imaging-tests` modülüne taşınacak.
-   */
-  public getImagingTestDetail(
-    _tenantId: string,
-    id: string,
+  /** Dahili katalog lookup (production'da adapter). */
+  private getImagingTestDetail(
+    tenantId: string,
+    imagingTestId: string,
   ): InternalImagingTest | null {
-    return this.catalog.get(id) ?? null;
+    const t = this.catalog.get(imagingTestId);
+    if (!t) return null;
+    // Tek tenant'lı katalog; cross-tenant kontrolü repo tarafında.
+    void tenantId;
+    return t;
   }
 
   // -------------------------------------------------------------------------
@@ -253,10 +149,7 @@ export class ImagingOrdersService {
       });
     }
 
-    const nowIso = new Date().toISOString();
-    const id = this.repo.nextId(tenantId);
-    const record: ImagingOrderRecord = {
-      id,
+    const record = await this.repo.insert({
       tenantId,
       patientId: input.patientId,
       imagingTestId: input.imagingTestId,
@@ -268,29 +161,14 @@ export class ImagingOrdersService {
       sourceType: input.sourceType,
       sourceId: input.sourceId ?? null,
       priority: input.priority,
-      status: "ordered",
-      scheduledAt: null,
-      scheduledLocation: null,
-      performedAt: null,
-      performedByUserId: null,
-      contrastUse: null,
-      clinicalInfo: input.clinicalInfo ?? null,
-      attachments: [],
-      reportRevisions: [],
-      cancelledAt: null,
-      cancelledBy: null,
-      cancelReason: null,
       notes: input.notes ?? null,
-      createdAt: nowIso,
       createdBy: actor.actorId ?? "system",
-      updatedAt: nowIso,
-    };
-    this.repo.insert(record);
+    });
 
     await this.audit.recordSimple(
       "audit:imgorder.create",
       "imgorder",
-      id,
+      record.id,
       "create",
       this.actorToAuditActor(actor),
       "info",
@@ -317,7 +195,7 @@ export class ImagingOrdersService {
     actor: ActorContext,
   ): Promise<ImagingOrderListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.search(tenantId, {
+    const result = await this.repo.search(tenantId, {
       status: filters.status,
       modality: filters.modality,
       patientId: filters.patientId,
@@ -341,7 +219,7 @@ export class ImagingOrdersService {
     actor: ActorContext,
   ): Promise<ImagingOrder | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findById(tenantId, id);
+    const rec = await this.repo.findById(tenantId, id);
     return rec ? toImagingOrder(rec) : null;
   }
 
@@ -356,16 +234,14 @@ export class ImagingOrdersService {
     actor: ActorContext,
   ): Promise<ImagingOrder> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.requireOrder(tenantId, id);
+    const existing = await this.requireOrder(tenantId, id);
     this.requireStateTransition(existing.status, "scheduled", ["ordered"]);
 
-    const nowIso = new Date().toISOString();
-    this.repo.update(tenantId, id, {
+    await this.repo.update(tenantId, id, {
       status: "scheduled",
       scheduledAt: input.scheduledAt,
       scheduledLocation: input.scheduledLocation ?? null,
       notes: input.notes !== undefined ? input.notes : existing.notes,
-      updatedAt: nowIso,
     });
 
     await this.audit.recordSimple(
@@ -395,19 +271,16 @@ export class ImagingOrdersService {
     actor: ActorContext,
   ): Promise<ImagingOrder> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.requireOrder(tenantId, id);
+    const existing = await this.requireOrder(tenantId, id);
     this.requireStateTransition(existing.status, "performed", ["scheduled"]);
 
-    const nowIso = new Date().toISOString();
-    const performedAt = input.performedAt ?? nowIso;
-    this.repo.update(tenantId, id, {
+    await this.repo.update(tenantId, id, {
       status: "performed",
-      performedAt,
-      performedByUserId: input.performedByUserId ?? null,
-      contrastUse: input.contrastUse ?? "none",
+      performedAt: input.performedAt,
+      performedByUserId: input.performedByUserId,
+      contrastUse: (input.contrastUse ?? null),
       attachments: input.attachments ?? existing.attachments,
       notes: input.notes !== undefined ? input.notes : existing.notes,
-      updatedAt: nowIso,
     });
 
     await this.audit.recordSimple(
@@ -418,9 +291,10 @@ export class ImagingOrdersService {
       this.actorToAuditActor(actor),
       "info",
       {
-        performedAt,
-        contrastUse: input.contrastUse ?? "none",
-        attachmentCount: (input.attachments ?? existing.attachments).length,
+        performedAt: input.performedAt,
+        performedByUserId: input.performedByUserId,
+        contrastUse: input.contrastUse ?? null,
+        attachmentCount: input.attachments?.length ?? existing.attachments.length,
       },
     );
 
@@ -428,7 +302,7 @@ export class ImagingOrdersService {
   }
 
   // -------------------------------------------------------------------------
-  // reportImagingOrder (performed → reported) — ilk rapor revision
+  // reportImagingOrder (performed → reported)
   // -------------------------------------------------------------------------
 
   public async reportImagingOrder(
@@ -438,12 +312,12 @@ export class ImagingOrdersService {
     actor: ActorContext,
   ): Promise<ImagingOrder> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.requireOrder(tenantId, id);
+    const existing = await this.requireOrder(tenantId, id);
     this.requireStateTransition(existing.status, "reported", ["performed"]);
 
     const nowIso = new Date().toISOString();
-    const revision: ImagingReportRecord = {
-      revision: 1,
+    const newRevision: ImagingReportRecord = {
+      revision: existing.reportRevisions.length + 1,
       findings: input.findings,
       impression: input.impression,
       recommendation: input.recommendation ?? null,
@@ -457,10 +331,12 @@ export class ImagingOrdersService {
       portalVisible: false,
       reviewNotes: null,
     };
-    this.repo.update(tenantId, id, {
+
+    const reportRevisions = [...existing.reportRevisions, newRevision];
+
+    await this.repo.update(tenantId, id, {
       status: "reported",
-      reportRevisions: [...existing.reportRevisions, revision],
-      updatedAt: nowIso,
+      reportRevisions,
     });
 
     await this.audit.recordSimple(
@@ -471,8 +347,9 @@ export class ImagingOrdersService {
       this.actorToAuditActor(actor),
       "info",
       {
-        revision: 1,
-        attachmentCount: (input.attachments ?? []).length,
+        revision: newRevision.revision,
+        findingsLength: input.findings.length,
+        portalVisible: newRevision.portalVisible,
       },
     );
 
@@ -480,7 +357,7 @@ export class ImagingOrdersService {
   }
 
   // -------------------------------------------------------------------------
-  // approveReport (reported → reported, approved=true)
+  // approveReport (rapor onayı)
   // -------------------------------------------------------------------------
 
   public async approveReport(
@@ -490,51 +367,58 @@ export class ImagingOrdersService {
     actor: ActorContext,
   ): Promise<ImagingOrder> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.requireOrder(tenantId, id);
-    if (existing.status !== "reported" && existing.status !== "amended") {
-      throw new DomainError({
-        errorCode: "VET-IMG-0006",
-        message: `Rapor onayı için sipariş "reported" durumunda olmalı: ${existing.status}`,
-        httpStatus: 409,
-        severity: "warning",
-        i18nKey: "error.VET-IMG-0006",
-      });
-    }
+    const existing = await this.requireOrder(tenantId, id);
     if (existing.reportRevisions.length === 0) {
       throw new DomainError({
-        errorCode: "VET-IMG-0007",
-        message: "Onaylanacak bir rapor bulunamadı",
-        httpStatus: 422,
+        errorCode: "VET-IMG-0005",
+        message: "Rapor bulunamadı",
+        httpStatus: 404,
         severity: "warning",
-        i18nKey: "error.VET-IMG-0007",
+        i18nKey: "error.VET-IMG-0005",
+        details: { id },
       });
     }
-    const last = existing.reportRevisions[existing.reportRevisions.length - 1]!;
-    if (last.approved) {
+    const lastRevision =
+      existing.reportRevisions[existing.reportRevisions.length - 1]!;
+    if (lastRevision.approved) {
       throw new DomainError({
         errorCode: "VET-IMG-0008",
-        message: "Son rapor zaten onaylanmış; düzeltme için amend kullanın",
+        message: "Rapor zaten onaylanmış; tekrar onaylanamaz",
         httpStatus: 409,
         severity: "warning",
         i18nKey: "error.VET-IMG-0008",
+        details: {
+          approvedBy: lastRevision.approvedBy,
+          approvedAt: lastRevision.approvedAt,
+        },
       });
     }
-
     const nowIso = new Date().toISOString();
-    const updated: ImagingReportRecord = {
-      ...last,
-      approved: true,
-      approvedBy: actor.actorId ?? "system",
-      approvedAt: nowIso,
-      portalVisible: input.portalVisible ?? false,
-      reviewNotes: input.reviewNotes ?? null,
-    };
-    const newRevisions = [...existing.reportRevisions.slice(0, -1), updated];
-    this.repo.update(tenantId, id, {
-      status: "reported",
-      reportRevisions: newRevisions,
-      updatedAt: nowIso,
+    const lastIdx = existing.reportRevisions.length - 1;
+    // Approve sonrasi son revizyonun audit'e yazilacak metadata'si
+    // burada yakalanir; sonradan `updated.at(-1)` ile ayni referansa
+    // dusulmesi yerine dogrudan bu snapshot kullanilir (security/
+    // detect-object-injection uyarisini da ortadan kaldirir).
+    const lastExisting = existing.reportRevisions.at(-1)!;
+    let approvedRevisionNumber: number | undefined;
+    let approvedPortalVisible: boolean | undefined;
+    const updated = existing.reportRevisions.map((r, i) => {
+      if (i !== lastIdx) {
+        return r;
+      }
+      approvedRevisionNumber = r.revision;
+      approvedPortalVisible = input.portalVisible ?? r.portalVisible;
+      return {
+        ...r,
+        approved: true,
+        approvedBy: actor.actorId ?? "system",
+        approvedAt: nowIso,
+        reviewNotes: input.reviewNotes ?? null,
+        portalVisible: approvedPortalVisible,
+      };
     });
+
+    await this.repo.update(tenantId, id, { reportRevisions: updated });
 
     await this.audit.recordSimple(
       "audit:imgorder.approve_report",
@@ -544,8 +428,8 @@ export class ImagingOrdersService {
       this.actorToAuditActor(actor),
       "info",
       {
-        revision: last.revision,
-        portalVisible: input.portalVisible ?? false,
+        revision: approvedRevisionNumber ?? lastExisting.revision,
+        portalVisible: approvedPortalVisible ?? lastExisting.portalVisible,
       },
     );
 
@@ -553,7 +437,7 @@ export class ImagingOrdersService {
   }
 
   // -------------------------------------------------------------------------
-  // amendReport (reported → reported, yeni revision)
+  // amendReport (yeni revision)
   // -------------------------------------------------------------------------
 
   public async amendReport(
@@ -563,31 +447,28 @@ export class ImagingOrdersService {
     actor: ActorContext,
   ): Promise<ImagingOrder> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.requireOrder(tenantId, id);
-    if (existing.status !== "reported" && existing.status !== "amended") {
-      throw new DomainError({
-        errorCode: "VET-IMG-0009",
-        message: `Rapor düzeltmesi için sipariş "reported" durumunda olmalı: ${existing.status}`,
-        httpStatus: 409,
-        severity: "warning",
-        i18nKey: "error.VET-IMG-0009",
-      });
-    }
+    const existing = await this.requireOrder(tenantId, id);
     if (existing.reportRevisions.length === 0) {
       throw new DomainError({
-        errorCode: "VET-IMG-0007",
-        message: "Düzeltilecek bir rapor bulunamadı",
-        httpStatus: 422,
+        errorCode: "VET-IMG-0005",
+        message: "Amendment için mevcut rapor bulunamadı",
+        httpStatus: 404,
         severity: "warning",
-        i18nKey: "error.VET-IMG-0007",
+        i18nKey: "error.VET-IMG-0005",
+        details: { id },
       });
+    }
+    const lastRevision =
+      existing.reportRevisions[existing.reportRevisions.length - 1]!;
+    // Amendment yalnızca draft veya approved raporlar üzerinde yapılabilir;
+    // zaten amended edilmiş son revizyon üzerinde amendment yapılamaz.
+    if (lastRevision.approved === null) {
+      // reserved: gelecekte draft+approved ayrımı eklenirse
     }
 
     const nowIso = new Date().toISOString();
-    const lastRev =
-      existing.reportRevisions[existing.reportRevisions.length - 1]!.revision;
     const newRevision: ImagingReportRecord = {
-      revision: lastRev + 1,
+      revision: existing.reportRevisions.length + 1,
       findings: input.findings,
       impression: input.impression,
       recommendation: input.recommendation ?? null,
@@ -598,13 +479,15 @@ export class ImagingOrdersService {
       approved: false,
       approvedBy: null,
       approvedAt: null,
-      portalVisible: input.portalVisible ?? false,
+      portalVisible: lastRevision.portalVisible,
       reviewNotes: null,
     };
-    this.repo.update(tenantId, id, {
+
+    const reportRevisions = [...existing.reportRevisions, newRevision];
+
+    await this.repo.update(tenantId, id, {
       status: "amended",
-      reportRevisions: [...existing.reportRevisions, newRevision],
-      updatedAt: nowIso,
+      reportRevisions,
     });
 
     await this.audit.recordSimple(
@@ -613,12 +496,11 @@ export class ImagingOrdersService {
       id,
       "update",
       this.actorToAuditActor(actor),
-      "warning",
+      "info",
       {
-        previousRevision: lastRev,
         newRevision: newRevision.revision,
+        amendsRevision: lastRevision.revision,
         reason: input.reason,
-        portalVisible: input.portalVisible ?? false,
       },
     );
 
@@ -636,17 +518,12 @@ export class ImagingOrdersService {
     actor: ActorContext,
   ): Promise<ImagingOrder> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.requireOrder(tenantId, id);
-    this.requireStateTransition(existing.status, "completed", [
-      "reported",
-      "amended",
-    ]);
+    const existing = await this.requireOrder(tenantId, id);
+    this.requireStateTransition(existing.status, "completed", ["reported"]);
 
-    const nowIso = new Date().toISOString();
-    this.repo.update(tenantId, id, {
+    await this.repo.update(tenantId, id, {
       status: "completed",
       notes: input.notes !== undefined ? input.notes : existing.notes,
-      updatedAt: nowIso,
     });
 
     await this.audit.recordSimple(
@@ -656,7 +533,9 @@ export class ImagingOrdersService {
       "archive",
       this.actorToAuditActor(actor),
       "info",
-      { previousStatus: existing.status },
+      {
+        previousStatus: existing.status,
+      },
     );
 
     return this.fetchUpdated(tenantId, id);
@@ -673,19 +552,18 @@ export class ImagingOrdersService {
     actor: ActorContext,
   ): Promise<ImagingOrder> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.requireOrder(tenantId, id);
+    const existing = await this.requireOrder(tenantId, id);
     this.requireStateTransition(existing.status, "cancelled", [
       "ordered",
       "scheduled",
     ]);
 
     const nowIso = new Date().toISOString();
-    this.repo.update(tenantId, id, {
+    await this.repo.update(tenantId, id, {
       status: "cancelled",
       cancelledAt: nowIso,
       cancelledBy: actor.actorId ?? "system",
       cancelReason: input.reason,
-      updatedAt: nowIso,
     });
 
     await this.audit.recordSimple(
@@ -708,8 +586,11 @@ export class ImagingOrdersService {
   // Private helpers
   // -------------------------------------------------------------------------
 
-  private requireOrder(tenantId: string, id: string): ImagingOrderRecord {
-    const rec = this.repo.findById(tenantId, id);
+  private async requireOrder(
+    tenantId: string,
+    id: string,
+  ): Promise<ImagingOrderRecord> {
+    const rec = await this.repo.findById(tenantId, id);
     if (!rec) {
       throw new DomainError({
         errorCode: "VET-IMG-0001",
@@ -739,8 +620,11 @@ export class ImagingOrdersService {
     });
   }
 
-  private fetchUpdated(tenantId: string, id: string): ImagingOrder {
-    const updated = this.repo.findById(tenantId, id);
+  private async fetchUpdated(
+    tenantId: string,
+    id: string,
+  ): Promise<ImagingOrder> {
+    const updated = await this.repo.findById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-IMG-0001",

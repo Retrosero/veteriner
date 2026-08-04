@@ -1,47 +1,64 @@
 /**
- * @file Imaging order repository (in-memory).
+ * @file Imaging order repository.
  * @module apps/api/modules/imaging-orders/imaging-orders.repository
  *
- * @description GOAL-093 görüntüleme isteği veri erişim katmanı.
- * DB migration sonraya bırakıldı; tenant-scoped in-memory Map
- * kullanılır.
+ * @description GOAL-093 (FAZ-9) görüntüleme isteği veri erişim katmanı.
+ * W1.2d kapsamında in-memory Map'ten Prisma DB'ye taşındı.
  *
- * - `byId`: id → record
- * - `counters`: tenant bazlı id sayacı
- *
- * @security Tüm sorgular tenantId ile filtrelenir.
- *
+ * @security Tenant RLS zorunlu. Append-only (DB trigger). Her sorgu
+ *   `withContext` içinde transaction-yerel RLS bağlamıyla çalışır.
  * @since GOAL-093 (FAZ-9) görüntüleme isteği ve raporu core
+ * @w1.2d DB persistence (in-memory → Prisma)
+ * @w1.4 RLS transaction-yerel context
  */
 
 import { Injectable } from "@nestjs/common";
 
+import { PrismaService } from "../../prisma/prisma.service.js";
+
 import type {
-  ImagingOrderRecord,
-  ImagingReportRecord,
-} from "../../common/imaging-orders/imaging-order.types.js";
-import type {
+  ImagingContrastUse,
   ImagingModality,
+  ImagingOrderPriority,
+  ImagingOrderRecord,
   ImagingOrderSourceType,
   ImagingOrderStatus,
-} from "@vetniva/contracts";
+  ImagingReportRecord,
+} from "../../common/imaging-orders/imaging-order.types.js";
+import type { ImagingOrder, Prisma } from "@prisma/client";
+
+/** Insert input. */
+export interface ImagingOrderInsertInput {
+  tenantId: string;
+  patientId: string;
+  imagingTestId: string;
+  imagingTestCode: string;
+  imagingTestName: string;
+  modality: ImagingModality;
+  bodyPart: string | null;
+  price: string;
+  sourceType: ImagingOrderSourceType;
+  sourceId: string | null;
+  priority: ImagingOrderPriority;
+  createdBy: string;
+  notes: string | null;
+}
 
 /** Patch tipi. */
 export interface ImagingOrderPatch {
   status?: ImagingOrderStatus | undefined;
-  scheduledAt?: string | null | undefined;
+  scheduledAt?: string | Date | null | undefined;
   scheduledLocation?: string | null | undefined;
-  performedAt?: string | null | undefined;
+  performedAt?: string | Date | null | undefined;
   performedByUserId?: string | null | undefined;
-  contrastUse?: "none" | "iv" | "oral" | "rectal" | "other" | null | undefined;
+  contrastUse?: ImagingContrastUse | null | undefined;
   clinicalInfo?: string | null | undefined;
   attachments?: string[] | undefined;
   reportRevisions?: ImagingReportRecord[] | undefined;
-  cancelledAt?: string | null | undefined;
+  cancelledAt?: string | Date | null | undefined;
   cancelledBy?: string | null | undefined;
   cancelReason?: string | null | undefined;
   notes?: string | null | undefined;
-  updatedAt?: string | undefined;
 }
 
 /** Arama filtreleri. */
@@ -58,75 +75,211 @@ export interface ImagingOrderSearchFilters {
   offset: number;
 }
 
+/** RLS actor. */
+interface TenantActor {
+  tenantId: string;
+  isSuperadmin?: boolean;
+}
+
 @Injectable()
 export class ImagingOrdersRepository {
-  /** key: id → record. */
-  private readonly byId = new Map<string, ImagingOrderRecord>();
-  /** Her tenant için id counter. */
-  private readonly counters = new Map<string, number>();
+  public constructor(private readonly prisma: PrismaService) {}
 
-  public nextId(tenantId: string): string {
-    const n = (this.counters.get(tenantId) ?? 0) + 1;
-    this.counters.set(tenantId, n);
-    return `io-${tenantId.slice(0, 8)}-${String(n).padStart(6, "0")}`;
+  public async findById(
+    tenantId: string,
+    id: string,
+  ): Promise<ImagingOrderRecord | null> {
+    return this.withContext({ tenantId }, async (tx) => {
+      const row = await tx.imagingOrder.findFirst({
+        where: { id, tenantId },
+      });
+      return row ? this.toRecord(row) : null;
+    });
   }
 
-  public insert(record: ImagingOrderRecord): ImagingOrderRecord {
-    this.byId.set(record.id, record);
-    return record;
+  public async insert(
+    input: ImagingOrderInsertInput,
+  ): Promise<ImagingOrderRecord> {
+    return this.withContext({ tenantId: input.tenantId }, async (tx) => {
+      const row = await tx.imagingOrder.create({
+        data: {
+          tenantId: input.tenantId,
+          patientId: input.patientId,
+          imagingTestId: input.imagingTestId,
+          imagingTestCode: input.imagingTestCode,
+          imagingTestName: input.imagingTestName,
+          modality: input.modality,
+          bodyPart: input.bodyPart,
+          price: input.price,
+          sourceType: input.sourceType,
+          sourceId: input.sourceId,
+          priority: input.priority,
+          notes: input.notes,
+          createdBy: input.createdBy,
+        },
+      });
+      return this.toRecord(row);
+    });
   }
 
-  public findById(tenantId: string, id: string): ImagingOrderRecord | null {
-    const rec = this.byId.get(id);
-    if (!rec || rec.tenantId !== tenantId) return null;
-    return rec;
-  }
-
-  public update(
+  public async update(
     tenantId: string,
     id: string,
     patch: ImagingOrderPatch,
-  ): ImagingOrderRecord | null {
-    const rec = this.findById(tenantId, id);
-    if (!rec) return null;
-    for (const [k, v] of Object.entries(patch)) {
-      if (v !== undefined) {
-        (rec as unknown as Record<string, unknown>)[k] = v;
+  ): Promise<ImagingOrderRecord | null> {
+    return this.withContext({ tenantId }, async (tx) => {
+      const toDate = (
+        v: string | Date | null | undefined,
+      ): Date | null => {
+        if (v === null || v === undefined) return null;
+        return v instanceof Date ? v : new Date(v);
+      };
+      try {
+        const row = await tx.imagingOrder.update({
+          where: { id },
+          data: {
+            ...(patch.status !== undefined ? { status: patch.status } : {}),
+            ...(patch.scheduledAt !== undefined
+              ? { scheduledAt: toDate(patch.scheduledAt) }
+              : {}),
+            ...(patch.scheduledLocation !== undefined
+              ? { scheduledLocation: patch.scheduledLocation }
+              : {}),
+            ...(patch.performedAt !== undefined
+              ? { performedAt: toDate(patch.performedAt) }
+              : {}),
+            ...(patch.performedByUserId !== undefined
+              ? { performedByUserId: patch.performedByUserId }
+              : {}),
+            ...(patch.contrastUse !== undefined
+              ? { contrastUse: patch.contrastUse }
+              : {}),
+            ...(patch.clinicalInfo !== undefined
+              ? { clinicalInfo: patch.clinicalInfo }
+              : {}),
+            ...(patch.attachments !== undefined
+              ? { attachments: patch.attachments }
+              : {}),
+            ...(patch.reportRevisions !== undefined
+              ? {
+                  reportRevisions:
+                    patch.reportRevisions as unknown as Prisma.InputJsonValue,
+                }
+              : {}),
+            ...(patch.cancelledAt !== undefined
+              ? { cancelledAt: toDate(patch.cancelledAt) }
+              : {}),
+            ...(patch.cancelledBy !== undefined
+              ? { cancelledBy: patch.cancelledBy }
+              : {}),
+            ...(patch.cancelReason !== undefined
+              ? { cancelReason: patch.cancelReason }
+              : {}),
+            ...(patch.notes !== undefined ? { notes: patch.notes } : {}),
+          },
+        });
+        if (row.tenantId !== tenantId) return null;
+        return this.toRecord(row);
+      } catch (e: unknown) {
+        if (e && typeof e === "object" && "code" in e && e.code === "P2025") {
+          return null;
+        }
+        throw e;
       }
-    }
-    this.byId.set(id, rec);
-    return rec;
+    });
   }
 
-  public search(
+  public async search(
     tenantId: string,
     filters: ImagingOrderSearchFilters,
-  ): { items: ImagingOrderRecord[]; total: number } {
-    const all: ImagingOrderRecord[] = [];
-    for (const rec of this.byId.values()) {
-      if (rec.tenantId !== tenantId) continue;
-      if (filters.status && rec.status !== filters.status) continue;
-      if (filters.modality && rec.modality !== filters.modality) continue;
-      if (filters.patientId && rec.patientId !== filters.patientId) continue;
-      if (filters.sourceType && rec.sourceType !== filters.sourceType) continue;
-      if (filters.sourceId && rec.sourceId !== filters.sourceId) continue;
-      if (filters.dateFrom && rec.createdAt < filters.dateFrom) continue;
-      if (filters.dateTo && rec.createdAt > filters.dateTo) continue;
-      all.push(rec);
-    }
-    const sort = filters.sort ?? "desc";
-    all.sort((a, b) => {
-      const cmp = a.createdAt.localeCompare(b.createdAt);
-      return sort === "desc" ? -cmp : cmp;
+  ): Promise<{ items: ImagingOrderRecord[]; total: number }> {
+    return this.withContext({ tenantId }, async (tx) => {
+      const where: Prisma.ImagingOrderWhereInput = {
+        tenantId,
+        ...(filters.status && { status: filters.status }),
+        ...(filters.modality && { modality: filters.modality }),
+        ...(filters.patientId && { patientId: filters.patientId }),
+        ...(filters.sourceType && { sourceType: filters.sourceType }),
+        ...(filters.sourceId && { sourceId: filters.sourceId }),
+        ...((filters.dateFrom || filters.dateTo) && {
+          createdAt: {
+            ...(filters.dateFrom && { gte: new Date(filters.dateFrom) }),
+            ...(filters.dateTo && { lte: new Date(filters.dateTo) }),
+          },
+        }),
+      };
+
+      const sort = filters.sort ?? "desc";
+      const [rows, total] = await Promise.all([
+        tx.imagingOrder.findMany({
+          where,
+          orderBy: { createdAt: sort },
+          take: filters.limit,
+          skip: filters.offset,
+        }),
+        tx.imagingOrder.count({ where }),
+      ]);
+
+      return {
+        items: rows.map((r) => this.toRecord(r)),
+        total,
+      };
     });
-    const total = all.length;
-    const items = all.slice(filters.offset, filters.offset + filters.limit);
-    return { items, total };
   }
 
-  /** Test yardımcısı. */
-  public clear(): void {
-    this.byId.clear();
-    this.counters.clear();
+  /**
+   * Sorgu başında RLS context'i set eder. `set_config(name, value, is_local=true)`
+   * transaction sonunda otomatik temizlenir; aynı bağlam içindeki sorgular RLS
+   * policy'sini doğru uygular. Bu sayede hem WHERE cümlesi hem de RLS USING
+   * clause aynı tenant bağlamıyla çalışır.
+   *
+   * @param actor tenantId/isSuperadmin çifti
+   * @param fn transaction içinde çalışacak sorgu
+   */
+  private async withContext<T>(
+    actor: TenantActor,
+    fn: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    const isSuper = actor.isSuperadmin ? "true" : "false";
+    const tenantId = actor.tenantId;
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin', ${isSuper}, true)`;
+      await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
+      return fn(tx);
+    });
+  }
+
+  private toRecord(row: ImagingOrder): ImagingOrderRecord {
+    return {
+      id: row.id,
+      tenantId: row.tenantId,
+      patientId: row.patientId,
+      imagingTestId: row.imagingTestId,
+      imagingTestCode: row.imagingTestCode,
+      imagingTestName: row.imagingTestName,
+      modality: row.modality as ImagingModality,
+      bodyPart: row.bodyPart,
+      price: row.price,
+      sourceType: row.sourceType as ImagingOrderSourceType,
+      sourceId: row.sourceId,
+      priority: row.priority as ImagingOrderPriority,
+      status: row.status as ImagingOrderStatus,
+      scheduledAt: row.scheduledAt?.toISOString() ?? null,
+      scheduledLocation: row.scheduledLocation,
+      performedAt: row.performedAt?.toISOString() ?? null,
+      performedByUserId: row.performedByUserId,
+      contrastUse: row.contrastUse as ImagingContrastUse | null,
+      clinicalInfo: row.clinicalInfo,
+      attachments: row.attachments,
+      reportRevisions:
+        (row.reportRevisions as unknown as ImagingReportRecord[]) ?? [],
+      cancelledAt: row.cancelledAt?.toISOString() ?? null,
+      cancelledBy: row.cancelledBy,
+      cancelReason: row.cancelReason,
+      notes: row.notes,
+      createdAt: row.createdAt.toISOString(),
+      createdBy: row.createdBy,
+      updatedAt: row.updatedAt.toISOString(),
+    };
   }
 }
