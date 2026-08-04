@@ -28,6 +28,10 @@ RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/apps/api/dist apps/api/dist
+# Prisma migrate deploy için schema.prisma ve migrations dizini şart.
+# Runner stage'de pnpm workspace kullanmıyoruz; npx ile doğrudan @prisma
+# binary'sini çalıştırıyoruz, schema.prisma otomatik bulunur.
+COPY --from=builder /app/apps/api/prisma apps/api/prisma
 # RBAC izin kataloğu ve context-aware yardim/RAG indeksi dokuman
 # tabanli runtime girdileridir. Uygulama bunlari proje köküne göre
 # okuduğu için docs kökü production imajında da bulunmalıdır.
@@ -43,4 +47,4 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -qO- http://127.0.0
 # tablosu yok gibi P2021 alır). Container başlarken `migrate deploy` ile
 # şemayı uygula, sonra API'yi başlat. Retry'li yapı geçici DB hazır olmama
 # durumlarını tolere eder.
-CMD ["sh", "-c", "for i in 1 2 3 4 5 6 7 8 9 10; do pnpm --filter @vetniva/api exec prisma migrate deploy && break; echo 'Migration failed, retrying in 5s...'; sleep 5; done; node apps/api/dist/main.js"]
+CMD ["sh", "-c", "for i in 1 2 3 4 5 6 7 8 9 10; do npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma && break; echo 'Migration failed, retrying in 5s...'; sleep 5; done; node apps/api/dist/main.js"]
