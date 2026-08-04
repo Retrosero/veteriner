@@ -1713,6 +1713,316 @@ model VaccineReminderTenantConfigRecord {
 }
 
 // -----------------------------------------------------------------------------
+// LAB_TESTS — GOAL-090 (FAZ-9) laboratuvar test kataloğu.
+// Tenant bazlı test master data: kod, ad, numune türü, birim, referans
+// aralığı, koşullu aralıklar (JSON), fiyat (decimal string) ve aktiflik.
+// Append-only + arşiv: fiziksel silme YOKTUR; `active=false` ile arşivlenir.
+// `code` tenant-scoped unique. W1.2a kapsamında in-memory Map'ten DB'ye
+// taşındı.
+// -----------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------
+// NOTIFICATIONS + NOTIFICATION_INBOX + NOTIFICATION_CONSENT — Faz 2/13
+// bildirim altyapısı DB persistence. In-memory `InboxStore` ve
+// `NotificationRecord` Map'leri DB'ye taşındı. W1.3 kapsamında.
+// -----------------------------------------------------------------------------
+
+model Notification {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  /// NotificationChannel: email | sms | in_app | whatsapp.
+  channel     String   @db.VarChar(20)
+  /// NotificationCategory: appointment | lab | stock | system | kvkk | marketing.
+  category    String   @db.VarChar(30)
+  templateKey String   @map("template_key") @db.VarChar(100)
+  /// NotificationLocale: tr-TR | en-GB.
+  locale      String   @default("tr-TR") @db.VarChar(10)
+  /// NotificationStatus: pending | sent | failed | suppressed.
+  status      String   @default("pending") @db.VarChar(20)
+  attempts    Int      @default(0)
+  lastError   String?  @map("last_error") @db.VarChar(2000)
+  /// Template render sonucu body (JSONB: subject, body, html, vs.).
+  rendered    Json     @default("{}")
+  /// Alıcı (email, telefon, vs.) — provider'a gönderim için.
+  recipient   String   @db.VarChar(200)
+  /// Idempotency: aynı (tenantId, idempotencyKey) ile tekrar gönderim engellenir.
+  idempotencyKey String?  @map("idempotency_key") @db.VarChar(200)
+  /// In-app inbox read durumu (sadece in_app channel için set edilir).
+  readAt      DateTime? @map("read_at") @db.Timestamptz(6)
+  sentAt      DateTime? @map("sent_at") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([tenantId, idempotencyKey])
+  @@index([tenantId, userId, createdAt])
+  @@index([tenantId, status])
+  @@index([tenantId, channel, status])
+  @@map("notifications")
+}
+
+model NotificationConsent {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  /// NotificationChannel.
+  channel   String   @db.VarChar(20)
+  /// Kullanıcı bu kanal için açık rıza verdi mi?
+  allowed   Boolean  @default(false)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([tenantId, userId, channel])
+  @@index([tenantId, userId])
+  @@map("notification_consents")
+}
+
+// -----------------------------------------------------------------------------
+// LAB_ADAPTER_EXPORTS + LAB_ADAPTER_IMPORTS — GOAL-094 (FAZ-9) cihaz/dış
+// lab adapter ledger. Provider-agnostic adapter sözleşmesinin persist
+// katmanı. İki ayrı tablo: export (order → provider) ve import (provider →
+// result). Her iki tablo da tenant RLS korumalı, append-only.
+// W1.2e kapsamında in-memory Map'ten DB'ye taşındı.
+// -----------------------------------------------------------------------------
+
+model LabAdapterExport {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  labOrderId        String   @map("lab_order_id") @db.Uuid
+  /// LabAdapterType: in_clinic_device | external_lab.
+  adapterType       String   @map("adapter_type") @db.VarChar(30)
+  providerName      String   @map("provider_name") @db.VarChar(100)
+  /// LabAdapterExportStatus: pending | accepted | rejected | failed | cancelled.
+  status            String   @default("pending") @db.VarChar(20)
+  idempotencyKey    String   @map("idempotency_key") @db.VarChar(100)
+  providerReference String?  @map("provider_reference") @db.VarChar(200)
+  providerMessage   String?  @map("provider_message") @db.VarChar(2000)
+  attemptCount      Int      @default(0) @map("attempt_count")
+  lastAttemptAt     DateTime? @map("last_attempt_at") @db.Timestamptz(6)
+  lastError         String?  @map("last_error") @db.VarChar(2000)
+  /// Adapter'a gönderilen payload (JSONB).
+  payload           Json     @default("{}")
+  notes             String?  @db.VarChar(2000)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy         String   @map("created_by") @db.VarChar(100)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([tenantId, idempotencyKey])
+  @@index([tenantId, labOrderId, createdAt])
+  @@index([tenantId, status])
+  @@index([tenantId, adapterType, createdAt])
+  @@map("lab_adapter_exports")
+}
+
+model LabAdapterImport {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  labOrderId        String   @map("lab_order_id") @db.Uuid
+  /// LabAdapterType.
+  adapterType       String   @map("adapter_type") @db.VarChar(30)
+  providerName      String   @map("provider_name") @db.VarChar(100)
+  /// LabAdapterImportStatus: received | mapped | failed.
+  status            String   @default("received") @db.VarChar(20)
+  providerReference String   @map("provider_reference") @db.VarChar(200)
+  /// Provider'dan gelen ham payload (JSONB).
+  rawPayload        Json     @map("raw_payload")
+  mappedResultId    String?  @map("mapped_result_id") @db.Uuid
+  mappedAt          DateTime? @map("mapped_at") @db.Timestamptz(6)
+  mappedBy          String?  @map("mapped_by") @db.VarChar(100)
+  errorMessage      String?  @map("error_message") @db.VarChar(2000)
+  receivedAt        DateTime @map("received_at") @db.Timestamptz(6)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([tenantId, labOrderId, receivedAt])
+  @@index([tenantId, status])
+  @@index([tenantId, providerReference])
+  @@map("lab_adapter_imports")
+}
+
+// -----------------------------------------------------------------------------
+// IMAGING_ORDERS — GOAL-093 (FAZ-9) görüntüleme isteği ve raporu.
+// Tenant bazlı görüntüleme (röntgen/ultrason/CT/MRI/endoskopi/fluoro/diğer)
+// siparişi; katalog snapshot'ı (code/name/modality/bodyPart/price) order
+// üzerinde dondurulur. Rapor alt-akışı `reportRevisions` JSONB içinde
+// append-only revizyonlar. State machine:
+// ordered → scheduled → performed → reported → completed;
+// ordered|scheduled → cancelled; reported → amended (yeni revision).
+// Append-only: fiziksel silme YOKTUR. W1.2d kapsamında in-memory Map'ten
+// DB'ye taşındı.
+// -----------------------------------------------------------------------------
+
+model ImagingOrder {
+  id                  String    @id @default(uuid()) @db.Uuid
+  tenantId            String    @map("tenant_id") @db.Uuid
+  patientId           String    @map("patient_id") @db.Uuid
+  imagingTestId       String    @map("imaging_test_id") @db.Uuid
+  /// Katalog snapshot'ı.
+  imagingTestCode     String    @map("imaging_test_code") @db.VarChar(64)
+  imagingTestName     String    @map("imaging_test_name") @db.VarChar(200)
+  /// ImagingModality: xray | ultrasound | ct | mri | endoscopy | fluoroscopy | other.
+  modality            String    @db.VarChar(20)
+  bodyPart            String?   @map("body_part") @db.VarChar(100)
+  /// Decimal string.
+  price               String    @db.VarChar(30)
+  /// ImagingOrderSourceType: examination | hospitalization | surgery | manual.
+  sourceType          String    @map("source_type") @db.VarChar(20)
+  sourceId            String?   @map("source_id") @db.Uuid
+  /// ImagingOrderPriority: routine | urgent | stat.
+  priority            String    @default("routine") @db.VarChar(10)
+  /// ImagingOrderStatus: ordered | scheduled | performed | reported | completed | cancelled | amended.
+  status              String    @default("ordered") @db.VarChar(20)
+  scheduledAt         DateTime? @map("scheduled_at") @db.Timestamptz(6)
+  scheduledLocation   String?   @map("scheduled_location") @db.VarChar(200)
+  performedAt         DateTime? @map("performed_at") @db.Timestamptz(6)
+  performedByUserId   String?   @map("performed_by_user_id") @db.Uuid
+  /// ImagingContrastUse: none | iv | oral | rectal | other.
+  contrastUse         String?   @map("contrast_use") @db.VarChar(10)
+  clinicalInfo        String?   @map("clinical_info") @db.VarChar(4000)
+  /// FileMeta id listesi.
+  attachments         String[]  @default([])
+  /// Append-only rapor revizyonları (JSONB).
+  reportRevisions     Json      @default("[]") @map("report_revisions")
+  cancelledAt         DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  cancelledBy         String?   @map("cancelled_by") @db.VarChar(100)
+  cancelReason        String?   @map("cancel_reason") @db.VarChar(2000)
+  notes               String?   @db.VarChar(2000)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy           String    @map("created_by") @db.VarChar(100)
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([tenantId, status])
+  @@index([tenantId, patientId, createdAt])
+  @@index([tenantId, modality, createdAt])
+  @@index([tenantId, sourceType, sourceId])
+  @@index([tenantId, createdAt])
+  @@map("imaging_orders")
+}
+
+// -----------------------------------------------------------------------------
+// LAB_RESULTS — GOAL-092 (FAZ-9) laboratuvar sonuçları.
+// Tenant bazlı lab sonucu; lab order'a bağlı, **tek** aktif sonuç +
+// amendment revision zinciri. State machine: draft → pending_review →
+// approved; approved → amended (yeni revision oluşur, eski
+// `amended` işaretlenir). Append-only: fiziksel silme YOKTUR.
+// W1.2c kapsamında in-memory Map'ten DB'ye taşındı.
+// -----------------------------------------------------------------------------
+
+model LabResult {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  labOrderId      String   @map("lab_order_id") @db.Uuid
+  revision        Int
+  value           String   @db.VarChar(200)
+  /// Decimal string (4 ondalık). Sayısal karşılaştırma için opsiyonel.
+  valueNumeric    String?  @map("value_numeric") @db.VarChar(30)
+  /// LabOrder snapshot'ından gelir.
+  unit            String   @db.VarChar(32)
+  referenceRange  String?  @map("reference_range") @db.VarChar(200)
+  /// LabAbnormalFlag: normal | low | high | critical_low | critical_high | abnormal.
+  abnormalFlag    String   @default("normal") @map("abnormal_flag") @db.VarChar(20)
+  /// LabResultStatus: draft | pending_review | approved | amended.
+  status          String   @default("draft") @db.VarChar(20)
+  /// FileMeta id listesi (PostgreSQL native String[]).
+  attachments     String[] @default([])
+  notes           String?  @db.VarChar(2000)
+  enteredBy       String   @map("entered_by") @db.VarChar(100)
+  enteredAt       DateTime @default(now()) @map("entered_at") @db.Timestamptz(6)
+  reviewedBy      String?  @map("reviewed_by") @db.VarChar(100)
+  reviewedAt      DateTime? @map("reviewed_at") @db.Timestamptz(6)
+  reviewNotes     String?  @map("review_notes") @db.VarChar(2000)
+  /// Amendment zinciri: bu kayıt hangi sonucu amend ediyor?
+  amendsResultId  String?  @map("amends_result_id") @db.Uuid
+  amendmentReason String?  @map("amendment_reason") @db.VarChar(2000)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([tenantId, labOrderId, revision])
+  @@index([tenantId, labOrderId, revision])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
+  @@map("lab_results")
+}
+
+// -----------------------------------------------------------------------------
+// LAB_ORDERS — GOAL-091 (FAZ-9) laboratuvar isteği ve numune.
+// Tenant bazlı lab siparişi; muayene/hospitalization/surgery veya manual
+// source'tan açılır. Katalog snapshot'ı (code/name/sampleType/unit/
+// referenceRange/price) order üzerinde dondurulur; katalog sonradan
+// değişse bile order kendi anlık görüntüsünü korur. Append-only: fiziksel
+// silme YOKTUR; iptal `cancelled` durumuna geçiş ile yapılır. W1.2b
+// kapsamında in-memory Map'ten DB'ye taşındı.
+// -----------------------------------------------------------------------------
+
+model LabOrder {
+  id                   String    @id @default(uuid()) @db.Uuid
+  tenantId             String    @map("tenant_id") @db.Uuid
+  patientId            String    @map("patient_id") @db.Uuid
+  labTestId            String    @map("lab_test_id") @db.Uuid
+  /// Katalog snapshot'ı — order oluşturulduğunda lab_tests'ten kopyalanır.
+  labTestCode          String    @map("lab_test_code") @db.VarChar(64)
+  labTestName          String    @map("lab_test_name") @db.VarChar(200)
+  /// LabSampleType snapshot.
+  sampleType           String    @map("sample_type") @db.VarChar(20)
+  unit                 String    @db.VarChar(32)
+  referenceRange       String?   @map("reference_range") @db.VarChar(200)
+  /// Decimal string (4 ondalık).
+  price                String    @db.VarChar(30)
+  /// LabOrderSourceType: examination | hospitalization | surgery | manual.
+  sourceType           String    @map("source_type") @db.VarChar(20)
+  /// Polymorphic reference; sourceType'a göre değişir.
+  sourceId             String?   @map("source_id") @db.Uuid
+  /// LabOrderPriority: routine | urgent | stat.
+  priority             String    @default("routine") @db.VarChar(10)
+  /// LabOrderStatus: ordered | collected | processing | completed | cancelled.
+  status               String    @default("ordered") @db.VarChar(20)
+  collectedAt          DateTime? @map("collected_at") @db.Timestamptz(6)
+  collectedByUserId    String?   @map("collected_by_user_id") @db.Uuid
+  /// LabOrderSampleQuality: ok | hemolyzed | insufficient | contaminated | other.
+  sampleQuality        String?   @map("sample_quality") @db.VarChar(20)
+  processingStartedAt  DateTime? @map("processing_started_at") @db.Timestamptz(6)
+  completedAt          DateTime? @map("completed_at") @db.Timestamptz(6)
+  cancelledAt          DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  cancelledBy          String?   @map("cancelled_by") @db.VarChar(100)
+  cancelReason         String?   @map("cancel_reason") @db.VarChar(2000)
+  notes                String?   @db.VarChar(2000)
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy            String    @map("created_by") @db.VarChar(100)
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([tenantId, status])
+  @@index([tenantId, patientId, createdAt])
+  @@index([tenantId, sourceType, sourceId])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, labTestId])
+  @@map("lab_orders")
+}
+
+model LabTest {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  code              String   @db.VarChar(64)
+  name              String   @db.VarChar(200)
+  /// LabSampleType enum: blood, urine, stool, swab, tissue, saliva, csf, other
+  sampleType        String   @map("sample_type") @db.VarChar(20)
+  unit              String   @db.VarChar(32)
+  referenceRange    String?  @map("reference_range") @db.VarChar(200)
+  /// JSON string; MVP'de düz metin; geleceğe dönük koşullu aralıklar.
+  conditionalRanges String?  @map("conditional_ranges") @db.VarChar(8000)
+  /// Decimal string (4 ondalık). Para alanı olduğu için floating point kullanılmaz.
+  price             String   @db.VarChar(30)
+  active            Boolean  @default(true)
+  notes             String?  @db.VarChar(2000)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy         String   @map("created_by") @db.VarChar(100)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([tenantId, code])
+  @@index([tenantId, active])
+  @@index([tenantId, createdAt])
+  @@map("lab_tests")
+}
+
+// -----------------------------------------------------------------------------
 // ERROR_EVENTS — GOAL-100 merkezi backend hata olayları.
 // Hata olayları tenant kapsamını ve PII maskelenmiş bağlamı kalıcı tutar.
 // Aynı tenant + fingerprint için tek aggregate satırı kullanılır; tekrarlar
@@ -1804,30 +2114,30 @@ model JobRun {
 // -----------------------------------------------------------------------------
 
 model SecurityEvent {
-  id              String    @id @default(uuid()) @db.Uuid
-  requestId       String    @map("request_id") @db.VarChar(100)
-  tenantId        String?   @map("tenant_id") @db.Uuid
-  branchId        String?   @map("branch_id") @db.Uuid
-  userId          String?   @map("user_id") @db.Uuid
-  actorType       String    @map("actor_type") @db.VarChar(20)
-  type            String    @db.VarChar(50)
-  module          String    @db.VarChar(50)
-  route           String    @db.VarChar(500)
-  release         String    @db.VarChar(100)
-  severity        String    @db.VarChar(10)
-  fingerprint     String    @db.Char(16)
-  errorCode       String?   @map("error_code") @db.VarChar(64)
-  message         String    @db.VarChar(2000)
-  statusCode      Int?      @map("status_code")
-  ipAddress       String?   @map("ip_address") @db.VarChar(64)
-  userAgentHash   String?   @map("user_agent_hash") @db.Char(16)
-  context         Json      @default("{}")
-  country         String    @db.VarChar(10)
-  occurredAt      DateTime  @map("occurred_at") @db.Timestamptz(6)
-  firstSeenAt     DateTime  @map("first_seen_at") @db.Timestamptz(6)
-  lastSeenAt      DateTime  @map("last_seen_at") @db.Timestamptz(6)
-  occurrenceCount Int       @default(1) @map("occurrence_count")
-  alertSent       Boolean   @default(false) @map("alert_sent")
+  id              String   @id @default(uuid()) @db.Uuid
+  requestId       String   @map("request_id") @db.VarChar(100)
+  tenantId        String?  @map("tenant_id") @db.Uuid
+  branchId        String?  @map("branch_id") @db.Uuid
+  userId          String?  @map("user_id") @db.Uuid
+  actorType       String   @map("actor_type") @db.VarChar(20)
+  type            String   @db.VarChar(50)
+  module          String   @db.VarChar(50)
+  route           String   @db.VarChar(500)
+  release         String   @db.VarChar(100)
+  severity        String   @db.VarChar(10)
+  fingerprint     String   @db.Char(16)
+  errorCode       String?  @map("error_code") @db.VarChar(64)
+  message         String   @db.VarChar(2000)
+  statusCode      Int?     @map("status_code")
+  ipAddress       String?  @map("ip_address") @db.VarChar(64)
+  userAgentHash   String?  @map("user_agent_hash") @db.Char(16)
+  context         Json     @default("{}")
+  country         String   @db.VarChar(10)
+  occurredAt      DateTime @map("occurred_at") @db.Timestamptz(6)
+  firstSeenAt     DateTime @map("first_seen_at") @db.Timestamptz(6)
+  lastSeenAt      DateTime @map("last_seen_at") @db.Timestamptz(6)
+  occurrenceCount Int      @default(1) @map("occurrence_count")
+  alertSent       Boolean  @default(false) @map("alert_sent")
 
   @@index([tenantId, lastSeenAt])
   @@index([fingerprint, lastSeenAt])
@@ -1855,18 +2165,18 @@ model LogRetentionPolicy {
 }
 
 model LogRetentionSweep {
-  id             String   @id @default(uuid()) @db.Uuid
-  triggeredBy    String   @map("triggered_by") @db.VarChar(20)
-  triggeredById  String?  @map("triggered_by_id") @db.VarChar(100)
-  startedAt      DateTime @map("started_at") @db.Timestamptz(6)
-  finishedAt     DateTime @map("finished_at") @db.Timestamptz(6)
-  totalScanned   Int      @map("total_scanned")
-  totalArchived  Int      @map("total_archived")
-  totalDeleted   Int      @map("total_deleted")
-  totalErrors    Int      @map("total_errors")
-  buckets        Json     @default("[]")
-  dryRun         Boolean  @default(false) @map("dry_run")
-  note           String?  @db.Text
+  id            String   @id @default(uuid()) @db.Uuid
+  triggeredBy   String   @map("triggered_by") @db.VarChar(20)
+  triggeredById String?  @map("triggered_by_id") @db.VarChar(100)
+  startedAt     DateTime @map("started_at") @db.Timestamptz(6)
+  finishedAt    DateTime @map("finished_at") @db.Timestamptz(6)
+  totalScanned  Int      @map("total_scanned")
+  totalArchived Int      @map("total_archived")
+  totalDeleted  Int      @map("total_deleted")
+  totalErrors   Int      @map("total_errors")
+  buckets       Json     @default("[]")
+  dryRun        Boolean  @default(false) @map("dry_run")
+  note          String?  @db.Text
 
   @@index([startedAt])
   @@index([triggeredBy, startedAt])
