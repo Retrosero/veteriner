@@ -5,23 +5,38 @@
  * @description GOAL-090 laboratuvar test kataloğu service
  * testleri.
  *   - createLabTest (oluşturma + audit).
- *   - duplicate code 409 VET-LABTEST-0002.
+ *   - duplicate code 409 VET-LABTEST-0002 (ön kontrol + P2002 race).
  *   - listLabTests (sampleType/active/search filtreleri).
  *   - getLabTestDetail (cross-tenant → null).
  *   - updateLabTest (kısmi güncelleme + arşiv).
  *   - Cross-tenant create 403 VET-AUTHZ-0001.
  *   - Update missing 404 VET-LABTEST-0001.
  *
+ * @note W1.2a: Repository artık Prisma-backed. Bu testlerde service
+ *   davranışını izole doğrulamak için stateful bir test double
+ *   (`LabTestsRepositoryTestDouble`) kullanılır. DB seviyesinde
+ *   davranış (RLS, P2002, trigger) E2E testlerle
+ *   (`test/lab-tests.rls.e2e-spec.ts`) doğrulanır.
+ *
  * @since GOAL-090 (FAZ-9) laboratuvar test kataloğu core
+ * @w1.2a DB persistence (in-memory → Prisma) — service testi mock'la
  */
+
+import { randomUUID } from "node:crypto";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { LabTestsRepository } from "./lab-tests.repository.js";
 import { LabTestsService } from "./lab-tests.service.js";
 
+import type {
+  LabTestInsertInput,
+  LabTestPatch,
+  LabTestSearchFilters,
+  LabTestsRepository,
+} from "./lab-tests.repository.js";
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
+import type { LabTestRecord } from "../../common/lab-tests/lab-test.types.js";
 import type {
   LabTestCreateInput,
   LabTestUpdateInput,
@@ -87,13 +102,115 @@ function makeCreateInput(
   } as LabTestCreateInput;
 }
 
+/**
+ * Service testlerini DB'den izole etmek için stateful test double.
+ * Production'da `LabTestsRepository` PrismaService ile çalışır; burada
+ * aynı sözleşmeyi sağlayan in-memory bir uygulama kullanılır.
+ * DB seviyesi davranış (RLS, P2002, append-only trigger) E2E testlerde
+ * ayrıca doğrulanır.
+ */
+class LabTestsRepositoryTestDouble {
+  private readonly byId = new Map<string, LabTestRecord>();
+  private readonly byCode = new Map<string, string>();
+
+  public async findByCode(
+    tenantId: string,
+    code: string,
+  ): Promise<LabTestRecord | null> {
+    const id = this.byCode.get(`${tenantId}::${code.trim().toLowerCase()}`);
+    if (!id) return null;
+    return this.byId.get(id) ?? null;
+  }
+
+  public async findById(
+    tenantId: string,
+    id: string,
+  ): Promise<LabTestRecord | null> {
+    const rec = this.byId.get(id);
+    if (!rec || rec.tenantId !== tenantId) return null;
+    return rec;
+  }
+
+  public async insert(input: LabTestInsertInput): Promise<LabTestRecord> {
+    const id = randomUUID();
+    const now = new Date().toISOString();
+    const record: LabTestRecord = {
+      id,
+      tenantId: input.tenantId,
+      code: input.code,
+      name: input.name,
+      sampleType: input.sampleType,
+      unit: input.unit,
+      referenceRange: input.referenceRange,
+      conditionalRanges: input.conditionalRanges,
+      price: input.price,
+      active: input.active,
+      notes: input.notes,
+      createdAt: now,
+      createdBy: input.createdBy,
+      updatedAt: now,
+    };
+    this.byId.set(id, record);
+    this.byCode.set(`${input.tenantId}::${input.code.toLowerCase()}`, id);
+    return record;
+  }
+
+  public async update(
+    tenantId: string,
+    id: string,
+    patch: LabTestPatch,
+  ): Promise<LabTestRecord | null> {
+    const rec = this.byId.get(id);
+    if (!rec || rec.tenantId !== tenantId) return null;
+    if (patch.name !== undefined) rec.name = patch.name;
+    if (patch.unit !== undefined) rec.unit = patch.unit;
+    if (patch.referenceRange !== undefined)
+      rec.referenceRange = patch.referenceRange;
+    if (patch.conditionalRanges !== undefined)
+      rec.conditionalRanges = patch.conditionalRanges;
+    if (patch.price !== undefined) rec.price = patch.price;
+    if (patch.active !== undefined) rec.active = patch.active;
+    if (patch.notes !== undefined) rec.notes = patch.notes;
+    rec.updatedAt = new Date().toISOString();
+    return rec;
+  }
+
+  public async search(
+    tenantId: string,
+    filters: LabTestSearchFilters,
+  ): Promise<{ items: LabTestRecord[]; total: number }> {
+    const term = filters.search?.trim().toLowerCase();
+    const all: LabTestRecord[] = [];
+    for (const rec of this.byId.values()) {
+      if (rec.tenantId !== tenantId) continue;
+      if (filters.sampleType && rec.sampleType !== filters.sampleType) continue;
+      if (filters.active !== undefined && rec.active !== filters.active)
+        continue;
+      if (term) {
+        const codeMatch = rec.code.toLowerCase().includes(term);
+        const nameMatch = rec.name.toLowerCase().includes(term);
+        if (!codeMatch && !nameMatch) continue;
+      }
+      all.push(rec);
+    }
+    const sort = filters.sort ?? "asc";
+    all.sort((a, b) => {
+      const cmp = a.code.localeCompare(b.code, "tr");
+      return sort === "desc" ? -cmp : cmp;
+    });
+    const total = all.length;
+    const items = all.slice(filters.offset, filters.offset + filters.limit);
+    return { items, total };
+  }
+}
+
 describe("LabTestsService", () => {
   let service: LabTestsService;
   let repo: LabTestsRepository;
   let audit: AuditService;
 
   beforeEach(() => {
-    repo = new LabTestsRepository();
+    repo = new LabTestsRepositoryTestDouble() as unknown as LabTestsRepository;
     audit = makeAudit();
     service = new LabTestsService(repo, audit);
   });

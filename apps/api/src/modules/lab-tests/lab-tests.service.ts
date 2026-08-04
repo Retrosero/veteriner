@@ -7,8 +7,8 @@
  *
  * İş kuralları:
  * - `createLabTest`: `code` zorunlu ve tenant-scoped unique; aynı
- *   kod 409 VET-LABTEST-0002. Fiyat zorunlu (decimal string).
- *   Audit `audit:labtest.create`.
+ *   kod 409 VET-LABTEST-0002. DB P2002 burada map edilir. Fiyat
+ *   zorunlu (decimal string). Audit `audit:labtest.create`.
  * - `listLabTests` / `getLabTestDetail`: tenant-scoped; cross-tenant
  *   → null. Search code ve name'de case-insensitive substring.
  * - `updateLabTest`: kısmi güncelleme. `code` değiştirilemez
@@ -16,12 +16,14 @@
  *   yapılır. Audit `audit:labtest.update`.
  *
  * @security Tenant bilgisi yalnızca actor.tenantId'den alınır.
- *   Fiziksel silme YOKTUR.
+ *   Fiziksel silme YOKTUR (DB trigger).
  *
  * @since GOAL-090 (FAZ-9) laboratuvar test kataloğu core
+ * @w1.2a DB persistence (in-memory → Prisma)
  */
 
 import { Injectable, Logger } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 
 import { LabTestsRepository } from "./lab-tests.repository.js";
 import { AuditService } from "../../common/audit/audit.service.js";
@@ -60,8 +62,9 @@ export class LabTestsService {
   ): Promise<LabTest> {
     this.requireTenantScope(actor, tenantId);
 
-    // Tenant-scoped unique code check
-    const dup = this.repo.findByCode(tenantId, input.code);
+    // Ön kontrol: case-insensitive aynı kod zaten varsa erken 409.
+    // DB P2002 de bunu yakalar; burada net hata metni için erken dönüş.
+    const dup = await this.repo.findByCode(tenantId, input.code);
     if (dup) {
       throw new DomainError({
         errorCode: "VET-LABTEST-0002",
@@ -73,30 +76,43 @@ export class LabTestsService {
       });
     }
 
-    const nowIso = new Date().toISOString();
-    const id = this.repo.nextId(tenantId);
-    const record: LabTestRecord = {
-      id,
-      tenantId,
-      code: input.code.trim(),
-      name: input.name.trim(),
-      sampleType: input.sampleType,
-      unit: input.unit.trim(),
-      referenceRange: input.referenceRange ?? null,
-      conditionalRanges: input.conditionalRanges ?? null,
-      price: input.price,
-      active: input.active ?? true,
-      notes: input.notes ?? null,
-      createdAt: nowIso,
-      createdBy: actor.actorId ?? "system",
-      updatedAt: nowIso,
-    };
-    this.repo.insert(record);
+    let record: LabTestRecord;
+    try {
+      record = await this.repo.insert({
+        tenantId,
+        code: input.code.trim(),
+        name: input.name.trim(),
+        sampleType: input.sampleType,
+        unit: input.unit.trim(),
+        referenceRange: input.referenceRange ?? null,
+        conditionalRanges: input.conditionalRanges ?? null,
+        price: input.price,
+        active: input.active ?? true,
+        notes: input.notes ?? null,
+        createdBy: actor.actorId ?? "system",
+      });
+    } catch (e: unknown) {
+      // Eşzamanlı insert yarış durumunda DB P2002'yi de VET-LABTEST-0002'ye map et.
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === "P2002"
+      ) {
+        throw new DomainError({
+          errorCode: "VET-LABTEST-0002",
+          message: "Bu kod ile kayıtlı bir laboratuvar testi zaten var",
+          httpStatus: 409,
+          severity: "warning",
+          i18nKey: "error.VET-LABTEST-0002",
+          details: { code: input.code },
+        });
+      }
+      throw e;
+    }
 
     await this.audit.recordSimple(
       "audit:labtest.create",
       "labtest",
-      id,
+      record.id,
       "create",
       this.actorToAuditActor(actor),
       "info",
@@ -123,7 +139,7 @@ export class LabTestsService {
     actor: ActorContext,
   ): Promise<LabTestListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.search(tenantId, {
+    const result = await this.repo.search(tenantId, {
       sampleType: filters.sampleType,
       active: filters.active,
       search: filters.search,
@@ -143,7 +159,7 @@ export class LabTestsService {
     actor: ActorContext,
   ): Promise<LabTest | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findById(tenantId, id);
+    const rec = await this.repo.findById(tenantId, id);
     return rec ? toLabTest(rec) : null;
   }
 
@@ -158,7 +174,7 @@ export class LabTestsService {
     actor: ActorContext,
   ): Promise<LabTest> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.repo.findById(tenantId, id);
+    const existing = await this.repo.findById(tenantId, id);
     if (!existing) {
       throw new DomainError({
         errorCode: "VET-LABTEST-0001",
@@ -170,8 +186,7 @@ export class LabTestsService {
       });
     }
 
-    const nowIso = new Date().toISOString();
-    this.repo.update(tenantId, id, {
+    const updated = await this.repo.update(tenantId, id, {
       ...(input.name !== undefined ? { name: input.name.trim() } : {}),
       ...(input.unit !== undefined ? { unit: input.unit.trim() } : {}),
       ...(input.referenceRange !== undefined
@@ -183,8 +198,15 @@ export class LabTestsService {
       ...(input.price !== undefined ? { price: input.price } : {}),
       ...(input.active !== undefined ? { active: input.active } : {}),
       ...(input.notes !== undefined ? { notes: input.notes } : {}),
-      updatedAt: nowIso,
     });
+
+    if (!updated) {
+      throw new DomainError({
+        errorCode: "VET-LABTEST-0001",
+        message: "Laboratuvar testi bulunamadı",
+        httpStatus: 404,
+      });
+    }
 
     await this.audit.recordSimple(
       "audit:labtest.update",
@@ -204,14 +226,6 @@ export class LabTestsService {
       },
     );
 
-    const updated = this.repo.findById(tenantId, id);
-    if (!updated) {
-      throw new DomainError({
-        errorCode: "VET-LABTEST-0001",
-        message: "Laboratuvar testi bulunamadı",
-        httpStatus: 404,
-      });
-    }
     return toLabTest(updated);
   }
 
