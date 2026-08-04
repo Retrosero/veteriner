@@ -29,6 +29,7 @@
  *   Cross-tenant IDOR → null. Onaylanmış sonuç değiştirilemez.
  *
  * @since GOAL-092 (FAZ-9) laboratuvar sonuçları core
+ * @w1.2c DB persistence (in-memory → Prisma)
  */
 
 import { Injectable, Logger } from "@nestjs/common";
@@ -116,7 +117,7 @@ export class LabResultsService {
       });
     }
 
-    const existing = this.repo.findActiveByOrder(tenantId, labOrderId);
+    const existing = await this.repo.findActiveByOrder(tenantId, labOrderId);
     if (existing) {
       throw new DomainError({
         errorCode: "VET-LABRES-0003",
@@ -132,38 +133,26 @@ export class LabResultsService {
       });
     }
 
-    const nowIso = new Date().toISOString();
-    const id = this.repo.nextId(tenantId);
-    const record: LabResultRecord = {
-      id,
+    const record = await this.repo.insert({
       tenantId,
       labOrderId,
       revision: 1,
       value: input.value,
       valueNumeric: input.valueNumeric ?? null,
-      // Order snapshot'ı
       unit: order.unit,
       referenceRange: order.referenceRange,
       abnormalFlag: input.abnormalFlag ?? "normal",
-      status: "draft",
       attachments: input.attachments ?? [],
       notes: input.notes ?? null,
       enteredBy: actor.actorId ?? "system",
-      enteredAt: nowIso,
-      reviewedBy: null,
-      reviewedAt: null,
-      reviewNotes: null,
       amendsResultId: null,
       amendmentReason: null,
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    };
-    this.repo.insert(record);
+    });
 
     await this.audit.recordSimple(
       "audit:labresult.create",
       "labresult",
-      id,
+      record.id,
       "create",
       this.actorToAuditActor(actor),
       "info",
@@ -188,7 +177,7 @@ export class LabResultsService {
     actor: ActorContext,
   ): Promise<LabResultListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const all = this.repo.listByOrder(tenantId, labOrderId);
+    const all = await this.repo.listByOrder(tenantId, labOrderId);
     return {
       items: all.map(toLabResultRevision),
       total: all.length,
@@ -205,7 +194,7 @@ export class LabResultsService {
     actor: ActorContext,
   ): Promise<LabResult | null> {
     this.requireTenantScope(actor, tenantId);
-    const active = this.repo.findActiveByOrder(tenantId, labOrderId);
+    const active = await this.repo.findActiveByOrder(tenantId, labOrderId);
     return active ? toLabResult(active) : null;
   }
 
@@ -220,16 +209,14 @@ export class LabResultsService {
     actor: ActorContext,
   ): Promise<LabResult> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.requireDraftResult(tenantId, labOrderId);
+    const existing = await this.requireDraftResult(tenantId, labOrderId);
 
-    const nowIso = new Date().toISOString();
-    this.repo.update(tenantId, existing.id, {
+    await this.repo.update(tenantId, existing.id, {
       value: input.value,
       valueNumeric: input.valueNumeric,
       abnormalFlag: input.abnormalFlag,
       attachments: input.attachments,
       notes: input.notes,
-      updatedAt: nowIso,
     });
 
     await this.audit.recordSimple(
@@ -259,14 +246,12 @@ export class LabResultsService {
     actor: ActorContext,
   ): Promise<LabResult> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.requireResult(tenantId, labOrderId);
+    const existing = await this.requireResult(tenantId, labOrderId);
     this.requireStateTransition(existing.status, "pending_review", ["draft"]);
 
-    const nowIso = new Date().toISOString();
-    this.repo.update(tenantId, existing.id, {
+    await this.repo.update(tenantId, existing.id, {
       status: "pending_review",
       notes: input.notes !== undefined ? input.notes : existing.notes,
-      updatedAt: nowIso,
     });
 
     await this.audit.recordSimple(
@@ -295,18 +280,17 @@ export class LabResultsService {
     actor: ActorContext,
   ): Promise<LabResult> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.requireResult(tenantId, labOrderId);
+    const existing = await this.requireResult(tenantId, labOrderId);
     this.requireStateTransition(existing.status, "approved", [
       "pending_review",
     ]);
 
     const nowIso = new Date().toISOString();
-    this.repo.update(tenantId, existing.id, {
+    await this.repo.update(tenantId, existing.id, {
       status: "approved",
       reviewedBy: actor.actorId ?? "system",
       reviewedAt: nowIso,
       reviewNotes: input.reviewNotes ?? null,
-      updatedAt: nowIso,
     });
 
     await this.audit.recordSimple(
@@ -337,7 +321,7 @@ export class LabResultsService {
     actor: ActorContext,
   ): Promise<LabResult> {
     this.requireTenantScope(actor, tenantId);
-    const original = this.requireResult(tenantId, labOrderId);
+    const original = await this.requireResult(tenantId, labOrderId);
     if (original.status !== "approved") {
       throw new DomainError({
         errorCode: "VET-LABRES-0002",
@@ -352,18 +336,14 @@ export class LabResultsService {
       });
     }
 
-    const nowIso = new Date().toISOString();
     // Orijinali amended işaretle.
-    this.repo.update(tenantId, original.id, {
+    await this.repo.update(tenantId, original.id, {
       status: "amended",
-      updatedAt: nowIso,
     });
 
     // Yeni revision oluştur.
-    const newId = this.repo.nextId(tenantId);
-    const newRevision = this.repo.nextRevision(tenantId, labOrderId);
-    const amendment: LabResultRecord = {
-      id: newId,
+    const newRevision = await this.repo.nextRevision(tenantId, labOrderId);
+    const amendment = await this.repo.insert({
       tenantId,
       labOrderId,
       revision: newRevision,
@@ -372,25 +352,17 @@ export class LabResultsService {
       unit: original.unit,
       referenceRange: original.referenceRange,
       abnormalFlag: input.abnormalFlag ?? "normal",
-      status: "draft",
       attachments: input.attachments ?? [],
       notes: input.notes ?? null,
       enteredBy: actor.actorId ?? "system",
-      enteredAt: nowIso,
-      reviewedBy: null,
-      reviewedAt: null,
-      reviewNotes: null,
       amendsResultId: original.id,
       amendmentReason: input.reason,
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    };
-    this.repo.insert(amendment);
+    });
 
     await this.audit.recordSimple(
       "audit:labresult.amend",
       "labresult",
-      newId,
+      amendment.id,
       "create",
       this.actorToAuditActor(actor),
       "info",
@@ -409,8 +381,11 @@ export class LabResultsService {
   // Private helpers
   // -------------------------------------------------------------------------
 
-  private requireResult(tenantId: string, labOrderId: string): LabResultRecord {
-    const rec = this.repo.findActiveByOrder(tenantId, labOrderId);
+  private async requireResult(
+    tenantId: string,
+    labOrderId: string,
+  ): Promise<LabResultRecord> {
+    const rec = await this.repo.findActiveByOrder(tenantId, labOrderId);
     if (!rec) {
       throw new DomainError({
         errorCode: "VET-LABRES-0001",
@@ -424,11 +399,11 @@ export class LabResultsService {
     return rec;
   }
 
-  private requireDraftResult(
+  private async requireDraftResult(
     tenantId: string,
     labOrderId: string,
-  ): LabResultRecord {
-    const rec = this.requireResult(tenantId, labOrderId);
+  ): Promise<LabResultRecord> {
+    const rec = await this.requireResult(tenantId, labOrderId);
     if (rec.status !== "draft") {
       throw new DomainError({
         errorCode: "VET-LABRES-0002",
@@ -458,8 +433,8 @@ export class LabResultsService {
     });
   }
 
-  private fetchUpdated(tenantId: string, id: string): LabResult {
-    const updated = this.repo.findById(tenantId, id);
+  private async fetchUpdated(tenantId: string, id: string): Promise<LabResult> {
+    const updated = await this.repo.findById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-LABRES-0001",

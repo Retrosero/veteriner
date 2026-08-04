@@ -13,14 +13,21 @@
  * @since GOAL-092 (FAZ-9) laboratuvar sonuçları core
  */
 
+import { randomUUID } from "node:crypto";
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { LabResultsRepository } from "./lab-results.repository.js";
 import { LabResultsService } from "./lab-results.service.js";
 import { type LabOrdersService } from "../lab-orders/lab-orders.service.js";
 
+import type {
+  LabResultInsertInput,
+  LabResultPatch,
+  LabResultsRepository,
+} from "./lab-results.repository.js";
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
+import type { LabResultRecord } from "../../common/lab-results/lab-result.types.js";
 import type {
   LabOrder,
   LabResultAmendInput,
@@ -199,6 +206,118 @@ function makeCreateInput(
   };
 }
 
+/**
+ * W1.2c: Service testlerini DB'den izole etmek için stateful test double.
+ * Production'da `LabResultsRepository` PrismaService ile çalışır; burada
+ * aynı sözleşmeyi sağlayan in-memory bir uygulama kullanılır.
+ */
+class LabResultsRepositoryTestDouble {
+  private readonly byId = new Map<string, LabResultRecord>();
+
+  public async findById(
+    tenantId: string,
+    id: string,
+  ): Promise<LabResultRecord | null> {
+    const rec = this.byId.get(id);
+    if (!rec || rec.tenantId !== tenantId) return null;
+    return rec;
+  }
+
+  public async insert(input: LabResultInsertInput): Promise<LabResultRecord> {
+    const id = randomUUID();
+    const now = new Date().toISOString();
+    const record: LabResultRecord = {
+      id,
+      tenantId: input.tenantId,
+      labOrderId: input.labOrderId,
+      revision: input.revision,
+      value: input.value,
+      valueNumeric: input.valueNumeric,
+      unit: input.unit,
+      referenceRange: input.referenceRange,
+      abnormalFlag: input.abnormalFlag,
+      status: "draft",
+      attachments: input.attachments,
+      notes: input.notes,
+      enteredBy: input.enteredBy,
+      enteredAt: now,
+      reviewedBy: null,
+      reviewedAt: null,
+      reviewNotes: null,
+      amendsResultId: input.amendsResultId,
+      amendmentReason: input.amendmentReason,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.byId.set(id, record);
+    return record;
+  }
+
+  public async update(
+    tenantId: string,
+    id: string,
+    patch: LabResultPatch,
+  ): Promise<LabResultRecord | null> {
+    const rec = this.byId.get(id);
+    if (!rec || rec.tenantId !== tenantId) return null;
+    const toIso = (
+      v: string | Date | null | undefined,
+    ): string | null => {
+      if (v === null || v === undefined) return null;
+      return v instanceof Date ? v.toISOString() : v;
+    };
+    if (patch.value !== undefined) rec.value = patch.value;
+    if (patch.valueNumeric !== undefined)
+      rec.valueNumeric = patch.valueNumeric;
+    if (patch.abnormalFlag !== undefined)
+      rec.abnormalFlag = patch.abnormalFlag;
+    if (patch.attachments !== undefined) rec.attachments = patch.attachments;
+    if (patch.notes !== undefined) rec.notes = patch.notes;
+    if (patch.status !== undefined) rec.status = patch.status;
+    if (patch.reviewedBy !== undefined) rec.reviewedBy = patch.reviewedBy;
+    if (patch.reviewedAt !== undefined)
+      rec.reviewedAt = toIso(patch.reviewedAt);
+    if (patch.reviewNotes !== undefined) rec.reviewNotes = patch.reviewNotes;
+    if (patch.amendmentReason !== undefined)
+      rec.amendmentReason = patch.amendmentReason;
+    rec.updatedAt = new Date().toISOString();
+    return rec;
+  }
+
+  public async listByOrder(
+    tenantId: string,
+    labOrderId: string,
+  ): Promise<LabResultRecord[]> {
+    const out: LabResultRecord[] = [];
+    for (const rec of this.byId.values()) {
+      if (rec.tenantId === tenantId && rec.labOrderId === labOrderId) {
+        out.push(rec);
+      }
+    }
+    out.sort((a, b) => b.revision - a.revision);
+    return out;
+  }
+
+  public async findActiveByOrder(
+    tenantId: string,
+    labOrderId: string,
+  ): Promise<LabResultRecord | null> {
+    for (const rec of await this.listByOrder(tenantId, labOrderId)) {
+      if (rec.status !== "amended") return rec;
+    }
+    return null;
+  }
+
+  public async nextRevision(
+    tenantId: string,
+    labOrderId: string,
+  ): Promise<number> {
+    const all = await this.listByOrder(tenantId, labOrderId);
+    if (all.length === 0) return 1;
+    return Math.max(...all.map((r) => r.revision)) + 1;
+  }
+}
+
 describe("LabResultsService", () => {
   let service: LabResultsService;
   let repo: LabResultsRepository;
@@ -206,7 +325,7 @@ describe("LabResultsService", () => {
   let labOrders: StubLabOrdersService;
 
   beforeEach(() => {
-    repo = new LabResultsRepository();
+    repo = new LabResultsRepositoryTestDouble() as unknown as LabResultsRepository;
     audit = makeAudit();
     labOrders = new StubLabOrdersService();
     service = new LabResultsService(
