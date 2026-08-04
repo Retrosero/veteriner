@@ -13,8 +13,10 @@ WORKDIR /repo
 
 # ---- 2) Dependencies (prod + dev) -------------------------------
 FROM base AS deps
-# Tüm monorepo lockfile ve workspace dosyaları kopyalanır;
-# pnpm filter ile sadece worker ve bağımlılıkları kurulur.
+# Tüm monorepo lockfile ve workspace dosyaları kopyalanır.
+# Web ile aynı gerekçe: filtreli install pnpm store'da @vetniva/config
+# bağlantısını kırıyor; api ile uyumlu olması için --prod=false filtresiz
+# tam install uygulanır.
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml* .npmrc ./
 COPY packages/config/package.json packages/config/
 COPY packages/contracts/package.json packages/contracts/
@@ -22,7 +24,7 @@ COPY packages/i18n/package.json packages/i18n/
 COPY packages/ui/package.json packages/ui/
 COPY apps/api/package.json apps/api/
 COPY apps/worker/package.json apps/worker/
-RUN pnpm install --filter @vetniva/worker... --filter @vetniva/api... --frozen-lockfile=false --ignore-scripts
+RUN pnpm install --frozen-lockfile=false --ignore-scripts --prod=false
 
 # ---- 3) Build ----------------------------------------------------
 FROM base AS build

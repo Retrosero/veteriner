@@ -17,8 +17,12 @@ COPY packages/i18n/package.json packages/i18n/
 COPY packages/ui/package.json packages/ui/
 COPY apps/web/package.json apps/web/
 
-# Yalnızca web paketi + bağımlılıkları (dev dahil) kurulur.
-RUN pnpm install --filter @vetniva/web... --frozen-lockfile=false --ignore-scripts
+# Tüm monorepo workspace'i kurulur (api ile aynı strateji). Filtreli
+# install (@vetniva/web...) build sırasında @vetniva/config/tsconfig.base.json
+# çözümlemesini kırıyor; pnpm store'da eksik bağlantı oluşuyor ve
+# `pnpm --filter @vetniva/contracts build` adımı "node_modules missing" hatası
+# ile başarısız oluyor. Bu yüzden --prod=false ile tüm paketler kurulur.
+RUN pnpm install --frozen-lockfile=false --ignore-scripts --prod=false
 
 # ---- 2. Build katmanı ----
 FROM deps AS builder
@@ -66,6 +70,13 @@ COPY --from=builder /repo/apps/web/.next/static ./apps/web/.next/static
 COPY --from=builder /repo/apps/web/public ./apps/web/public
 
 EXPOSE 3000
+
+# Coolify ve genel orchestrator'lar için liveness kontrolü.
+# Next.js 14 standalone server.js port 3000'de dinler; ana sayfa
+# default locale (tr-TR) ile 200 döner. Busybox `wget` node:20-alpine
+# imajında hazır geldiği için ek paket kurulumu gerekmez.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3000/ >/dev/null 2>&1 || exit 1
 
 # Non-root kullanıcı ile çalıştır
 RUN addgroup -g 1001 -S nodejs && adduser -S -u 1001 -G nodejs nextjs
