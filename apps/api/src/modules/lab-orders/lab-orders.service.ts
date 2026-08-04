@@ -26,9 +26,10 @@
  *
  * @security Tenant bilgisi yalnızca actor.tenantId'den alınır.
  *   Cross-tenant IDOR → null. Fiziksel silme YOKTUR; düzeltme
- *   `cancelled` durumuna geçişle yapılır.
+ *   `cancelled` durumuna geçişle yapılır (DB trigger).
  *
  * @since GOAL-091 (FAZ-9) laboratuvar isteği ve numune core
+ * @w1.2b DB persistence (in-memory → Prisma)
  */
 
 import { Injectable, Logger } from "@nestjs/common";
@@ -103,14 +104,11 @@ export class LabOrdersService {
       });
     }
 
-    const nowIso = new Date().toISOString();
-    const id = this.repo.nextId(tenantId);
-    const record: LabOrderRecord = {
-      id,
+    // Snapshot (katalog sonradan değişse bile order'ın anlık görüntüsü)
+    const record = await this.repo.insert({
       tenantId,
       patientId: input.patientId,
       labTestId: input.labTestId,
-      // Snapshot (katalog sonradan değişse bile order'ın anlık görüntüsü)
       labTestCode: test.code,
       labTestName: test.name,
       sampleType: test.sampleType,
@@ -120,26 +118,14 @@ export class LabOrdersService {
       sourceType: input.sourceType,
       sourceId: input.sourceId ?? null,
       priority: input.priority,
-      status: "ordered",
-      collectedAt: null,
-      collectedByUserId: null,
-      sampleQuality: null,
-      processingStartedAt: null,
-      completedAt: null,
-      cancelledAt: null,
-      cancelledBy: null,
-      cancelReason: null,
       notes: input.notes ?? null,
-      createdAt: nowIso,
       createdBy: actor.actorId ?? "system",
-      updatedAt: nowIso,
-    };
-    this.repo.insert(record);
+    });
 
     await this.audit.recordSimple(
       "audit:laborder.create",
       "laborder",
-      id,
+      record.id,
       "create",
       this.actorToAuditActor(actor),
       "info",
@@ -166,7 +152,7 @@ export class LabOrdersService {
     actor: ActorContext,
   ): Promise<LabOrderListResponse> {
     this.requireTenantScope(actor, tenantId);
-    const result = this.repo.search(tenantId, {
+    const result = await this.repo.search(tenantId, {
       status: filters.status,
       patientId: filters.patientId,
       sourceType: filters.sourceType,
@@ -189,7 +175,7 @@ export class LabOrdersService {
     actor: ActorContext,
   ): Promise<LabOrder | null> {
     this.requireTenantScope(actor, tenantId);
-    const rec = this.repo.findById(tenantId, id);
+    const rec = await this.repo.findById(tenantId, id);
     return rec ? toLabOrder(rec) : null;
   }
 
@@ -204,17 +190,15 @@ export class LabOrdersService {
     actor: ActorContext,
   ): Promise<LabOrder> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.requireOrder(tenantId, id);
+    const existing = await this.requireOrder(tenantId, id);
     this.requireStateTransition(existing.status, "collected", ["ordered"]);
 
-    const nowIso = new Date().toISOString();
-    this.repo.update(tenantId, id, {
+    await this.repo.update(tenantId, id, {
       status: "collected",
       collectedAt: input.collectedAt,
       collectedByUserId: input.collectedByUserId,
       sampleQuality: input.sampleQuality ?? "ok",
       notes: input.notes !== undefined ? input.notes : existing.notes,
-      updatedAt: nowIso,
     });
 
     await this.audit.recordSimple(
@@ -245,16 +229,14 @@ export class LabOrdersService {
     actor: ActorContext,
   ): Promise<LabOrder> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.requireOrder(tenantId, id);
+    const existing = await this.requireOrder(tenantId, id);
     this.requireStateTransition(existing.status, "processing", ["collected"]);
 
-    const nowIso = new Date().toISOString();
-    const sentAt = input.sentAt ?? nowIso;
-    this.repo.update(tenantId, id, {
+    const sentAt = input.sentAt ?? new Date().toISOString();
+    await this.repo.update(tenantId, id, {
       status: "processing",
       processingStartedAt: sentAt,
       notes: input.notes !== undefined ? input.notes : existing.notes,
-      updatedAt: nowIso,
     });
 
     await this.audit.recordSimple(
@@ -284,15 +266,14 @@ export class LabOrdersService {
     actor: ActorContext,
   ): Promise<LabOrder> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.requireOrder(tenantId, id);
+    const existing = await this.requireOrder(tenantId, id);
     this.requireStateTransition(existing.status, "completed", ["processing"]);
 
     const nowIso = new Date().toISOString();
-    this.repo.update(tenantId, id, {
+    await this.repo.update(tenantId, id, {
       status: "completed",
       completedAt: nowIso,
       notes: input.notes !== undefined ? input.notes : existing.notes,
-      updatedAt: nowIso,
     });
 
     await this.audit.recordSimple(
@@ -321,19 +302,18 @@ export class LabOrdersService {
     actor: ActorContext,
   ): Promise<LabOrder> {
     this.requireTenantScope(actor, tenantId);
-    const existing = this.requireOrder(tenantId, id);
+    const existing = await this.requireOrder(tenantId, id);
     this.requireStateTransition(existing.status, "cancelled", [
       "ordered",
       "collected",
     ]);
 
     const nowIso = new Date().toISOString();
-    this.repo.update(tenantId, id, {
+    await this.repo.update(tenantId, id, {
       status: "cancelled",
       cancelledAt: nowIso,
       cancelledBy: actor.actorId ?? "system",
       cancelReason: input.reason,
-      updatedAt: nowIso,
     });
 
     await this.audit.recordSimple(
@@ -356,8 +336,11 @@ export class LabOrdersService {
   // Private helpers
   // -------------------------------------------------------------------------
 
-  private requireOrder(tenantId: string, id: string): LabOrderRecord {
-    const rec = this.repo.findById(tenantId, id);
+  private async requireOrder(
+    tenantId: string,
+    id: string,
+  ): Promise<LabOrderRecord> {
+    const rec = await this.repo.findById(tenantId, id);
     if (!rec) {
       throw new DomainError({
         errorCode: "VET-LABORD-0001",
@@ -387,8 +370,8 @@ export class LabOrdersService {
     });
   }
 
-  private fetchUpdated(tenantId: string, id: string): LabOrder {
-    const updated = this.repo.findById(tenantId, id);
+  private async fetchUpdated(tenantId: string, id: string): Promise<LabOrder> {
+    const updated = await this.repo.findById(tenantId, id);
     if (!updated) {
       throw new DomainError({
         errorCode: "VET-LABORD-0001",

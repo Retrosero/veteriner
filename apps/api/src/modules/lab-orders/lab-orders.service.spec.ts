@@ -13,14 +13,22 @@
  * @since GOAL-091 (FAZ-9) laboratuvar isteği ve numune core
  */
 
+import { randomUUID } from "node:crypto";
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { LabOrdersRepository } from "./lab-orders.repository.js";
 import { LabOrdersService } from "./lab-orders.service.js";
 import { type LabTestsService } from "../lab-tests/lab-tests.service.js";
 
+import type {
+  LabOrderInsertInput,
+  LabOrderPatch,
+  LabOrderSearchFilters,
+  LabOrdersRepository,
+} from "./lab-orders.repository.js";
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type { AuditService } from "../../common/audit/audit.service.js";
+import type { LabOrderRecord } from "../../common/lab-orders/lab-order.types.js";
 import type {
   LabTest,
   LabOrderCancelInput,
@@ -142,6 +150,118 @@ function makeTest(overrides: Partial<LabTest> = {}): LabTest {
   };
 }
 
+/**
+ * W1.2b: Service testlerini DB'den izole etmek için stateful test double.
+ * Production'da `LabOrdersRepository` PrismaService ile çalışır; burada
+ * aynı sözleşmeyi sağlayan in-memory bir uygulama kullanılır.
+ */
+class LabOrdersRepositoryTestDouble {
+  private readonly byId = new Map<string, LabOrderRecord>();
+
+  public async findById(
+    tenantId: string,
+    id: string,
+  ): Promise<LabOrderRecord | null> {
+    const rec = this.byId.get(id);
+    if (!rec || rec.tenantId !== tenantId) return null;
+    return rec;
+  }
+
+  public async insert(input: LabOrderInsertInput): Promise<LabOrderRecord> {
+    const id = randomUUID();
+    const now = new Date().toISOString();
+    const record: LabOrderRecord = {
+      id,
+      tenantId: input.tenantId,
+      patientId: input.patientId,
+      labTestId: input.labTestId,
+      labTestCode: input.labTestCode,
+      labTestName: input.labTestName,
+      sampleType: input.sampleType,
+      unit: input.unit,
+      referenceRange: input.referenceRange,
+      price: input.price,
+      sourceType: input.sourceType,
+      sourceId: input.sourceId,
+      priority: input.priority,
+      status: "ordered",
+      collectedAt: null,
+      collectedByUserId: null,
+      sampleQuality: null,
+      processingStartedAt: null,
+      completedAt: null,
+      cancelledAt: null,
+      cancelledBy: null,
+      cancelReason: null,
+      notes: input.notes,
+      createdAt: now,
+      createdBy: input.createdBy,
+      updatedAt: now,
+    };
+    this.byId.set(id, record);
+    return record;
+  }
+
+  public async update(
+    tenantId: string,
+    id: string,
+    patch: LabOrderPatch,
+  ): Promise<LabOrderRecord | null> {
+    const rec = this.byId.get(id);
+    if (!rec || rec.tenantId !== tenantId) return null;
+    const toIso = (
+      v: string | Date | null | undefined,
+    ): string | null => {
+      if (v === null || v === undefined) return null;
+      return v instanceof Date ? v.toISOString() : v;
+    };
+    if (patch.status !== undefined) rec.status = patch.status;
+    if (patch.collectedAt !== undefined)
+      rec.collectedAt = toIso(patch.collectedAt);
+    if (patch.collectedByUserId !== undefined)
+      rec.collectedByUserId = patch.collectedByUserId;
+    if (patch.sampleQuality !== undefined)
+      rec.sampleQuality = patch.sampleQuality;
+    if (patch.processingStartedAt !== undefined)
+      rec.processingStartedAt = toIso(patch.processingStartedAt);
+    if (patch.completedAt !== undefined)
+      rec.completedAt = toIso(patch.completedAt);
+    if (patch.cancelledAt !== undefined)
+      rec.cancelledAt = toIso(patch.cancelledAt);
+    if (patch.cancelledBy !== undefined) rec.cancelledBy = patch.cancelledBy;
+    if (patch.cancelReason !== undefined)
+      rec.cancelReason = patch.cancelReason;
+    if (patch.notes !== undefined) rec.notes = patch.notes;
+    rec.updatedAt = new Date().toISOString();
+    return rec;
+  }
+
+  public async search(
+    tenantId: string,
+    filters: LabOrderSearchFilters,
+  ): Promise<{ items: LabOrderRecord[]; total: number }> {
+    const all: LabOrderRecord[] = [];
+    for (const rec of this.byId.values()) {
+      if (rec.tenantId !== tenantId) continue;
+      if (filters.status && rec.status !== filters.status) continue;
+      if (filters.patientId && rec.patientId !== filters.patientId) continue;
+      if (filters.sourceType && rec.sourceType !== filters.sourceType) continue;
+      if (filters.sourceId && rec.sourceId !== filters.sourceId) continue;
+      if (filters.dateFrom && rec.createdAt < filters.dateFrom) continue;
+      if (filters.dateTo && rec.createdAt > filters.dateTo) continue;
+      all.push(rec);
+    }
+    const sort = filters.sort ?? "desc";
+    all.sort((a, b) => {
+      const cmp = a.createdAt.localeCompare(b.createdAt);
+      return sort === "desc" ? -cmp : cmp;
+    });
+    const total = all.length;
+    const items = all.slice(filters.offset, filters.offset + filters.limit);
+    return { items, total };
+  }
+}
+
 function makeCreateInput(
   overrides: Partial<LabOrderCreateInput> = {},
 ): LabOrderCreateInput {
@@ -161,7 +281,7 @@ describe("LabOrdersService", () => {
   let labTests: StubLabTestsService;
 
   beforeEach(() => {
-    repo = new LabOrdersRepository();
+    repo = new LabOrdersRepositoryTestDouble() as unknown as LabOrdersRepository;
     audit = makeAudit();
     labTests = new StubLabTestsService();
     labTests.addTest(makeTest());
