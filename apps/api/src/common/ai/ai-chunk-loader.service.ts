@@ -83,6 +83,10 @@ export class AiChunkLoader {
       return this.cache;
     }
     try {
+      // this.filePath constructor'da tek seferlik set edilir; runtime'da
+      // disaridan gelen kullanici girdisi degildir. Bu nedenle non-literal
+      // fs yolu beklenen ve kontrollu bir kullanimdir.
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
       const s = await stat(this.filePath);
       const mtime = s.mtimeMs;
       if (mtime === this.lastMtime && this.cache.length > 0) {
@@ -229,7 +233,7 @@ export function parseChunksYaml(raw: string): LoadedChunk[] {
         keywords: Array.isArray((c as Record<string, unknown>)["keywords"])
           ? (((c as Record<string, unknown>)["keywords"] as unknown[]).filter(
               (k): k is string => typeof k === "string",
-            ) as string[])
+            ))
           : [],
         source:
           typeof (c as Record<string, unknown>)["source"] === "string"

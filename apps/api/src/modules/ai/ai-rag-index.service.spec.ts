@@ -14,8 +14,8 @@
 
 import { describe, expect, it } from "vitest";
 
-import { AiChunkLoader, type LoadedChunk } from "../../common/ai/ai-chunk-loader.service.js";
 import { AiRagIndexService } from "./ai-rag-index.service.js";
+import { AiChunkLoader, type LoadedChunk } from "../../common/ai/ai-chunk-loader.service.js";
 
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
@@ -268,8 +268,10 @@ describe("AiRagIndexService", () => {
     const svc = new AiRagIndexService(loader);
     expect((await svc.totalChunks())).toBe(1);
     svc.invalidate();
-    // Invalidate sonrasi cache temizlenmis olmali.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Invalidate sonrasi cache temizlenmis olmali. `cache` private bir
+    // alandir; test amacli erisim kasitli olarak `any` uzerinden yapilir
+    // (yalnizca bu test satirinda).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
     expect((loader as any).cache.length).toBe(0);
   });
 
