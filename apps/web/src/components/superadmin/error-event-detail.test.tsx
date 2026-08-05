@@ -62,7 +62,7 @@ describe("ErrorEventDetail", () => {
       return Promise.resolve({ ok: true, data: detail });
     });
 
-    const view = render(<ErrorEventDetail eventId="event-1" />);
+    const view = render(<ErrorEventDetail eventId="event-1" locale="tr-TR" />);
     await waitFor(() => {
       expect(mocks.request).toHaveBeenCalledWith(
         "/api/v1/superadmin/error-events/event-1",
@@ -146,7 +146,7 @@ describe("ErrorEventDetail", () => {
       return Promise.resolve({ ok: true, data: detail });
     });
 
-    const view = render(<ErrorEventDetail eventId="event-1" />);
+    const view = render(<ErrorEventDetail eventId="event-1" locale="tr-TR" />);
     await waitFor(() => {
       expect(mocks.request).toHaveBeenCalledWith(
         "/api/v1/superadmin/error-events/event-1/audit-log",

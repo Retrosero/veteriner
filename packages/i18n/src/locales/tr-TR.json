@@ -292,7 +292,42 @@
       "support_save_failed": "Destek bağlantısı kaydedilemedi.",
       "audit_load_failed": "Audit log yüklenemedi.",
       "not_found": "Hata olayı bulunamadı."
-    }
+    },
+    "kpi": {
+      "title": "24 saat özeti",
+      "total": "Toplam hata (24s)",
+      "critical": "Kritik (24s)",
+      "investigating": "İnceleniyor",
+      "reopened": "Yeniden açıldı",
+      "load_error_hint": "Yüklenemedi"
+    },
+    "tabs": {
+      "list": "Liste",
+      "groups": "Gruplar (fingerprint)"
+    },
+    "groups": {
+      "title": "Fingerprint grupları",
+      "loading": "Gruplar yükleniyor…",
+      "empty": "Eşleşen fingerprint grubu yok.",
+      "load_failed": "Fingerprint grupları yüklenemedi.",
+      "detail_title": "Grup detayı",
+      "detail_loading": "Grup detayı yükleniyor…",
+      "detail_load_failed": "Grup detayı yüklenemedi.",
+      "detail_close": "Detayı kapat",
+      "columns": {
+        "fingerprint": "Fingerprint",
+        "severity": "Şiddet",
+        "module": "Modül",
+        "error_code": "Hata kodu",
+        "status": "Durum",
+        "assigned": "Atanan",
+        "events": "Olay",
+        "unique_tenants": "Tenant",
+        "first_seen": "İlk görülme",
+        "last_seen": "Son görülme"
+      }
+    },
+    "retry": "Yeniden dene"
   },
   "frontend_error_capture": {
     "_comment": "GOAL-101 (FAZ-10) frontend hata yakalama client-side çevirileri.",
@@ -305,6 +340,133 @@
     "global_description": "Beklenmeyen bir kritik hata oluştu. Ekibimiz olayı otomatik olarak inceliyor. Lütfen birkaç dakika sonra tekrar deneyin.",
     "reporter_disabled": "Hata raporlama devre dışı bırakıldı.",
     "queue_full_warning": "Hata kuyruğu dolu; eski olaylar atılmış olabilir."
+  },
+  "job_runs": {
+    "_comment": "GOAL-101 (FAZ-10) SUPERADMIN job runs modülü UI çevirileri.",
+    "title": "Job Runs",
+    "description": "Background job ve entegrasyon logları; retry ve dead-letter yönetimi.",
+    "list_heading": "Job run listesi",
+    "summary_heading": "Job runs 24 saat özeti",
+    "detail_heading": "Job run detayı",
+    "attempts_heading": "Aynı jobKey için tüm denemeler",
+    "dead_letter_heading": "Dead-letter görünümü",
+    "load_error_hint": "Job run kayıtları şu anda yüklenemiyor.",
+    "detail_load_error_hint": "Job run ayrıntısı şu anda yüklenemiyor.",
+    "empty": "Filtrelere uyan job run yok.",
+    "total_label": "Toplam {count} job run",
+    "pagination_label": "limit=50 · offset=0",
+    "back_to_list": "Listeye dön",
+    "refresh": "Yenile",
+    "filters": {
+      "title": "Filtreler",
+      "queue_name": "Queue",
+      "job_name": "Job adı",
+      "job_key": "Job anahtarı",
+      "status": "Durum",
+      "source": "Kaynak",
+      "triggered_by": "Tetikleyici",
+      "tenant": "Tenant",
+      "branch": "Şube",
+      "country": "Ülke",
+      "from": "Başlangıç tarihi",
+      "to": "Bitiş tarihi",
+      "search": "Ara",
+      "search_placeholder": "jobKey, jobName veya errorCode",
+      "reset": "Filtreleri sıfırla",
+      "all": "Tümü",
+      "dead_letter_only": "Yalnız dead-letter"
+    },
+    "statuses": {
+      "pending": "Beklemede",
+      "running": "Çalışıyor",
+      "succeeded": "Başarılı",
+      "failed": "Hata",
+      "dead_letter": "Dead-Letter"
+    },
+    "sources": {
+      "queue": "Queue",
+      "adapter": "Adapter",
+      "cron": "Cron",
+      "system": "Sistem"
+    },
+    "triggered_by": {
+      "user": "Kullanıcı",
+      "system": "Sistem",
+      "schedule": "Zamanlayıcı",
+      "retry": "Retry"
+    },
+    "columns": {
+      "status": "Durum",
+      "queue_name": "Queue",
+      "job_name": "Job",
+      "attempt": "Deneme",
+      "source": "Kaynak",
+      "triggered_by": "Tetikleyici",
+      "tenant": "Tenant",
+      "branch": "Şube",
+      "country": "Ülke",
+      "started_at": "Başlangıç",
+      "finished_at": "Bitiş",
+      "duration_ms": "Süre",
+      "error_code": "Hata kodu",
+      "job_key": "Job anahtarı"
+    },
+    "summary": {
+      "title": "24 saat özeti",
+      "total": "Toplam",
+      "succeeded": "Başarılı",
+      "failed": "Hata",
+      "dead_letter": "Dead-Letter",
+      "running": "Çalışıyor",
+      "pending": "Beklemede",
+      "last_24h_dead_letter": "24s Dead-Letter",
+      "oldest_running": "En eski çalışan",
+      "oldest_running_none": "Çalışan job yok",
+      "load_error_hint": "Yüklenemedi"
+    },
+    "detail": {
+      "status": "Durum",
+      "job_key": "Job anahtarı",
+      "queue_name": "Queue",
+      "job_name": "Job adı",
+      "attempt": "Deneme",
+      "max_attempts": "Maks. deneme",
+      "source": "Kaynak",
+      "triggered_by": "Tetikleyici",
+      "triggered_by_user": "Tetikleyen kullanıcı",
+      "tenant": "Tenant",
+      "branch": "Şube",
+      "country": "Ülke",
+      "started_at": "Başlangıç",
+      "finished_at": "Bitiş",
+      "duration_ms": "Süre",
+      "error_code": "Hata kodu",
+      "correlation_id": "Correlation ID",
+      "input": "Input",
+      "output": "Output",
+      "error_stack": "Stack trace",
+      "no_input": "Input kaydedilmemiş.",
+      "no_output": "Output kaydedilmemiş.",
+      "no_error_stack": "Bu run için stack trace saklanmıyor (başarılı veya terminal).",
+      "no_user": "Sistem",
+      "actions_heading": "Aksiyonlar"
+    },
+    "actions": {
+      "retry": "Yeniden dene",
+      "finish": "Run'ı sonlandır",
+      "view_attempts": "Tüm denemeleri gör",
+      "view_detail": "Detayı aç",
+      "retry_success": "Job run yeniden kuyruğa alındı.",
+      "retry_error": "Job run yeniden denenemedi.",
+      "finish_success": "Job run sonlandırıldı.",
+      "finish_error": "Job run sonlandırılamadı."
+    },
+    "attempts": {
+      "list_heading": "Tüm denemeler",
+      "load_error_hint": "Denemeler yüklenemedi.",
+      "empty": "Bu jobKey için ek deneme yok.",
+      "total_label": "Toplam {count} deneme"
+    }
   },
   "error": {
     "_comment": "GOAL-004: VET-<MODULE>-<NNN> formatı. Eski TR_/EN_ kodları 6 ay alias olarak tutulur.",

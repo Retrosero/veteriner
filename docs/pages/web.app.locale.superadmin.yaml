@@ -1,0 +1,107 @@
+page_id: web.app.locale.superadmin
+route: "/[locale]/superadmin"
+module: superadmin
+title_key: superadmin.nav.overview
+purpose:
+  tr-TR: "Süper admin paneli giriş ekranı. Son 24 saatteki hata olayı, dead-letter job ve güvenlik olayı sayılarını özetler; detay sayfalarına yönlendirir."
+  en-GB: "Super admin panel overview. Summarises the last 24 hours of error events, dead-letter jobs and security events; routes to detail pages."
+allowed_roles:
+  - SUPERADMIN
+required_permissions:
+  - "audit:log:read"
+prerequisites:
+  - "Kullanıcı SUPERADMIN rolüne sahip olmalı (GOAL-016)."
+  - "Actor context'inde tenantId yok (cross-tenant görünüm)."
+fields:
+  - key: kpi.totalErrors24h
+    label_key: superadmin.kpi.total_errors_24h
+    description:
+      tr-TR: "Son 24 saatte kaydedilen hata olayı sayısı."
+      en-GB: "Number of error events recorded in the last 24 hours."
+    type: number
+    required: true
+  - key: kpi.deadLetterLast24h
+    label_key: superadmin.kpi.dead_letter_24h
+    description:
+      tr-TR: "Son 24 saatte dead-letter'a terfi eden job run sayısı."
+      en-GB: "Number of job runs promoted to dead-letter in the last 24 hours."
+    type: number
+    required: true
+  - key: kpi.securityEventsLast24h
+    label_key: superadmin.kpi.security_events_24h
+    description:
+      tr-TR: "Son 24 saatte kaydedilen güvenlik olayı sayısı."
+      en-GB: "Number of security events recorded in the last 24 hours."
+    type: number
+    required: true
+actions:
+  - key: open_error_center
+    description:
+      tr-TR: "Hata merkezi sayfasını açar; detaylı hata olaylarına erişim."
+      en-GB: "Open the error center page; access to detailed error events."
+    permission: "audit:log:read"
+  - key: open_job_runs
+    description:
+      tr-TR: "Job runs sayfasını açar; dead-letter ve retry yönetimi."
+      en-GB: "Open the job runs page; dead-letter and retry management."
+    permission: "audit:log:read"
+  - key: open_security_events
+    description:
+      tr-TR: "Güvenlik olayları sayfasını açar; alarm ve fingerprint görünümü."
+      en-GB: "Open the security events page; alarm and fingerprint view."
+    permission: "audit:log:read"
+  - key: open_retention
+    description:
+      tr-TR: "Log retention sayfasını açar; policy ve sweep yönetimi."
+      en-GB: "Open the log retention page; policy and sweep management."
+    permission: "audit:log:read"
+step_by_step:
+  tr-TR:
+    - "Tarayıcıdan /<locale>/superadmin adresine git."
+    - "Üst kısımdaki 3 KPI kartı son 24 saat özetini gösterir; herhangi biri yüklenemezse 'Yükleniyor' rozeti belirir."
+    - "Hata detayları için sol menüden 'Hata Merkezi'ni seç veya KPI kartındaki 'Hata Merkezi' bağlantısını kullan."
+    - "Job run yönetimi için 'Job Runs', güvenlik alarmları için 'Güvenlik Olayları', retention politikaları için 'Log Saklama' seç."
+  en-GB:
+    - "Navigate to /<locale>/superadmin in the browser."
+    - "The top 3 KPI cards summarise the last 24 hours; a 'Loading' badge appears on any card that fails to load."
+    - "For error details, pick 'Error Center' from the left menu or use the 'Error Center' link in the KPI section."
+    - "For job run management, pick 'Job Runs'; for security alarms, 'Security Events'; for retention policies, 'Log Retention'."
+possible_errors:
+  - code: VET-AUTHZ-0001
+    tr-TR: "SUPERADMIN yetkisi yok."
+    en-GB: "Not a SUPERADMIN."
+  - code: VET-COMMON-0001
+    tr-TR: "API bağlantısı kurulamadı; kartlarda 'Yükleniyor' rozeti gösterilir."
+    en-GB: "API connection failed; cards show 'Loading' badge."
+related_pages:
+  - web.app.locale.superadmin.error-center
+  - web.app.locale.superadmin.job-runs
+  - web.app.locale.superadmin.security-events
+  - web.app.locale.superadmin.retention
+related_api:
+  - "GET /api/v1/superadmin/error-events/summary"
+  - "GET /api/v1/superadmin/job-runs/summary"
+  - "GET /api/v1/superadmin/security-events/summary"
+keywords:
+  tr-TR:
+    [
+      süper admin,
+      genel bakış,
+      KPI,
+      hata özeti,
+      dead-letter,
+      güvenlik özeti,
+      SUPERADMIN,
+    ]
+  en-GB:
+    [
+      super admin,
+      overview,
+      KPI,
+      error summary,
+      dead-letter,
+      security summary,
+      SUPERADMIN,
+    ]
+version: "1.0.0"
+last_verified_at: 2026-08-05

@@ -1,0 +1,106 @@
+page_id: web.app.locale.superadmin.retention.[id]
+route: "/[locale]/superadmin/retention/[id]"
+module: superadmin
+title_key: retention.policy.id
+purpose:
+  tr-TR: "Tek bir retention policy'nin detay, düzenleme ve silme görünümü. (tenantId, logType, severity) kompozit anahtarıdır; redactPii her zaman true olarak set edilir (KVKK/UK GDPR uyumu)."
+  en-GB: "Detail, edit and delete view for a single retention policy. (tenantId, logType, severity) is the composite key; redactPii is always forced to true (KVKK/UK GDPR compliance)."
+allowed_roles:
+  - SUPERADMIN
+required_permissions:
+  - "audit:log:read"
+prerequisites:
+  - "Kullanıcı SUPERADMIN rolüne sahip olmalı (GOAL-016)."
+fields:
+  - key: tenantId
+    label_key: retention.form.tenantLabel
+    description:
+      tr-TR: "Kompozit anahtarın parçası; read-only."
+      en-GB: "Part of the composite key; read-only."
+    type: string
+    required: true
+  - key: logType
+    label_key: retention.form.logTypeLabel
+    description:
+      tr-TR: "audit_log | error_event | security_event | job_run | notification | request_log."
+      en-GB: "audit_log | error_event | security_event | job_run | notification | request_log."
+    type: enum
+    required: true
+  - key: severity
+    label_key: retention.form.severityLabel
+    description:
+      tr-TR: "info | warning | error | critical."
+      en-GB: "info | warning | error | critical."
+    type: enum
+    required: true
+  - key: retentionDays
+    label_key: retention.form.retentionDaysLabel
+    description:
+      tr-TR: "Saklama süresi (gün). 1-3650 arası."
+      en-GB: "Retention period in days. 1-3650."
+    type: number
+    required: true
+  - key: archiveAfterDays
+    label_key: retention.form.archiveAfterDaysLabel
+    description:
+      tr-TR: "Retention'ın kaç gün öncesinden itibaren cold storage'a taşınsın."
+      en-GB: "How many days before retention to move to cold storage."
+    type: number
+    required: true
+  - key: archiveStorage
+    label_key: retention.form.archiveStorageLabel
+    description:
+      tr-TR: "hot | cold | none."
+      en-GB: "hot | cold | none."
+    type: enum
+    required: true
+  - key: redactPii
+    label_key: retention.form.redactPiiLabel
+    description:
+      tr-TR: "Read-only; her zaman true. Backend override kabul etmez."
+      en-GB: "Read-only; always true. Backend does not accept overrides."
+    type: boolean
+    required: true
+actions:
+  - key: save
+    description:
+      tr-TR: "Form alanlarını PUT ile upsert eder."
+      en-GB: "Upserts the form fields via PUT."
+    permission: "audit:log:read"
+  - key: delete
+    description:
+      tr-TR: "Policy'yi siler; onay ister."
+      en-GB: "Deletes the policy; requires confirmation."
+    permission: "audit:log:read"
+step_by_step:
+  tr-TR:
+    - "Tarayıcıdan /<locale>/superadmin/retention/{id} adresine git."
+    - "tenantId ve redactPii alanlarının read-only olduğunu doğrula."
+    - "logType, severity, retentionDays, archiveAfterDays, archiveStorage alanlarını düzenle."
+    - "Kaydet ile PUT endpoint'ini çağır; Sil ile onay sonrası DELETE endpoint'ini çağır."
+  en-GB:
+    - "Navigate to /<locale>/superadmin/retention/{id} in the browser."
+    - "Verify tenantId and redactPii fields are read-only."
+    - "Edit logType, severity, retentionDays, archiveAfterDays, archiveStorage."
+    - "Press Save to call the PUT endpoint; press Delete to call DELETE after confirmation."
+possible_errors:
+  - code: VET-VALIDATION-0001
+    tr-TR: "Geçersiz payload (örn. archiveAfterDays > retentionDays)."
+    en-GB: "Invalid payload (e.g., archiveAfterDays > retentionDays)."
+  - code: VET-AUDIT-0001
+    tr-TR: "Policy bulunamadı."
+    en-GB: "Policy not found."
+  - code: VET-AUTHZ-0001
+    tr-TR: "SUPERADMIN yetkisi yok."
+    en-GB: "Not a SUPERADMIN."
+related_pages:
+  - web.app.locale.superadmin.retention
+related_api:
+  - "GET /api/v1/superadmin/log-retention/policies/{id}"
+  - "PUT /api/v1/superadmin/log-retention/policies"
+  - "DELETE /api/v1/superadmin/log-retention/policies/{id}"
+keywords:
+  tr-TR: [retention policy detay, upsert, delete, KVKK, PII]
+  en-GB: [retention policy detail, upsert, delete, KVKK, PII]
+version: "1.0.0"
+last_verified_at: 2026-08-05

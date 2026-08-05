@@ -292,7 +292,42 @@
       "support_save_failed": "Support link could not be saved.",
       "audit_load_failed": "Audit log could not be loaded.",
       "not_found": "Error event not found."
-    }
+    },
+    "kpi": {
+      "title": "24 hour summary",
+      "total": "Total errors (24h)",
+      "critical": "Critical (24h)",
+      "investigating": "Investigating",
+      "reopened": "Reopened",
+      "load_error_hint": "Unavailable"
+    },
+    "tabs": {
+      "list": "List",
+      "groups": "Groups (fingerprint)"
+    },
+    "groups": {
+      "title": "Fingerprint groups",
+      "loading": "Loading groups…",
+      "empty": "No matching fingerprint groups.",
+      "load_failed": "Could not load fingerprint groups.",
+      "detail_title": "Group detail",
+      "detail_loading": "Loading group detail…",
+      "detail_load_failed": "Could not load group detail.",
+      "detail_close": "Close detail",
+      "columns": {
+        "fingerprint": "Fingerprint",
+        "severity": "Severity",
+        "module": "Module",
+        "error_code": "Error code",
+        "status": "Status",
+        "assigned": "Assigned",
+        "events": "Events",
+        "unique_tenants": "Tenants",
+        "first_seen": "First seen",
+        "last_seen": "Last seen"
+      }
+    },
+    "retry": "Retry"
   },
   "frontend_error_capture": {
     "_comment": "GOAL-101 (FAZ-10) frontend error capture client-side translations.",
@@ -305,6 +340,133 @@
     "global_description": "An unexpected critical error occurred. Our team has been automatically notified. Please try again in a few minutes.",
     "reporter_disabled": "Error reporting is disabled.",
     "queue_full_warning": "Error queue is full; older events may have been dropped."
+  },
+  "job_runs": {
+    "_comment": "GOAL-101 (FAZ-10) SUPERADMIN job runs module UI translations.",
+    "title": "Job Runs",
+    "description": "Background job and integration logs; retry and dead-letter management.",
+    "list_heading": "Job run list",
+    "summary_heading": "Job runs 24h summary",
+    "detail_heading": "Job run detail",
+    "attempts_heading": "All attempts for this jobKey",
+    "dead_letter_heading": "Dead-letter view",
+    "load_error_hint": "Job run records could not be loaded at this time.",
+    "detail_load_error_hint": "Job run detail could not be loaded at this time.",
+    "empty": "No job runs match the current filters.",
+    "total_label": "Total {count} job runs",
+    "pagination_label": "limit=50 · offset=0",
+    "back_to_list": "Back to list",
+    "refresh": "Refresh",
+    "filters": {
+      "title": "Filters",
+      "queue_name": "Queue",
+      "job_name": "Job name",
+      "job_key": "Job key",
+      "status": "Status",
+      "source": "Source",
+      "triggered_by": "Triggered by",
+      "tenant": "Tenant",
+      "branch": "Branch",
+      "country": "Country",
+      "from": "From date",
+      "to": "To date",
+      "search": "Search",
+      "search_placeholder": "jobKey, jobName, or errorCode",
+      "reset": "Reset filters",
+      "all": "All",
+      "dead_letter_only": "Dead-letter only"
+    },
+    "statuses": {
+      "pending": "Pending",
+      "running": "Running",
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "dead_letter": "Dead-Letter"
+    },
+    "sources": {
+      "queue": "Queue",
+      "adapter": "Adapter",
+      "cron": "Cron",
+      "system": "System"
+    },
+    "triggered_by": {
+      "user": "User",
+      "system": "System",
+      "schedule": "Scheduler",
+      "retry": "Retry"
+    },
+    "columns": {
+      "status": "Status",
+      "queue_name": "Queue",
+      "job_name": "Job",
+      "attempt": "Attempt",
+      "source": "Source",
+      "triggered_by": "Triggered by",
+      "tenant": "Tenant",
+      "branch": "Branch",
+      "country": "Country",
+      "started_at": "Started",
+      "finished_at": "Finished",
+      "duration_ms": "Duration",
+      "error_code": "Error code",
+      "job_key": "Job key"
+    },
+    "summary": {
+      "title": "24 hour summary",
+      "total": "Total",
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "dead_letter": "Dead-Letter",
+      "running": "Running",
+      "pending": "Pending",
+      "last_24h_dead_letter": "Dead-letter (24h)",
+      "oldest_running": "Oldest running",
+      "oldest_running_none": "No running jobs",
+      "load_error_hint": "Could not load"
+    },
+    "detail": {
+      "status": "Status",
+      "job_key": "Job key",
+      "queue_name": "Queue",
+      "job_name": "Job name",
+      "attempt": "Attempt",
+      "max_attempts": "Max. attempts",
+      "source": "Source",
+      "triggered_by": "Triggered by",
+      "triggered_by_user": "Triggered by user",
+      "tenant": "Tenant",
+      "branch": "Branch",
+      "country": "Country",
+      "started_at": "Started",
+      "finished_at": "Finished",
+      "duration_ms": "Duration",
+      "error_code": "Error code",
+      "correlation_id": "Correlation ID",
+      "input": "Input",
+      "output": "Output",
+      "error_stack": "Stack trace",
+      "no_input": "No input recorded.",
+      "no_output": "No output recorded.",
+      "no_error_stack": "No stack trace is stored for this run (successful or terminal).",
+      "no_user": "System",
+      "actions_heading": "Actions"
+    },
+    "actions": {
+      "retry": "Retry",
+      "finish": "Finish run",
+      "view_attempts": "View all attempts",
+      "view_detail": "View detail",
+      "retry_success": "Job run was re-queued.",
+      "retry_error": "Job run could not be retried.",
+      "finish_success": "Job run was finished.",
+      "finish_error": "Job run could not be finished."
+    },
+    "attempts": {
+      "list_heading": "All attempts",
+      "load_error_hint": "Attempts could not be loaded.",
+      "empty": "No additional attempts for this jobKey.",
+      "total_label": "Total {count} attempts"
+    }
   },
   "error": {
     "_comment": "GOAL-004: VET-<MODULE>-<NNN> format. Legacy TR_/EN_ codes retained as aliases.",

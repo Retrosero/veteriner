@@ -1,68 +1,69 @@
-page_id: web.superadmin.locale.log-retention
-route: "/[locale]/superadmin/log-retention"
+page_id: web.app.locale.superadmin.retention
+route: "/[locale]/superadmin/retention"
 module: superadmin
-title_key: superadmin.log_retention.title
+title_key: retention.title
 purpose:
-  tr-TR: "Tüm tenant'ların log retention policy'lerini yöneten ve manuel sweep tetikleyen SUPERADMIN paneli. Tenant override + global policy + default zincirini gösterir."
-  en-GB: "SUPERADMIN panel that manages all tenants' log retention policies and triggers manual sweeps. Shows tenant override + global policy + default chain."
+  tr-TR: "Tüm tenant'ların log retention policy'lerini yöneten ve sweep tetikleyen SUPERADMIN paneli. Policies, Sweeps, Effective sekmeleri ile tenant × logType × severity retention zincirini gösterir."
+  en-GB: "SUPERADMIN panel that manages log retention policies for all tenants and triggers sweeps. Shows the tenant × logType × severity chain via the Policies, Sweeps and Effective tabs."
 allowed_roles:
   - SUPERADMIN
 required_permissions:
   - "audit:log:read"
 prerequisites:
   - "Kullanıcı SUPERADMIN rolüne sahip olmalı (GOAL-016)."
+  - "Actor context'inde tenantId yok (cross-tenant görünüm)."
 fields:
   - key: filters.tenantId
-    label_key: superadmin.log_retention.filters.tenant
+    label_key: retention.filters.tenant
     description:
       tr-TR: "null = global override; uuid = tenant-specific override."
       en-GB: "null = global override; uuid = tenant-specific override."
     type: string
     required: false
   - key: filters.logType
-    label_key: superadmin.log_retention.filters.log_type
+    label_key: retention.filters.logType
     description:
       tr-TR: "audit_log | error_event | security_event | job_run | notification | request_log."
       en-GB: "audit_log | error_event | security_event | job_run | notification | request_log."
     type: enum
     required: false
   - key: filters.severity
-    label_key: superadmin.log_retention.filters.severity
+    label_key: retention.filters.severity
     description:
       tr-TR: "info | warning | error | critical."
       en-GB: "info | warning | error | critical."
     type: enum
     required: false
   - key: policies.retentionDays
-    label_key: superadmin.log_retention.retention_days
+    label_key: retention.policy.retentionDays
     description:
       tr-TR: "Saklama süresi (gün). 1-3650 arası."
       en-GB: "Retention period in days. 1-3650."
     type: number
     required: true
   - key: policies.archiveAfterDays
-    label_key: superadmin.log_retention.archive_after_days
+    label_key: retention.policy.archiveAfterDays
     description:
       tr-TR: "Retention'ın kaç gün öncesinden itibaren cold storage'a taşınsın. 0 = arşiv yok."
       en-GB: "How many days before retention to move to cold storage. 0 = no archive."
     type: number
     required: true
   - key: policies.archiveStorage
-    label_key: superadmin.log_retention.archive_storage
+    label_key: retention.policy.archiveStorage
     description:
       tr-TR: "hot (canlı DB) | cold (object storage) | none (sadece sil)."
       en-GB: "hot (live DB) | cold (object storage) | none (delete only)."
     type: enum
     required: true
   - key: policies.redactPii
-    label_key: superadmin.log_retention.redact_pii
+    label_key: retention.policy.redactPii
     description:
       tr-TR: "true (her zaman — KVKK/UK GDPR uyumu; caller override edemez)."
       en-GB: "true (always — KVKK/UK GDPR compliance; caller cannot override)."
     type: boolean
     required: true
   - key: sweeps.dryRun
-    label_key: superadmin.log_retention.dry_run
+    label_key: retention.sweep.dryRun
     description:
       tr-TR: "true → gerçek işlem yok, yalnız sayım."
       en-GB: "true → no actual operation, only counting."
@@ -96,38 +97,34 @@ actions:
     permission: "audit:log:read"
 step_by_step:
   tr-TR:
-    - "Tarayıcıdan /<locale>/superadmin/log-retention adresine git."
-    - "Üst kısımdaki filtrelerden tenant, logType, severity seç."
-    - "Listeden bir policy'ye tıklayarak detayı gör; 'Effective' sekmesinden zincirin hangi kaynaktan geldiğini kontrol et."
-    - "Yeni policy için 'Ekle' butonuna tıkla; tenant/logType/severity/retentionDays/archiveAfterDays/archiveStorage alanlarını doldur (redactPii=true otomatik)."
-    - "Sweep tetiklemek için 'Sweep Başlat' butonuna tıkla; dryRun=true ise gerçek işlem yapılmaz."
-    - "Sweep geçmişini görmek için 'Geçmiş' sekmesine geç; bucket bazlı expired/archived/deleted sayılarını incele."
+    - "Tarayıcıdan /<locale>/superadmin/retention adresine git."
+    - "Üst kısımdaki 'Yeni Policy' / 'Sweep Başlat' butonları ile aksiyon al."
+    - "Policies sekmesinde tenant/logType/severity filtresi ile policy listesini incele; satıra tıklayıp detayına geç."
+    - "Sweeps sekmesinde from/to filtresi ile sweep geçmişini incele; satıra tıklayıp bucket bazlı expired/archived/deleted sayılarını gör."
+    - "Effective sekmesinde tenant/logType/severity seçip 'Hesapla' düğmesine bas; source alanı (tenantOverride | globalOverride | default) ile resolved policy'yi gör."
   en-GB:
-    - "Navigate to /<locale>/superadmin/log-retention in the browser."
-    - "Select tenant, logType, severity from the top filters."
-    - "Click a policy to view detail; switch to 'Effective' tab to see which source the chain comes from."
-    - "For a new policy, click 'Add' and fill tenant/logType/severity/retentionDays/archiveAfterDays/archiveStorage (redactPii=true is automatic)."
-    - "To trigger a sweep, click 'Start Sweep'; set dryRun=true for counting only."
-    - "To view sweep history, switch to 'History' tab; review expired/archived/deleted counts per bucket."
+    - "Navigate to /<locale>/superadmin/retention in the browser."
+    - "Use the top 'New Policy' / 'Start Sweep' buttons to act."
+    - "On the Policies tab filter by tenant/logType/severity; click a row to open its detail."
+    - "On the Sweeps tab filter by from/to; click a row to view per-bucket expired/archived/deleted counts."
+    - "On the Effective tab pick tenant/logType/severity and press 'Resolve'; the source badge (tenantOverride | globalOverride | default) shows the resolved policy."
 possible_errors:
   - code: VET-VALIDATION-0001
     tr-TR: "Geçersiz payload (örn. archiveAfterDays > retentionDays)."
     en-GB: "Invalid payload (e.g., archiveAfterDays > retentionDays)."
-  - code: VET-AUDIT-0001
-    tr-TR: "Policy veya sweep bulunamadı."
-    en-GB: "Policy or sweep not found."
   - code: VET-AUTHZ-0001
     tr-TR: "SUPERADMIN yetkisi yok."
     en-GB: "Not a SUPERADMIN."
-related_pages: []
+related_pages:
+  - web.app.locale.superadmin.retention.[id]
+  - web.app.locale.superadmin.retention.sweeps.[id]
 related_api:
   - "GET /api/v1/superadmin/log-retention/policies"
   - "GET /api/v1/superadmin/log-retention/policies/effective"
-  - "GET /api/v1/superadmin/log-retention/policies/{id}"
   - "PUT /api/v1/superadmin/log-retention/policies"
   - "DELETE /api/v1/superadmin/log-retention/policies/{id}"
-  - "POST /api/v1/superadmin/log-retention/sweeps"
   - "GET /api/v1/superadmin/log-retention/sweeps"
+  - "POST /api/v1/superadmin/log-retention/sweeps"
   - "GET /api/v1/superadmin/log-retention/sweeps/{id}"
 keywords:
   tr-TR:
@@ -135,4 +132,4 @@ keywords:
   en-GB:
     [log retention, archiving, retention policy, sweep, KVKK, UK GDPR, PII mask]
 version: "1.0.0"
-last_verified_at: 2026-07-31
+last_verified_at: 2026-08-05

@@ -1,0 +1,196 @@
+page_id: web.app.locale.superadmin.security-events.id
+route: "/[locale]/superadmin/security-events/[id]"
+module: superadmin
+title_key: superadmin.security_events.detail.heading
+purpose:
+  tr-TR: "Tek bir güvenlik olayının tüm operasyonel alanlarını (type, severity, module, errorCode, message, statusCode, fingerprint, requestId, maskedIp, userAgentHash, country, route, release, occurrenceCount, firstSeenAt, lastSeenAt, alertSent, PII-mask'lı context) salt okunur olarak gösteren detay sayfası. Liste sayfasına geri dönüş bağlantısı içerir."
+  en-GB: "Detail page that displays all operational fields (type, severity, module, errorCode, message, statusCode, fingerprint, requestId, maskedIp, userAgentHash, country, route, release, occurrenceCount, firstSeenAt, lastSeenAt, alertSent, PII-masked context) of a single security event in read-only mode. Includes a back link to the list page."
+allowed_roles:
+  - SUPERADMIN
+required_permissions:
+  - "audit:log:read"
+prerequisites:
+  - "Kullanıcı SUPERADMIN rolüne sahip olmalı (GOAL-016)."
+  - "URL'deki [id] geçerli bir güvenlik olayı kimliği olmalı; aksi halde 404."
+  - "Actor context'inde tenantId yok (cross-tenant görünüm)."
+fields:
+  - key: detail.type
+    label_key: superadmin.security_events.detail.type
+    description:
+      tr-TR: "Olay türü: failed_login | unauthorized_access_attempt | suspicious_export | role_change | tenant_isolation_breach_attempt."
+      en-GB: "Event type: failed_login | unauthorized_access_attempt | suspicious_export | role_change | tenant_isolation_breach_attempt."
+    type: enum
+    required: true
+  - key: detail.severity
+    label_key: superadmin.security_events.detail.severity
+    description:
+      tr-TR: "Olay şiddeti: info | warning | error | critical."
+      en-GB: "Event severity: info | warning | error | critical."
+    type: enum
+    required: true
+  - key: detail.module
+    label_key: superadmin.security_events.detail.module
+    description:
+      tr-TR: "Modül kodu (auth, clinic, tenant, ...)."
+      en-GB: "Module code (auth, clinic, tenant, ...)."
+    type: string
+    required: true
+  - key: detail.errorCode
+    label_key: superadmin.security_events.detail.error_code
+    description:
+      tr-TR: "VET-AUTH-0002 | VET-AUTHZ-0002 | VET-AUDIT-0002 | VET-RBAC-0002 | VET-TENANT-0002."
+      en-GB: "VET-AUTH-0002 | VET-AUTHZ-0002 | VET-AUDIT-0002 | VET-RBAC-0002 | VET-TENANT-0002."
+    type: string
+    required: true
+  - key: detail.message
+    label_key: superadmin.security_events.detail.message
+    description:
+      tr-TR: "Operatör için okunabilir mesaj."
+      en-GB: "Human-readable message for the operator."
+    type: string
+    required: true
+  - key: detail.statusCode
+    label_key: superadmin.security_events.detail.status_code
+    description:
+      tr-TR: "İlişkili HTTP durum kodu (varsa)."
+      en-GB: "Associated HTTP status code (if any)."
+    type: number
+    required: false
+  - key: detail.fingerprint
+    label_key: superadmin.security_events.detail.fingerprint
+    description:
+      tr-TR: "Aynı saldırı sınıfı için paylaşılan fingerprint hash."
+      en-GB: "Shared fingerprint hash for the same attack class."
+    type: string
+    required: true
+  - key: detail.requestId
+    label_key: superadmin.security_events.detail.request_id
+    description:
+      tr-TR: "X-Request-Id correlation değeri (varsa)."
+      en-GB: "X-Request-Id correlation value (if any)."
+    type: string
+    required: false
+  - key: detail.maskedIp
+    label_key: superadmin.security_events.detail.masked_ip
+    description:
+      tr-TR: "Mask'lı IP adresi (192.168.1.***)."
+      en-GB: "Masked IP address (192.168.1.***)."
+    type: string
+    required: false
+  - key: detail.userAgentHash
+    label_key: superadmin.security_events.detail.user_agent_hash
+    description:
+      tr-TR: "Kısa user agent hash (8 hex)."
+      en-GB: "Short user agent hash (8 hex)."
+    type: string
+    required: false
+  - key: detail.country
+    label_key: superadmin.security_events.detail.country
+    description:
+      tr-TR: "ISO-3166-1 alpha-2 ülke kodu."
+      en-GB: "ISO-3166-1 alpha-2 country code."
+    type: string
+    required: true
+  - key: detail.route
+    label_key: superadmin.security_events.detail.route
+    description:
+      tr-TR: "İlişkili HTTP route (METHOD path)."
+      en-GB: "Associated HTTP route (METHOD path)."
+    type: string
+    required: true
+  - key: detail.release
+    label_key: superadmin.security_events.detail.release
+    description:
+      tr-TR: "Olay sırasındaki uygulama sürümü."
+      en-GB: "Application release at the time of the event."
+    type: string
+    required: true
+  - key: detail.occurrenceCount
+    label_key: superadmin.security_events.detail.occurrence_count
+    description:
+      tr-TR: "Aynı fingerprint ile toplam oluşum sayısı."
+      en-GB: "Total occurrence count for the same fingerprint."
+    type: number
+    required: true
+  - key: detail.firstSeenAt
+    label_key: superadmin.security_events.detail.first_seen
+    description:
+      tr-TR: "İlk görülme zaman damgası."
+      en-GB: "First seen timestamp."
+    type: datetime
+    required: true
+  - key: detail.lastSeenAt
+    label_key: superadmin.security_events.detail.last_seen
+    description:
+      tr-TR: "Son görülme zaman damgası."
+      en-GB: "Last seen timestamp."
+    type: datetime
+    required: true
+  - key: detail.alertSent
+    label_key: superadmin.security_events.detail.alert_sent
+    description:
+      tr-TR: "Alarm adapter'ın tetiklenip tetiklenmediğini gösterir."
+      en-GB: "Indicates whether the alarm adapter was triggered."
+    type: boolean
+    required: true
+  - key: detail.context
+    label_key: superadmin.security_events.detail.context
+    description:
+      tr-TR: "PII-mask'lı context alanı; request body field name'leri + query + headers."
+      en-GB: "PII-masked context field; request body field names + query + headers."
+    type: object
+    required: false
+actions:
+  - key: back_to_list
+    description:
+      tr-TR: "Güvenlik olayı liste sayfasına geri döner."
+      en-GB: "Navigate back to the security events list page."
+    permission: "audit:log:read"
+step_by_step:
+  tr-TR:
+    - "Listeden bir kayda tıkla veya doğrudan /<locale>/superadmin/security-events/<id> adresine git."
+    - "Sayfanın üst kısmındaki type, severity, alertSent badge'lerini kontrol et."
+    - "Tanım listesinden tüm alanları (module, errorCode, statusCode, fingerprint, requestId, masked IP, userAgentHash, country, route, release, occurrenceCount, firstSeenAt, lastSeenAt) doğrula."
+    - "PII-mask'lı context alanını incele; email, phone, ownerName gibi alanlar mask'lenmiştir."
+    - "Geri dönmek için 'Listeye dön' bağlantısını kullan."
+  en-GB:
+    - "Click a record from the list or navigate directly to /<locale>/superadmin/security-events/<id>."
+    - "Verify the type, severity, and alertSent badges at the top of the page."
+    - "Review all fields in the definition list (module, errorCode, statusCode, fingerprint, requestId, masked IP, userAgentHash, country, route, release, occurrenceCount, firstSeenAt, lastSeenAt)."
+    - "Inspect the PII-masked context; fields like email, phone, ownerName are masked."
+    - "Use the 'Back to list' link to return."
+possible_errors:
+  - code: VET-AUDIT-0001
+    tr-TR: "Güvenlik olayı bulunamadı; ID yanlış veya silinmiş olabilir."
+    en-GB: "Security event not found; ID may be wrong or deleted."
+  - code: VET-AUTHZ-0001
+    tr-TR: "SUPERADMIN yetkisi yok."
+    en-GB: "Not a SUPERADMIN."
+  - code: VET-COMMON-0001
+    tr-TR: "API bağlantısı kurulamadı; detay 'Yüklenemedi' rozeti gösterir."
+    en-GB: "API connection failed; detail shows 'Could not load' badge."
+related_pages:
+  - web.app.locale.superadmin.security-events
+related_api:
+  - "GET /api/v1/superadmin/security-events/{id}"
+keywords:
+  tr-TR:
+    [
+      güvenlik olayı detay,
+      fingerprint,
+      mask'lı IP,
+      user agent hash,
+      PII mask,
+      SUPERADMIN,
+    ]
+  en-GB:
+    [
+      security event detail,
+      fingerprint,
+      masked IP,
+      user agent hash,
+      PII mask,
+      SUPERADMIN,
+    ]
+version: "1.0.0"
+last_verified_at: 2026-08-05

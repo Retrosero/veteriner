@@ -1,0 +1,89 @@
+page_id: web.app.locale.superadmin.retention.sweeps.[id]
+route: "/[locale]/superadmin/retention/sweeps/[id]"
+module: superadmin
+title_key: retention.tabs.sweeps
+purpose:
+  tr-TR: "Tek bir retention sweep kaydının detay görünümü. triggeredBy, started/finished, dryRun bilgisi ile birlikte tenant × logType × severity bucket'ları için expired/archived/deleted sayılarını gösterir."
+  en-GB: "Detail view for a single retention sweep record. Shows triggeredBy, started/finished, dryRun info along with per-bucket expired/archived/deleted counts for tenant × logType × severity combinations."
+allowed_roles:
+  - SUPERADMIN
+required_permissions:
+  - "audit:log:read"
+prerequisites:
+  - "Kullanıcı SUPERADMIN rolüne sahip olmalı (GOAL-016)."
+fields:
+  - key: startedAt
+    label_key: retention.sweep.startedAt
+    description:
+      tr-TR: "Sweep'in başladığı zaman damgası (UTC ISO-8601)."
+      en-GB: "Sweep start timestamp (UTC ISO-8601)."
+    type: datetime
+    required: true
+  - key: finishedAt
+    label_key: retention.sweep.finishedAt
+    description:
+      tr-TR: "Sweep'in bittiği zaman damgası; null ise devam ediyor."
+      en-GB: "Sweep finish timestamp; null if still running."
+    type: datetime
+    required: false
+  - key: durationMs
+    label_key: retention.sweep.duration
+    description:
+      tr-TR: "Sweep süresi (ms)."
+      en-GB: "Sweep duration in ms."
+    type: number
+    required: false
+  - key: dryRun
+    label_key: retention.sweep.dryRun
+    description:
+      tr-TR: "true ise yalnız sayım yapılmıştır; gerçek silme/arşivleme yok."
+      en-GB: "true if counting only; no actual delete/archive."
+    type: boolean
+    required: true
+  - key: triggeredBy
+    label_key: retention.sweep.triggeredBy
+    description:
+      tr-TR: "Sweep'i tetikleyen aktör."
+      en-GB: "Actor that triggered the sweep."
+    type: string
+    required: true
+  - key: buckets
+    label_key: retention.sweep.bucket
+    description:
+      tr-TR: "tenant × logType × severity bucket sayıları."
+      en-GB: "Per-bucket counts for tenant × logType × severity."
+    type: array
+    required: true
+actions:
+  - key: back
+    description:
+      tr-TR: "Liste sayfasına döner."
+      en-GB: "Returns to the list page."
+    permission: "audit:log:read"
+step_by_step:
+  tr-TR:
+    - "Tarayıcıdan /<locale>/superadmin/retention/sweeps/{id} adresine git."
+    - "Üst kısımda sweep meta verisini (started/finished, dryRun, triggeredBy) kontrol et."
+    - "Aşağıdaki bucket tablosunda her tenant × logType × severity için expired/archived/deleted sayılarını incele."
+    - "Toplam expired/archived/deleted sayıları için karttaki totals alanına bak."
+  en-GB:
+    - "Navigate to /<locale>/superadmin/retention/sweeps/{id} in the browser."
+    - "Check the sweep metadata (started/finished, dryRun, triggeredBy) at the top."
+    - "Inspect per-bucket expired/archived/deleted counts in the table below."
+    - "View the totals in the totals card for an aggregate view."
+possible_errors:
+  - code: VET-AUDIT-0001
+    tr-TR: "Sweep bulunamadı."
+    en-GB: "Sweep not found."
+  - code: VET-AUTHZ-0001
+    tr-TR: "SUPERADMIN yetkisi yok."
+    en-GB: "Not a SUPERADMIN."
+related_pages:
+  - web.app.locale.superadmin.retention
+related_api:
+  - "GET /api/v1/superadmin/log-retention/sweeps/{id}"
+keywords:
+  tr-TR: [sweep detay, retention, bucket, expired, archived, deleted]
+  en-GB: [sweep detail, retention, bucket, expired, archived, deleted]
+version: "1.0.0"
+last_verified_at: 2026-08-05

@@ -1,0 +1,248 @@
+page_id: web.app.locale.superadmin.job-runs.locale.id
+route: "/[locale]/superadmin/job-runs/[id]"
+module: superadmin
+title_key: superadmin.job_runs.title
+purpose:
+  tr-TR: "Tek bir SUPERADMIN job run'ının detay sayfası. Meta veri, input/output, errorStack, retry/finish aksiyonları ve aynı jobKey için tüm denemeler gösterilir."
+  en-GB: "Detail page for a single SUPERADMIN job run. Shows metadata, input/output, errorStack, retry/finish actions, and all attempts for the same jobKey."
+allowed_roles:
+  - SUPERADMIN
+required_permissions:
+  - "audit:log:read"
+prerequisites:
+  - "Kullanıcı SUPERADMIN rolüne sahip olmalı (GOAL-016)."
+  - "URL'deki `id` path parametresi backend'e düz geçirilir; ek doğrulama backend tarafında yapılır."
+fields:
+  - key: detail.id
+    label_key: superadmin.job_runs.detail.id
+    description:
+      tr-TR: "Job run'ın internal UUID'si."
+      en-GB: "Internal UUID of the job run."
+    type: string
+    required: true
+  - key: detail.status
+    label_key: superadmin.job_runs.detail.status
+    description:
+      tr-TR: "pending | running | succeeded | failed | dead_letter."
+      en-GB: "pending | running | succeeded | failed | dead_letter."
+    type: enum
+    required: true
+  - key: detail.jobKey
+    label_key: superadmin.job_runs.detail.job_key
+    description:
+      tr-TR: "İş mantıksal anahtarı; aynı jobKey için tüm denemeler attempts endpoint'i ile listelenir."
+      en-GB: "Job logical key; all attempts for the same key are listed via the attempts endpoint."
+    type: string
+    required: true
+  - key: detail.queueName
+    label_key: superadmin.job_runs.detail.queue_name
+    description:
+      tr-TR: "BullMQ queue adı."
+      en-GB: "BullMQ queue name."
+    type: string
+    required: true
+  - key: detail.jobName
+    label_key: superadmin.job_runs.detail.job_name
+    description:
+      tr-TR: "Job handler adı (örn. SendInvoice)."
+      en-GB: "Job handler name (e.g. SendInvoice)."
+    type: string
+    required: true
+  - key: detail.attempt
+    label_key: superadmin.job_runs.detail.attempt
+    description:
+      tr-TR: "Mevcut deneme numarası; maxAttempts varsa `attempt / maxAttempts` formatında gösterilir."
+      en-GB: "Current attempt number; rendered as `attempt / maxAttempts` when maxAttempts is set."
+    type: integer
+    required: true
+  - key: detail.maxAttempts
+    label_key: superadmin.job_runs.detail.max_attempts
+    description:
+      tr-TR: "Queue yapılandırmasından gelen maksimum deneme sayısı; null ise sınırsız kabul edilir."
+      en-GB: "Max attempts from queue configuration; null means unlimited."
+    type: integer
+    required: false
+  - key: detail.source
+    label_key: superadmin.job_runs.detail.source
+    description:
+      tr-TR: "queue | adapter | cron | system."
+      en-GB: "queue | adapter | cron | system."
+    type: enum
+    required: true
+  - key: detail.triggeredBy
+    label_key: superadmin.job_runs.detail.triggered_by
+    description:
+      tr-TR: "user | system | schedule | retry."
+      en-GB: "user | system | schedule | retry."
+    type: enum
+    required: true
+  - key: detail.triggeredByUserId
+    label_key: superadmin.job_runs.detail.triggered_by_user
+    description:
+      tr-TR: "Tetikleyen kullanıcı kimliği; null ise 'Sistem' gösterilir."
+      en-GB: "Triggering user identifier; null is rendered as 'System'."
+    type: string
+    required: false
+  - key: detail.tenantId
+    label_key: superadmin.job_runs.detail.tenant
+    description:
+      tr-TR: "Tenant kimliği (operasyonel izleme amaçlı). SUPERADMIN görünümü tenant-üstüdür."
+      en-GB: "Tenant identifier (operational monitoring). SUPERADMIN view is cross-tenant."
+    type: string
+    required: false
+  - key: detail.branchId
+    label_key: superadmin.job_runs.detail.branch
+    description:
+      tr-TR: "Şube kimliği."
+      en-GB: "Branch identifier."
+    type: string
+    required: false
+  - key: detail.country
+    label_key: superadmin.job_runs.detail.country
+    description:
+      tr-TR: "Ülke kodu (TR | GB)."
+      en-GB: "Country code (TR | GB)."
+    type: string
+    required: false
+  - key: detail.startedAt
+    label_key: superadmin.job_runs.detail.started_at
+    description:
+      tr-TR: "Run'ın başlangıç zamanı (ISO-8601)."
+      en-GB: "Run start time (ISO-8601)."
+    type: datetime
+    required: true
+  - key: detail.finishedAt
+    label_key: superadmin.job_runs.detail.finished_at
+    description:
+      tr-TR: "Run'ın bitiş zamanı; running ise null."
+      en-GB: "Run finish time; null while running."
+    type: datetime
+    required: false
+  - key: detail.durationMs
+    label_key: superadmin.job_runs.detail.duration_ms
+    description:
+      tr-TR: "Süre (ms); running ise null."
+      en-GB: "Duration (ms); null while running."
+    type: integer
+    required: false
+  - key: detail.errorCode
+    label_key: superadmin.job_runs.detail.error_code
+    description:
+      tr-TR: "VET-JOBRUN-NNNN formatında hata kodu; succeeded ise null."
+      en-GB: "VET-JOBRUN-NNNN error code; null for succeeded runs."
+    type: string
+    required: false
+  - key: detail.correlationId
+    label_key: superadmin.job_runs.detail.correlation_id
+    description:
+      tr-TR: "Backend logları ile eşleştirme için correlation ID."
+      en-GB: "Correlation ID for backend log mapping."
+    type: string
+    required: false
+  - key: detail.input
+    label_key: superadmin.job_runs.detail.input
+    description:
+      tr-TR: "Job'a geçilen input; PII mask'lı JSON object olarak render edilir."
+      en-GB: "Job input; rendered as PII-masked JSON object."
+    type: object
+    required: false
+  - key: detail.output
+    label_key: superadmin.job_runs.detail.output
+    description:
+      tr-TR: "Job'un döndüğü output; PII mask'lı JSON object olarak render edilir."
+      en-GB: "Job output; rendered as PII-masked JSON object."
+    type: object
+    required: false
+  - key: detail.errorStack
+    label_key: superadmin.job_runs.detail.error_stack
+    description:
+      tr-TR: "Stack trace; yalnızca failed/dead_letter için dolu."
+      en-GB: "Stack trace; populated only for failed/dead_letter."
+    type: string
+    required: false
+  - key: attempts.items
+    label_key: superadmin.job_runs.attempts.list
+    description:
+      tr-TR: "Aynı jobKey için tüm denemelerin özeti (status, attempt, startedAt, durationMs, errorCode)."
+      en-GB: "Summary of all attempts for the same jobKey (status, attempt, startedAt, durationMs, errorCode)."
+    type: array
+    required: true
+actions:
+  - key: retry
+    description:
+      tr-TR: "Yalnızca failed/dead_letter run'lar için manuel retry başlatır. POST /api/v1/superadmin/job-runs/{id}/retry."
+      en-GB: "Trigger manual retry for failed/dead_letter runs only. POST /api/v1/superadmin/job-runs/{id}/retry."
+    permission: "audit:log:read"
+  - key: finish
+    description:
+      tr-TR: "Yalnızca running run'ları manuel olarak sonlandırır. POST /api/v1/superadmin/job-runs/{id}/finish."
+      en-GB: "Manually finish only running runs. POST /api/v1/superadmin/job-runs/{id}/finish."
+    permission: "audit:log:read"
+  - key: view_attempts
+    description:
+      tr-TR: "Aynı jobKey için tüm denemeleri detay panelinin altında listeler."
+      en-GB: "List all attempts for the same jobKey at the bottom of the detail panel."
+    permission: "audit:log:read"
+step_by_step:
+  tr-TR:
+    - "Tarayıcıdan /<locale>/superadmin/job-runs/{id} adresine git."
+    - "Üst kısım status + jobKey + duration özetini gösterir; ortada meta grid (queueName, jobName, attempt, source, triggeredBy, tenant, branch, country, correlation, startedAt, finishedAt, errorCode)."
+    - "Input ve Output bölümleri PII mask'lı JSON object olarak render edilir; null ise placeholder gösterilir."
+    - "errorStack yalnızca failed/dead_letter run'lar için görünür; diğer durumlarda 'Bu run için stack trace saklanmıyor' mesajı gösterilir."
+    - "Manuel retry için 'Yeniden dene' butonuna tıkla; yalnızca failed/dead_letter durumunda aktiftir."
+    - "Manuel sonlandırma için 'Run'ı sonlandır' butonuna tıkla; yalnızca running durumunda aktiftir."
+    - "Aynı jobKey'in tüm denemeleri detay panelinin altındaki attempts bölümünde listelenir."
+  en-GB:
+    - "Navigate to /<locale>/superadmin/job-runs/{id} in the browser."
+    - "The top section shows status + jobKey + duration summary; the middle shows the meta grid (queueName, jobName, attempt, source, triggeredBy, tenant, branch, country, correlation, startedAt, finishedAt, errorCode)."
+    - "Input and Output sections render PII-masked JSON objects; null is shown as a placeholder."
+    - "errorStack is visible only for failed/dead_letter runs; other statuses show 'No stack trace is stored for this run'."
+    - "For manual retry, click 'Retry'; the button is only active for failed/dead_letter runs."
+    - "To finish manually, click 'Finish run'; the button is only active for running runs."
+    - "All attempts for the same jobKey are listed in the attempts section at the bottom of the detail panel."
+possible_errors:
+  - code: VET-AUDIT-0002
+    tr-TR: "Job run bulunamadı; ID yanlış veya silinmiş olabilir."
+    en-GB: "Job run not found; ID may be wrong or deleted."
+  - code: VET-JOBRUN-0001
+    tr-TR: "Run zaten terminal; tekrar finish edilemez."
+    en-GB: "Run is already terminal; cannot be finished again."
+  - code: VET-JOBRUN-0003
+    tr-TR: "Run retry için uygun değil (succeeded/running/pending)."
+    en-GB: "Run is not eligible for retry (succeeded/running/pending)."
+  - code: VET-COMMON-0001
+    tr-TR: "API bağlantısı kurulamadı; 'Yüklenemedi' mesajı gösterilir."
+    en-GB: "API connection failed; 'Could not load' message is shown."
+  - code: VET-AUTHZ-0001
+    tr-TR: "SUPERADMIN yetkisi yok."
+    en-GB: "Not a SUPERADMIN."
+related_pages:
+  - web.app.locale.superadmin.job-runs
+related_api:
+  - "GET /api/v1/superadmin/job-runs/{id}"
+  - "POST /api/v1/superadmin/job-runs/{id}/retry"
+  - "POST /api/v1/superadmin/job-runs/{id}/finish"
+  - "GET /api/v1/superadmin/job-runs/attempts/{jobKey}"
+keywords:
+  tr-TR:
+    [
+      job run detay,
+      job detay,
+      retry,
+      finish,
+      attempts,
+      stack trace,
+      SUPERADMIN,
+    ]
+  en-GB:
+    [
+      job run detail,
+      job detail,
+      retry,
+      finish,
+      attempts,
+      stack trace,
+      SUPERADMIN,
+    ]
+version: "1.0.0"
+last_verified_at: 2026-08-05

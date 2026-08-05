@@ -1,0 +1,191 @@
+page_id: web.app.locale.superadmin.security-events
+route: "/[locale]/superadmin/security-events"
+module: superadmin
+title_key: superadmin.security_events.title
+purpose:
+  tr-TR: "Tüm tenant'ların güvenlik olaylarını (failed_login, unauthorized_access_attempt, suspicious_export, role_change, tenant_isolation_breach_attempt) gösteren SUPERADMIN paneli. Filtreli arama, severity × type summary, top-20 fingerprint saldırı sınıfı kartları, kritik olaylarda alarm adapter tetikleme."
+  en-GB: "SUPERADMIN panel that displays all tenants' security events (failed_login, unauthorized_access_attempt, suspicious_export, role_change, tenant_isolation_breach_attempt). Provides filtered search, severity × type summary, top-20 fingerprint attack class cards, and alarm adapter trigger for critical events."
+allowed_roles:
+  - SUPERADMIN
+required_permissions:
+  - "audit:log:read"
+prerequisites:
+  - "Kullanıcı SUPERADMIN rolüne sahip olmalı (GOAL-016)."
+  - "Actor context'inde tenantId yok (cross-tenant görünüm)."
+  - "Backend summary + list endpoint'leri `audit:log:read` permission kontrolü uygular."
+fields:
+  - key: filters.type
+    label_key: superadmin.security_events.filters.type
+    description:
+      tr-TR: "failed_login | unauthorized_access_attempt | suspicious_export | role_change | tenant_isolation_breach_attempt."
+      en-GB: "failed_login | unauthorized_access_attempt | suspicious_export | role_change | tenant_isolation_breach_attempt."
+    type: enum
+    required: false
+  - key: filters.severity
+    label_key: superadmin.security_events.filters.severity
+    description:
+      tr-TR: "info | warning | error | critical."
+      en-GB: "info | warning | error | critical."
+    type: enum
+    required: false
+  - key: filters.module
+    label_key: superadmin.security_events.filters.module
+    description:
+      tr-TR: "Modül kodu (auth, clinic, tenant, ...)."
+      en-GB: "Module code (auth, clinic, tenant, ...)."
+    type: string
+    required: false
+  - key: filters.tenantId
+    label_key: superadmin.security_events.filters.tenant
+    description:
+      tr-TR: "Belirli bir tenant'ın güvenlik olaylarını göster."
+      en-GB: "Show security events for a specific tenant."
+    type: string
+    required: false
+  - key: filters.branchId
+    label_key: superadmin.security_events.filters.branch
+    description:
+      tr-TR: "Belirli bir şubenin güvenlik olaylarını göster."
+      en-GB: "Show security events for a specific branch."
+    type: string
+    required: false
+  - key: filters.userId
+    label_key: superadmin.security_events.filters.user
+    description:
+      tr-TR: "Belirli bir kullanıcıya ait güvenlik olaylarını göster."
+      en-GB: "Show security events for a specific user."
+    type: string
+    required: false
+  - key: filters.country
+    label_key: superadmin.security_events.filters.country
+    description:
+      tr-TR: "ISO-3166-1 alpha-2 ülke kodu (TR, GB)."
+      en-GB: "ISO-3166-1 alpha-2 country code (TR, GB)."
+    type: string
+    required: false
+  - key: filters.release
+    label_key: superadmin.security_events.filters.release
+    description:
+      tr-TR: "Sürüm etiketi (örn. 1.0.0)."
+      en-GB: "Release tag (e.g. 1.0.0)."
+    type: string
+    required: false
+  - key: filters.route
+    label_key: superadmin.security_events.filters.route
+    description:
+      tr-TR: "Route prefix filtresi (örn. /api/v1/auth)."
+      en-GB: "Route prefix filter (e.g. /api/v1/auth)."
+    type: string
+    required: false
+  - key: filters.from
+    label_key: superadmin.security_events.filters.from
+    description:
+      tr-TR: "lastSeenAt >= from (ISO-8601)."
+      en-GB: "lastSeenAt >= from (ISO-8601)."
+    type: datetime
+    required: false
+  - key: filters.to
+    label_key: superadmin.security_events.filters.to
+    description:
+      tr-TR: "lastSeenAt <= to (ISO-8601)."
+      en-GB: "lastSeenAt <= to (ISO-8601)."
+    type: datetime
+    required: false
+  - key: filters.search
+    label_key: superadmin.security_events.filters.search
+    description:
+      tr-TR: "message, errorCode, fingerprint üzerinde serbest metin araması."
+      en-GB: "Free-text search across message, errorCode, fingerprint."
+    type: string
+    required: false
+  - key: list.items
+    label_key: superadmin.security_events.list.items
+    description:
+      tr-TR: "Güvenlik olayları; type (badge), severity (badge), module, errorCode, message, route, country, occurrenceCount, lastSeenAt, alertSent kolonları."
+      en-GB: "Security events; columns: type (badge), severity (badge), module, errorCode, message, route, country, occurrenceCount, lastSeenAt, alertSent."
+    type: array
+    required: true
+  - key: summary.severityBreakdown
+    label_key: superadmin.security_events.summary.severity_breakdown
+    description:
+      tr-TR: "Severity × type kırılımı; her severity için 5 type cell'inde count."
+      en-GB: "Severity × type breakdown; count per type within each severity card."
+    type: object
+    required: true
+  - key: summary.topGroups
+    label_key: superadmin.security_events.summary.top_groups
+    description:
+      tr-TR: "Top-20 fingerprint saldırı sınıfı kartı; eventCount DESC sıralı."
+      en-GB: "Top-20 fingerprint attack class cards; sorted by eventCount DESC."
+    type: array
+    required: true
+actions:
+  - key: open_detail
+    description:
+      tr-TR: "Bir satıra tıklayıp güvenlik olayı detay sayfasını açar."
+      en-GB: "Click a row to open the security event detail page."
+    permission: "audit:log:read"
+  - key: filter_list
+    description:
+      tr-TR: "type, severity, module, tenant, branch, user, country, release, route, from, to, search alanlarına göre listeyi filtreler."
+      en-GB: "Filter the list by type, severity, module, tenant, branch, user, country, release, route, from, to, search."
+    permission: "audit:log:read"
+  - key: view_summary
+    description:
+      tr-TR: "Severity × type kırılımı + top-20 saldırı sınıfı."
+      en-GB: "Severity × type breakdown + top-20 attack classes."
+    permission: "audit:log:read"
+step_by_step:
+  tr-TR:
+    - "Tarayıcıdan /<locale>/superadmin/security-events adresine git."
+    - "Üst kısımdaki summary kartlarından severity × type dağılımını ve top-20 saldırı sınıfını incele."
+    - "Filtrelerden type, severity, module, tenant, branch, user, country, release, route, from, to, search alanlarını seç."
+    - "Listeden bir kayda tıklayarak detay sayfasına git (IP, userAgent, fingerprint, context)."
+    - "alertSent=true olan critical olaylar için alarm adapter'ın tetiklendiğini doğrula."
+  en-GB:
+    - "Navigate to /<locale>/superadmin/security-events in the browser."
+    - "Review the summary cards at the top for severity × type breakdown and top-20 attack classes."
+    - "Filter the list by type, severity, module, tenant, branch, user, country, release, route, from, to, or search."
+    - "Click a row to open the detail page (IP, userAgent, fingerprint, context)."
+    - "Verify that alertSent=true for critical events indicates the alarm adapter was triggered."
+possible_errors:
+  - code: VET-AUDIT-0001
+    tr-TR: "Güvenlik olayı bulunamadı; ID yanlış veya silinmiş olabilir."
+    en-GB: "Security event not found; ID may be wrong or deleted."
+  - code: VET-AUTHZ-0001
+    tr-TR: "SUPERADMIN yetkisi yok."
+    en-GB: "Not a SUPERADMIN."
+  - code: VET-COMMON-0001
+    tr-TR: "API bağlantısı kurulamadı; summary veya liste 'Yüklenemedi' rozeti gösterir."
+    en-GB: "API connection failed; summary or list shows 'Could not load' badge."
+related_pages:
+  - web.app.locale.superadmin
+related_api:
+  - "GET /api/v1/superadmin/security-events"
+  - "GET /api/v1/superadmin/security-events/summary"
+  - "GET /api/v1/superadmin/security-events/{id}"
+keywords:
+  tr-TR:
+    [
+      güvenlik olayı,
+      failed login,
+      suspicious export,
+      role change,
+      tenant breach,
+      alarm adapter,
+      SUPERADMIN,
+      fingerprint saldırı,
+    ]
+  en-GB:
+    [
+      security event,
+      failed login,
+      suspicious export,
+      role change,
+      tenant breach,
+      alarm adapter,
+      SUPERADMIN,
+      fingerprint attack,
+    ]
+version: "1.0.0"
+last_verified_at: 2026-08-05

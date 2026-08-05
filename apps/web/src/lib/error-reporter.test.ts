@@ -453,10 +453,14 @@ describe("ErrorReporter — token-bucket rate limit (per user)", () => {
 });
 
 describe("ErrorReporter — max retry attempts", () => {
-  let fetchMock: Mock;
+  // fetchMock bu blokta doğrudan kullanılmıyor; her test kendi
+  // `failFetch` mock'unu oluşturuyor. beforeEach hook'u ileride
+  // paylaşılan davranış eklemek için boş bırakıldı; bu nedenle
+  // bilinçli olarak `_` prefix'i ile işaretliyoruz.
+  let _fetchMock: Mock;
 
   beforeEach(() => {
-    fetchMock = makeFetchMock();
+    _fetchMock = makeFetchMock();
   });
 
   it("default maxRetryAttempts=3 sonrası kuyruktan düşer", async () => {

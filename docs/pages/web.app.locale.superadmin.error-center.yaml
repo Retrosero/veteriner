@@ -1,10 +1,10 @@
-page_id: web.superadmin.locale.error-center
+page_id: web.app.locale.superadmin.error-center
 route: "/[locale]/superadmin/error-center"
 module: superadmin
 title_key: superadmin.error_center.title
 purpose:
-  tr-TR: "Tüm tenant'ların hata olaylarını (5xx + critical) gösteren SUPERADMIN paneli. Filtreli arama, fingerprint grupları, status yönetimi, atama, çözüm notu, destek bağlantısı ve birleşik audit log'a erişim sağlar."
-  en-GB: "SUPERADMIN panel that displays all tenants' error events (5xx + critical). Provides filtered search, fingerprint groups, status management, assignment, resolution notes, support link, and unified audit log."
+  tr-TR: "Tüm tenant'ların hata olaylarını (5xx + critical) gösteren SUPERADMIN paneli. 24s KPI özetleri, filtreli arama, fingerprint grupları, status yönetimi, atama, çözüm notu, destek bağlantısı ve birleşik audit log'a erişim sağlar."
+  en-GB: "SUPERADMIN panel that displays all tenants' error events (5xx + critical). Provides 24h KPI summaries, filtered search, fingerprint groups, status management, assignment, resolution notes, support link, and unified audit log."
 allowed_roles:
   - SUPERADMIN
 required_permissions:
@@ -205,4 +205,4 @@ keywords:
       audit log,
     ]
 version: "1.0.0"
-last_verified_at: 2026-07-31
+last_verified_at: 2026-08-05
