@@ -72,11 +72,12 @@ COPY --from=builder /repo/apps/web/public ./apps/web/public
 EXPOSE 3000
 
 # Coolify ve genel orchestrator'lar için liveness kontrolü.
-# Next.js 14 standalone server.js port 3000'de dinler; ana sayfa
-# default locale (tr-TR) ile 200 döner. Busybox `wget` node:20-alpine
+# Next.js 14 standalone server.js port 3000'de dinler; kök yol locale
+# middleware'i olmadan 404 döndüğü için varsayılan locale (tr-TR) doğrudan
+# kontrol edilir. Busybox `wget` node:20-alpine
 # imajında hazır geldiği için ek paket kurulumu gerekmez.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:3000/ >/dev/null 2>&1 || exit 1
+  CMD wget -qO- http://127.0.0.1:3000/tr-TR >/dev/null 2>&1 || exit 1
 
 # Non-root kullanıcı ile çalıştır
 RUN addgroup -g 1001 -S nodejs && adduser -S -u 1001 -G nodejs nextjs
