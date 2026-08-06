@@ -10,3 +10,22 @@ packages:
 # kaldirilir; paketler oldugu gibi build yapar. AGENTS.md'de de
 # onerilen fallback.
 nodeLinker: hoisted
+
+# pnpm.overrides: FAZ-12 Next.js upgrade (14.2.35) sonrasi kalan
+# transitive CVE'ler icin. Not: pnpm 9.x pnpm-workspace.yaml icinde
+# `overrides` anahtarini henuz okumuyor (pnpm 10+ ile geldi), bu
+# yuzden asil override listesi root package.json#pnpm.overrides
+# altinda tutuluyor. Burada sadece workspace semasi tanimli.
+# Patchlenmis surumler:
+#   - multer 2.1.0+: DoS (incomplete cleanup, resource exhaustion,
+#     uncontrolled recursion, deeply nested fields)
+#   - js-yaml 4.3.0+: YAML merge-key quadratic CPU
+#   - lodash 4.17.21: template injection + prototype pollution
+#   - postcss 8.5.23: source-map path traversal + XSS
+#   - semver 7.6.0: ReDoS (gerektiginde)
+#   - ws 8.17.0: header validation (gerektiginde)
+# Next.js 14.x patchlenmis surumleri yok (>=15.5.16 sart), o yuzden
+# `next` override ile sabit tutuluyor; bu 14.x serisindeki 25
+# Next.js CVE'si override ile giderilemez, FAZ-13 (Next 15.5.16)
+# major upgrade'ine birakilmistir.
+
