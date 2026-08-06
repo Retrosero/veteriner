@@ -22,8 +22,14 @@ import { logger } from "./logger.js";
 import { closeRedisConnection } from "./queues/connection.js";
 import { closeHealthQueue, getHealthQueue } from "./queues/health.queue.js";
 import { closeHealthWorker, getHealthWorker } from "./workers/health.worker.js";
-import { closeRagChunkQueue, getRagChunkQueue } from "./queues/rag-chunk.queue.js";
-import { closeRagChunkWorker, getRagChunkWorker } from "./workers/rag-chunk.worker.js";
+import {
+  closeRagChunkQueue,
+  getRagChunkQueue,
+} from "./queues/rag-chunk.queue.js";
+import {
+  closeRagChunkWorker,
+  getRagChunkWorker,
+} from "./workers/rag-chunk.worker.js";
 import { closeJobRunReporter } from "./observability/job-run-reporter.js";
 import { startRagChunkScheduler } from "./scheduler/rag-chunk-scheduler.js";
 

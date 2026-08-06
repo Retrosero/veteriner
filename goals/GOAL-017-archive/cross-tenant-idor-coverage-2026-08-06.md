@@ -15,9 +15,9 @@ ile 10 senaryo tek bir RLS E2E dosyasında toplandı.
 
 ## Test Dosyası
 
-| Dosya | Test Sayısı | Kapsam |
-| --- | --- | --- |
-| `apps/api/test/cross-tenant-idor.rls.e2e-spec.ts` | 10 | Pilot + cross-tenant IDOR + session/invitation/audit |
+| Dosya                                             | Test Sayısı | Kapsam                                               |
+| ------------------------------------------------- | ----------- | ---------------------------------------------------- |
+| `apps/api/test/cross-tenant-idor.rls.e2e-spec.ts` | 10          | Pilot + cross-tenant IDOR + session/invitation/audit |
 
 ## Pilot Fixture (PILOT_SEED)
 
@@ -30,18 +30,18 @@ ile 10 senaryo tek bir RLS E2E dosyasında toplandı.
 
 ## 10 Senaryo
 
-| # | Senaryo | Doğrulama | Hata Kodu |
-| --- | --- | --- | --- |
-| 1 | Patient cross-tenant IDOR | `findPersistedById` pilot bağlamda yabancı patient için null; pilot patient'lar pilot bağlamda görünür, yabancı bağlamda görünmez | `VET-CLINIC-0001` / `VET-AUTHZ-0002` (gizli 404) |
-| 2 | Owner cross-tenant IDOR | Aynısı owner için + pilot owner'lar pilot bağlamda görünür | `VET-CLINIC-0001` |
-| 3 | Examination cross-tenant | `persistedFind` pilot bağlamda null; yabancı bağlamda pilot examination count 0 | `VET-CLINIC-0001` |
-| 4 | Prescription cross-tenant | `persistedFindById` null + audit yazma denemesi RLS tarafından reddedilir | `VET-CLINIC-0001` + RLS reject |
-| 5 | Vaccination cross-tenant | `persistedById` null; yabancı bağlamda yabancı vaccine count 1 | `VET-CLINIC-0001` |
-| 6 | Portal/User invitation cross-tenant | Pilot invitation pilot bağlamda görünür, foreign bağlamda null; auth repo lookup service-level tenant doğrular | `VET-PORTAL-0001` (service guard) |
-| 7 | Branches arası transfer (cross-branch aynı tenant) | Auth repo `findActiveBranchForUser` pilot→pilot erişim başarılı; pilot→foreign null; pilot user pilot-secondary branch'a erişebilir (RLS düzeyinde tenant izolasyonu) | `VET-AUTHZ-0004` (service guard, branch scope) |
-| 8 | Session token rotate | Eski session `revokedAt`/`revokedReason`/`replacedById` set edilir; yeni session aktif; auth repo token lookup revoked state'i döner | `audit:auth.session.rotate` (audit) |
-| 9 | Invitation token reuse (tek kullanımlık) | İlk kabul `pending → accepted`; ikinci update no-op (status korunur); service katmanı 410 VET-PORTAL-0001 döner | `VET-PORTAL-0001` (410 Gone) |
-| 10 | Audit log cross-tenant filtreleme | `audit_events` RLS pilot bağlamda foreign event görmez, foreign bağlamda kendi event'ini görür; tenant bağlamı olmadan app rolü audit event göremez | RLS policy |
+| #   | Senaryo                                            | Doğrulama                                                                                                                                                             | Hata Kodu                                        |
+| --- | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| 1   | Patient cross-tenant IDOR                          | `findPersistedById` pilot bağlamda yabancı patient için null; pilot patient'lar pilot bağlamda görünür, yabancı bağlamda görünmez                                     | `VET-CLINIC-0001` / `VET-AUTHZ-0002` (gizli 404) |
+| 2   | Owner cross-tenant IDOR                            | Aynısı owner için + pilot owner'lar pilot bağlamda görünür                                                                                                            | `VET-CLINIC-0001`                                |
+| 3   | Examination cross-tenant                           | `persistedFind` pilot bağlamda null; yabancı bağlamda pilot examination count 0                                                                                       | `VET-CLINIC-0001`                                |
+| 4   | Prescription cross-tenant                          | `persistedFindById` null + audit yazma denemesi RLS tarafından reddedilir                                                                                             | `VET-CLINIC-0001` + RLS reject                   |
+| 5   | Vaccination cross-tenant                           | `persistedById` null; yabancı bağlamda yabancı vaccine count 1                                                                                                        | `VET-CLINIC-0001`                                |
+| 6   | Portal/User invitation cross-tenant                | Pilot invitation pilot bağlamda görünür, foreign bağlamda null; auth repo lookup service-level tenant doğrular                                                        | `VET-PORTAL-0001` (service guard)                |
+| 7   | Branches arası transfer (cross-branch aynı tenant) | Auth repo `findActiveBranchForUser` pilot→pilot erişim başarılı; pilot→foreign null; pilot user pilot-secondary branch'a erişebilir (RLS düzeyinde tenant izolasyonu) | `VET-AUTHZ-0004` (service guard, branch scope)   |
+| 8   | Session token rotate                               | Eski session `revokedAt`/`revokedReason`/`replacedById` set edilir; yeni session aktif; auth repo token lookup revoked state'i döner                                  | `audit:auth.session.rotate` (audit)              |
+| 9   | Invitation token reuse (tek kullanımlık)           | İlk kabul `pending → accepted`; ikinci update no-op (status korunur); service katmanı 410 VET-PORTAL-0001 döner                                                       | `VET-PORTAL-0001` (410 Gone)                     |
+| 10  | Audit log cross-tenant filtreleme                  | `audit_events` RLS pilot bağlamda foreign event görmez, foreign bağlamda kendi event'ini görür; tenant bağlamı olmadan app rolü audit event göremez                   | RLS policy                                       |
 
 ## Mimari Detaylar
 
@@ -50,12 +50,12 @@ ile 10 senaryo tek bir RLS E2E dosyasında toplandı.
   - 19 tenant-scope tabloya grant
 - **RLS bağlamı:** `withTenant(tenantId, action)` transaction-local
   `set_config('app.tenant_id', ...)` + `set_config('app.is_superadmin',
-  'false')` kullanır
+'false')` kullanır
 - **Skip guard:** `DATABASE_MIGRATOR_URL` veya `DATABASE_URL` yoksa
   `itDb = it.skip` ile 10 senaryo skip edilir; lint + type-check + test
   gate'leri etkilenmez
 - **PII maskeleme:** Pilot kullanıcı parolaları `passwordHash:
-  "not-used-by-rls-test"` ile placeholder; auth flow bu testlerde
+"not-used-by-rls-test"` ile placeholder; auth flow bu testlerde
   çalışmaz (sadece token hash lookup)
 
 ## Çalıştırma Koşulları

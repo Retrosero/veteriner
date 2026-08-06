@@ -135,4 +135,7 @@ pnpm --filter @vetniva/api test
 - `tools/rag-chunk-producer/README.md` — CLI kullanim detaylari.
 - `docs/ai/CHUNK_SCHEMA.md` — chunk sema referansi.
 - `docs/ai/AI_KNOWLEDGE_BASE.md` — RAG mimarisi.
+- `docs/operations/RAG_CHUNK_PRODUCTION.md` — üretim scheduler
+  stratejisi, hash-tabanlı dedup, JSONL ihracatı, FAZ-12+
+  retrieval planı (kapsamlı operasyonel rehber).
 - `goals/GOAL-116_COMPLETION_REPORT.md` — bu production pipeline.

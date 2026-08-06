@@ -13,17 +13,17 @@ yetkileri + cross-tenant senaryolar dahil.
 
 ## Test Dosyaları (8)
 
-| Dosya | Test Sayısı | Kapsam |
-| --- | --- | --- |
-| `app.e2e-spec.ts` | 7 | Genel app başlatma + auth akışı |
-| `controlled-drugs.rls.e2e-spec.ts` | 10 | Kontrollü ilaç + append-only correction |
-| `error-events.rls.e2e-spec.ts` | 1 | SUPERADMIN error event izolasyonu |
-| `imaging-orders.rls.e2e-spec.ts` | 11 | Görüntüleme + report JSONB + app role |
-| `lab-orders.rls.e2e-spec.ts` | 10 | Laboratuvar sipariş + patient filtresi |
-| `lab-results.rls.e2e-spec.ts` | 11 | Lab sonuç + revision |
-| `lab-tests.rls.e2e-spec.ts` | 12 | Lab test kataloğu + tenant scope |
-| `runtime-role.http.e2e-spec.ts` | 2 | HTTP üzerinden runtime role davranışı |
-| **Toplam** | **64** | |
+| Dosya                              | Test Sayısı | Kapsam                                  |
+| ---------------------------------- | ----------- | --------------------------------------- |
+| `app.e2e-spec.ts`                  | 7           | Genel app başlatma + auth akışı         |
+| `controlled-drugs.rls.e2e-spec.ts` | 10          | Kontrollü ilaç + append-only correction |
+| `error-events.rls.e2e-spec.ts`     | 1           | SUPERADMIN error event izolasyonu       |
+| `imaging-orders.rls.e2e-spec.ts`   | 11          | Görüntüleme + report JSONB + app role   |
+| `lab-orders.rls.e2e-spec.ts`       | 10          | Laboratuvar sipariş + patient filtresi  |
+| `lab-results.rls.e2e-spec.ts`      | 11          | Lab sonuç + revision                    |
+| `lab-tests.rls.e2e-spec.ts`        | 12          | Lab test kataloğu + tenant scope        |
+| `runtime-role.http.e2e-spec.ts`    | 2           | HTTP üzerinden runtime role davranışı   |
+| **Toplam**                         | **64**      |                                         |
 
 ## Kapsanan Senaryolar
 

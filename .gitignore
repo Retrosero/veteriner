@@ -25,6 +25,9 @@ apps/api/node_modules/@prisma/client/
 # Local Prisma migration artifacts
 apps/api/prisma/.tmp/
 
+# Prisma migration diff outputs (gecici, prisma migrate dev ciktisi)
+apps/api/diff_output.*
+
 # Generated
 **/generated/prisma/**
 src/generated/

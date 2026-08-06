@@ -12,12 +12,12 @@ tıbbi soru reddi, sözleşme/backend entegrasyonu çalışıyor.
 
 ## Test Sonuçları
 
-| Test Dosyası | Test Sayısı | Durum |
-| --- | --- | --- |
-| `onboarding-wizard.test.tsx` | 5 | ✅ |
-| `onboarding-client.test.ts` | 7 | ✅ |
-| `help-button.test.tsx` | 3 | ✅ |
-| **Toplam** | **15** | **✅ 15/15** |
+| Test Dosyası                 | Test Sayısı | Durum        |
+| ---------------------------- | ----------- | ------------ |
+| `onboarding-wizard.test.tsx` | 5           | ✅           |
+| `onboarding-client.test.ts`  | 7           | ✅           |
+| `help-button.test.tsx`       | 3           | ✅           |
+| **Toplam**                   | **15**      | **✅ 15/15** |
 
 ## Dosya Yapısı
 

@@ -196,6 +196,102 @@ Her senaryo için doldurulacak tablo:
 - **Pilot veri şifreleme** → Faz 12+ (production data
   encryption at-rest).
 
+## Kabul Kriteri Sözlüğü (GOAL-121, FAZ-12)
+
+Her pilot adımı için tek bir "PASS/FAIL" kararının arkasında
+üç katmanlı bir kontrol vardır. Aşağıdaki sözlük hem operatörün
+(el ile) hem runner'ın (otomatik) karar mekaniğini paylaşır.
+
+### Sözlük terimleri
+
+| Terim                  | Açıklama                                                          | Kaynak                                            |
+| ---------------------- | ----------------------------------------------------------------- | ------------------------------------------------- |
+| `PASS`                 | Adımın tüm kontrolleri geçti                                      | `runner.ts` `UatStepResult.passed`                |
+| `FAIL`                 | En az bir kontrol başarısız                                       | `runner.ts` `UatStepResult.error`                 |
+| `expectedStatus`       | Beklenen HTTP status; tek sayı veya aralık                        | `UatStep.expectStatus`                            |
+| `expectedField`        | Response body'sinde truthy olması beklenen alan (nokta notasyonu) | `UatStep.expectField`                             |
+| `placeholderSelfRef`   | Placeholder kendi anahtarına referans veriyor (imkansız)          | `PLACEHOLDER_SELF_REF` (`UAT-PLACEHOLDER-0001`)   |
+| `placeholderNotFound`  | Placeholder context'te bulunamadı                                 | `PLACEHOLDER_NOT_FOUND` (`UAT-PLACEHOLDER-0002`)  |
+| `piiMasked`            | Pilot yorumu PII içerdiği için maskelendi                         | `FEEDBACK_PII_MASKED` (`UAT-FEEDBACK-0001`)       |
+| `invalidRating`        | Puan 0-5 dışında                                                  | `FEEDBACK_INVALID_RATING` (`UAT-FEEDBACK-0002`)   |
+| `missingReviewer`      | Reviewer adı boş                                                  | `FEEDBACK_MISSING_REVIEWER` (`UAT-FEEDBACK-0003`) |
+| `tenantBoundaryBreach` | Yanıt `X-Tenant-Id` header'ı istektekini tutmuyor                 | (k6 tarafı, FAZ-12 sonrası)                       |
+
+### PASS kuralı
+
+Bir adım `passed=true` olması için:
+
+1. `expectedStatus` listede en az bir eşleşme olmalı (örn. 200 veya 201).
+2. `expectedField` tanımlıysa response body'sinde ilgili alan
+   `isTruthyField` kuralına göre truthy olmalı (string → uzunluk > 0;
+   sayı → sıfır olmayan finite; dizi/object → boş olmayan).
+3. Fetch aşamasında network/parse hatası olmamalı.
+
+Senaryo `allPassed=true` olması için **tüm adımlar** bu kurala
+uymalı ve adım sayısı `scenario.steps.length` ile eşleşmeli
+(erken `break` = kısmi çalıştırma = FAIL).
+
+### Geçerli sayılmayan durumlar
+
+Aşağıdaki durumlar "kısmi başarı" değil, **FAIL**'dir:
+
+- Adım 3'te hata aldıktan sonra adım 4-5'in boş `passed=true`
+  ile geçmesi (senaryo `break` ile kesilir; toplam adım sayısı
+  eşleşmediği için `allPassed=false`).
+- `placeholderNotFound` hatası alan bir adım (placeholder
+  çözümlemesi yarıda kaldı; gerçek test verisi sağlanmalı).
+- `placeholderSelfRef` (yapılandırma hatası; config güncellenmeli).
+
+### Kabul sözlüğü — senaryo bazlı PASS kriterleri
+
+| Senaryo             | Modül           | Adım sayısı | Beklenen toplam süre                  | Ek kriter                                                                        |
+| ------------------- | --------------- | ----------- | ------------------------------------- | -------------------------------------------------------------------------------- |
+| `new_owner_patient` | owner           | 4           | < 90s                                 | Tüm zorunlu alanlar (firstName, lastName, phone, email) ve KVKK onayı doğrulanır |
+| `appointment`       | appointment     | 3           | < 30s                                 | Slot çakışması yoksa 201; varsa net 4xx hata mesajı                              |
+| `examination`       | examination     | 3           | < 15dk (UI süresi; API toplamı < 5s)  | SOAP notu en az 1 cümle her bölümde; imza sonrası amendment akışı                |
+| `vaccination`       | vaccination     | 2           | < 60s                                 | Lot aktif, SKT geçmemiş, stok düşümü sonradan doğrulanır                         |
+| `petshop_sale`      | petshop         | 3           | < 90s                                 | Stok otomatik düşer, fiş PDF açılır (UI)                                         |
+| `collection`        | payment         | 2           | < 30s                                 | Müşteri bakiyesi doğru güncellenir, kasa hareketi oluşur                         |
+| `surgery`           | surgery         | 3           | < 30dk (UI süresi; API toplamı < 5s)  | Onam formu imzalanmadan başlamaz; anestezi her 5dk vital                         |
+| `hospitalization`   | hospitalization | 3           | < 20dk (UI süresi; API toplamı < 5s)  | Order schedule doğru uygulanır, taburcu sonrası kafes boşalır                    |
+| `laboratory`        | lab             | 4           | < 20dk (UI süresi; API toplamı < 10s) | Anormal flag kırmızı gösterilir (UI), onay sonrası muayeneye bağlanır            |
+| `portal`            | portal          | 2           | < 5dk                                 | Yalnızca kendi hayvanları görünür (UI), PDF indir çalışır                        |
+
+> **UI süresi** kuralı otomatik runner tarafından doğrulanmaz;
+> saha gözlemi veya tarayıcı E2E testi (FAZ-13+) ile ölçülür.
+> API tarafında PASS koşulu yalnızca HTTP durum kodu + expected
+> field doğrulamasıdır.
+
+### Genel kabul kriterleri (pilot ekibin skoru)
+
+- Tüm 10 senaryo **≥ 3.5/5** ortalama pilot puanı.
+- Kritik hata (veri kaybı, tenant izolasyonu ihlali, audit
+  eksikliği) **yok** (bkz. `error_events`).
+- Tüm senaryolar kabul sözlüğündeki ek kriterleri karşılar.
+- `uat-report.md` içinde "Gereksiz adım" olarak işaretlenen
+  adım sayısı **< 5** (toplam 30 adım üzerinden; %15 üzeri UX
+  sorunu sayılır).
+
+### Adım `expectField` eşleme tablosu
+
+Aşağıdaki eşleme runner tarafından otomatik yapılır; pilot
+ekibin bilmesine gerek yoktur, ancak hata ayıklamada yararlıdır:
+
+| Adım                         | Beklenen alan |
+| ---------------------------- | ------------- |
+| `create_owner`               | `id`          |
+| `create_patient`             | `id`          |
+| `create_appointment`         | `id`          |
+| `start_examination`          | `id`          |
+| `create_vaccine_application` | `id`          |
+| `create_sale`                | `sale.id`     |
+| `create_payment`             | `id`          |
+| `create_surgery_plan`        | `id`          |
+| `create_hospitalization`     | `id`          |
+| `create_lab_order`           | `id`          |
+| `create_portal_request`      | `id`          |
+
 ## Commit
 
 - Docs: (bu commit) — `docs(operations): GOAL-121 pilot kabul testleri`
+- Docs: (bu commit) — `docs(operations): GOAL-121 kabul kriteri sözlüğü`

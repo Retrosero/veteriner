@@ -17,37 +17,37 @@ değil; runbook aşağıda.
 
 ## Unit Test Sonuçları
 
-| Test Dosyası | Test Sayısı | Durum |
-| --- | --- | --- |
-| tests/report.test.ts | 8 | ✅ |
-| tests/thresholds.test.ts | 18 | ✅ |
-| tests/config.test.ts | 16 | ✅ |
-| tests/config-override.test.ts | 14 | ✅ |
-| tests/smoke.test.ts | 1 | ✅ |
-| tests/generator.test.ts | 14 | ✅ |
-| **Toplam** | **71** | **✅ 71/71** |
+| Test Dosyası                  | Test Sayısı | Durum        |
+| ----------------------------- | ----------- | ------------ |
+| tests/report.test.ts          | 8           | ✅           |
+| tests/thresholds.test.ts      | 18          | ✅           |
+| tests/config.test.ts          | 16          | ✅           |
+| tests/config-override.test.ts | 14          | ✅           |
+| tests/smoke.test.ts           | 1           | ✅           |
+| tests/generator.test.ts       | 14          | ✅           |
+| **Toplam**                    | **71**      | **✅ 71/71** |
 
 Çalıştırma: `pnpm --filter @vetniva/load-test test`
 
 ## 7 Senaryo Kataloğu
 
-| # | Anahtar | API | P95 (ms) | RPS | Profil |
-| --- | --- | --- | --- | --- | --- |
-| 1 | patient_search | GET /api/v1/clinic/patients | 200 | 200 | pilot |
-| 2 | calendar | GET /api/v1/calendar/appointments | 300 | 50 | pilot |
-| 3 | patient_timeline | GET /api/v1/clinic/patients/:id/timeline | 500 | 30 | pilot |
-| 4 | stock_query | GET /api/v1/inventory/stock | 400 | 40 | pilot |
-| 5 | pos | POST /api/v1/petshop/sales | 500 | 50/saat | pilot |
-| 6 | report | GET /api/v1/reports/finance | 1500 | 5 | pilot |
-| 7 | error_center | GET /api/v1/superadmin/error-events | 600 | 30 | pilot |
+| #   | Anahtar          | API                                      | P95 (ms) | RPS     | Profil |
+| --- | ---------------- | ---------------------------------------- | -------- | ------- | ------ |
+| 1   | patient_search   | GET /api/v1/clinic/patients              | 200      | 200     | pilot  |
+| 2   | calendar         | GET /api/v1/calendar/appointments        | 300      | 50      | pilot  |
+| 3   | patient_timeline | GET /api/v1/clinic/patients/:id/timeline | 500      | 30      | pilot  |
+| 4   | stock_query      | GET /api/v1/inventory/stock              | 400      | 40      | pilot  |
+| 5   | pos              | POST /api/v1/petshop/sales               | 500      | 50/saat | pilot  |
+| 6   | report           | GET /api/v1/reports/finance              | 1500     | 5       | pilot  |
+| 7   | error_center     | GET /api/v1/superadmin/error-events      | 600      | 30      | pilot  |
 
 ## Yük Profili Threshold Matrisi
 
 | Profil | P95 (ms) | P99 (ms) | Max Hata Oranı | Min RPS |
-| --- | --- | --- | --- | --- |
-| smoke | 300 | 600 | 0% | 1 |
-| pilot | 500 | 1000 | %1 | 10 |
-| stress | 1500 | 3000 | %5 | 50 |
+| ------ | -------- | -------- | -------------- | ------- |
+| smoke  | 300      | 600      | 0%             | 1       |
+| pilot  | 500      | 1000     | %1             | 10      |
+| stress | 1500     | 3000     | %5             | 50      |
 
 ## k6 Script Yapısı
 

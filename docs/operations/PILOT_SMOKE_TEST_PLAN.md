@@ -12,12 +12,12 @@ API doğrudan erişim yok (BFF pattern); tüm akış web üzerinden.
 
 Demo kullanıcılar:
 
-| Email | Şifre | Rol |
-| --- | --- | --- |
-| `owner@pilot.vetniva.local` | `VetNiva-Owner-2026!` | OWNER |
-| `owner2@pilot.vetniva.local` | `VetNiva-Owner2-2026!` | OWNER |
-| `vet@pilot.vetniva.local` | `VetNiva-Vet-2026!` | VETERINARIAN |
-| `staff@pilot.vetniva.local` | `VetNiva-Staff-2026!` | STAFF |
+| Email                        | Şifre                  | Rol          |
+| ---------------------------- | ---------------------- | ------------ |
+| `owner@pilot.vetniva.local`  | `VetNiva-Owner-2026!`  | OWNER        |
+| `owner2@pilot.vetniva.local` | `VetNiva-Owner2-2026!` | OWNER        |
+| `vet@pilot.vetniva.local`    | `VetNiva-Vet-2026!`    | VETERINARIAN |
+| `staff@pilot.vetniva.local`  | `VetNiva-Staff-2026!`  | STAFF        |
 
 Tenant: `pilot-vet-kadikoy` (`11c6beec-7c64-4cf6-9cb7-d9ea6fd5c8a1`)
 Branch: `b203d16a-91e2-49c0-b9d7-9bdc55fdf60d`
@@ -40,11 +40,13 @@ Branch: `b203d16a-91e2-49c0-b9d7-9bdc55fdf60d`
 ### 2.2 Diğer Roller
 
 Aynı akışı sırayla:
+
 - `vet@pilot.vetniva.local` → VETERINARIAN dashboard
 - `staff@pilot.vetniva.local` → STAFF dashboard
 - `owner2@pilot.vetniva.local` → OWNER dashboard
 
 **Her biri için:**
+
 - [ ] Login 200
 - [ ] Role-based menü görünür
 - [ ] Sidebar'da farklı modüller (OWNER: tümü, VETERINARIAN: klinik, STAFF: klinik sınırlı)
@@ -184,17 +186,17 @@ verileri görmeli. Farklı tenant testi için tenant bazlı veri gerekli
 
 ## 9. Smoke Test Sonuç Tablosu
 
-| # | Adım | Beklenen | Durum |
-| --- | --- | --- | --- |
-| 1 | Health check | 200 | ☐ |
-| 2 | Login (4 user) | 200 | ☐ |
-| 3 | Klinik akış (muayene→reçete→fatura→tahsilat) | 201×4 | ☐ |
-| 4 | Stok düşümü | Stok 1 azalır | ☐ |
-| 5 | KVKK bilgilendirmesi | Görünür | ☐ |
-| 6 | Onboarding wizard | Açılır + çalışır | ☐ |
-| 7 | Cross-tenant izolasyon | Aynı tenant = aynı veri | ☐ |
-| 8 | Audit trail | Event görünür | ☐ |
-| 9 | 401/403/404 hata yönetimi | Doğru mesajlar | ☐ |
+| #   | Adım                                         | Beklenen                | Durum |
+| --- | -------------------------------------------- | ----------------------- | ----- |
+| 1   | Health check                                 | 200                     | ☐     |
+| 2   | Login (4 user)                               | 200                     | ☐     |
+| 3   | Klinik akış (muayene→reçete→fatura→tahsilat) | 201×4                   | ☐     |
+| 4   | Stok düşümü                                  | Stok 1 azalır           | ☐     |
+| 5   | KVKK bilgilendirmesi                         | Görünür                 | ☐     |
+| 6   | Onboarding wizard                            | Açılır + çalışır        | ☐     |
+| 7   | Cross-tenant izolasyon                       | Aynı tenant = aynı veri | ☐     |
+| 8   | Audit trail                                  | Event görünür           | ☐     |
+| 9   | 401/403/404 hata yönetimi                    | Doğru mesajlar          | ☐     |
 
 ## 10. Bilinen Sınırlamalar (Pilot)
 

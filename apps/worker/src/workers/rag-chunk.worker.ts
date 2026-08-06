@@ -24,7 +24,10 @@ import {
 import { logger } from "../logger.js";
 import { getRedisConnection } from "../queues/connection.js";
 import { RAG_CHUNK_QUEUE_NAME } from "../queues/rag-chunk.queue.js";
-import { finishJobRun, startJobRun } from "../observability/job-run-reporter.js";
+import {
+  finishJobRun,
+  startJobRun,
+} from "../observability/job-run-reporter.js";
 
 /**
  * Worker seçenekleri. Concurrency 1: docs dosya sistemi aynı
@@ -114,10 +117,7 @@ export function getRagChunkWorker(): Worker {
     );
 
     worker.on("ready", () => {
-      logger.info(
-        { queue: RAG_CHUNK_QUEUE_NAME },
-        "rag-chunk worker hazır",
-      );
+      logger.info({ queue: RAG_CHUNK_QUEUE_NAME }, "rag-chunk worker hazır");
     });
     worker.on("failed", (job, error) => {
       logger.error(

@@ -19,12 +19,12 @@ VetNiva tenant veri dışa aktarma (GOAL-125, FAZ-12) hazır:
 
 ## Unit Test Sonuçları
 
-| Test Dosyası | Test Sayısı | Durum |
-| --- | --- | --- |
-| tests/pii-masker.test.ts | 9 | ✅ |
-| tests/export.test.ts | 12 | ✅ |
-| tests/prisma-data-source.test.ts | 10 | 🟡 DB gerekli (port 55432) |
-| **Toplam (DB olmadan)** | **21** | **✅ 21/21** |
+| Test Dosyası                     | Test Sayısı | Durum                      |
+| -------------------------------- | ----------- | -------------------------- |
+| tests/pii-masker.test.ts         | 9           | ✅                         |
+| tests/export.test.ts             | 12          | ✅                         |
+| tests/prisma-data-source.test.ts | 10          | 🟡 DB gerekli (port 55432) |
+| **Toplam (DB olmadan)**          | **21**      | **✅ 21/21**               |
 
 Çalıştırma: `pnpm --filter @vetniva/tenant-export exec vitest run --exclude='**/prisma-data-source.test.ts'`
 
@@ -73,20 +73,20 @@ pnpm --filter @vetniva/tenant-export exec node --import tsx src/cli-export.ts \
 
 **Maskelenen PII alanları (örnek):**
 
-| Orijinal | Maskelenmiş |
-| --- | --- |
-| `firstName: "Demo"` | `De******mo` |
-| `lastName: "Owner"` | `Ow******er` |
+| Orijinal                      | Maskelenmiş                                      |
+| ----------------------------- | ------------------------------------------------ |
+| `firstName: "Demo"`           | `De******mo`                                     |
+| `lastName: "Owner"`           | `Ow******er`                                     |
 | `email: "demo@vetniva.local"` | `de******************************************al` |
-| `phone: "+905550000000"` | `+9***************************00` |
+| `phone: "+905550000000"`      | `+9***************************00`                |
 
 ## 3 Data Source Modu
 
-| Mod | Açıklama | Kullanım |
-| --- | --- | --- |
-| Empty (default) | Boş dataset | Schema validation + dry-run |
-| `--with-demo-data` | Sentetik kimliksiz veri | CI/CD smoke test |
-| `--with-prisma` | Gerçek DB bağlantısı | Production export |
+| Mod                | Açıklama                | Kullanım                    |
+| ------------------ | ----------------------- | --------------------------- |
+| Empty (default)    | Boş dataset             | Schema validation + dry-run |
+| `--with-demo-data` | Sentetik kimliksiz veri | CI/CD smoke test            |
+| `--with-prisma`    | Gerçek DB bağlantısı    | Production export           |
 
 ## Canlı Prisma Runbook
 
@@ -128,14 +128,14 @@ teyitli PII'yi mask'ler (e-posta/TCKN/telefon).
 
 ## Tenant Export vs KVKK Export Farkı
 
-| Özellik | Tenant Export (GOAL-125) | KVKK Export (GOAL-126) |
-| --- | --- | --- |
-| Amaç | Tenant'ın verisini taşıma | Veri sahibinin talebi |
-| PII mask | ✅ Strict (default) | ❌ Yok (veri sahibine) |
-| Format | JSON / CSV | JSON |
-| Kapsam | 10 dataset | 7 dataset |
-| Audit event | `audit:tenant.export.created` | `audit:kvkk.export.applied` |
-| Tetikleyen | SUPERADMIN, OWNER | Veri sahibi (portal) veya DPO |
+| Özellik     | Tenant Export (GOAL-125)      | KVKK Export (GOAL-126)        |
+| ----------- | ----------------------------- | ----------------------------- |
+| Amaç        | Tenant'ın verisini taşıma     | Veri sahibinin talebi         |
+| PII mask    | ✅ Strict (default)           | ❌ Yok (veri sahibine)        |
+| Format      | JSON / CSV                    | JSON                          |
+| Kapsam      | 10 dataset                    | 7 dataset                     |
+| Audit event | `audit:tenant.export.created` | `audit:kvkk.export.applied`   |
+| Tetikleyen  | SUPERADMIN, OWNER             | Veri sahibi (portal) veya DPO |
 
 ## Yapılmayanlar / Pilot Kapsamı Dışı
 

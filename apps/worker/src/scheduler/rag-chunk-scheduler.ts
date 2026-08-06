@@ -144,10 +144,7 @@ export function startRagChunkScheduler(
 ): NodeJS.Timeout {
   const handle = setInterval(() => {
     void runRagChunkSchedulerTick().catch((err: unknown) => {
-      logger.error(
-        { err },
-        "rag-chunk scheduler tick fatal hatasi",
-      );
+      logger.error({ err }, "rag-chunk scheduler tick fatal hatasi");
     });
   }, intervalMs);
   // Worker process tek scheduler instance calistirmali.

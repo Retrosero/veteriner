@@ -120,7 +120,7 @@ PATIENT DETAIL: Page breadcrumb “Hastalar / Pamuk”. Header with refined pale
 NEW PATIENT: Page title “Yeni Hasta Kaydı”; clear two-column form in quiet sections. Section “Hasta Sahibi”: searchable existing owner select plus “+ Yeni Hasta Sahibi”. Section “Hayvan Bilgileri”: Adı, Tür segmented control Kedi/Köpek/Kuş, Irk, Cinsiyet, Doğum tarihi, Renk, Mikroçip no. Section “Sağlık Uyarıları”: Alerjiler, Kronik durumlar, Not. Use subtle validation under one intentionally invalid microchip field. Sticky bottom bar has “Vazgeç” and “Kaydet”.
 ```
 
-### 4. 
+### 4.
 
 ### 5. Muayene
 

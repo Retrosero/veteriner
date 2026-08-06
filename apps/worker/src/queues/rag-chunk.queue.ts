@@ -64,10 +64,7 @@ export function getRagChunkQueue(): Queue {
       defaultJobOptions: DEFAULT_JOB_OPTIONS,
     });
     queue.on("error", (error) => {
-      logger.error(
-        { err: error, queue: RAG_CHUNK_QUEUE_NAME },
-        "Queue hatası",
-      );
+      logger.error({ err: error, queue: RAG_CHUNK_QUEUE_NAME }, "Queue hatası");
     });
   }
   return queue;

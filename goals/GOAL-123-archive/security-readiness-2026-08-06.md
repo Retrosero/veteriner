@@ -20,54 +20,54 @@ girdisi ile `cli-run.ts` üzerinden çalıştırılabilir.
 
 ## Unit Test Sonuçları
 
-| Test Dosyası | Test Sayısı | Durum |
-| --- | --- | --- |
-| tests/report.test.ts | 8 | ✅ |
-| tests/config.test.ts | 12 | ✅ |
-| tests/severity.test.ts | 15 | ✅ |
-| tests/rate-limit.test.ts | 6 | ✅ |
-| tests/file-upload.test.ts | 8 | ✅ |
-| tests/smoke.test.ts | 1 | ✅ |
-| tests/auth-roles.test.ts | 9 | ✅ |
-| tests/sql-injection.test.ts | 8 | ✅ |
-| tests/tenant-isolation.test.ts | 10 | ✅ |
-| tests/runner.test.ts | 10 | ✅ |
-| tests/xss-csrf.test.ts | 13 | ✅ |
-| **Toplam** | **100** | **✅ 100/100** |
+| Test Dosyası                   | Test Sayısı | Durum          |
+| ------------------------------ | ----------- | -------------- |
+| tests/report.test.ts           | 8           | ✅             |
+| tests/config.test.ts           | 12          | ✅             |
+| tests/severity.test.ts         | 15          | ✅             |
+| tests/rate-limit.test.ts       | 6           | ✅             |
+| tests/file-upload.test.ts      | 8           | ✅             |
+| tests/smoke.test.ts            | 1           | ✅             |
+| tests/auth-roles.test.ts       | 9           | ✅             |
+| tests/sql-injection.test.ts    | 8           | ✅             |
+| tests/tenant-isolation.test.ts | 10          | ✅             |
+| tests/runner.test.ts           | 10          | ✅             |
+| tests/xss-csrf.test.ts         | 13          | ✅             |
+| **Toplam**                     | **100**     | **✅ 100/100** |
 
 Çalıştırma: `pnpm --filter @vetniva/security-test test`
 
 ## Canlı API Kontrol Kataloğu (14)
 
-| # | Kategori | Anahtar | ASVS | Severity | Adım |
-| --- | --- | --- | --- | --- | --- |
-| 1 | auth | auth_brute_force_lockout | L2 | high | 2 |
-| 2 | auth | auth_expired_token | L2 | high | 2 |
-| 3 | auth | auth_refresh_token_rotation | L2 | high | 2 |
-| 4 | authz | authz_role_escalation | L2 | critical | 1 |
-| 5 | idor | idor_cross_tenant_patient | L1 | critical | 1 |
-| 6 | idor | idor_cross_tenant_owner | L1 | critical | 1 |
-| 7 | xss | xss_input_sanitization | L1 | high | 1 |
-| 8 | xss | xss_output_encoding | L1 | low | 1 |
-| 9 | csrf | csrf_state_changing_token | L1 | medium | 1 |
-| 10 | sql_injection | sql_injection_search | L1 | critical | 1 |
-| 11 | file_upload | file_upload_mime_validation | L1 | high | 1 |
-| 12 | file_upload | file_upload_size_limit | L1 | medium | 1 |
-| 13 | rate_limit | rate_limit_per_ip | L2 | medium | 1 |
-| 14 | tenant_isolation | tenant_isolation_header_override | L2 | critical | 1 |
+| #   | Kategori         | Anahtar                          | ASVS | Severity | Adım |
+| --- | ---------------- | -------------------------------- | ---- | -------- | ---- |
+| 1   | auth             | auth_brute_force_lockout         | L2   | high     | 2    |
+| 2   | auth             | auth_expired_token               | L2   | high     | 2    |
+| 3   | auth             | auth_refresh_token_rotation      | L2   | high     | 2    |
+| 4   | authz            | authz_role_escalation            | L2   | critical | 1    |
+| 5   | idor             | idor_cross_tenant_patient        | L1   | critical | 1    |
+| 6   | idor             | idor_cross_tenant_owner          | L1   | critical | 1    |
+| 7   | xss              | xss_input_sanitization           | L1   | high     | 1    |
+| 8   | xss              | xss_output_encoding              | L1   | low      | 1    |
+| 9   | csrf             | csrf_state_changing_token        | L1   | medium   | 1    |
+| 10  | sql_injection    | sql_injection_search             | L1   | critical | 1    |
+| 11  | file_upload      | file_upload_mime_validation      | L1   | high     | 1    |
+| 12  | file_upload      | file_upload_size_limit           | L1   | medium   | 1    |
+| 13  | rate_limit       | rate_limit_per_ip                | L2   | medium   | 1    |
+| 14  | tenant_isolation | tenant_isolation_header_override | L2   | critical | 1    |
 
 ## ASVS L1 / L2 Kapsam Matrisi
 
-| ASVS Bölümü | L1 Kapsam | L2 Kapsam |
-| --- | --- | --- |
-| V2 — Kimlik Doğrulama | (3 kontrolün L2 karşılığı) | ✅ 3/3 |
-| V4 — Erişim Kontrolü | idor, authz | rate_limit, tenant_isolation |
-| V5 — Validation/Sanitization | xss, sql_injection | — |
-| V6 — Kriptografi | (token rotation L2 kapsamında) | refresh_token |
-| V7 — Hata Yönetimi | (test runner'ında) | — |
-| V9 — İletişim | (HTTPS — altyapı katmanı) | — |
-| V11 — İş Mantığı | file_upload | brute_force |
-| V13 — API | csrf | — |
+| ASVS Bölümü                  | L1 Kapsam                      | L2 Kapsam                    |
+| ---------------------------- | ------------------------------ | ---------------------------- |
+| V2 — Kimlik Doğrulama        | (3 kontrolün L2 karşılığı)     | ✅ 3/3                       |
+| V4 — Erişim Kontrolü         | idor, authz                    | rate_limit, tenant_isolation |
+| V5 — Validation/Sanitization | xss, sql_injection             | —                            |
+| V6 — Kriptografi             | (token rotation L2 kapsamında) | refresh_token                |
+| V7 — Hata Yönetimi           | (test runner'ında)             | —                            |
+| V9 — İletişim                | (HTTPS — altyapı katmanı)      | —                            |
+| V11 — İş Mantığı             | file_upload                    | brute_force                  |
+| V13 — API                    | csrf                           | —                            |
 
 **Toplamda 14 OWASP ASVS kontrolü tanımlı** (7 L1, 7 L2). L3 ve üzeri
 için pilot kapsamında kontrol yok; FAZ-13+ (Phase 13 haric) production
@@ -101,13 +101,13 @@ Mevcut pilot verisi:
 
 ## Severity Dağılımı (14 kontrol)
 
-| Severity | Sayı | Yüzde |
-| --- | --- | --- |
-| critical | 5 | 35.7% |
-| high | 4 | 28.6% |
-| medium | 3 | 21.4% |
-| low | 1 | 7.1% |
-| info | 0 | 0% |
+| Severity   | Sayı   | Yüzde    |
+| ---------- | ------ | -------- |
+| critical   | 5      | 35.7%    |
+| high       | 4      | 28.6%    |
+| medium     | 3      | 21.4%    |
+| low        | 1      | 7.1%     |
+| info       | 0      | 0%       |
 | **Toplam** | **14** | **100%** |
 
 5 kritik kontrol production release öncesi yeşil olmalı:

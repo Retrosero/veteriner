@@ -31,10 +31,7 @@ import { logger } from "../logger.js";
  */
 export const ragChunkJobPayloadSchema = z.object({
   /** Kaynak dizin (ör. `docs/workflows`, `docs/pages`). */
-  source: z
-    .string()
-    .min(1, "source zorunludur")
-    .default("docs/workflows"),
+  source: z.string().min(1, "source zorunludur").default("docs/workflows"),
   /** Çıktı dosyası (YAML). */
   output: z
     .string()
@@ -136,13 +133,7 @@ async function runProducerAsChild(
 
   // Windows'ta forward slash'ler Node tarafından kabul edilir, ancak
   // shellescape için normalleştirilir.
-  const args = [
-    "--import",
-    "tsx",
-    producerEntry,
-    "--source",
-    data.source,
-  ];
+  const args = ["--import", "tsx", producerEntry, "--source", data.source];
 
   return new Promise<RagChunkJobResult>((resolve, reject) => {
     const child = spawn(process.execPath, args, {

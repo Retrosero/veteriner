@@ -8,32 +8,32 @@
 
 ## Genel Durum
 
-| Kategori | Durum | Not |
-| --- | --- | --- |
-| Coolify deploy | ✅ Tamamlandı | api, web, worker 3/3 healthy |
-| Custom domain | ✅ Tamamlandı | `vetniva.appsgo.cloud` (DNS tunnel) |
-| Pilot veri seed | ✅ Tamamlandı | 4 users, 2 owners, 2 patients |
-| Auth/login | ✅ Doğrulandı | sessionToken, role-based |
-| Tenant API endpoints | ✅ Doğrulandı | patients, owners, notifications |
-| CI gates (lint, type, i18n, docs) | ✅ 4/4 yeşil | (bkz. aşağıda) |
-| Unit test | ✅ 100+ test yeşil | security 100, load 71, backup 8, kvkk 16, tenant-export 21 |
-| Backup dry-run | ✅ Tamamlandı | tier matrix allOk:true |
-| Tenant export dry-run | ✅ Tamamlandı | 3 row, 4 PII mask'lendi |
-| KVKK unit test | ✅ Tamamlandı | 16/16 |
-| Security readiness report | ✅ Tamamlandı | 14 ASVS kontrolü |
-| Load test readiness report | ✅ Tamamlandı | 7 senaryo + 71 unit |
-| RLS regression test | 🟡 Planlanmış | pilot veri ile coverage eklenecek |
-| FAZ-13 entegrasyonları | ❌ Pilot dışı | SMS, payment, e-SMM |
+| Kategori                          | Durum              | Not                                                        |
+| --------------------------------- | ------------------ | ---------------------------------------------------------- |
+| Coolify deploy                    | ✅ Tamamlandı      | api, web, worker 3/3 healthy                               |
+| Custom domain                     | ✅ Tamamlandı      | `vetniva.appsgo.cloud` (DNS tunnel)                        |
+| Pilot veri seed                   | ✅ Tamamlandı      | 4 users, 2 owners, 2 patients                              |
+| Auth/login                        | ✅ Doğrulandı      | sessionToken, role-based                                   |
+| Tenant API endpoints              | ✅ Doğrulandı      | patients, owners, notifications                            |
+| CI gates (lint, type, i18n, docs) | ✅ 4/4 yeşil       | (bkz. aşağıda)                                             |
+| Unit test                         | ✅ 100+ test yeşil | security 100, load 71, backup 8, kvkk 16, tenant-export 21 |
+| Backup dry-run                    | ✅ Tamamlandı      | tier matrix allOk:true                                     |
+| Tenant export dry-run             | ✅ Tamamlandı      | 3 row, 4 PII mask'lendi                                    |
+| KVKK unit test                    | ✅ Tamamlandı      | 16/16                                                      |
+| Security readiness report         | ✅ Tamamlandı      | 14 ASVS kontrolü                                           |
+| Load test readiness report        | ✅ Tamamlandı      | 7 senaryo + 71 unit                                        |
+| RLS regression test               | 🟡 Planlanmış      | pilot veri ile coverage eklenecek                          |
+| FAZ-13 entegrasyonları            | ❌ Pilot dışı      | SMS, payment, e-SMM                                        |
 
 ## CI Gates (5 Ağustos 2026 itibarıyla)
 
-| Gate | Komut | Sonuç |
-| --- | --- | --- |
-| Lint | `pnpm lint` | ✅ 0 error / 0 warning (15 paket) |
-| Type-check | `pnpm type-check` | ✅ 18/18 paket |
-| i18n parity | `pnpm i18n:check` | ✅ tr-TR / en-GB eşit |
-| docs:check | `pnpm docs:check` | ✅ 0 hata (1638 uyarı — orphan alanlar, FAZ-13+) |
-| Unit test | `pnpm test` | 🟡 1 pre-existing fail (prisma-data-source: port 55432 DB gerekli) |
+| Gate        | Komut             | Sonuç                                                              |
+| ----------- | ----------------- | ------------------------------------------------------------------ |
+| Lint        | `pnpm lint`       | ✅ 0 error / 0 warning (15 paket)                                  |
+| Type-check  | `pnpm type-check` | ✅ 18/18 paket                                                     |
+| i18n parity | `pnpm i18n:check` | ✅ tr-TR / en-GB eşit                                              |
+| docs:check  | `pnpm docs:check` | ✅ 0 hata (1638 uyarı — orphan alanlar, FAZ-13+)                   |
+| Unit test   | `pnpm test`       | 🟡 1 pre-existing fail (prisma-data-source: port 55432 DB gerekli) |
 
 ## Production Release Akışı
 
@@ -97,13 +97,13 @@ KVKK_DEFAULT_COUNTRY=TR
 
 Coolify UI'da 5 uygulama oluştur:
 
-| App | Image | Port | Domain |
-| --- | --- | --- | --- |
-| vetniva-postgres | postgres:16-alpine | 5432 | (internal) |
-| vetniva-redis | redis:7-alpine | 6379 | (internal) |
-| vetniva-api | vetniva/api:latest | 3001 | api.vetniva.com.tr |
-| vetniva-web | vetniva/web:latest | 3000 | vetniva.com.tr |
-| vetniva-worker | vetniva/worker:latest | (no port) | (internal) |
+| App              | Image                 | Port      | Domain             |
+| ---------------- | --------------------- | --------- | ------------------ |
+| vetniva-postgres | postgres:16-alpine    | 5432      | (internal)         |
+| vetniva-redis    | redis:7-alpine        | 6379      | (internal)         |
+| vetniva-api      | vetniva/api:latest    | 3001      | api.vetniva.com.tr |
+| vetniva-web      | vetniva/web:latest    | 3000      | vetniva.com.tr     |
+| vetniva-worker   | vetniva/worker:latest | (no port) | (internal)         |
 
 ### Adım 6: Migration + Smoke
 

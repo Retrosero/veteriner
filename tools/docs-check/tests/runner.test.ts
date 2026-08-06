@@ -128,7 +128,8 @@ describe("docs-check", () => {
         (i) => i.path === "field:tenant.name",
       );
       expect(fieldIssues.length).toBeGreaterThan(0);
-      expect(fieldIssues[0]?.severity).toBe("error");
+      // c3845ab: orphan field artık CI gate'i kırmasın; severity "warning" (follow-up: auto-generate)
+      expect(fieldIssues[0]?.severity).toBe("warning");
     } finally {
       await (await import("node:fs/promises")).writeFile(fieldsPath, original);
     }
