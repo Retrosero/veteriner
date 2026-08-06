@@ -217,6 +217,13 @@ function extractEntityFromSchemaName(
   schemaName: string,
   fileEntity: string | null,
 ): string | null {
+  // Dosya adından gelen entity her zaman öncelikli. Tek doğruluk
+  // kaynağı dosya adı; `lab-order.ts` içindeki her şema `lab_order`
+  // entity'sine aittir. Şema adından çıkarım yalnızca dosya adı
+  // ipucu vermediğinde kullanılır (örn. ortak `common.ts` içinde
+  // birden fazla entity için şema).
+  if (fileEntity) return fileEntity;
+
   // Önce bilinen entity listesinde ara.
   const m = schemaName.match(SCHEMA_NAME_RE);
   if (m && m[0]) {
@@ -236,8 +243,7 @@ function extractEntityFromSchemaName(
     }
   }
 
-  // Varlık adı schema isminde yoksa dosya adından gelen entity'yi kullan.
-  return fileEntity;
+  return null;
 }
 
 /**

@@ -318,6 +318,7 @@ bu katalogda yer almasını zorunlu kılar.
 | `VET-IMG-0002` | Geçersiz durum geçişi            | 409  | warning  | server | Sırasıyla ordered → scheduled → performed → reported → completed. |
 | `VET-IMG-0003` | Katalogda görüntüleme testi yok  | 422  | warning  | server | imagingTestId kontrol edin.                                       |
 | `VET-IMG-0004` | Katalog pasif                    | 422  | warning  | server | Aktif bir görüntüleme testi seçin.                                |
+| `VET-IMG-0005` | Rapor düzeltme/amend için rapor yok | 404  | warning  | server | Önce rapor yazın (perform + report).                              |
 | `VET-IMG-0006` | Rapor onayı için yanlış durum    | 409  | warning  | server | Sipariş reported/amended olmalı.                                  |
 | `VET-IMG-0007` | Rapor bulunamadı                 | 422  | warning  | server | Önce rapor yazın.                                                 |
 | `VET-IMG-0008` | Son rapor zaten onaylanmış       | 409  | warning  | server | Düzeltme için amend kullanın.                                     |

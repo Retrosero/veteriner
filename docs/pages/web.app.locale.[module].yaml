@@ -1,0 +1,70 @@
+page_id: web.app.locale.module
+route: "/[locale]/[module]"
+module: navigation
+title_key: navigation.module.title
+purpose:
+  tr-TR: "Klinik modüllerinin (patients, appointments, consultation, ...) genel giriş sayfası. Sol menüden seçilen modülün başlık ve açıklama ekranını gösterir; modüle özel detay/veri modülleri kendi alt rotaları üzerinden yüklenir."
+  en-GB: "Generic entry page for clinic modules (patients, appointments, consultation, ...). Shows the selected module's title and description from the side menu; module-specific data lives in its own sub-routes."
+allowed_roles:
+  - VETERINARIAN
+  - STAFF
+  - OWNER
+required_permissions: []
+prerequisites:
+  - "Aktif tenant üyeliği."
+  - "URL'deki [module] segmenti whitelist'te olmalı (MODULES sözlüğü)."
+fields:
+  - key: module.title
+    label_key: navigation.module.title
+    description:
+      tr-TR: "Modülün görünen başlığı (örn. 'Hastalar', 'Randevular')."
+      en-GB: "Module's display title (e.g. 'Patients', 'Appointments')."
+    type: string
+    required: true
+  - key: module.description
+    label_key: navigation.module.description
+    description:
+      tr-TR: "Modülün kısa açıklaması."
+      en-GB: "Short description of the module."
+    type: string
+    required: true
+  - key: module.nextStep
+    label_key: navigation.module.nextStep
+    description:
+      tr-TR: "Bu modülde gerçekleştirilecek bir sonraki işlem için bilgilendirme mesajı."
+      en-GB: "Informational message about the next step in this module."
+    type: string
+    required: false
+actions:
+  - key: open_module
+    description:
+      tr-TR: "Modülün ana sayfasını açar."
+      en-GB: "Opens the module's main page."
+    permission: ""
+  - key: navigate_to_subroute
+    description:
+      tr-TR: "Modüle özel alt rotalara (örn. /clinic/patients/:id) gider."
+      en-GB: "Navigates to module-specific sub-routes (e.g. /clinic/patients/:id)."
+    permission: ""
+step_by_step:
+  tr-TR:
+    - "Sol menüden bir modül seç veya /<locale>/<module> yoluna git."
+    - "Modül whitelist'te değilse 404 sayfası görüntülenir."
+    - "Modül geçerliyse başlık, açıklama ve bir sonraki adım mesajı gösterilir."
+  en-GB:
+    - "Pick a module from the side menu or navigate to /<locale>/<module>."
+    - "If the module is not whitelisted, a 404 page is shown."
+    - "If valid, the title, description and next-step message are rendered."
+possible_errors:
+  - code: VET-CLINIC-0001
+    tr-TR: "Modül bulunamadı."
+    en-GB: "Module not found."
+related_pages:
+  - web.app.locale
+  - web.app.locale.dashboard
+related_api: []
+keywords:
+  tr-TR: [modül, navigation, menü, module, sidebar]
+  en-GB: [module, navigation, menu, sidebar]
+version: "1.0.0"
+last_verified_at: "2026-08-06"

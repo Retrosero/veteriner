@@ -60,6 +60,42 @@ const NODE_BUILTINS = new Set([
 const TAILWIND_BREAKPOINTS = new Set(["sm", "md", "lg", "xl", "2xl"]);
 
 /**
+ * Bilinen false positive kalıpları. Bunlar CSS özellik adları
+ * (`display:none`, `overflow:hidden`, vb.) veya üç parçalı izin
+ * formunun yanlışlıkla eşleştiği string'lerdir. Tarayıcı,
+ * permission matrisi girdisi olarak değerlendirilmez.
+ */
+const CSS_PROPERTY_VALUES = new Set([
+  "display:none",
+  "overflow:hidden",
+  "overflow:auto",
+  "overflow:scroll",
+  "text-align:left",
+  "text-align:right",
+  "text-align:center",
+  "text-align:justify",
+  "align-items:flex-start",
+  "align-items:flex-end",
+  "align-items:center",
+  "justify-content:flex-start",
+  "justify-content:flex-end",
+  "justify-content:center",
+  "justify-content:space-between",
+  "flex-direction:row",
+  "flex-direction:column",
+  "position:relative",
+  "position:absolute",
+  "position:fixed",
+  "position:sticky",
+  "cursor:pointer",
+  "cursor:not-allowed",
+  "visibility:hidden",
+  "visibility:visible",
+  "white-space:nowrap",
+  "word-break:break-all",
+]);
+
+/**
  * Bir değerin Node.js yerleşik modül adı olup olmadığını belirler.
  * @param perm
  */
@@ -101,6 +137,7 @@ export async function scanPermissions(root: string): Promise<string[]> {
       if (!perm) continue;
       if (isNodeBuiltin(perm)) continue;
       if (looksLikeTailwindClass(perm)) continue;
+      if (CSS_PROPERTY_VALUES.has(perm)) continue;
       seen.add(perm);
     }
   }
