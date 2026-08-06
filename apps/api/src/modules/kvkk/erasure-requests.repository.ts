@@ -68,7 +68,7 @@ export class ErasureRequestsRepository {
           requestedBy: args.requestedBy,
           reason: args.reason,
           status: "pending",
-          redactedFields: [] as unknown as Prisma.InputJsonValue,
+          redactedFields: [],
           retainedMedicalRecords: 0,
           metadata:
             (args.metadata as Prisma.InputJsonValue | null) ?? Prisma.JsonNull,
@@ -152,8 +152,7 @@ export class ErasureRequestsRepository {
           status: args.status,
           completedAt: new Date(),
           completedBy: args.completedBy,
-          redactedFields:
-            args.redactedFields as unknown as Prisma.InputJsonValue,
+          redactedFields: args.redactedFields,
           retainedMedicalRecords: args.retainedMedicalRecords,
         },
       }),

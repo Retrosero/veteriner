@@ -13,10 +13,7 @@ vi.mock("./api-client", () => ({
 }));
 
 import { apiRequest } from "./api-client";
-import {
-  askOnboarding,
-  listOnboardingScenarios,
-} from "./onboarding-client";
+import { askOnboarding, listOnboardingScenarios } from "./onboarding-client";
 
 const mockedApiRequest = vi.mocked(apiRequest);
 
@@ -110,55 +107,54 @@ describe("askOnboarding", () => {
       currentPage: "/tr-TR/patients",
     });
     expect(result).toEqual(response);
-    expect(mockedApiRequest).toHaveBeenCalledWith(
-      "/api/v1/onboarding/ask",
-      {
-        method: "POST",
-        credentials: "include",
-        body: {
-          query: "Yeni hasta nasıl eklenir?",
-          locale: "tr-TR",
-          role: "VETERINARIAN",
-          currentPage: "/tr-TR/patients",
-        },
+    expect(mockedApiRequest).toHaveBeenCalledWith("/api/v1/onboarding/ask", {
+      method: "POST",
+      credentials: "include",
+      body: {
+        query: "Yeni hasta nasıl eklenir?",
+        locale: "tr-TR",
+        role: "VETERINARIAN",
+        currentPage: "/tr-TR/patients",
       },
-    );
+    });
   });
 
   it("soru kırpılır (trim)", async () => {
     mockedApiRequest.mockResolvedValueOnce({
       ok: true,
-      data: { query_id: "q-2", answer: "", generationSource: "template" as const },
+      data: {
+        query_id: "q-2",
+        answer: "",
+        generationSource: "template" as const,
+      },
       status: 200,
       requestId: null,
     });
     await askOnboarding({ locale: "tr-TR", query: "  aşı  " });
-    expect(mockedApiRequest).toHaveBeenCalledWith(
-      "/api/v1/onboarding/ask",
-      {
-        method: "POST",
-        credentials: "include",
-        body: { query: "aşı", locale: "tr-TR" },
-      },
-    );
+    expect(mockedApiRequest).toHaveBeenCalledWith("/api/v1/onboarding/ask", {
+      method: "POST",
+      credentials: "include",
+      body: { query: "aşı", locale: "tr-TR" },
+    });
   });
 
   it("opsiyonel alanlar (role, currentPage) gönderilmez", async () => {
     mockedApiRequest.mockResolvedValueOnce({
       ok: true,
-      data: { query_id: "q-3", answer: "", generationSource: "template" as const },
+      data: {
+        query_id: "q-3",
+        answer: "",
+        generationSource: "template" as const,
+      },
       status: 200,
       requestId: null,
     });
     await askOnboarding({ locale: "en-GB", query: "test" });
-    expect(mockedApiRequest).toHaveBeenCalledWith(
-      "/api/v1/onboarding/ask",
-      {
-        method: "POST",
-        credentials: "include",
-        body: { query: "test", locale: "en-GB" },
-      },
-    );
+    expect(mockedApiRequest).toHaveBeenCalledWith("/api/v1/onboarding/ask", {
+      method: "POST",
+      credentials: "include",
+      body: { query: "test", locale: "en-GB" },
+    });
   });
 
   it("API hata döndüğünde uniform no-match cevabı döner", async () => {

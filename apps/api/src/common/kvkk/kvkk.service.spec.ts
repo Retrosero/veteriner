@@ -35,7 +35,11 @@ interface KvkkServiceHarness {
 }
 
 function asString(value: unknown): string {
-  return typeof value === "string" ? value : value instanceof Error ? value.message : String(value);
+  return typeof value === "string"
+    ? value
+    : value instanceof Error
+      ? value.message
+      : String(value);
 }
 
 async function createHarness(): Promise<KvkkServiceHarness> {
@@ -43,7 +47,9 @@ async function createHarness(): Promise<KvkkServiceHarness> {
     providers: [KvkkService],
   }).compile();
   const service = moduleRef.get(KvkkService);
-  const logSpy = vi.spyOn(service["logger"], "warn").mockImplementation(() => undefined);
+  const logSpy = vi
+    .spyOn(service["logger"], "warn")
+    .mockImplementation(() => undefined);
   return { service, logSpy };
 }
 
@@ -98,8 +104,12 @@ describe("KvkkService", () => {
         requestedBy: "u",
         reason: "r",
       });
-      expect(result.requestedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
-      expect(new Date(result.requestedAt).toISOString()).toBe(result.requestedAt);
+      expect(result.requestedAt).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
+      );
+      expect(new Date(result.requestedAt).toISOString()).toBe(
+        result.requestedAt,
+      );
     });
 
     it("audit log warn seviyesinde yazılır (PII olmadan)", async () => {
@@ -202,14 +212,17 @@ describe("KvkkService", () => {
     it("exportedAt ISO 8601 formatında döner", async () => {
       const { service } = await createHarness();
       const result = await service.exportTenantData("t");
-      expect(result.exportedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      expect(result.exportedAt).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
+      );
     });
 
     it("audit log tenant ID hash'ini (8 karakter) loglar; PII sızdırmaz", async () => {
       const { service, logSpy } = await createHarness();
       await service.exportTenantData("tenant-very-secret-id");
       const calls = logSpy.mock.calls.map((c) => asString(c[0]));
-      const msg = calls.find((m) => m.includes("KVKK tenant data export")) ?? "";
+      const msg =
+        calls.find((m) => m.includes("KVKK tenant data export")) ?? "";
       expect(msg).toContain("KVKK tenant data export");
       // tenant_hash 8 karakter hex olmali
       expect(msg).toMatch(/tenant_hash=[a-f0-9]{8}/);

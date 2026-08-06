@@ -77,7 +77,9 @@ const appPrisma =
         const url = new URL(runtimeDatabaseUrl);
         url.username = appRoleName;
         url.password = appRolePassword;
-        return new PrismaClient({ datasources: { db: { url: url.toString() } } });
+        return new PrismaClient({
+          datasources: { db: { url: url.toString() } },
+        });
       })()
     : null;
 
@@ -542,35 +544,32 @@ describe("Cross-Tenant IDOR RLS (GOAL-017 pilot coverage)", () => {
   // 2) Owner cross-tenant IDOR
   // -------------------------------------------------------------------------
 
-  itDb(
-    "owner cross-tenant read tenant bağlamıyla null döner",
-    async () => {
-      if (!ownerRepo) return;
-      const sameTenantLookup = await ownerRepo.findPersistedById(
-        PILOT_TENANT_ID,
-        FOREIGN_OWNER_RECORD_ID,
-      );
-      expect(sameTenantLookup).toBeNull();
+  itDb("owner cross-tenant read tenant bağlamıyla null döner", async () => {
+    if (!ownerRepo) return;
+    const sameTenantLookup = await ownerRepo.findPersistedById(
+      PILOT_TENANT_ID,
+      FOREIGN_OWNER_RECORD_ID,
+    );
+    expect(sameTenantLookup).toBeNull();
 
-      // Pilot kendi owner'ları doğru tenant bağlamında görünür (negatif kanıt).
-      const ownOwner = await ownerRepo.findPersistedById(
-        PILOT_TENANT_ID,
-        PILOT_OWNER_RECORD_ID,
-      );
-      const ownOwner2 = await ownerRepo.findPersistedById(
-        PILOT_TENANT_ID,
-        PILOT_OWNER2_RECORD_ID,
-      );
-      expect(ownOwner?.id).toBe(PILOT_OWNER_RECORD_ID);
-      expect(ownOwner2?.id).toBe(PILOT_OWNER2_RECORD_ID);
+    // Pilot kendi owner'ları doğru tenant bağlamında görünür (negatif kanıt).
+    const ownOwner = await ownerRepo.findPersistedById(
+      PILOT_TENANT_ID,
+      PILOT_OWNER_RECORD_ID,
+    );
+    const ownOwner2 = await ownerRepo.findPersistedById(
+      PILOT_TENANT_ID,
+      PILOT_OWNER2_RECORD_ID,
+    );
+    expect(ownOwner?.id).toBe(PILOT_OWNER_RECORD_ID);
+    expect(ownOwner2?.id).toBe(PILOT_OWNER2_RECORD_ID);
 
-      // Pilot owner'ları yabancı bağlamda görünmez.
-      const crossLeak = await withTenant(FOREIGN_TENANT_ID, (tx) =>
-        tx.owner.findUnique({ where: { id: PILOT_OWNER_RECORD_ID } }),
-      );
-      expect(crossLeak).toBeNull();
-    },
-  );
+    // Pilot owner'ları yabancı bağlamda görünmez.
+    const crossLeak = await withTenant(FOREIGN_TENANT_ID, (tx) =>
+      tx.owner.findUnique({ where: { id: PILOT_OWNER_RECORD_ID } }),
+    );
+    expect(crossLeak).toBeNull();
+  });
 
   // -------------------------------------------------------------------------
   // 3) Examination cross-tenant
@@ -665,24 +664,23 @@ describe("Cross-Tenant IDOR RLS (GOAL-017 pilot coverage)", () => {
       if (!authRepo) return;
       // Pilot davetinin foreign tenant bağlamında user_invitations tablosunda
       // aranması → RLS null döner.
-      const foreignScopeLookup = await withTenant(
-        FOREIGN_TENANT_ID,
-        (tx) => tx.userInvitation.findUnique({ where: { id: INVITATION_A_ID } }),
+      const foreignScopeLookup = await withTenant(FOREIGN_TENANT_ID, (tx) =>
+        tx.userInvitation.findUnique({ where: { id: INVITATION_A_ID } }),
       );
       expect(foreignScopeLookup).toBeNull();
 
       // Pilot bağlamında aynı davet görünür.
-      const pilotScopeLookup = await withTenant(
-        PILOT_TENANT_ID,
-        (tx) => tx.userInvitation.findUnique({ where: { id: INVITATION_A_ID } }),
+      const pilotScopeLookup = await withTenant(PILOT_TENANT_ID, (tx) =>
+        tx.userInvitation.findUnique({ where: { id: INVITATION_A_ID } }),
       );
       expect(pilotScopeLookup?.id).toBe(INVITATION_A_ID);
 
       // authRepository token lookup: pilot daveti foreign user bağlamında
       // görünür (auth.repo RLS kullanmaz; tenant doğrulaması service'te).
       // Davetin kendisi pilot tenant'a ait — service katmanı bu kontrolü yapar.
-      const invitationByHash =
-        await authRepo.findInvitationByTokenHash(INVITATION_A_TOKEN_HASH);
+      const invitationByHash = await authRepo.findInvitationByTokenHash(
+        INVITATION_A_TOKEN_HASH,
+      );
       expect(invitationByHash?.tenantId).toBe(PILOT_TENANT_ID);
       expect(invitationByHash?.tenantId).not.toBe(FOREIGN_TENANT_ID);
     },
@@ -762,18 +760,16 @@ describe("Cross-Tenant IDOR RLS (GOAL-017 pilot coverage)", () => {
       });
 
       // Eski token artık geçersiz: revokedAt dolu.
-      const rotatedSession = await withTenant(
-        PILOT_TENANT_ID,
-        (tx) => tx.userSession.findUnique({ where: { id: SESSION_A_ID } }),
+      const rotatedSession = await withTenant(PILOT_TENANT_ID, (tx) =>
+        tx.userSession.findUnique({ where: { id: SESSION_A_ID } }),
       );
       expect(rotatedSession?.revokedAt).toBeInstanceOf(Date);
       expect(rotatedSession?.revokedReason).toBe("rotated");
       expect(rotatedSession?.replacedById).toBe(SESSION_B_ID);
 
       // Yeni session (B) hâlâ aktif ve pilot bağlamda görünür.
-      const newSession = await withTenant(
-        PILOT_TENANT_ID,
-        (tx) => tx.userSession.findUnique({ where: { id: SESSION_B_ID } }),
+      const newSession = await withTenant(PILOT_TENANT_ID, (tx) =>
+        tx.userSession.findUnique({ where: { id: SESSION_B_ID } }),
       );
       expect(newSession?.revokedAt).toBeNull();
       expect(newSession?.tokenHash).toBe(SESSION_B_TOKEN_HASH);
@@ -807,9 +803,8 @@ describe("Cross-Tenant IDOR RLS (GOAL-017 pilot coverage)", () => {
       // Service katmanı (portal.service.ts) bunu 410 VET-PORTAL-0001 olarak
       // döner; burada RLS seviyesinde accepted state'in korunduğunu
       // doğruluyoruz.
-      const after = await withTenant(
-        PILOT_TENANT_ID,
-        (tx) => tx.userInvitation.findUnique({ where: { id: INVITATION_A_ID } }),
+      const after = await withTenant(PILOT_TENANT_ID, (tx) =>
+        tx.userInvitation.findUnique({ where: { id: INVITATION_A_ID } }),
       );
       expect(after?.status).toBe("accepted");
       expect(after?.acceptedAt).toBeInstanceOf(Date);
@@ -821,9 +816,8 @@ describe("Cross-Tenant IDOR RLS (GOAL-017 pilot coverage)", () => {
           data: { status: "accepted" },
         });
       });
-      const stillAccepted = await withTenant(
-        PILOT_TENANT_ID,
-        (tx) => tx.userInvitation.findUnique({ where: { id: INVITATION_A_ID } }),
+      const stillAccepted = await withTenant(PILOT_TENANT_ID, (tx) =>
+        tx.userInvitation.findUnique({ where: { id: INVITATION_A_ID } }),
       );
       expect(stillAccepted?.status).toBe("accepted");
 

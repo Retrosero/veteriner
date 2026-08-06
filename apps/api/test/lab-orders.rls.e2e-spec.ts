@@ -383,11 +383,10 @@ describe("Lab Orders PostgreSQL RLS", () => {
     // Tenant A'nın actor'ı ile Tenant B'ye ait bir order'ı güncellemek
     // → RLS USING clause o satırı göstermediği için 0 satır etkilenir
     // → P2025 → repository null döner.
-    const result = await labOrdersRepository.update(
-      tenantAId,
-      seededOrderBId,
-      { status: "cancelled", cancelReason: "cross-tenant probe" },
-    );
+    const result = await labOrdersRepository.update(tenantAId, seededOrderBId, {
+      status: "cancelled",
+      cancelReason: "cross-tenant probe",
+    });
     expect(result).toBeNull();
 
     const untouched = await adminPrisma.labOrder.findUnique({
