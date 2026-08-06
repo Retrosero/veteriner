@@ -522,11 +522,45 @@ i18n:check` parity temiz geçti. Dokümantasyon uyarıları Faz 10–12 yayın
   üzerinde tam E2E smoke 19/19 geçti.
 
 > 6 Agustos 2026 lint kapisi: @vetniva/worker icin 3 hata + 1 uyari
-(ag-chunk-job.ts -- kullanilmayan start, var olmayan rule icin
-eslint-disable yorumu, dinamik equire('node:fs')), ve
-@vetniva/backup icin 11 hata + 1 uyari (
-ow.toISOString() unsafe
-call -- options.now ?? (() => new Date())() operator onceligi, import
-order, anchored cron regex gerekceli disable) temizlendi. pnpm lint
-14/14 gorevde sifir hata / sifir uyari ile gecti. Commit: 57f5575 +
-456ab38.
+> (
+> ag-chunk-job.ts -- kullanilmayan start, var olmayan rule icin
+> eslint-disable yorumu, dinamik
+> equire('node:fs')), ve
+> @vetniva/backup icin 11 hata + 1 uyari (
+> ow.toISOString() unsafe
+> call -- options.now ?? (() => new Date())() operator onceligi, import
+> order, anchored cron regex gerekceli disable) temizlendi. pnpm lint
+> 14/14 gorevde sifir hata / sifir uyari ile gecti. Commit: 57f5575 +
+> 456ab38.
+
+## 6 Ağustos 2026 — Pilot Smoke Test + Production Hardening (c3845ab..e3e4209)
+
+### CI Gates
+
+- docs:check: 2012 hata → 0 (c3845ab)
+- Next.js 14.2.18 → 14.2.35 (e3e4209, CVE: 1 critical + 12 high)
+
+### Yeni Endpoint'ler
+
+- KVKK erasure request flow (ac8473d): POST/GET/apply/export
+- 4 OpenAPI docs (docs/api/api.*_kvkk_*.md)
+
+### Test Coverage
+
+- 295+ test yeşil (security 100, load 71, backup 8, kvkk 16,
+  tenant-export 21, onboarding 31)
+- 50 yeni RLS E2E testi (8c5006e: 5 modül × 10 senaryo)
+- 10 cross-tenant IDOR senaryosu (69fea2d)
+
+### CI/CD
+
+- Smoke test Playwright workflow (2622eae): 9 senaryo
+- docs:check Tailwind prefix filter (dd31ac0)
+
+### Hazırlık Raporları
+
+- GOAL-121 pilot smoke test planı (53bb66a)
+- GOAL-122/123/124/125/126/127 readiness raporları
+- GOAL-017 RLS coverage raporu (8842be6)
+- GOAL-117 onboarding polish readiness
+- GOAL-123 CVE audit (80c6837, 50 zafiyet)

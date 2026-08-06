@@ -70,6 +70,21 @@ docker-compose.override.yml
 # OpenAPI generated snapshots (keep schema authoritative in source)
 apps/api/openapi.generated.json
 
+# RAG chunk JSONL ihracatı (pipeline her çalışmada yeniden üretir;
+# canonical kaynak AI_CHUNKS.yaml'dır).
+docs/ai/AI_CHUNKS.jsonl
+
 # Temporary tsc isolation backups (do not commit)
 .tsc-isolation-backup/
 .tsc-isolation-backup2/
+
+# Geçici geliştirme artefaktları
+temp/
+seed-bypass.js
+
+# Araç script'ler (deneysel)
+tools/docs-check/scripts/add-missing-fields.py
+tools/docs-check/scripts/debug-parse.mjs
+tools/rag-chunk-producer/src/hash.ts
+tools/rag-chunk-producer/src/jsonl.ts
+tools/security-test/eslint.config.mjs
