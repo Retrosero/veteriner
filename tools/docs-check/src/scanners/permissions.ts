@@ -57,7 +57,23 @@ const NODE_BUILTINS = new Set([
   "async_hooks",
 ]);
 
-const TAILWIND_BREAKPOINTS = new Set(["sm", "md", "lg", "xl", "2xl"]);
+/**
+ * Tailwind utility sınıfı önekleri (state + breakpoint). Bu öneklerle
+ * başlayan string'ler `colon` ayraçlı Tailwind class'ıdır; permission
+ * matrisi girdisi olarak değerlendirilmez. Yeni önek eklenirse
+ * buraya eklenmesi gerekir.
+ */
+const TAILWIND_PREFIXES = new Set([
+  // Breakpoints
+  "sm", "md", "lg", "xl", "2xl",
+  // State önekleri
+  "hover", "focus", "active", "disabled", "visited", "checked",
+  "first", "last", "odd", "even", "empty", "required", "optional",
+  "group-hover", "group-focus", "peer-hover", "peer-focus",
+  "before", "after", "placeholder", "file", "marker", "selection",
+  "rtl", "ltr",
+  "print", "dark", "motion-safe", "motion-reduce",
+]);
 
 /**
  * Bilinen false positive kalıpları. Bunlar CSS özellik adları
@@ -104,13 +120,14 @@ function isNodeBuiltin(perm: string): boolean {
 }
 
 /**
- * Bir colon içeren değerin Tailwind breakpoint sınıfı olup olmadığını belirler.
+ * Bir colon içeren değerin Tailwind utility sınıfı olup olmadığını belirler.
+ * Önek listesi (TAILWIND_PREFIXES) state + breakpoint öneklerini kapsar.
  * @param perm
  */
 function looksLikeTailwindClass(perm: string): boolean {
   const parts = perm.split(":");
   if (parts.length < 2) return false;
-  return TAILWIND_BREAKPOINTS.has(parts[0] ?? "");
+  return TAILWIND_PREFIXES.has(parts[0] ?? "");
 }
 
 /**
