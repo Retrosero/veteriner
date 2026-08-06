@@ -22,7 +22,6 @@
 import { Badge } from "@vetniva/ui";
 import { useState } from "react";
 
-
 import { apiRequest } from "@/lib/api-client";
 import { getLabels, type Locale } from "@/lib/labels";
 import { safeLabelLookup } from "@/lib/safe-lookup";

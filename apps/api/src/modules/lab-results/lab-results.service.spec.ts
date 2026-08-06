@@ -260,17 +260,13 @@ class LabResultsRepositoryTestDouble {
   ): Promise<LabResultRecord | null> {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
-    const toIso = (
-      v: string | Date | null | undefined,
-    ): string | null => {
+    const toIso = (v: string | Date | null | undefined): string | null => {
       if (v === null || v === undefined) return null;
       return v instanceof Date ? v.toISOString() : v;
     };
     if (patch.value !== undefined) rec.value = patch.value;
-    if (patch.valueNumeric !== undefined)
-      rec.valueNumeric = patch.valueNumeric;
-    if (patch.abnormalFlag !== undefined)
-      rec.abnormalFlag = patch.abnormalFlag;
+    if (patch.valueNumeric !== undefined) rec.valueNumeric = patch.valueNumeric;
+    if (patch.abnormalFlag !== undefined) rec.abnormalFlag = patch.abnormalFlag;
     if (patch.attachments !== undefined) rec.attachments = patch.attachments;
     if (patch.notes !== undefined) rec.notes = patch.notes;
     if (patch.status !== undefined) rec.status = patch.status;
@@ -325,7 +321,8 @@ describe("LabResultsService", () => {
   let labOrders: StubLabOrdersService;
 
   beforeEach(() => {
-    repo = new LabResultsRepositoryTestDouble() as unknown as LabResultsRepository;
+    repo =
+      new LabResultsRepositoryTestDouble() as unknown as LabResultsRepository;
     audit = makeAudit();
     labOrders = new StubLabOrdersService();
     service = new LabResultsService(

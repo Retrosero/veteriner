@@ -119,10 +119,7 @@ function detailOptString(
  * @param d
  * @param key
  */
-function detailHas(
-  d: Record<string, unknown>,
-  key: string,
-): boolean {
+function detailHas(d: Record<string, unknown>, key: string): boolean {
   const entry = Object.entries(d).find(([k]) => k === key);
   if (!entry) return false;
   return Boolean(entry[1]);
@@ -168,8 +165,7 @@ function renderAuditDetails(
       const url = detailOptString(d, "url");
       return (
         <span>
-          {labels.systemLabel}{" "}
-          <strong>{detailString(d, "system", "?")}</strong>
+          {labels.systemLabel} <strong>{detailString(d, "system", "?")}</strong>
           {externalId ? (
             <span className="ml-2 font-mono">{externalId}</span>
           ) : null}
@@ -362,9 +358,13 @@ export function ErrorEventDetail({
       aria-label={detailLabels.title}
       className="space-y-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
     >
-      <h2 className="text-lg font-medium text-slate-900">{detailLabels.title}</h2>
+      <h2 className="text-lg font-medium text-slate-900">
+        {detailLabels.title}
+      </h2>
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
-      {!event ? <p className="text-sm text-slate-500">{detailLabels.loading}</p> : null}
+      {!event ? (
+        <p className="text-sm text-slate-500">{detailLabels.loading}</p>
+      ) : null}
       {event ? (
         <>
           <dl className="grid gap-3 text-sm sm:grid-cols-2">
@@ -482,7 +482,11 @@ export function ErrorEventDetail({
               >
                 <p>{note.body}</p>
                 <p className="mt-1 text-xs text-slate-500">
-                  {safeLabelLookup(detailLabels.notes.visibility, note.visibility, note.visibility)}{" "}
+                  {safeLabelLookup(
+                    detailLabels.notes.visibility,
+                    note.visibility,
+                    note.visibility,
+                  )}{" "}
                   · {new Date(note.createdAt).toLocaleString()}
                 </p>
               </article>
@@ -552,7 +556,11 @@ export function ErrorEventDetail({
                       <span>{new Date(entry.occurredAt).toLocaleString()}</span>
                       <span>·</span>
                       <span>
-                        {safeLabelLookup(auditLabels.actionLabels, entry.action, entry.action)}
+                        {safeLabelLookup(
+                          auditLabels.actionLabels,
+                          entry.action,
+                          entry.action,
+                        )}
                       </span>
                       <span>·</span>
                       <span>

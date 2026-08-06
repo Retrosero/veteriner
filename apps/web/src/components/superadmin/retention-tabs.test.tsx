@@ -28,7 +28,10 @@ describe("RetentionTabs", () => {
   beforeEach(() => {
     mocks.request.mockReset();
     // default: policy listesi boş döner
-    mocks.request.mockResolvedValue({ ok: true, data: { items: [], total: 0 } });
+    mocks.request.mockResolvedValue({
+      ok: true,
+      data: { items: [], total: 0 },
+    });
   });
 
   it("üç sekmeyi render eder ve default olarak Policies seçili gelir", async () => {
@@ -56,10 +59,9 @@ describe("RetentionTabs", () => {
     const policiesTab = view.getByRole("tab", { name: "Politikalar" });
     policiesTab.focus();
     fireEvent.keyDown(policiesTab, { key: "ArrowRight" });
-    fireEvent.keyDown(
-      view.getByRole("tab", { name: "Sweep Geçmişi" }),
-      { key: "ArrowRight" },
-    );
+    fireEvent.keyDown(view.getByRole("tab", { name: "Sweep Geçmişi" }), {
+      key: "ArrowRight",
+    });
     expect(view.getByRole("tab", { name: "Effective" })).toHaveAttribute(
       "aria-selected",
       "true",

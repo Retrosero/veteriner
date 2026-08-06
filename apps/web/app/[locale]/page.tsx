@@ -155,48 +155,59 @@ export default async function HomePage({
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#F7F8F7]">
       {/* Skip-link */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded-md focus:bg-clinic-700 focus:px-3 focus:py-2 focus:text-sm focus:text-white"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded-md focus:bg-[#167A4A] focus:px-3 focus:py-2 focus:text-sm focus:text-white"
       >
         {isEn ? "Skip to main content" : "İçeriğe geç"}
       </a>
 
       {/* Header */}
-      <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <header className="border-b border-[#E1E5E2] bg-white/90 backdrop-blur-md sticky top-0 z-30">
+        <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link
             href={`/${locale}`}
-            className="flex items-center gap-2"
+            className="flex items-center gap-3"
             aria-label={labels.brand.name}
           >
             <span
               aria-hidden="true"
-              className="grid h-9 w-9 place-items-center rounded-lg bg-clinic-700 text-white"
+              className="grid h-[34px] w-[34px] place-items-center rounded-lg bg-[#0D4D2E] text-white shadow-sm"
             >
-              <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-                <circle cx="12" cy="14" r="6" />
-                <circle cx="6" cy="8" r="2.5" />
-                <circle cx="18" cy="8" r="2.5" />
-                <circle cx="9" cy="4" r="2" />
-                <circle cx="15" cy="4" r="2" />
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5"
+              >
+                <circle cx="12" cy="14" r="4" fill="currentColor" />
+                <circle cx="8" cy="8" r="1.75" fill="currentColor" />
+                <circle cx="16" cy="8" r="1.75" fill="currentColor" />
+                <circle cx="10" cy="4.5" r="1.25" fill="currentColor" />
+                <circle cx="14" cy="4.5" r="1.25" fill="currentColor" />
               </svg>
             </span>
-            <span className="text-base font-semibold text-gray-900">
-              {labels.brand.name}
-            </span>
+            <div className="flex flex-col">
+              <span className="text-[17px] font-semibold leading-tight text-[#0D4D2E]">
+                {labels.brand.name}
+              </span>
+              <span className="text-xs text-[#5F6368]">Klinik Yönetimi</span>
+            </div>
           </Link>
           <nav
             aria-label={isEn ? "Primary" : "Birincil"}
-            className="flex items-center gap-2"
+            className="flex items-center gap-3"
           >
             <Link
-              href={`/${locale}/login`}
-              className="hidden text-sm font-medium text-gray-700 hover:text-clinic-700 sm:inline-block"
+              href={`/${locale}/dashboard`}
+              className="text-sm font-medium text-[#0D4D2E] hover:text-[#10633B] bg-[#E6F4EC] px-3.5 py-2 rounded-lg transition-colors"
             >
-              {labels.login.submit}
+              {isEn ? "Go to Dashboard" : "Dashboard'a Git →"}
             </Link>
             <Link href={`/${locale}/login`}>
               <Button size="sm">{labels.login.submit}</Button>
@@ -208,36 +219,38 @@ export default async function HomePage({
       {/* Main */}
       <main id="main-content" aria-label={isEn ? "Main content" : "Ana içerik"}>
         {/* Hero */}
-        <section aria-labelledby="hero-title" className="bg-white">
+        <section aria-labelledby="hero-title" className="bg-[#F7F8F7]">
           <div className="mx-auto max-w-7xl px-4 pb-16 pt-12 sm:px-6 sm:pt-16 lg:px-8 lg:pt-20">
             <div className="mx-auto max-w-3xl text-center">
-              <span className="inline-flex items-center gap-2 rounded-full border border-clinic-200 bg-clinic-50 px-3 py-1 text-xs font-medium text-clinic-700">
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#E1E5E2] bg-white px-3.5 py-1.5 text-xs font-medium text-[#0D4D2E] shadow-sm">
                 <span
                   aria-hidden="true"
-                  className="h-1.5 w-1.5 rounded-full bg-clinic-600"
+                  className="h-2 w-2 rounded-full bg-[#248A3D]"
                 />
                 {labels.brand.tagline}
               </span>
               <h1
                 id="hero-title"
-                className="mt-6 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl"
+                className="mt-6 text-4xl font-bold tracking-tight text-[#1D1D1F] sm:text-5xl"
               >
                 {isEn
                   ? "One platform for your clinic, your patients, and your team."
                   : "Kliniğiniz, hastalarınız ve ekibiniz için tek platform."}
               </h1>
-              <p className="mt-5 text-lg leading-8 text-gray-600">
+              <p className="mt-5 text-lg leading-8 text-[#5F6368]">
                 {isEn
                   ? "Manage appointments, exams, vaccinations, sales, and reports in a single, fast interface designed for veterinary teams."
                   : "Randevu, muayene, aşı, satış ve raporları klinik ekipleri için tasarlanmış hızlı ve bütünleşik bir arayüzde yönetin."}
               </p>
               <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-                <Link href={`/${locale}/login`}>
-                  <Button size="lg">{labels.login.submit}</Button>
+                <Link href={`/${locale}/dashboard`}>
+                  <Button size="lg">
+                    {isEn ? "Open Dashboard" : "Klinik Dashboard'unu Aç"}
+                  </Button>
                 </Link>
-                <Link href={`/${locale}/health`}>
+                <Link href={`/${locale}/login`}>
                   <Button size="lg" variant="secondary">
-                    {isEn ? "System status" : "Sistem Durumu"}
+                    {labels.login.submit}
                   </Button>
                 </Link>
               </div>

@@ -13,16 +13,11 @@
  * @since GOAL-082 (FAZ-8) anestezi takip core
  */
 
-import { Injectable, Optional } from "@nestjs/common";
-import type {
-  AnesthesiaComplicationRecord as DbComplication,
-  AnesthesiaMedicationRecord as DbMedication,
-  AnesthesiaRecord as DbAnesthesia,
-  AnesthesiaStaffRecord as DbStaff,
-  AnesthesiaVitalRecord as DbVital,
-  Prisma,
-} from "@prisma/client";
 import { randomUUID } from "node:crypto";
+
+import { Injectable, Optional } from "@nestjs/common";
+
+import { PrismaService } from "../../prisma/prisma.service.js";
 
 import type {
   AnesthesiaComplicationRecord,
@@ -31,7 +26,14 @@ import type {
   AnesthesiaStaffRecord,
   AnesthesiaVitalRecord,
 } from "../../common/anesthesia/anesthesia.types.js";
-import { PrismaService } from "../../prisma/prisma.service.js";
+import type {
+  AnesthesiaComplicationRecord as DbComplication,
+  AnesthesiaMedicationRecord as DbMedication,
+  AnesthesiaRecord as DbAnesthesia,
+  AnesthesiaStaffRecord as DbStaff,
+  AnesthesiaVitalRecord as DbVital,
+  Prisma,
+} from "@prisma/client";
 import type { AnesthesiaStatus } from "@vetniva/contracts";
 
 /** Patch tipi (kısmi güncelleme). */

@@ -423,7 +423,7 @@ export class LogRetentionRepository implements OnModuleInit {
   ): Prisma.LogRetentionSweepUncheckedCreateInput {
     return {
       ...rec,
-      buckets: rec.buckets as Prisma.InputJsonValue,
+      buckets: rec.buckets,
       startedAt: new Date(rec.startedAt),
       finishedAt: new Date(rec.finishedAt),
     };

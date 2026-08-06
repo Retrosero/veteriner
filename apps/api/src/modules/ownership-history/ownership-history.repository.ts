@@ -23,17 +23,18 @@
 import { randomUUID } from "node:crypto";
 
 import { Injectable, Optional } from "@nestjs/common";
+
 import { PrismaService } from "../../prisma/prisma.service.js";
-import type {
-  OwnershipHistory as PrismaOwnershipHistory,
-  Prisma,
-} from "@prisma/client";
 
 import type {
   Ownership,
   OwnershipCreateInput,
   OwnershipFilters,
 } from "../../common/ownership/ownership.types.js";
+import type {
+  OwnershipHistory as PrismaOwnershipHistory,
+  Prisma,
+} from "@prisma/client";
 
 /** Persist edilmiş ownership record. */
 export interface OwnershipRecord {

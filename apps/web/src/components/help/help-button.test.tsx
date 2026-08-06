@@ -243,11 +243,7 @@ describe("HelpButton", () => {
     vi.useFakeTimers();
     try {
       render(
-        <HelpButton
-          locale={LOCALE}
-          apiBaseUrl={API_BASE}
-          labels={LABELS}
-        />,
+        <HelpButton locale={LOCALE} apiBaseUrl={API_BASE} labels={LABELS} />,
       );
       fireEvent.click(screen.getByTestId("help-button"));
       // 20 sn gecir, sonra etkilesim.

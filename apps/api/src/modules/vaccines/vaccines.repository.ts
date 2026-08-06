@@ -13,19 +13,20 @@
  * @since GOAL-050 (FAZ-5) aşı kataloğu ve protokoller core
  */
 
-import { Injectable, Optional } from "@nestjs/common";
-import type {
-  Prisma,
-  VaccineProtocolRecord as DbProtocol,
-} from "@prisma/client";
 import { randomUUID } from "node:crypto";
-import { PrismaService } from "../../prisma/prisma.service.js";
+
+import { Injectable, Optional } from "@nestjs/common";
 
 import {
   toVaccineProtocol,
   type VaccineProtocolRecord,
 } from "../../common/vaccines/vaccine.types.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
+import type {
+  Prisma,
+  VaccineProtocolRecord as DbProtocol,
+} from "@prisma/client";
 import type {
   SpeciesTarget,
   VaccineCategory,
@@ -69,7 +70,7 @@ export class VaccinesRepository {
         data: {
           ...record,
           defaultDose: record.defaultDose as Prisma.InputJsonValue,
-          steps: record.steps as Prisma.InputJsonValue,
+          steps: record.steps,
           createdAt: new Date(record.createdAt),
           updatedAt: new Date(record.updatedAt),
           archivedAt: record.archivedAt ? new Date(record.archivedAt) : null,
@@ -127,9 +128,7 @@ export class VaccinesRepository {
       ...(p.defaultDose !== undefined
         ? { defaultDose: p.defaultDose as Prisma.InputJsonValue }
         : {}),
-      ...(p.steps !== undefined
-        ? { steps: p.steps as Prisma.InputJsonValue }
-        : {}),
+      ...(p.steps !== undefined ? { steps: p.steps } : {}),
       ...(p.totalDurationMonths !== undefined
         ? { totalDurationMonths: p.totalDurationMonths }
         : {}),

@@ -137,7 +137,10 @@ export function ErrorEventKpiSummary({
   return (
     <section
       aria-label={labels.title}
-      className={cn("grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4", className)}
+      className={cn(
+        "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4",
+        className,
+      )}
       role="group"
     >
       <KpiCell

@@ -76,21 +76,21 @@ export function DataTable<T>({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-lg border border-gray-200 bg-white",
+        "overflow-hidden rounded-[14px] border border-[#E1E5E2] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]",
         className,
       )}
     >
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+        <table className="min-w-full divide-y divide-[#ECEFED]">
           {caption ? <caption className="sr-only">{caption}</caption> : null}
-          <thead className="bg-gray-50">
+          <thead className="bg-[#F6F8F6]">
             <tr>
               {columns.map((col) => (
                 <th
                   key={col.key}
                   scope="col"
                   className={cn(
-                    "px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500",
+                    "px-5 py-3.5 text-left text-xs font-medium tracking-normal text-[#5F6368]",
                     col.align === "right" && "text-right",
                     col.align === "center" && "text-center",
                     col.className,
@@ -102,16 +102,16 @@ export function DataTable<T>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100" aria-busy={loading}>
+          <tbody className="divide-y divide-[#ECEFED]" aria-busy={loading}>
             {rows.length === 0 ? (
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-4 py-10 text-center"
+                  className="px-5 py-12 text-center"
                   role="status"
                 >
                   {empty ?? (
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-[#5F6368]">
                       Kayıt bulunamadı
                     </span>
                   )}
@@ -121,12 +121,15 @@ export function DataTable<T>({
               rows.map((row, index) => {
                 const key = getRowKey ? getRowKey(row, index) : String(index);
                 return (
-                  <tr key={key} className="transition-colors hover:bg-gray-50">
+                  <tr
+                    key={key}
+                    className="transition-colors hover:bg-[#F7FBF8]"
+                  >
                     {columns.map((col) => (
                       <td
                         key={col.key}
                         className={cn(
-                          "whitespace-nowrap px-4 py-3 text-sm text-gray-700",
+                          "whitespace-nowrap px-5 py-4 text-sm text-[#1D1D1F]",
                           col.align === "right" && "text-right",
                           col.align === "center" && "text-center",
                           col.className,

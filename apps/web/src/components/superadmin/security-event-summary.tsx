@@ -24,7 +24,6 @@ import { Badge } from "@vetniva/ui";
 import { cn } from "@vetniva/ui/cn";
 import { useEffect, useState } from "react";
 
-
 import { safeLabelLookup } from "@/lib/safe-lookup";
 
 import {
@@ -79,9 +78,7 @@ function indexBy<T extends { [k: string]: string | number }>(
     // runtime okuma aynı desen ile yapılır.
     const countEntry = Object.entries(row).find(([k]) => k === "count");
     const count =
-      countEntry && typeof countEntry[1] === "number"
-        ? countEntry[1]
-        : 0;
+      countEntry && typeof countEntry[1] === "number" ? countEntry[1] : 0;
     map.set(String(value), count);
   }
   return map;
@@ -145,11 +142,7 @@ export function SecurityEventSummary({
   const typeMap = indexBy(data.byType, "type");
 
   return (
-    <section
-      aria-label={sec.summaryHeading}
-      className="space-y-6"
-      role="group"
-    >
+    <section aria-label={sec.summaryHeading} className="space-y-6" role="group">
       <div>
         <h3 className="text-base font-semibold text-slate-900">
           {sec.summary.title}
@@ -231,7 +224,11 @@ export function SecurityEventSummary({
                       size="sm"
                       tone={severityTone(group.severity)}
                     >
-                      {safeLabelLookup(sec.severities, group.severity, group.severity)}
+                      {safeLabelLookup(
+                        sec.severities,
+                        group.severity,
+                        group.severity,
+                      )}
                     </Badge>
                   </div>
                   <p className="break-all font-mono text-xs text-slate-700">

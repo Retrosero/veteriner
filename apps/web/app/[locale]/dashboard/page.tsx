@@ -354,150 +354,150 @@ export default async function DashboardPage({
           role: locale === "en-GB" ? "Veterinarian" : "Veteriner",
         }}
       >
-      <PageHeader
-        title={labels.dashboard.sections.todayAppointments}
-        description={
-          <span>
-            {greeting},{" "}
-            <span className="font-medium text-gray-900">Dr. Ayşe</span> —{" "}
-            {today}
-          </span>
-        }
-        breadcrumb={[
-          { label: labels.nav.dashboard, href: `/${locale}` },
-          { label: labels.dashboard.sections.todayAppointments },
-        ]}
-      />
+        <PageHeader
+          title={labels.dashboard.sections.todayAppointments}
+          description={
+            <span>
+              {greeting},{" "}
+              <span className="font-medium text-gray-900">Dr. Ayşe</span> —{" "}
+              {today}
+            </span>
+          }
+          breadcrumb={[
+            { label: labels.nav.dashboard, href: `/${locale}` },
+            { label: labels.dashboard.sections.todayAppointments },
+          ]}
+        />
 
-      {/* KPI satırı */}
-      <section
-        aria-label="Günlük metrikler"
-        className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
-      >
-        <KpiCard
-          label={labels.dashboard.kpi.appointmentsToday}
-          value="12"
-          delta={2}
-          icon={ICONS.calendar}
-          hint="dünden"
-        />
-        <KpiCard
-          label={labels.dashboard.kpi.waitingPatients}
-          value="4"
-          delta={-1}
-          icon={ICONS.waiting}
-          hint="dünden"
-        />
-        <KpiCard
-          label={labels.dashboard.kpi.stockAlert}
-          value="3"
-          delta={1}
-          icon={ICONS.stock}
-          hint="son 24 saat"
-        />
-        <KpiCard
-          label={labels.dashboard.kpi.revenueToday}
-          value="₺4.250"
-          delta={12}
-          deltaFormat="percent"
-          icon={ICONS.cash}
-          hint="dünden"
-        />
-      </section>
-
-      {/* İki kolon: randevular + hızlı işlemler */}
-      <section className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* Bugünkü randevular */}
-        <div className="lg:col-span-2">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-base font-semibold text-gray-900">
-              {labels.dashboard.sections.todayAppointments}
-            </h3>
-            <a
-              href={`/${locale}/appointments`}
-              className="text-sm font-medium text-clinic-700 hover:text-clinic-800 hover:underline"
-            >
-              Tümünü gör →
-            </a>
-          </div>
-          <DataTable
-            columns={columns}
-            rows={SAMPLE_APPOINTMENTS}
-            getRowKey={(row) => row.id}
-            empty={
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-gray-700">
-                  {labels.dashboard.empty.noAppointments}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {labels.dashboard.empty.noAppointmentsHelp}
-                </p>
-              </div>
-            }
+        {/* KPI satırı */}
+        <section
+          aria-label="Günlük metrikler"
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        >
+          <KpiCard
+            label={labels.dashboard.kpi.appointmentsToday}
+            value="18"
+            delta={3}
+            icon={ICONS.calendar}
+            hint="dünden"
           />
-        </div>
+          <KpiCard
+            label={labels.dashboard.kpi.waitingPatients}
+            value="4"
+            delta={-1}
+            icon={ICONS.waiting}
+            hint="dünden"
+          />
+          <KpiCard
+            label={labels.dashboard.kpi.stockAlert}
+            value="3"
+            delta={1}
+            icon={ICONS.stock}
+            hint="son 24 saat"
+          />
+          <KpiCard
+            label={labels.dashboard.kpi.revenueToday}
+            value="₺12.480,00"
+            delta={15}
+            deltaFormat="percent"
+            icon={ICONS.cash}
+            hint="dünden"
+          />
+        </section>
 
-        {/* Hızlı işlemler */}
-        <div>
-          <h3 className="mb-3 text-base font-semibold text-gray-900">
-            {labels.dashboard.sections.quickActions}
-          </h3>
-          <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
-            <QuickAction
-              href={`/${locale}/patients/new`}
-              icon={ICONS.owner}
-              label={labels.dashboard.quickActions.newOwner}
-            />
-            <QuickAction
-              href={`/${locale}/patients/new?kind=animal`}
-              icon={ICONS.pet}
-              label={labels.dashboard.quickActions.newPatient}
-            />
-            <QuickAction
-              href={`/${locale}/appointments/new`}
-              icon={ICONS.appointment}
-              label={labels.dashboard.quickActions.newAppointment}
-            />
-            <QuickAction
-              href={`/${locale}/petshop/sales/new`}
-              icon={ICONS.sale}
-              label={labels.dashboard.quickActions.newSale}
-            />
-          </div>
-
-          {/* Sistem durumu kartı */}
-          <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4">
-            <div className="mb-3 flex items-center gap-2">
-              <span className="text-clinic-700">
-                <span className="block h-5 w-5">{ICONS.status}</span>
-              </span>
-              <h4 className="text-sm font-semibold text-gray-900">
-                {labels.dashboard.sections.systemStatus}
-              </h4>
+        {/* İki kolon: randevular + hızlı işlemler */}
+        <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {/* Bugünkü randevular */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-[#1D1D1F]">
+                {labels.dashboard.sections.todayAppointments}
+              </h3>
+              <a
+                href={`/${locale}/appointments`}
+                className="text-sm font-medium text-[#167A4A] hover:text-[#10633B] hover:underline"
+              >
+                Tümünü gör →
+              </a>
             </div>
-            <dl className="space-y-1.5 text-sm">
-              <SystemStatusRow label={labels.system.api} status="up" />
-              <SystemStatusRow
-                label={labels.system.database}
-                status="up"
-                meta="12ms"
-              />
-              <SystemStatusRow label={labels.system.queue} status="up" />
-              <SystemStatusRow
-                label={labels.system.version}
-                status="unknown"
-                meta="0.1.0 (devlocal)"
-              />
-            </dl>
-            <a
-              href={`/${locale}/health`}
-              className="mt-3 inline-flex text-xs font-medium text-clinic-700 hover:text-clinic-800 hover:underline"
-            >
-              {labels.system.detail} →
-            </a>
+            <DataTable
+              columns={columns}
+              rows={SAMPLE_APPOINTMENTS}
+              getRowKey={(row) => row.id}
+              empty={
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-[#1D1D1F]">
+                    {labels.dashboard.empty.noAppointments}
+                  </p>
+                  <p className="text-xs text-[#5F6368]">
+                    {labels.dashboard.empty.noAppointmentsHelp}
+                  </p>
+                </div>
+              }
+            />
           </div>
-        </div>
-      </section>
+
+          {/* Hızlı işlemler */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-[#1D1D1F]">
+              {labels.dashboard.sections.quickActions}
+            </h3>
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
+              <QuickAction
+                href={`/${locale}/patients/new`}
+                icon={ICONS.owner}
+                label={labels.dashboard.quickActions.newOwner}
+              />
+              <QuickAction
+                href={`/${locale}/patients/new?kind=animal`}
+                icon={ICONS.pet}
+                label={labels.dashboard.quickActions.newPatient}
+              />
+              <QuickAction
+                href={`/${locale}/appointments/new`}
+                icon={ICONS.appointment}
+                label={labels.dashboard.quickActions.newAppointment}
+              />
+              <QuickAction
+                href={`/${locale}/petshop/sales/new`}
+                icon={ICONS.sale}
+                label={labels.dashboard.quickActions.newSale}
+              />
+            </div>
+
+            {/* Sistem durumu kartı */}
+            <div className="mt-4 rounded-[14px] border border-[#E1E5E2] bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="text-[#167A4A]">
+                  <span className="block h-5 w-5">{ICONS.status}</span>
+                </span>
+                <h4 className="text-sm font-semibold text-[#1D1D1F]">
+                  {labels.dashboard.sections.systemStatus}
+                </h4>
+              </div>
+              <dl className="space-y-2 text-sm">
+                <SystemStatusRow label={labels.system.api} status="up" />
+                <SystemStatusRow
+                  label={labels.system.database}
+                  status="up"
+                  meta="12ms"
+                />
+                <SystemStatusRow label={labels.system.queue} status="up" />
+                <SystemStatusRow
+                  label={labels.system.version}
+                  status="unknown"
+                  meta="0.1.0 (devlocal)"
+                />
+              </dl>
+              <a
+                href={`/${locale}/health`}
+                className="mt-4 inline-flex text-xs font-medium text-[#167A4A] hover:text-[#10633B] hover:underline"
+              >
+                {labels.system.detail} →
+              </a>
+            </div>
+          </div>
+        </section>
       </AppShell>
       <HelpButton
         locale={locale}
@@ -508,13 +508,6 @@ export default async function DashboardPage({
   );
 }
 
-/**
- *
- * @param root0
- * @param root0.href
- * @param root0.icon
- * @param root0.label
- */
 function QuickAction({
   href,
   icon,
@@ -527,15 +520,15 @@ function QuickAction({
   return (
     <a
       href={href}
-      className="group flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-3 transition-colors hover:border-clinic-300 hover:bg-clinic-50/40"
+      className="group flex items-center gap-3.5 rounded-[14px] border border-[#E1E5E2] bg-white p-3.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:border-[#167A4A] hover:bg-[#F0F8F3]/50"
     >
       <span
         aria-hidden="true"
-        className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-clinic-50 text-clinic-700 transition-colors group-hover:bg-clinic-100"
+        className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#F0F8F3] text-[#0D4D2E] transition-colors group-hover:bg-[#E6F4EC]"
       >
         <span className="h-5 w-5">{icon}</span>
       </span>
-      <span className="text-sm font-medium text-gray-900">{label}</span>
+      <span className="text-sm font-medium text-[#1D1D1F]">{label}</span>
     </a>
   );
 }

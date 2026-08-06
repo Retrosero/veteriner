@@ -156,9 +156,45 @@ export function severityCriticalClass(severity: SecuritySeverity): string {
 }
 
 /**
+ * Bir datetime-local string değerini ISO-8601 formatına dönüştürür.
+ * Geçersiz veya boş değer için `null` döner; bu sayede çağıran
+ * taraf `query.set("from", iso)` çağrısını koşulsuz yapabilir ve
+ * beklenmeyen `RangeError: Invalid time value` istisnalarından
+ * kaçınılır. `datetime-local` input'ları boş bırakıldığında
+ * `filters.from === ""` döner; bu durum da `null` ile sonuçlanır.
+ *
+ * @param value `datetime-local` input değeri (örn. `2026-08-01T00:00`).
+ * @returns Geçerli ISO string veya `null`.
+ */
+export function safeParseDate(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const date = new Date(trimmed);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
+}
+
+/**
+ * Bir ISO-8601 string değerini locale uygun görüntüleme string'ine
+ * dönüştürür. Geçersiz değer için `—` döner; `RangeError` /
+ * `Invalid Date` render istisnalarını yakalar. API'den dönen
+ * `lastSeenAt` gibi alanlar beklenen formatta olsa da, kontrat
+ * değişikliğine karşı savunmacı biçimde sarılır.
+ * @param value ISO-8601 datetime string (örn. `2026-08-05T10:00:00.000Z`).
+ * @param locale Active locale, `toLocaleString`'e iletilir.
+ * @returns Locale uygun format veya `—` fallback.
+ */
+export function safeFormatDate(value: string, locale: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString(locale);
+}
+
+/**
  * Filtre state'inden API sorgu yolunu kurar. Yalnız whitelist
  * alanları eklenir; boş string'ler atlanır. `from` / `to`
- * datetime-local değerleri ISO formatına çevrilir.
+ * datetime-local değerleri `safeParseDate` üzerinden ISO
+ * formatına çevrilir; geçersiz değerler atlanır.
  * @param filters
  */
 export function buildSecurityEventPath(
@@ -179,8 +215,10 @@ export function buildSecurityEventPath(
   setIfPresent("country", filters.country);
   setIfPresent("release", filters.release);
   setIfPresent("route", filters.route);
-  if (filters.from) query.set("from", new Date(filters.from).toISOString());
-  if (filters.to) query.set("to", new Date(filters.to).toISOString());
+  const fromIso = safeParseDate(filters.from);
+  if (fromIso) query.set("from", fromIso);
+  const toIso = safeParseDate(filters.to);
+  if (toIso) query.set("to", toIso);
   setIfPresent("search", filters.search);
   return `/api/v1/superadmin/security-events?${query.toString()}`;
 }

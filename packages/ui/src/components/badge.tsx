@@ -19,22 +19,20 @@ import { forwardRef, type HTMLAttributes } from "react";
 import { cn } from "../lib/cn.js";
 
 const badgeVariants = cva(
-  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium leading-5 whitespace-nowrap",
+  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium leading-5 whitespace-nowrap",
   {
     variants: {
       tone: {
-        success:
-          "bg-success-50 text-success-700 ring-1 ring-inset ring-success-500/20",
-        warning: "bg-warn-50 text-warn-700 ring-1 ring-inset ring-warn-500/20",
-        danger:
-          "bg-danger-50 text-danger-700 ring-1 ring-inset ring-danger-500/20",
-        info: "bg-clinic-50 text-clinic-800 ring-1 ring-inset ring-clinic-500/20",
-        neutral: "bg-gray-100 text-gray-700 ring-1 ring-inset ring-gray-300/30",
+        success: "bg-[#EAF6EC] text-[#248A3D]",
+        warning: "bg-[#FFF4E5] text-[#B86B00]",
+        danger: "bg-[#FCEBEA] text-[#C3362C]",
+        info: "bg-[#EAF3FB] text-[#2775B6]",
+        neutral: "bg-[#F1F5F1] text-[#5F6368]",
       },
       size: {
-        sm: "px-1.5 text-[10px]",
-        md: "px-2 text-xs",
-        lg: "px-2.5 py-0.5 text-sm",
+        sm: "px-2 text-[11px]",
+        md: "px-2.5 text-xs",
+        lg: "px-3 py-1 text-sm",
       },
     },
     defaultVariants: {

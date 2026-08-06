@@ -17,29 +17,30 @@
 @tailwind utilities;
 
 :root {
-  --color-bg: 250 250 252;
-  --color-fg: 17 24 39;
-  --color-muted: 107 114 128;
-  --color-border: 229 231 235;
+  --color-bg: 247 248 247;
+  --color-fg: 29 29 31;
+  --color-muted: 95 99 104;
+  --color-border: 225 229 226;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-bg: 17 24 39;
-    --color-fg: 243 244 246;
-    --color-muted: 156 163 175;
-    --color-border: 55 65 81;
+    --color-bg: 247 248 247;
+    --color-fg: 29 29 31;
+    --color-muted: 95 99 104;
+    --color-border: 225 229 226;
   }
 }
 
 html,
 body {
-  background-color: rgb(var(--color-bg));
-  color: rgb(var(--color-fg));
+  background-color: #F7F8F7;
+  color: #1D1D1F;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 *:focus-visible {
-  outline: 2px solid #0359a1;
+  outline: 2px solid #167A4A;
   outline-offset: 2px;
 }
 

@@ -18,20 +18,21 @@
  * @since GOAL-073 (FAZ-7) tahsilat iptal ve ters kayıt core
  */
 
-import { Injectable, Optional } from "@nestjs/common";
-import type {
-  PaymentReversalRecord as DbReversal,
-  Prisma,
-} from "@prisma/client";
 import { randomUUID } from "node:crypto";
-import { PrismaService } from "../../prisma/prisma.service.js";
+
+import { Injectable, Optional } from "@nestjs/common";
 
 import {
   reversalAmountToScaled,
   scaledBigIntToReversalAmount,
 } from "../../common/payments/payment-reversal.types.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
 import type { PaymentReversalRecord } from "../../common/payments/payment-reversal.types.js";
+import type {
+  PaymentReversalRecord as DbReversal,
+  Prisma,
+} from "@prisma/client";
 import type {
   PaymentReverseReason,
   PaymentSourceType,

@@ -11,10 +11,10 @@
 
 import "./globals.css";
 
+import { GlobalErrorListener } from "@/components/observability/global-error-listener";
+
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-
-import { GlobalErrorListener } from "@/components/observability/global-error-listener";
 
 export const metadata: Metadata = {
   title: {

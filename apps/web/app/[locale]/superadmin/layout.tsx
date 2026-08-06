@@ -57,7 +57,9 @@ async function resolveLocale(
  * Geliştirici notu: Gerçek oturum kontrolü geldiğinde
  * `requireSuperadmin()` çağrısı yeterlidir; bu katman değişmez.
  */
-function requireSuperadmin(_locale: Locale): { name: string; role: string } | null {
+function requireSuperadmin(
+  _locale: Locale,
+): { name: string; role: string } | null {
   // TODO(faz-1): session/permission doğrulaması.
   // Başarısızsa `redirect(\`/\${locale}/login\`)` veya `notFound()`.
   return {

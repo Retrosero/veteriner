@@ -40,11 +40,7 @@ export type OnboardingCategory =
  * Onboarding icin desteklenen roller.
  */
 export type OnboardingRole =
-  | "SUPERADMIN"
-  | "OWNER"
-  | "VETERINARIAN"
-  | "STAFF"
-  | "PET_OWNER_PORTAL";
+  "SUPERADMIN" | "OWNER" | "VETERINARIAN" | "STAFF" | "PET_OWNER_PORTAL";
 
 /**
  * Onboarding asistaninin cevap uretim kaynagi. `refusal` tibbi
@@ -98,7 +94,8 @@ export interface OnboardingAskResponse {
     score: number;
   }>;
   duration_ms: number;
-  refusalReason?: "medical" | "dosage" | "diagnosis" | "treatment" | "out_of_scope";
+  refusalReason?:
+    "medical" | "dosage" | "diagnosis" | "treatment" | "out_of_scope";
 }
 
 /**

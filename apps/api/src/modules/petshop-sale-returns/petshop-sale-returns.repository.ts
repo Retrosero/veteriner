@@ -10,19 +10,21 @@
  * @since GOAL-065 (FAZ-6) petshop satış iadesi core
  */
 
-import { Injectable, Optional } from "@nestjs/common";
-import type {
-  Prisma,
-  PetshopSaleReturnLineRecord as DbLine,
-  PetshopSaleReturnRecord as DbReturn,
-} from "@prisma/client";
 import { randomUUID } from "node:crypto";
+
+import { Injectable, Optional } from "@nestjs/common";
+
 import { PrismaService } from "../../prisma/prisma.service.js";
 
 import type {
   PetshopSaleReturnLineRecord,
   PetshopSaleReturnRecord,
 } from "../../common/petshop-sale-returns/petshop-sale-return.types.js";
+import type {
+  Prisma,
+  PetshopSaleReturnLineRecord as DbLine,
+  PetshopSaleReturnRecord as DbReturn,
+} from "@prisma/client";
 import type {
   PetshopPaymentMethod,
   PetshopSaleReturnStatus,

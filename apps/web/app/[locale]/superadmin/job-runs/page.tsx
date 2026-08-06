@@ -91,7 +91,10 @@ export default async function JobRunsPage({
         title={labels.jobRuns.title}
         description={labels.jobRuns.description}
         breadcrumb={[
-          { label: labels.superadmin.breadcrumb.root, href: `/${locale}/superadmin` },
+          {
+            label: labels.superadmin.breadcrumb.root,
+            href: `/${locale}/superadmin`,
+          },
           { label: labels.jobRuns.title },
         ]}
       />

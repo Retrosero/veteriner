@@ -28,7 +28,6 @@ import { cn } from "@vetniva/ui/cn";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
-
 import {
   securityEventTypeTone,
   severityCriticalClass,
@@ -49,10 +48,7 @@ const PII_KEY_PATTERN =
  * @param value
  * @param depth
  */
-function summarizeContext(
-  value: unknown,
-  depth = 0,
-): string {
+function summarizeContext(value: unknown, depth = 0): string {
   if (depth > 4) return "…";
   if (value === null || value === undefined) return "—";
   if (typeof value === "string") return JSON.stringify(value);
@@ -68,9 +64,7 @@ function summarizeContext(
     if (entries.length === 0) return "{}";
     return entries
       .map(([k, v]) => {
-        const maskedKey = PII_KEY_PATTERN.test(k)
-          ? `${k} (masked)`
-          : k;
+        const maskedKey = PII_KEY_PATTERN.test(k) ? `${k} (masked)` : k;
         return `${maskedKey}: ${summarizeContext(v, depth + 1)}`;
       })
       .join("\n");
@@ -196,7 +190,9 @@ export function SecurityEventDetail({
               </dd>
             </div>
             <div>
-              <dt className="text-slate-500">{sec.detail.userAgentHashLabel}</dt>
+              <dt className="text-slate-500">
+                {sec.detail.userAgentHashLabel}
+              </dt>
               <dd className="font-mono text-slate-900">
                 {event.userAgentHash ?? "—"}
               </dd>
@@ -210,7 +206,9 @@ export function SecurityEventDetail({
               <dd className="font-mono text-slate-900">{event.release}</dd>
             </div>
             <div>
-              <dt className="text-slate-500">{sec.detail.occurrenceCountLabel}</dt>
+              <dt className="text-slate-500">
+                {sec.detail.occurrenceCountLabel}
+              </dt>
               <dd className="text-slate-900">{event.occurrenceCount}</dd>
             </div>
             <div className="sm:col-span-2">
@@ -243,10 +241,7 @@ export function SecurityEventDetail({
             <p className="mt-1">{event.message}</p>
           </section>
 
-          <section
-            aria-label={sec.detail.contextLabel}
-            className="space-y-2"
-          >
+          <section aria-label={sec.detail.contextLabel} className="space-y-2">
             <h3 className="text-xs font-medium uppercase tracking-wide text-slate-500">
               {sec.detail.contextLabel}
             </h3>

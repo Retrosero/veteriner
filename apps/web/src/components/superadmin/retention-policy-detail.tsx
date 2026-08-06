@@ -24,8 +24,6 @@ import { Badge, Button, Input } from "@vetniva/ui";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-
-
 import { apiRequest } from "@/lib/api-client";
 import { getLabels, type Locale } from "@/lib/labels";
 import { safeLabelLookup } from "@/lib/safe-lookup";
@@ -104,8 +102,7 @@ export function RetentionPolicyDetail({
   const [severity, setSeverity] = useState<Severity>("info");
   const [retentionDays, setRetentionDays] = useState<string>("365");
   const [archiveAfterDays, setArchiveAfterDays] = useState<string>("0");
-  const [archiveStorage, setArchiveStorage] =
-    useState<ArchiveStorage>("hot");
+  const [archiveStorage, setArchiveStorage] = useState<ArchiveStorage>("hot");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -373,7 +370,9 @@ export function RetentionPolicyDetail({
         </div>
         <div>
           <label className="block text-sm text-slate-700">
-            <span className="font-medium">{labels.form.archiveStorageLabel}</span>
+            <span className="font-medium">
+              {labels.form.archiveStorageLabel}
+            </span>
             <select
               aria-label={labels.form.archiveStorageLabel}
               className="mt-1 h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm focus:border-clinic-500 focus:outline-none focus:ring-2 focus:ring-clinic-500/20"

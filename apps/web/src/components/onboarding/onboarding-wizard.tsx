@@ -22,7 +22,8 @@
  * @since GOAL-117 (FAZ-11) ilk kullanim asistan
  */
 
-import { type Locale ,
+import {
+  type Locale,
   type LocalizedOnboardingScenario,
   type OnboardingAskResponse,
   type OnboardingCategory,
@@ -284,7 +285,11 @@ async function fetchJson<T>(
       };
     }
     const data = (await res.json()) as T;
-    return { ok: true, data, ...(requestId ? { correlationId: requestId } : {}) };
+    return {
+      ok: true,
+      data,
+      ...(requestId ? { correlationId: requestId } : {}),
+    };
   } catch (err) {
     return {
       ok: false,
@@ -345,9 +350,10 @@ export function OnboardingWizard({
 }: OnboardingWizardProps): JSX.Element {
   // localStorage'dan ilk state'i oku (yalniz mount'ta).
   // Hata durumunda (SSR, private mode) sessizce fallback.
-  const readPersisted = useCallback(():
-    | { step: 1 | 2 | 3; role: OnboardingRole | null }
-    | null => {
+  const readPersisted = useCallback((): {
+    step: 1 | 2 | 3;
+    role: OnboardingRole | null;
+  } | null => {
     if (!storageKey) return null;
     if (typeof window === "undefined") return null;
     try {
@@ -435,10 +441,7 @@ export function OnboardingWizard({
     if (!storageKey) return;
     if (typeof window === "undefined") return;
     try {
-      window.localStorage.setItem(
-        storageKey,
-        JSON.stringify({ step, role }),
-      );
+      window.localStorage.setItem(storageKey, JSON.stringify({ step, role }));
     } catch {
       // Quota exceeded vs. → sessizce yok say.
     }
@@ -648,11 +651,7 @@ export function OnboardingWizard({
         </CardHeader>
         <CardBody>
           {step === 1 ? (
-            <Step1Role
-              labels={labels}
-              role={role}
-              onChange={setRole}
-            />
+            <Step1Role labels={labels} role={role} onChange={setRole} />
           ) : null}
           {step === 2 ? (
             <Step2Ask
@@ -846,10 +845,7 @@ function Step2Ask({
             reducedMotion={prefersReducedMotion}
           />
         ) : scenarios.length === 0 ? (
-          <p
-            className="text-sm text-gray-500"
-            data-testid="onboarding-empty"
-          >
+          <p className="text-sm text-gray-500" data-testid="onboarding-empty">
             {labels.empty}
           </p>
         ) : (
@@ -872,9 +868,7 @@ function Step2Ask({
                     <span className="text-clinic-700">
                       {CATEGORY_ICON[s.category]}
                     </span>
-                    <span className="font-medium text-gray-900">
-                      {s.title}
-                    </span>
+                    <span className="font-medium text-gray-900">{s.title}</span>
                   </span>
                   <span className="text-xs text-gray-500">
                     {s.stepCount} adim
@@ -912,7 +906,8 @@ function Step3Result({
   // senaryosunda sadece stepCount gosterilir.
   const detailScenario: LocalizedOnboardingScenario | null =
     askResponse?.scenario ?? null;
-  const listScenario: OnboardingScenarioListResponse["scenarios"][number] | null =
+  const listScenario:
+    OnboardingScenarioListResponse["scenarios"][number] | null =
     detailScenario === null
       ? (scenarios.find((s) => s.id === selectedScenarioId) ?? null)
       : null;
@@ -922,7 +917,8 @@ function Step3Result({
       : listScenario !== null
         ? { title: listScenario.title, summary: listScenario.summary }
         : null;
-  const steps: LocalizedOnboardingScenario["steps"] = detailScenario?.steps ?? [];
+  const steps: LocalizedOnboardingScenario["steps"] =
+    detailScenario?.steps ?? [];
   const generationSource: OnboardingGenerationSource | undefined =
     askResponse?.generationSource;
 

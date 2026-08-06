@@ -67,8 +67,8 @@ import {
   VaccineStockLedger,
   type StockMovement,
 } from "../../common/vaccines/vaccine-stock-ledger.js";
-import { PatientsService } from "../patients/patients.service.js";
 import { InventoryService } from "../inventory/inventory.service.js";
+import { PatientsService } from "../patients/patients.service.js";
 import { StockMovementsService } from "../stock-movements/stock-movements.service.js";
 
 import type { ActorContext } from "../../common/actor/actor-context.service.js";

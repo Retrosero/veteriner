@@ -25,7 +25,6 @@ import { Badge } from "@vetniva/ui";
 import { cn } from "@vetniva/ui/cn";
 import { useCallback, useEffect, useState } from "react";
 
-
 import {
   formatDurationMs,
   jobRunSourceTone,
@@ -77,10 +76,9 @@ export function JobRunDetail({
     setDetailError(null);
     setAttemptsError(null);
     void Promise.all([
-      apiRequest<JobRunDetailRecord>(
-        `/api/v1/superadmin/job-runs/${runId}`,
-        { credentials: "include" },
-      ),
+      apiRequest<JobRunDetailRecord>(`/api/v1/superadmin/job-runs/${runId}`, {
+        credentials: "include",
+      }),
     ]).then(([detailResult]) => {
       if (!detailResult.ok) {
         setDetailError(jobRuns.detailLoadErrorHint);
@@ -148,7 +146,12 @@ export function JobRunDetail({
     }
     setFeedback(jobRuns.actions.finishSuccess);
     load();
-  }, [detail, jobRuns.actions.finishError, jobRuns.actions.finishSuccess, load]);
+  }, [
+    detail,
+    jobRuns.actions.finishError,
+    jobRuns.actions.finishSuccess,
+    load,
+  ]);
 
   if (detailError) {
     return (
@@ -220,7 +223,7 @@ export function JobRunDetail({
           className={cn(
             "rounded border p-3 text-sm",
             feedback === jobRuns.actions.retrySuccess ||
-            feedback === jobRuns.actions.finishSuccess
+              feedback === jobRuns.actions.finishSuccess
               ? "border-[#A5D6A7] bg-[#EAF6EC] text-[#0D4D2E]"
               : "border-red-200 bg-red-50 text-red-800",
           )}
@@ -240,9 +243,7 @@ export function JobRunDetail({
           <dt className="text-[#86868B]">{jobRuns.detail.attempt}</dt>
           <dd className="text-[#1D1D1F]">
             {detail.attempt}
-            {detail.maxAttempts !== null
-              ? ` / ${detail.maxAttempts}`
-              : null}
+            {detail.maxAttempts !== null ? ` / ${detail.maxAttempts}` : null}
           </dd>
         </div>
         <div>
@@ -256,11 +257,12 @@ export function JobRunDetail({
         <div>
           <dt className="text-[#86868B]">{jobRuns.detail.triggeredBy}</dt>
           <dd className="flex flex-wrap items-center gap-2">
-            <Badge
-              size="sm"
-              tone={jobRunTriggeredByTone(detail.triggeredBy)}
-            >
-              {safeLabelLookup(jobRuns.triggeredBy, detail.triggeredBy, detail.triggeredBy)}
+            <Badge size="sm" tone={jobRunTriggeredByTone(detail.triggeredBy)}>
+              {safeLabelLookup(
+                jobRuns.triggeredBy,
+                detail.triggeredBy,
+                detail.triggeredBy,
+              )}
             </Badge>
             <span className="text-xs text-[#5F6368]">
               {detail.triggeredByUserId ?? jobRuns.detail.noUser}
@@ -281,9 +283,7 @@ export function JobRunDetail({
         </div>
         <div>
           <dt className="text-[#86868B]">{jobRuns.detail.correlationId}</dt>
-          <dd className="font-mono text-xs">
-            {detail.correlationId ?? "—"}
-          </dd>
+          <dd className="font-mono text-xs">{detail.correlationId ?? "—"}</dd>
         </div>
         <div>
           <dt className="text-[#86868B]">{jobRuns.detail.startedAt}</dt>
@@ -301,9 +301,7 @@ export function JobRunDetail({
         </div>
         <div>
           <dt className="text-[#86868B]">{jobRuns.detail.errorCode}</dt>
-          <dd className="font-mono text-xs">
-            {detail.errorCode ?? "—"}
-          </dd>
+          <dd className="font-mono text-xs">{detail.errorCode ?? "—"}</dd>
         </div>
       </dl>
 
@@ -412,7 +410,11 @@ export function JobRunDetail({
                     size="sm"
                     tone={jobRunStatusTone(attempt.status)}
                   >
-                    {safeLabelLookup(jobRuns.statuses, attempt.status, attempt.status)}
+                    {safeLabelLookup(
+                      jobRuns.statuses,
+                      attempt.status,
+                      attempt.status,
+                    )}
                   </Badge>
                   <span className="font-mono text-xs text-[#5F6368]">
                     attempt #{attempt.attempt}

@@ -14,10 +14,11 @@
 import { randomUUID } from "node:crypto";
 
 import { Injectable, Optional } from "@nestjs/common";
-import type { Prisma, SurgeryPlanRecord as DbPlan } from "@prisma/client";
+
 import { PrismaService } from "../../prisma/prisma.service.js";
 
 import type { SurgeryPlanRecord } from "../../common/surgery-plans/surgery-plan.types.js";
+import type { Prisma, SurgeryPlanRecord as DbPlan } from "@prisma/client";
 import type { SurgeryPlanStatus } from "@vetniva/contracts";
 
 /** Patch tipi. */

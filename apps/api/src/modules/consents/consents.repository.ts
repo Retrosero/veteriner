@@ -11,12 +11,14 @@
  * @since GOAL-081 (FAZ-8) onam formları core
  */
 
-import { Injectable, Optional } from "@nestjs/common";
-import type { ConsentRecord as DbConsent, Prisma } from "@prisma/client";
 import { randomUUID } from "node:crypto";
+
+import { Injectable, Optional } from "@nestjs/common";
+
 import { PrismaService } from "../../prisma/prisma.service.js";
 
 import type { ConsentRecord } from "../../common/consents/consent.types.js";
+import type { ConsentRecord as DbConsent, Prisma } from "@prisma/client";
 import type {
   ConsentSignatureMethod,
   ConsentStatus,

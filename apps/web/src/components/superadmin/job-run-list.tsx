@@ -27,7 +27,6 @@ import { cn } from "@vetniva/ui/cn";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-
 import { apiRequest } from "@/lib/api-client";
 import { getLabels, type Locale } from "@/lib/labels";
 import { safeLabelLookup } from "@/lib/safe-lookup";
@@ -86,10 +85,7 @@ export function JobRunList({ locale }: JobRunListProps): JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"list" | "dead-letter">("list");
   const [filters, setFilters] = useState<JobRunFilterState>(INITIAL_FILTERS);
-  const path = useMemo(
-    () => buildJobRunPath(filters, view),
-    [filters, view],
-  );
+  const path = useMemo(() => buildJobRunPath(filters, view), [filters, view]);
 
   useEffect(() => {
     let active = true;
@@ -198,10 +194,7 @@ export function JobRunList({ locale }: JobRunListProps): JSX.Element {
             aria-label={jobRuns.filters.status}
             className="mt-1 w-full rounded border border-[#D5DBD7] bg-white p-2"
             onChange={(event) =>
-              updateFilter(
-                "status",
-                event.target.value as JobRunStatus | "",
-              )
+              updateFilter("status", event.target.value as JobRunStatus | "")
             }
             value={filters.status}
           >
@@ -219,10 +212,7 @@ export function JobRunList({ locale }: JobRunListProps): JSX.Element {
             aria-label={jobRuns.filters.source}
             className="mt-1 w-full rounded border border-[#D5DBD7] bg-white p-2"
             onChange={(event) =>
-              updateFilter(
-                "source",
-                event.target.value as JobRunSource | "",
-              )
+              updateFilter("source", event.target.value as JobRunSource | "")
             }
             value={filters.source}
           >
@@ -418,7 +408,11 @@ export function JobRunList({ locale }: JobRunListProps): JSX.Element {
                           size="sm"
                           tone={jobRunStatusTone(row.status)}
                         >
-                          {safeLabelLookup(jobRuns.statuses, row.status, row.status)}
+                          {safeLabelLookup(
+                            jobRuns.statuses,
+                            row.status,
+                            row.status,
+                          )}
                         </Badge>
                       </Link>
                     </td>
@@ -427,7 +421,11 @@ export function JobRunList({ locale }: JobRunListProps): JSX.Element {
                     <td className="p-3 text-center">{row.attempt}</td>
                     <td className="p-3">
                       <Badge size="sm" tone={jobRunSourceTone(row.source)}>
-                        {safeLabelLookup(jobRuns.sources, row.source, row.source)}
+                        {safeLabelLookup(
+                          jobRuns.sources,
+                          row.source,
+                          row.source,
+                        )}
                       </Badge>
                     </td>
                     <td className="p-3">
@@ -435,7 +433,11 @@ export function JobRunList({ locale }: JobRunListProps): JSX.Element {
                         size="sm"
                         tone={jobRunTriggeredByTone(row.triggeredBy)}
                       >
-                        {safeLabelLookup(jobRuns.triggeredBy, row.triggeredBy, row.triggeredBy)}
+                        {safeLabelLookup(
+                          jobRuns.triggeredBy,
+                          row.triggeredBy,
+                          row.triggeredBy,
+                        )}
                       </Badge>
                     </td>
                     <td className="p-3 font-mono text-xs">

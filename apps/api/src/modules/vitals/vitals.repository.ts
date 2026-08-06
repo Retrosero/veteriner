@@ -14,9 +14,10 @@
  */
 
 import { Injectable, Optional } from "@nestjs/common";
-import { PrismaService } from "../../prisma/prisma.service.js";
-import type { VitalRecord as PrismaVitalRecord, Prisma } from "@prisma/client";
 
+import { PrismaService } from "../../prisma/prisma.service.js";
+
+import type { VitalRecord as PrismaVitalRecord, Prisma } from "@prisma/client";
 import type { VitalSigns, VitalsRecord } from "@vetniva/contracts";
 
 /** Persist edilmiş vital record. */
@@ -49,7 +50,7 @@ export class VitalsRepository {
           examinationId: r.examinationId,
           patientId: r.patientId,
           veterinarianId: r.veterinarianId,
-          vitalSigns: r.vitalSigns as unknown as Prisma.InputJsonValue,
+          vitalSigns: r.vitalSigns,
           takenAt: new Date(r.takenAt),
           recordedBy: r.recordedBy,
         },

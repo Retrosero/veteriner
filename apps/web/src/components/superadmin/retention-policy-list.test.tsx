@@ -24,7 +24,10 @@ import { RetentionPolicyList } from "./retention-policy-list";
 
 describe("RetentionPolicyList", () => {
   it("başlangıç isteğini çerezle gönderir ve filtreleri query'ye taşır", async () => {
-    mocks.request.mockResolvedValue({ ok: true, data: { items: [], total: 0 } });
+    mocks.request.mockResolvedValue({
+      ok: true,
+      data: { items: [], total: 0 },
+    });
     const view = render(<RetentionPolicyList locale="tr-TR" />);
 
     await waitFor(() => {
@@ -79,9 +82,7 @@ describe("RetentionPolicyList", () => {
     await waitFor(() => {
       expect(view.getByText("Global")).toBeInTheDocument();
       expect(view.getByText("365")).toBeInTheDocument();
-      expect(
-        view.getByLabelText("Detay: rp-1"),
-      ).toHaveAttribute(
+      expect(view.getByLabelText("Detay: rp-1")).toHaveAttribute(
         "href",
         "/tr-TR/superadmin/retention/rp-1",
       );
@@ -103,9 +104,7 @@ describe("RetentionPolicyList", () => {
     });
     const view = render(<RetentionPolicyList locale="tr-TR" />);
     await waitFor(() => {
-      expect(
-        view.getByRole("alert"),
-      ).toHaveTextContent("Veri yüklenemedi");
+      expect(view.getByRole("alert")).toHaveTextContent("Veri yüklenemedi");
     });
   });
 });

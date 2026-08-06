@@ -23,12 +23,14 @@
  * @since GOAL-063 (FAZ-6) stok hareketleri ve sayım core
  */
 
-import { Injectable, Optional } from "@nestjs/common";
-import type { Prisma, StockMovementRecord as DbMovement } from "@prisma/client";
 import { randomUUID } from "node:crypto";
+
+import { Injectable, Optional } from "@nestjs/common";
+
 import { PrismaService } from "../../prisma/prisma.service.js";
 
 import type { StockMovementRecord } from "../../common/stock-movements/stock-movement.types.js";
+import type { Prisma, StockMovementRecord as DbMovement } from "@prisma/client";
 import type { StockMovementType } from "@vetniva/contracts";
 
 /* --------------------------------------------------------------------------

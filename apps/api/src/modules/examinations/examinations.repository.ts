@@ -22,13 +22,14 @@
 import { randomUUID } from "node:crypto";
 
 import { Injectable, Optional } from "@nestjs/common";
+
 import { PrismaService } from "../../prisma/prisma.service.js";
+
 import type {
   Examination as PrismaExamination,
   ExaminationAmend as PrismaExaminationAmend,
   Prisma,
 } from "@prisma/client";
-
 import type {
   Examination,
   ExaminationAmend,

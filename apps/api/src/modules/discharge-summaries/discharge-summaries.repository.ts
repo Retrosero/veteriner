@@ -13,15 +13,17 @@
  * @since GOAL-086 (FAZ-8) gözlem ve taburcu özeti core
  */
 
-import { Injectable, Optional } from "@nestjs/common";
-import type { Prisma } from "@prisma/client";
 import { randomUUID } from "node:crypto";
+
+import { Injectable, Optional } from "@nestjs/common";
+
+import { PrismaService } from "../../prisma/prisma.service.js";
 
 import type {
   DischargeSummaryRecord,
   ObservationRecord,
 } from "../../common/discharge-summaries/discharge-summary.types.js";
-import { PrismaService } from "../../prisma/prisma.service.js";
+import type { Prisma } from "@prisma/client";
 import type {
   DischargeMedicationItem,
   DischargeSummaryStatus,
@@ -245,7 +247,7 @@ export class DischargeSummariesRepository {
         data: {
           ...rec,
           status: rec.status,
-          medications: rec.medications as Prisma.InputJsonValue,
+          medications: rec.medications,
           followUpDate: rec.followUpDate ? new Date(rec.followUpDate) : null,
           portalSharedAt: rec.portalSharedAt
             ? new Date(rec.portalSharedAt)

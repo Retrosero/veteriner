@@ -160,4 +160,53 @@ describe("ErrorEventDetail", () => {
       expect(view.getByText(/İncelemeye alındı/)).toBeInTheDocument();
     });
   });
+
+  it("GET /:id 404 döndüğünde hata mesajı gösterir ve etkileşimli bölümleri gizler", async () => {
+    // 404 senaryosu: backend event bulunamadı döner; component
+    // `error` state'ine düşmeli ve detail bölümünü render etmemeli.
+    // Bu test happy-path'in tersi yolu (error-path) güvence altına
+    // alır; operatör hangi eyleme geçemeyeceğini anlar.
+    mocks.request.mockImplementation((path: string) => {
+      if (path.endsWith("/notes")) {
+        return Promise.resolve({ ok: true, data: { items: [], total: 0 } });
+      }
+      if (path.endsWith("/audit-log")) {
+        return Promise.resolve({ ok: true, data: { items: [], total: 0 } });
+      }
+      // Ana detay isteği 404 (event bulunamadı).
+      return Promise.resolve({
+        ok: false,
+        error: {
+          error_code: "VET-COMMON-0001",
+          message: "Event not found",
+          source: "api",
+          severity: "error",
+          correlation_id: "req-404",
+          timestamp: "2026-08-05T10:00:00.000Z",
+        },
+        requestId: "req-404",
+      });
+    });
+
+    const view = render(
+      <ErrorEventDetail eventId="missing-event" locale="tr-TR" />,
+    );
+    await waitFor(() => {
+      expect(mocks.request).toHaveBeenCalledWith(
+        "/api/v1/superadmin/error-events/missing-event",
+        { credentials: "include" },
+      );
+    });
+    await waitFor(() => {
+      expect(
+        view.getByText("Hata ayrıntısı şu anda yüklenemiyor."),
+      ).toBeInTheDocument();
+    });
+    // Detail render edilmediği için durum combobox'ı ve "Durumu kaydet"
+    // butonu DOM'da olmamalı.
+    expect(view.queryByLabelText("Durum")).not.toBeInTheDocument();
+    expect(
+      view.queryByRole("button", { name: "Durumu kaydet" }),
+    ).not.toBeInTheDocument();
+  });
 });

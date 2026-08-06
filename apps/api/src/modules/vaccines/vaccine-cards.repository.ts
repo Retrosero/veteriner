@@ -15,9 +15,10 @@
  */
 
 import { Injectable, Optional } from "@nestjs/common";
-import type { Prisma } from "@prisma/client";
+
 import { PrismaService } from "../../prisma/prisma.service.js";
 
+import type { Prisma } from "@prisma/client";
 import type { TenantVaccineCardPortalSetting } from "@vetniva/contracts";
 
 /** Persist edilmiş tenant aşı kartı portal ayarı. */

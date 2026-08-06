@@ -16,19 +16,19 @@ import { forwardRef, type ButtonHTMLAttributes } from "react";
 import { cn } from "../lib/cn.js";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clinic-700 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clinic-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        primary: "bg-clinic-700 text-white hover:bg-clinic-800",
+        primary: "bg-clinic-500 text-white hover:bg-clinic-600 shadow-sm",
         secondary:
-          "bg-white text-clinic-800 border border-clinic-200 hover:bg-clinic-50",
-        ghost: "bg-transparent text-clinic-700 hover:bg-clinic-50",
+          "bg-white text-[#1D1D1F] border border-[#E1E5E2] hover:bg-clinic-50",
+        ghost: "bg-transparent text-clinic-700 hover:bg-[#F1F5F1]",
         danger: "bg-danger-500 text-white hover:bg-danger-700",
       },
       size: {
-        sm: "h-8 px-3 text-sm",
-        md: "h-10 px-4 text-sm",
+        sm: "h-9 px-3 text-xs",
+        md: "h-[42px] px-4 text-sm",
         lg: "h-12 px-6 text-base",
       },
       fullWidth: {

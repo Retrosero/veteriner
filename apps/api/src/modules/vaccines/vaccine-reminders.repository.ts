@@ -17,17 +17,18 @@
  * @since GOAL-053 (FAZ-5) aşı hatırlatma core
  */
 
+import { randomUUID } from "node:crypto";
+
 import { Injectable, Optional } from "@nestjs/common";
+
+import { buildVaccineReminderDedupeKey } from "../../common/vaccines/vaccine-reminder.types.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
+
+import type { VaccineReminderRecord } from "../../common/vaccines/vaccine-reminder.types.js";
 import type {
   Prisma,
   VaccineReminderRecord as DbReminder,
 } from "@prisma/client";
-import { randomUUID } from "node:crypto";
-import { PrismaService } from "../../prisma/prisma.service.js";
-
-import { buildVaccineReminderDedupeKey } from "../../common/vaccines/vaccine-reminder.types.js";
-
-import type { VaccineReminderRecord } from "../../common/vaccines/vaccine-reminder.types.js";
 import type {
   VaccineReminderChannel,
   VaccineReminderStatus,
@@ -505,12 +506,12 @@ export class VaccineRemindersRepository {
         create: {
           tenantId: config.tenantId,
           daysBeforeDue: config.daysBeforeDue,
-          channels: config.channels as Prisma.InputJsonValue,
+          channels: config.channels,
           updatedAt: new Date(config.updatedAt),
         },
         update: {
           daysBeforeDue: config.daysBeforeDue,
-          channels: config.channels as Prisma.InputJsonValue,
+          channels: config.channels,
           updatedAt: new Date(config.updatedAt),
         },
       });

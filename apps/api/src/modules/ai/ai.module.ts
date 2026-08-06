@@ -10,12 +10,12 @@
 
 import { Module } from "@nestjs/common";
 
-import { AiController } from "./ai.controller.js";
 import { AiRagIndexController } from "./ai-rag-index.controller.js";
 import { AiRagIndexService } from "./ai-rag-index.service.js";
 import { CHUNK_LOADER } from "./ai-rag-index.tokens.js";
-import { AiModule as CommonAiModule } from "../../common/ai/ai.module.js";
+import { AiController } from "./ai.controller.js";
 import { defaultChunkLoader } from "../../common/ai/ai-chunk-loader.service.js";
+import { AiModule as CommonAiModule } from "../../common/ai/ai.module.js";
 
 @Module({
   imports: [CommonAiModule],

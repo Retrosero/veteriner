@@ -17,15 +17,17 @@
  * @since GOAL-062 (FAZ-6) tedarikçi ve satın alma core
  */
 
-import { Injectable, Optional } from "@nestjs/common";
-import type { Prisma, SupplierRecord as DbSupplier } from "@prisma/client";
 import { randomUUID } from "node:crypto";
+
+import { Injectable, Optional } from "@nestjs/common";
+
 import { PrismaService } from "../../prisma/prisma.service.js";
 
 import type {
   SupplierType,
   SupplierRecord,
 } from "../../common/suppliers/supplier.types.js";
+import type { Prisma, SupplierRecord as DbSupplier } from "@prisma/client";
 
 /** Patch tipi: kısmi güncelleme için izin verilen alanlar. */
 export interface SupplierPatch {

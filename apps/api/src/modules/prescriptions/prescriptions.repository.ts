@@ -13,17 +13,18 @@
  * @since GOAL-045 (FAZ-4) reçete oluşturma core
  */
 
-import { Injectable, Optional } from "@nestjs/common";
-import type { Prisma } from "@prisma/client";
 import { randomUUID } from "node:crypto";
+
+import { Injectable, Optional } from "@nestjs/common";
 
 import {
   toPrescription,
   type PrescriptionRecord,
 } from "../../common/prescriptions/prescription.types.js";
-
-import type { Prescription } from "@vetniva/contracts";
 import { PrismaService } from "../../prisma/prisma.service.js";
+
+import type { Prisma } from "@prisma/client";
+import type { Prescription } from "@vetniva/contracts";
 
 type DbPrescription = Prisma.PrescriptionRecordGetPayload<{
   include: { items: true };
@@ -277,7 +278,7 @@ export class PrescriptionsRepository {
             context: "prescription",
             contextRefId: id,
             patientId: current.patientId,
-            lines: lines as Prisma.InputJsonValue,
+            lines: lines,
             notes: null,
             status: "recorded",
             occurredAt: now,
@@ -286,7 +287,7 @@ export class PrescriptionsRepository {
             cancelledAt: null,
             cancelledBy: null,
             cancelReason: null,
-            stockMovementIds: movementIds as Prisma.InputJsonValue,
+            stockMovementIds: movementIds,
           },
         });
         await tx.stockMovementRecord.updateMany({

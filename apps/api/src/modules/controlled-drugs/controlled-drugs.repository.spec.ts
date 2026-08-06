@@ -96,7 +96,7 @@ describe("ControlledDrugsRepository Prisma adapter", () => {
     expect(tx.controlledDrugEntry.create).toHaveBeenCalledWith(
       expect.objectContaining({
         // Vitest asymmetric matcher tipi `any`; yalnızca assertion verisidir.
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
         data: expect.objectContaining({ tenantId: TENANT_ID, id: ENTRY_ID }),
       }),
     );

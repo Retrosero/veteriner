@@ -37,7 +37,6 @@ describe("RetentionPolicyForm", () => {
     const view = render(
       <RetentionPolicyForm
         labels={labels}
-        locale="tr-TR"
         onClose={onClose}
         onSaved={onSaved}
       />,
@@ -72,7 +71,6 @@ describe("RetentionPolicyForm", () => {
     const view = render(
       <RetentionPolicyForm
         labels={labels}
-        locale="tr-TR"
         onClose={vi.fn()}
         onSaved={vi.fn()}
       />,
@@ -95,7 +93,6 @@ describe("RetentionPolicyForm", () => {
     const view = render(
       <RetentionPolicyForm
         labels={labels}
-        locale="tr-TR"
         onClose={vi.fn()}
         onSaved={vi.fn()}
       />,
@@ -130,7 +127,6 @@ describe("RetentionPolicyForm", () => {
     const view = render(
       <RetentionPolicyForm
         labels={labels}
-        locale="tr-TR"
         onClose={vi.fn()}
         onSaved={vi.fn()}
       />,

@@ -278,7 +278,7 @@ export class ImagingOrdersService {
       status: "performed",
       performedAt: input.performedAt,
       performedByUserId: input.performedByUserId,
-      contrastUse: (input.contrastUse ?? null),
+      contrastUse: input.contrastUse ?? null,
       attachments: input.attachments ?? existing.attachments,
       notes: input.notes !== undefined ? input.notes : existing.notes,
     });
@@ -294,7 +294,8 @@ export class ImagingOrdersService {
         performedAt: input.performedAt,
         performedByUserId: input.performedByUserId,
         contrastUse: input.contrastUse ?? null,
-        attachmentCount: input.attachments?.length ?? existing.attachments.length,
+        attachmentCount:
+          input.attachments?.length ?? existing.attachments.length,
       },
     );
 

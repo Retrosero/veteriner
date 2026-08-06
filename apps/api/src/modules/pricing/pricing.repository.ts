@@ -20,19 +20,21 @@
  * @since GOAL-070 (FAZ-7) fiyat listeleri ve hizmet ücretleri core
  */
 
-import { Injectable, Optional } from "@nestjs/common";
-import type {
-  Prisma,
-  PriceListItemRecord as DbItem,
-  PriceListRecord as DbList,
-} from "@prisma/client";
 import { randomUUID } from "node:crypto";
+
+import { Injectable, Optional } from "@nestjs/common";
+
 import { PrismaService } from "../../prisma/prisma.service.js";
 
 import type {
   PriceListItemRecord,
   PriceListRecord,
 } from "../../common/pricing/pricing.types.js";
+import type {
+  Prisma,
+  PriceListItemRecord as DbItem,
+  PriceListRecord as DbList,
+} from "@prisma/client";
 
 /** PriceList kısmi güncelleme alanları. */
 export interface PriceListPatch {

@@ -10,19 +10,21 @@
  * @since GOAL-071 (FAZ-7) klinik satış taslağı core
  */
 
-import { Injectable, Optional } from "@nestjs/common";
-import type {
-  Prisma,
-  ClinicSaleLineRecord as DbLine,
-  ClinicSaleRecord as DbSale,
-} from "@prisma/client";
 import { randomUUID } from "node:crypto";
+
+import { Injectable, Optional } from "@nestjs/common";
+
 import { PrismaService } from "../../prisma/prisma.service.js";
 
 import type {
   ClinicSaleLineRecord,
   ClinicSaleRecord,
 } from "../../common/clinic-sales/clinic-sale.types.js";
+import type {
+  Prisma,
+  ClinicSaleLineRecord as DbLine,
+  ClinicSaleRecord as DbSale,
+} from "@prisma/client";
 import type {
   ClinicSaleSourceType,
   ClinicSaleStatus,

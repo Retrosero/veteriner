@@ -93,9 +93,7 @@ describe("SecurityEventDetail", () => {
 
     const view = render(<SecurityEventDetail eventId="evt-1" locale="tr-TR" />);
 
-    expect(
-      await view.findByText(/yüklenemiyor/i),
-    ).toBeInTheDocument();
+    expect(await view.findByText(/yüklenemiyor/i)).toBeInTheDocument();
   });
 
   it("veri yüklenene kadar yükleniyor durumunu gösterir", () => {

@@ -10,14 +10,16 @@
  * @since GOAL-072 (FAZ-7) tahsilat core
  */
 
-import { Injectable, Optional } from "@nestjs/common";
-import type { PaymentRecord as DbPayment, Prisma } from "@prisma/client";
 import { randomUUID } from "node:crypto";
+
+import { Injectable, Optional } from "@nestjs/common";
+
 import { PrismaService } from "../../prisma/prisma.service.js";
 
-import type { PaymentRecord } from "../../common/payments/payment.types.js";
 import type { KasaEntryRecord } from "../../common/payments/kasa.types.js";
 import type { PaymentReversalRecord } from "../../common/payments/payment-reversal.types.js";
+import type { PaymentRecord } from "../../common/payments/payment.types.js";
+import type { PaymentRecord as DbPayment, Prisma } from "@prisma/client";
 import type {
   PaymentMethod,
   PaymentSourceType,

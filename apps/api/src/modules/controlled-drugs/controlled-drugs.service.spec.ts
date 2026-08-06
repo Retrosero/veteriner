@@ -196,7 +196,7 @@ describe("ControlledDrugsService", () => {
     expect(result.in.transferGroupId).toBe("trf-001");
     await expect(service.getStock(TENANT_A, ACTOR_A)).resolves.toMatchObject({
       // Vitest asymmetric matcher tipi `any`; yalnızca assertion verisidir.
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
       items: expect.arrayContaining([
         expect.objectContaining({
           branchId: "brn-a",

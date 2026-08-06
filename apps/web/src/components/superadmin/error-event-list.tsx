@@ -69,7 +69,12 @@ const INITIAL_FILTERS: FilterState = {
   to: "",
 };
 
-const STATUS_OPTIONS = ["new", "investigating", "resolved", "reopened"] as const;
+const STATUS_OPTIONS = [
+  "new",
+  "investigating",
+  "resolved",
+  "reopened",
+] as const;
 const SEVERITY_OPTIONS = ["critical", "error", "warning", "info"] as const;
 
 export type ErrorEventListProps = {
@@ -77,9 +82,26 @@ export type ErrorEventListProps = {
 };
 
 /**
+ * Bir datetime-local string değerini ISO-8601 formatına dönüştürür.
+ * Geçersiz veya boş değer için `null` döner; bu sayede çağıran taraf
+ * `query.set("from", iso)` çağrısını koşulsuz yapabilir ve
+ * `RangeError: Invalid time value` istisnalarından kaçınılır.
+ * @param value `datetime-local` input değeri (örn. `2026-08-01T00:00`).
+ * @returns Geçerli ISO string veya `null`.
+ */
+function safeParseDate(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const date = new Date(trimmed);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
+}
+
+/**
  * Aktif filtreleri API path'ine dönüştürür. Yalnız izinli parametreler
- * eklenir; boş string olanlar atlanır. `from`/`to` için
- * `URLSearchParams` otomatik encoding yapar.
+ * eklenir; boş string olanlar atlanır. `from`/`to` `datetime-local`
+ * değerleri `safeParseDate` üzerinden ISO'ya dönüştürülür; geçersiz
+ * değerler atlanır. `URLSearchParams` otomatik encoding yapar.
  * @param filters
  */
 function buildPath(filters: FilterState): string {
@@ -90,12 +112,15 @@ function buildPath(filters: FilterState): string {
   if (filters.tenant.trim()) query.set("tenantId", filters.tenant.trim());
   if (filters.branch.trim()) query.set("branchId", filters.branch.trim());
   if (filters.module.trim()) query.set("module", filters.module.trim());
-  if (filters.errorCode.trim()) query.set("errorCode", filters.errorCode.trim());
+  if (filters.errorCode.trim())
+    query.set("errorCode", filters.errorCode.trim());
   if (filters.release.trim()) query.set("release", filters.release.trim());
   if (filters.assignedTo.trim())
     query.set("assignedToUserId", filters.assignedTo.trim());
-  if (filters.from) query.set("from", filters.from);
-  if (filters.to) query.set("to", filters.to);
+  const fromIso = safeParseDate(filters.from);
+  if (fromIso) query.set("from", fromIso);
+  const toIso = safeParseDate(filters.to);
+  if (toIso) query.set("to", toIso);
   return `/api/v1/superadmin/error-events?${query.toString()}`;
 }
 
@@ -313,11 +338,19 @@ export function ErrorEventList({ locale }: ErrorEventListProps): JSX.Element {
                       onClick={() => setSelectedEventId(event.id)}
                       type="button"
                     >
-                      {safeLabelLookup(labels.statusLabels, event.status, event.status)}
+                      {safeLabelLookup(
+                        labels.statusLabels,
+                        event.status,
+                        event.status,
+                      )}
                     </button>
                   </td>
                   <td className="p-3">
-                    {safeLabelLookup(labels.severityLabels, event.severity, event.severity)}
+                    {safeLabelLookup(
+                      labels.severityLabels,
+                      event.severity,
+                      event.severity,
+                    )}
                   </td>
                   <td className="p-3 font-mono">{event.errorCode}</td>
                   <td className="p-3">{event.module}</td>

@@ -38,13 +38,13 @@ import { VaccinesService } from "./vaccines.service.js";
 import { AuditModule } from "../../common/audit/audit.module.js";
 import { ConsentService } from "../../common/notifications/consent.service.js";
 import { VaccineStockLedger } from "../../common/vaccines/vaccine-stock-ledger.js";
+import { InventoryModule } from "../inventory/inventory.module.js";
 import { NotificationsModule } from "../notifications/notifications.module.js";
 import { OwnersModule } from "../owners/owners.module.js";
 import { PatientsModule } from "../patients/patients.module.js";
 import { PortalAuthModule } from "../portal-auth/portal-auth.module.js";
-import { TenantModule } from "../tenant/tenant.module.js";
 import { StockMovementsModule } from "../stock-movements/stock-movements.module.js";
-import { InventoryModule } from "../inventory/inventory.module.js";
+import { TenantModule } from "../tenant/tenant.module.js";
 
 @Module({
   imports: [

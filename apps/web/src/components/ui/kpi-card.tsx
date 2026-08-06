@@ -87,16 +87,16 @@ export function KpiCard({
       role="article"
       aria-label={label}
       className={cn(
-        "group flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow",
+        "group flex flex-col gap-3 rounded-[14px] border border-[#E1E5E2] bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-md",
         className,
       )}
     >
       <div className="flex items-start justify-between gap-3">
-        <span className="text-sm font-medium text-gray-600">{label}</span>
+        <span className="text-sm font-medium text-[#5F6368]">{label}</span>
         {icon ? (
           <span
             aria-hidden="true"
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-clinic-50 text-clinic-700"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#F0F8F3] text-[#0D4D2E]"
           >
             <span className="h-5 w-5">{icon}</span>
           </span>
@@ -104,7 +104,7 @@ export function KpiCard({
       </div>
 
       <div className="flex items-baseline gap-3">
-        <span className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
+        <span className="text-2xl font-semibold tracking-tight text-[#1D1D1F] sm:text-3xl">
           {value}
         </span>
         {typeof delta === "number" ? (
@@ -118,7 +118,7 @@ export function KpiCard({
         ) : null}
       </div>
 
-      {hint ? <p className="text-xs text-gray-500">{hint}</p> : null}
+      {hint ? <p className="text-xs text-[#86868B]">{hint}</p> : null}
     </article>
   );
 }

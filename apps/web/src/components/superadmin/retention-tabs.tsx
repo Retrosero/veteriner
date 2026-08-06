@@ -13,7 +13,9 @@
  * - Tab listesi `role="tablist"` ve `aria-orientation="horizontal"`
  * - Aktif sekme `aria-selected="true"`
  * - Sekmeler arası klavye navigasyonu (Sol/Sağ ok) için `onKeyDown`
- * - Modal açıldığında focus trap ve Escape desteği
+ * - Modal açıldığında `FocusTrap` + Escape desteği; focus trap
+ *   modal komponentlerinin içindedir, bu kapsayıcı yalnız Escape
+ *   listener'ını yönetir
  * @security Tüm API çağrıları yalnızca oturum çereziyle yapılır;
  * tenant kimliği tarayıcıdan türetilmez; backend `audit:log:read`
  * yetkisini uygular.
@@ -24,8 +26,6 @@
 import { Button } from "@vetniva/ui";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-
-
 
 import { getLabels, type Locale } from "@/lib/labels";
 import {
@@ -46,7 +46,11 @@ export type RetentionTabsProps = {
   locale: Locale;
 };
 
-const TAB_ORDER: ReadonlyArray<RetentionTab> = ["policies", "sweeps", "effective"];
+const TAB_ORDER: ReadonlyArray<RetentionTab> = [
+  "policies",
+  "sweeps",
+  "effective",
+];
 
 /**
  * Bounded indeks için statik lookup. `TAB_ORDER` 3 elemanlı
@@ -95,8 +99,9 @@ export function RetentionTabs({ locale }: RetentionTabsProps): JSX.Element {
         safeRefLookup(tabRefs.current, next)?.focus();
       } else if (event.key === "ArrowLeft") {
         event.preventDefault();
-        const prev =
-          tabAt((currentIndex - 1 + TAB_ORDER.length) % TAB_ORDER.length);
+        const prev = tabAt(
+          (currentIndex - 1 + TAB_ORDER.length) % TAB_ORDER.length,
+        );
         setActiveTab(prev);
         safeRefLookup(tabRefs.current, prev)?.focus();
       } else if (event.key === "Home") {
@@ -157,10 +162,6 @@ export function RetentionTabs({ locale }: RetentionTabsProps): JSX.Element {
       data-testid="retention-tabs"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div
-          aria-label={labels.filters.title}
-          className="flex items-center gap-2 text-sm text-slate-600"
-        />
         <div
           aria-label="Aksiyonlar"
           className="flex flex-wrap items-center gap-2"
@@ -225,7 +226,9 @@ export function RetentionTabs({ locale }: RetentionTabsProps): JSX.Element {
         id={`retention-tabpanel-${activeTab}`}
         role="tabpanel"
       >
-        {activeTab === "policies" ? <RetentionPolicyList locale={locale} /> : null}
+        {activeTab === "policies" ? (
+          <RetentionPolicyList locale={locale} />
+        ) : null}
         {activeTab === "sweeps" ? <RetentionSweepList locale={locale} /> : null}
         {activeTab === "effective" ? (
           <RetentionEffectivePreview locale={locale} />
@@ -235,7 +238,6 @@ export function RetentionTabs({ locale }: RetentionTabsProps): JSX.Element {
       {policyModalOpen ? (
         <RetentionPolicyForm
           labels={labels}
-          locale={locale}
           onClose={() => setPolicyModalOpen(false)}
           onSaved={handlePolicySaved}
         />
@@ -244,7 +246,6 @@ export function RetentionTabs({ locale }: RetentionTabsProps): JSX.Element {
       {sweepModalOpen ? (
         <SweepTriggerModal
           labels={labels}
-          locale={locale}
           onClose={() => setSweepModalOpen(false)}
           onTriggered={handleSweepTriggered}
         />

@@ -22,12 +22,12 @@
 
 import { Inject, Injectable, Logger } from "@nestjs/common";
 
+import { CHUNK_LOADER } from "./ai-rag-index.tokens.js";
 import {
   AiChunkLoader,
   defaultChunkLoader,
   type LoadedChunk,
 } from "../../common/ai/ai-chunk-loader.service.js";
-import { CHUNK_LOADER } from "./ai-rag-index.tokens.js";
 
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
@@ -72,9 +72,7 @@ export class AiRagIndexService {
   private readonly logger = new Logger(AiRagIndexService.name);
   private readonly loader: AiChunkLoader;
 
-  public constructor(
-    @Inject(CHUNK_LOADER) deps?: AiChunkLoader,
-  ) {
+  public constructor(@Inject(CHUNK_LOADER) deps?: AiChunkLoader) {
     this.loader = deps ?? defaultChunkLoader();
   }
 
@@ -260,7 +258,8 @@ export class AiRagIndexService {
     rawQuery: string,
     idf: Map<string, number>,
   ): number {
-    const haystack = `${chunk.title} ${chunk.content} ${chunk.keywords.join(" ")}`.toLowerCase();
+    const haystack =
+      `${chunk.title} ${chunk.content} ${chunk.keywords.join(" ")}`.toLowerCase();
     const haystackTokens = this.tokenize(haystack);
     const tf = new Map<string, number>();
     for (const t of haystackTokens) {
@@ -291,11 +290,9 @@ export class AiRagIndexService {
    * Hangi query token'larının chunk ile eşleştiğini döner
    * (UI'da "eşleşen terimler" göstermek için).
    */
-  private matchedTerms(
-    chunk: LoadedChunk,
-    queryTokens: string[],
-  ): string[] {
-    const haystack = `${chunk.title} ${chunk.content} ${chunk.keywords.join(" ")}`.toLowerCase();
+  private matchedTerms(chunk: LoadedChunk, queryTokens: string[]): string[] {
+    const haystack =
+      `${chunk.title} ${chunk.content} ${chunk.keywords.join(" ")}`.toLowerCase();
     return queryTokens.filter((t) => haystack.includes(t));
   }
 }

@@ -21,8 +21,6 @@ import { Badge, Button } from "@vetniva/ui";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-
-
 import { apiRequest } from "@/lib/api-client";
 import { getLabels, type Locale } from "@/lib/labels";
 
@@ -191,7 +189,10 @@ export function RetentionSweepDetail({
           {labels.sweep.bucket} ({sweep.buckets.length})
         </h4>
         {sweep.buckets.length === 0 ? (
-          <p className="rounded border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500" role="status">
+          <p
+            className="rounded border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500"
+            role="status"
+          >
             {labels.common.empty}
           </p>
         ) : (

@@ -21,15 +21,17 @@
  * @since GOAL-066 (FAZ-6) klinik tüketimden otomatik stok düşümü core
  */
 
+import { randomUUID } from "node:crypto";
+
 import { Injectable, Optional } from "@nestjs/common";
+
+import { PrismaService } from "../../prisma/prisma.service.js";
+
+import type { ClinicalConsumptionRecord } from "../../common/clinical-consumption/clinical-consumption.types.js";
 import type {
   ClinicalConsumptionRecord as DbConsumption,
   Prisma,
 } from "@prisma/client";
-import { randomUUID } from "node:crypto";
-import { PrismaService } from "../../prisma/prisma.service.js";
-
-import type { ClinicalConsumptionRecord } from "../../common/clinical-consumption/clinical-consumption.types.js";
 import type {
   ClinicalConsumptionContext,
   ClinicalConsumptionStatus,
@@ -90,8 +92,8 @@ export class ClinicalConsumptionRepository {
       tx.clinicalConsumptionRecord.create({
         data: {
           ...rec,
-          lines: rec.lines as Prisma.InputJsonValue,
-          stockMovementIds: rec.stockMovementIds as Prisma.InputJsonValue,
+          lines: rec.lines,
+          stockMovementIds: rec.stockMovementIds,
           occurredAt: new Date(rec.occurredAt),
           createdAt: new Date(rec.createdAt),
           cancelledAt: rec.cancelledAt ? new Date(rec.cancelledAt) : null,

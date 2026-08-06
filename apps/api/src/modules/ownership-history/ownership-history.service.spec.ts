@@ -334,7 +334,7 @@ describe("OwnershipHistoryService", () => {
         expect.objectContaining({
           // Vitest asymmetric matcher API'si `any` dondurur; burada sadece
           // portal yenileme sinyalinin audit metadata'sinda oldugu sinanir.
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
           metadata: expect.objectContaining({
             portal: "refresh_required",
           }),

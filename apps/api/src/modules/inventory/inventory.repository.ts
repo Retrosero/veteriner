@@ -24,9 +24,10 @@
  * @since GOAL-061 (FAZ-6) depo, raf, lot ve SKT core
  */
 
-import { Injectable, Optional } from "@nestjs/common";
-import type { Prisma, WarehouseRecord as DbWarehouse } from "@prisma/client";
 import { randomUUID } from "node:crypto";
+
+import { Injectable, Optional } from "@nestjs/common";
+
 import { PrismaService } from "../../prisma/prisma.service.js";
 
 import type {
@@ -34,6 +35,7 @@ import type {
   StockLotRecord,
   WarehouseRecord,
 } from "../../common/inventory/inventory.types.js";
+import type { Prisma, WarehouseRecord as DbWarehouse } from "@prisma/client";
 
 /* --------------------------------------------------------------------------
  * Warehouse (Depo)

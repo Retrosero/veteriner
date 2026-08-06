@@ -408,7 +408,7 @@ describe("VaccineRemindersService", () => {
         expect.objectContaining({
           applicationId: APPLICATION_ID_A,
           // Vitest asymmetric matcher tipi `any`; yalnızca assertion verisidir.
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
           channel: expect.stringMatching(/sms|in_app/),
         }),
       );

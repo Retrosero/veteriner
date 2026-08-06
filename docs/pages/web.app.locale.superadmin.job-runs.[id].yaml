@@ -225,15 +225,7 @@ related_api:
   - "GET /api/v1/superadmin/job-runs/attempts/{jobKey}"
 keywords:
   tr-TR:
-    [
-      job run detay,
-      job detay,
-      retry,
-      finish,
-      attempts,
-      stack trace,
-      SUPERADMIN,
-    ]
+    [job run detay, job detay, retry, finish, attempts, stack trace, SUPERADMIN]
   en-GB:
     [
       job run detail,

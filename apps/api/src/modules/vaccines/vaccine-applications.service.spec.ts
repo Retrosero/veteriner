@@ -692,7 +692,7 @@ describe("VaccineApplicationsService", () => {
         "warning",
         expect.objectContaining({
           reason: "Yanlış hayvana uygulandı",
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest asymmetric matcher is intentionally consumed only by the assertion engine.
+
           reversedStockMovementIds: expect.any(Array),
         }),
       );
@@ -817,11 +817,10 @@ describe("VaccineApplicationsService", () => {
         "warning",
         expect.objectContaining({
           reason: "Yanlış lot girilmişti, doğrusu LOT-2026-B",
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest asymmetric matcher is intentionally consumed only by the assertion engine.
+
           lotChange: expect.objectContaining({
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest asymmetric matcher is intentionally consumed only by the assertion engine.
             before: expect.objectContaining({ lot: "LOT-2026-A" }),
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest asymmetric matcher is intentionally consumed only by the assertion engine.
+
             after: expect.objectContaining({ lot: "LOT-2026-B" }),
           }),
         }),
@@ -1012,19 +1011,18 @@ describe("VaccineApplicationsService", () => {
         "warning",
         expect.objectContaining({
           reason: "lot yanlıştı, doz da eksikti",
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest asymmetric matcher is intentionally consumed only by the assertion engine.
+
           before: expect.objectContaining({
             dose: { amount: 1, unit: "ml" },
           }),
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest asymmetric matcher is intentionally consumed only by the assertion engine.
+
           after: expect.objectContaining({
             dose: { amount: 0.5, unit: "ml" },
           }),
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest asymmetric matcher is intentionally consumed only by the assertion engine.
+
           lotChange: expect.objectContaining({
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest asymmetric matcher is intentionally consumed only by the assertion engine.
             before: expect.objectContaining({ lot: "LOT-2026-A" }),
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest asymmetric matcher is intentionally consumed only by the assertion engine.
+
             after: expect.objectContaining({ lot: "LOT-2026-D" }),
           }),
         }),

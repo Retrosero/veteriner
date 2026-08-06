@@ -103,9 +103,7 @@ export class LabResultsRepository {
     patch: LabResultPatch,
   ): Promise<LabResultRecord | null> {
     return this.withContext({ tenantId }, async (tx) => {
-      const toDate = (
-        v: string | Date | null | undefined,
-      ): Date | null => {
+      const toDate = (v: string | Date | null | undefined): Date | null => {
         if (v === null || v === undefined) return null;
         return v instanceof Date ? v : new Date(v);
       };

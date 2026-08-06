@@ -21,7 +21,6 @@ import { Badge } from "@vetniva/ui";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-
 import { apiRequest } from "@/lib/api-client";
 import { getLabels, type Locale } from "@/lib/labels";
 import { safeLabelLookup } from "@/lib/safe-lookup";
@@ -185,7 +184,10 @@ export function RetentionPolicyList({
       ) : null}
 
       {data && data.items.length === 0 && !error ? (
-        <p className="rounded border border-slate-200 bg-white p-6 text-center text-sm text-slate-500" role="status">
+        <p
+          className="rounded border border-slate-200 bg-white p-6 text-center text-sm text-slate-500"
+          role="status"
+        >
           {labels.common.empty}
         </p>
       ) : null}

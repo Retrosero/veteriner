@@ -106,12 +106,18 @@ type NavItemKey = keyof typeof Icon;
 
 const NAV_ITEMS: ReadonlyArray<{
   id: string;
-  labelKey: "overview" | "errorCenter" | "jobRuns" | "securityEvents" | "retention";
+  labelKey:
+    "overview" | "errorCenter" | "jobRuns" | "securityEvents" | "retention";
   iconKey: NavItemKey;
   /** Route prefix (locale hariç). Tam eşleşme + prefix eşleşmesi aktif sayılır. */
   path: string;
 }> = [
-  { id: "overview", labelKey: "overview", iconKey: "overview", path: "/superadmin" },
+  {
+    id: "overview",
+    labelKey: "overview",
+    iconKey: "overview",
+    path: "/superadmin",
+  },
   {
     id: "errorCenter",
     labelKey: "errorCenter",
@@ -294,7 +300,10 @@ export function SuperadminSidebar({
 
         {/* Footer: kullanıcı etiketi */}
         <div className="border-t border-slate-800 px-5 py-3 text-xs text-slate-400">
-          <span aria-hidden="true" className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />
+          <span
+            aria-hidden="true"
+            className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-400"
+          />
           {labels.superadmin.user}
         </div>
       </aside>

@@ -25,12 +25,7 @@ export const JOB_RUN_STATUSES = [
 
 export type JobRunStatus = (typeof JOB_RUN_STATUSES)[number];
 
-export const JOB_RUN_SOURCES = [
-  "queue",
-  "adapter",
-  "cron",
-  "system",
-] as const;
+export const JOB_RUN_SOURCES = ["queue", "adapter", "cron", "system"] as const;
 
 export type JobRunSource = (typeof JOB_RUN_SOURCES)[number];
 

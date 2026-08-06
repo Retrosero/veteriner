@@ -29,9 +29,7 @@ type PageParams = { locale: string };
  * Onboarding etiketleri. Server-side labels.ts'den bagimsiz; wizard
  * ihtiyaclarina ozel anahtarlar burada toplanir.
  */
-function getOnboardingLabels(
-  locale: Locale,
-): {
+function getOnboardingLabels(locale: Locale): {
   welcome: string;
   description: string;
   step1Title: string;

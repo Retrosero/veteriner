@@ -13,18 +13,15 @@
  *   SUPERADMIN/OWNER/VETERINARIAN rolleri için.
  */
 
-import {
-  Controller,
-  Get,
-  Logger,
-  Query,
-} from "@nestjs/common";
+import { Controller, Get, Logger, Query } from "@nestjs/common";
 import { z } from "zod";
 
+import {
+  AiRagIndexService,
+  type RagIndexSearchResponse,
+} from "./ai-rag-index.service.js";
 import { CurrentActor } from "../../common/actor/actor.decorator.js";
 import { RequireRole } from "../../common/rbac/require-role.decorator.js";
-
-import { AiRagIndexService, type RagIndexSearchResponse } from "./ai-rag-index.service.js";
 
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 
@@ -41,9 +38,7 @@ const searchQuerySchema = z.object({
 export class AiRagIndexController {
   private readonly logger = new Logger(AiRagIndexController.name);
 
-  public constructor(
-    private readonly ragIndex: AiRagIndexService,
-  ) {}
+  public constructor(private readonly ragIndex: AiRagIndexService) {}
 
   /**
    * `GET /api/v1/ai/rag/search?q=...&locale=tr-TR&topK=10` —

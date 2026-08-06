@@ -52,7 +52,14 @@ import type {
   ErrorEventStatusTransitionRecord,
   ErrorEventSupportLinkRecord,
 } from "../../common/error-events/error-event.types.js";
-import type { ErrorEvent as PrismaErrorEvent, Prisma } from "@prisma/client";
+import type {
+  ErrorEventNote as PrismaErrorEventNote,
+  ErrorEventSupportLink as PrismaErrorEventSupportLink,
+  ErrorEventAssignment as PrismaErrorEventAssignment,
+  ErrorEventStatusTransition as PrismaErrorEventStatusTransition,
+  ErrorEvent as PrismaErrorEvent,
+  Prisma,
+} from "@prisma/client";
 import type {
   ErrorEventCountry,
   ErrorEventModule,
@@ -366,6 +373,194 @@ export class ErrorEventsRepository implements OnModuleInit {
     };
   }
 
+  /**
+   * Çözüm notunu kalıcı tabloya yazar. Tenant bağlamı mevcutsa
+   * tenant-local RLS, yoksa system-write bağlamı kurulur. Hata
+   * durumunda loglama repository sahibine bırakılır (caller
+   * best-effort `void` ile çağırır).
+   *
+   * @param record
+   * @param tenantId
+   */
+  public async persistNoteSnapshot(
+    record: ErrorEventNoteRecord,
+    tenantId: string | null,
+  ): Promise<void> {
+    if (!this.prisma) return;
+    const data: Prisma.ErrorEventNoteUncheckedCreateInput = {
+      id: record.id,
+      fingerprint: record.fingerprint,
+      authorId: record.authorId,
+      authorType: record.authorType,
+      body: record.body,
+      visibility: record.visibility,
+      createdAt: new Date(record.createdAt),
+    };
+    const write = async (
+      tx: Prisma.TransactionClient,
+    ): Promise<PrismaErrorEventNote> => {
+      return tx.errorEventNote.upsert({
+        where: { id: record.id },
+        create: data,
+        update: data,
+      });
+    };
+    if (tenantId) {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
+        await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'false', true)`;
+        await write(tx);
+      });
+    } else {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'true', true)`;
+        await tx.$executeRaw`SELECT set_config('app.system_write', 'true', true)`;
+        await write(tx);
+      });
+    }
+  }
+
+  /**
+   * Destek bağlantısını kalıcı tabloya yazar. Tenant bağlamı
+   * mevcutsa tenant-local RLS, yoksa system-write bağlamı kurulur.
+   *
+   * @param record
+   * @param tenantId
+   */
+  public async persistSupportLinkSnapshot(
+    record: ErrorEventSupportLinkRecord,
+    tenantId: string | null,
+  ): Promise<void> {
+    if (!this.prisma) return;
+    const data: Prisma.ErrorEventSupportLinkUncheckedCreateInput = {
+      id: record.id,
+      fingerprint: record.fingerprint,
+      system: record.system,
+      externalId: record.externalId,
+      url: record.url,
+      title: record.title,
+      createdById: record.createdById,
+      createdByType: record.createdByType,
+      createdAt: new Date(record.createdAt),
+    };
+    const write = async (
+      tx: Prisma.TransactionClient,
+    ): Promise<PrismaErrorEventSupportLink> => {
+      return tx.errorEventSupportLink.upsert({
+        where: { id: record.id },
+        create: data,
+        update: data,
+      });
+    };
+    if (tenantId) {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
+        await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'false', true)`;
+        await write(tx);
+      });
+      return;
+    }
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'true', true)`;
+      await tx.$executeRaw`SELECT set_config('app.system_write', 'true', true)`;
+      await write(tx);
+    });
+  }
+
+  /**
+   * Atama kaydını kalıcı tabloya yazar. `assigneeId === UNASSIGNED`
+   * sentetik değeri DB'de `unassigned=true` + `assigneeId=null`
+   * olarak saklanır. Tenant bağlamı yukarıdaki metotlarla aynı.
+   *
+   * @param record
+   * @param tenantId
+   */
+  public async persistAssignmentSnapshot(
+    record: ErrorEventAssignmentRecordInternal,
+    tenantId: string | null,
+  ): Promise<void> {
+    if (!this.prisma) return;
+    const isUnassign = record.assigneeId === UNASSIGNED;
+    const data: Prisma.ErrorEventAssignmentUncheckedCreateInput = {
+      id: record.id,
+      fingerprint: record.fingerprint,
+      assigneeId: isUnassign ? null : record.assigneeId,
+      unassigned: isUnassign,
+      actorId: record.assignedById,
+      actorType: record.assignedByType,
+      reason: record.reason,
+      assignedAt: new Date(record.assignedAt),
+    };
+    const write = async (
+      tx: Prisma.TransactionClient,
+    ): Promise<PrismaErrorEventAssignment> => {
+      return tx.errorEventAssignment.upsert({
+        where: { id: record.id },
+        create: data,
+        update: data,
+      });
+    };
+    if (tenantId) {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
+        await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'false', true)`;
+        await write(tx);
+      });
+      return;
+    }
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'true', true)`;
+      await tx.$executeRaw`SELECT set_config('app.system_write', 'true', true)`;
+      await write(tx);
+    });
+  }
+
+  /**
+   * Status transition kaydını kalıcı tabloya yazar. Tenant bağlamı
+   * yukarıdaki metotlarla aynı.
+   *
+   * @param record
+   * @param tenantId
+   */
+  public async persistStatusTransitionSnapshot(
+    record: ErrorEventStatusTransitionRecord,
+    tenantId: string | null,
+  ): Promise<void> {
+    if (!this.prisma) return;
+    const data: Prisma.ErrorEventStatusTransitionUncheckedCreateInput = {
+      id: record.id,
+      fingerprint: record.fingerprint,
+      fromStatus: record.fromStatus,
+      toStatus: record.toStatus,
+      actorId: record.actorId,
+      actorType: record.actorType,
+      reason: record.reason,
+      occurredAt: new Date(record.occurredAt),
+    };
+    const write = async (
+      tx: Prisma.TransactionClient,
+    ): Promise<PrismaErrorEventStatusTransition> => {
+      return tx.errorEventStatusTransition.upsert({
+        where: { id: record.id },
+        create: data,
+        update: data,
+      });
+    };
+    if (tenantId) {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
+        await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'false', true)`;
+        await write(tx);
+      });
+      return;
+    }
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'true', true)`;
+      await tx.$executeRaw`SELECT set_config('app.system_write', 'true', true)`;
+      await write(tx);
+    });
+  }
+
   /** PostgreSQL satırını in-memory aggregate sözleşmesine dönüştürür. */
   private fromPersistenceRecord(row: PrismaErrorEvent): ErrorEventRecord {
     return {
@@ -568,6 +763,10 @@ export class ErrorEventsRepository implements OnModuleInit {
     list.push(transition);
     this.transitionsByFingerprint.set(scopeKey, list);
     this.byId.set(rec.id, rec);
+    // Best-effort: kalıcı snapshot yaz.
+    void this.persistStatusTransitionSnapshot(transition, rec.tenantId);
+    // Ana kaydın status + assignedToUserId alanı da güncellenir.
+    void this.persistSnapshot(rec);
     return { record: rec, transition };
   }
 
@@ -614,6 +813,8 @@ export class ErrorEventsRepository implements OnModuleInit {
     const list = this.notesByFingerprint.get(scopeKey) ?? [];
     list.push(rec);
     this.notesByFingerprint.set(scopeKey, list);
+    // Best-effort: kalıcı snapshot yaz.
+    void this.persistNoteSnapshot(rec, tenantId);
     return rec;
   }
 
@@ -673,6 +874,8 @@ export class ErrorEventsRepository implements OnModuleInit {
     const list = this.supportLinksByFingerprint.get(scopeKey) ?? [];
     list.push(rec);
     this.supportLinksByFingerprint.set(scopeKey, list);
+    // Best-effort: kalıcı snapshot yaz.
+    void this.persistSupportLinkSnapshot(rec, tenantId);
     return rec;
   }
 
@@ -729,7 +932,11 @@ export class ErrorEventsRepository implements OnModuleInit {
       ev.assignedToUserId =
         input.assigneeId === UNASSIGNED ? null : input.assigneeId;
       this.byId.set(ev.id, ev);
+      // Best-effort: ana kayıt güncellenir.
+      void this.persistSnapshot(ev);
     }
+    // Best-effort: kalıcı atama kaydı yaz.
+    void this.persistAssignmentSnapshot(rec, tenantId);
     return rec;
   }
 

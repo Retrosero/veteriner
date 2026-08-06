@@ -10,19 +10,21 @@
  * @since GOAL-064 (FAZ-6) petshop POS core
  */
 
-import { Injectable, Optional } from "@nestjs/common";
-import type {
-  Prisma,
-  PetshopSaleLineRecord as DbLine,
-  PetshopSaleRecord as DbSale,
-} from "@prisma/client";
 import { randomUUID } from "node:crypto";
+
+import { Injectable, Optional } from "@nestjs/common";
+
 import { PrismaService } from "../../prisma/prisma.service.js";
 
 import type {
   PetshopSaleLineRecord,
   PetshopSaleRecord,
 } from "../../common/petshop-sales/petshop-sale.types.js";
+import type {
+  Prisma,
+  PetshopSaleLineRecord as DbLine,
+  PetshopSaleRecord as DbSale,
+} from "@prisma/client";
 import type {
   PetshopSaleStatus,
   PetshopPaymentMethod,

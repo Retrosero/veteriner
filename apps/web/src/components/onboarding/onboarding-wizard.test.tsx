@@ -19,10 +19,7 @@ import "@testing-library/jest-dom/vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  OnboardingWizard,
-  type OnboardingLabels,
-} from "./onboarding-wizard";
+import { OnboardingWizard, type OnboardingLabels } from "./onboarding-wizard";
 
 import type { Locale } from "@vetniva/contracts";
 
@@ -251,8 +248,7 @@ describe("OnboardingWizard", () => {
         headers: new Headers(),
         json: async () => ({
           query_id: "req-test-medical",
-          answer:
-            "Bu konuda yardimci olamam, veteriner hekiminize danisin.",
+          answer: "Bu konuda yardimci olamam, veteriner hekiminize danisin.",
           generationSource: "refusal",
           refusalReason: "dosage",
           duration_ms: 4,
@@ -388,17 +384,17 @@ describe("OnboardingWizard", () => {
       resolveScenarios = resolve;
     });
     fetchSpy.mockReturnValueOnce(scenariosPromise).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers(),
-        json: async () => ({
-          query_id: "req-1",
-          answer: "...",
-          generationSource: "template",
-          scenario: SAMPLE_SCENARIO_DETAIL,
-          duration_ms: 5,
-        }),
-      });
+      ok: true,
+      status: 200,
+      headers: new Headers(),
+      json: async () => ({
+        query_id: "req-1",
+        answer: "...",
+        generationSource: "template",
+        scenario: SAMPLE_SCENARIO_DETAIL,
+        duration_ms: 5,
+      }),
+    });
 
     render(
       <OnboardingWizard
@@ -419,10 +415,7 @@ describe("OnboardingWizard", () => {
 
     // Skeleton'un aria-label'i set edilmeli.
     const skeleton = screen.getByTestId("onboarding-skeleton");
-    expect(skeleton).toHaveAttribute(
-      "aria-label",
-      LABELS.loadingSkeletonLabel,
-    );
+    expect(skeleton).toHaveAttribute("aria-label", LABELS.loadingSkeletonLabel);
 
     // Senaryolari coz; skeleton kaybolmali, liste gorunmeli.
     resolveScenarios({
@@ -433,7 +426,9 @@ describe("OnboardingWizard", () => {
     });
 
     await waitFor(() => {
-      expect(screen.queryByTestId("onboarding-skeleton")).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("onboarding-skeleton"),
+      ).not.toBeInTheDocument();
     });
     expect(screen.getByTestId("onboarding-scenarios")).toBeInTheDocument();
   });
@@ -485,9 +480,9 @@ describe("OnboardingWizard", () => {
     expect(
       screen.getByTestId("onboarding-empty-illustration"),
     ).toBeInTheDocument();
-    expect(
-      screen.getByTestId("onboarding-no-match-title").textContent,
-    ).toMatch(LABELS.emptyStateTitle);
+    expect(screen.getByTestId("onboarding-no-match-title").textContent).toMatch(
+      LABELS.emptyStateTitle,
+    );
   });
 
   /**
@@ -593,9 +588,7 @@ describe("OnboardingWizard", () => {
         />,
       );
       expect(
-        screen.getByTestId("onboarding-wizard").dataset[
-          "prefersReducedMotion"
-        ],
+        screen.getByTestId("onboarding-wizard").dataset["prefersReducedMotion"],
       ).toBe("true");
     } finally {
       vi.unstubAllGlobals();

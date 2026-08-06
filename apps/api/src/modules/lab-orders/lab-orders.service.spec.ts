@@ -209,9 +209,7 @@ class LabOrdersRepositoryTestDouble {
   ): Promise<LabOrderRecord | null> {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
-    const toIso = (
-      v: string | Date | null | undefined,
-    ): string | null => {
+    const toIso = (v: string | Date | null | undefined): string | null => {
       if (v === null || v === undefined) return null;
       return v instanceof Date ? v.toISOString() : v;
     };
@@ -229,8 +227,7 @@ class LabOrdersRepositoryTestDouble {
     if (patch.cancelledAt !== undefined)
       rec.cancelledAt = toIso(patch.cancelledAt);
     if (patch.cancelledBy !== undefined) rec.cancelledBy = patch.cancelledBy;
-    if (patch.cancelReason !== undefined)
-      rec.cancelReason = patch.cancelReason;
+    if (patch.cancelReason !== undefined) rec.cancelReason = patch.cancelReason;
     if (patch.notes !== undefined) rec.notes = patch.notes;
     rec.updatedAt = new Date().toISOString();
     return rec;
@@ -281,7 +278,8 @@ describe("LabOrdersService", () => {
   let labTests: StubLabTestsService;
 
   beforeEach(() => {
-    repo = new LabOrdersRepositoryTestDouble() as unknown as LabOrdersRepository;
+    repo =
+      new LabOrdersRepositoryTestDouble() as unknown as LabOrdersRepository;
     audit = makeAudit();
     labTests = new StubLabTestsService();
     labTests.addTest(makeTest());

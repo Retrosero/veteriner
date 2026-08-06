@@ -18,15 +18,17 @@
  * @since GOAL-060 (FAZ-6) ürün ve hizmet kataloğu core
  */
 
-import { Injectable, Optional } from "@nestjs/common";
-import type { Prisma, ProductRecord as DbProduct } from "@prisma/client";
 import { randomUUID } from "node:crypto";
+
+import { Injectable, Optional } from "@nestjs/common";
+
 import { PrismaService } from "../../prisma/prisma.service.js";
 
 import type {
   ProductKind,
   ProductRecord,
 } from "../../common/products/product.types.js";
+import type { Prisma, ProductRecord as DbProduct } from "@prisma/client";
 
 /** Patch tipi: kısmi güncelleme için izin verilen alanlar. */
 export interface ProductPatch {

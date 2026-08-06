@@ -44,7 +44,9 @@ const helpRequestSchema = z.object({
    * `hybrid` (var, uzun). `retrieval` zorlanırsa AI_CHUNKS.yaml'dan
    * retrieval sonuçları önceliklendirilir.
    */
-  generationSource: z.enum(["auto", "template", "retrieval", "hybrid"]).optional(),
+  generationSource: z
+    .enum(["auto", "template", "retrieval", "hybrid"])
+    .optional(),
 });
 
 /** Help response gövdesi. */

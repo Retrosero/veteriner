@@ -30,7 +30,6 @@ import {
   safeRefLookup,
 } from "@/lib/safe-lookup";
 
-
 export type ErrorEventTabKey = "list" | "groups";
 
 export type ErrorEventTabLabels = {

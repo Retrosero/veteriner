@@ -13,9 +13,10 @@
 import { randomUUID } from "node:crypto";
 
 import { Injectable, Optional } from "@nestjs/common";
-import { PrismaService } from "../../prisma/prisma.service.js";
-import type { Appointment as PrismaAppointment, Prisma } from "@prisma/client";
 
+import { PrismaService } from "../../prisma/prisma.service.js";
+
+import type { Appointment as PrismaAppointment, Prisma } from "@prisma/client";
 import type {
   AppointmentFilters,
   AppointmentStatus,

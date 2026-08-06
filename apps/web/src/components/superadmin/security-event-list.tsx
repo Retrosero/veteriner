@@ -25,7 +25,6 @@ import { cn } from "@vetniva/ui/cn";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-
 import { safeLabelLookup } from "@/lib/safe-lookup";
 
 import {
@@ -36,6 +35,7 @@ import {
   type SecuritySeverity,
   buildSecurityEventPath,
   type SecurityEventFilterState,
+  safeFormatDate,
 } from "./security-event-types";
 import { apiRequest } from "../../lib/api-client";
 import { getLabels, type Locale } from "../../lib/labels";
@@ -79,9 +79,10 @@ export function SecurityEventList({
 }: SecurityEventListProps): JSX.Element {
   const labels = getLabels(locale);
   const sec = labels.securityEvents;
-  const [data, setData] = useState<{ items: SecurityEventRow[]; total: number } | null>(
-    null,
-  );
+  const [data, setData] = useState<{
+    items: SecurityEventRow[];
+    total: number;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] =
     useState<SecurityEventFilterState>(INITIAL_FILTERS);
@@ -286,9 +287,7 @@ export function SecurityEventList({
         <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-5 py-3 text-sm text-slate-600">
             <span>{sec.totalLabel.replace("{count}", String(data.total))}</span>
-            <span className="text-xs text-slate-400">
-              limit=50 · offset=0
-            </span>
+            <span className="text-xs text-slate-400">limit=50 · offset=0</span>
           </div>
           {data.items.length === 0 ? (
             <p
@@ -342,34 +341,41 @@ export function SecurityEventList({
                         className="inline-flex items-center gap-2 text-blue-700 underline decoration-blue-200 underline-offset-2 hover:text-blue-900"
                         href={`/${locale}/superadmin/security-events/${event.id}`}
                       >
-                        <Badge size="sm" tone={securityEventTypeTone(event.type)}>
+                        <Badge
+                          size="sm"
+                          tone={securityEventTypeTone(event.type)}
+                        >
                           {safeLabelLookup(sec.types, event.type, event.type)}
                         </Badge>
                       </Link>
                     </td>
                     <td className="p-3">
                       <Badge size="sm" tone={severityTone(event.severity)}>
-                        {safeLabelLookup(sec.severities, event.severity, event.severity)}
+                        {safeLabelLookup(
+                          sec.severities,
+                          event.severity,
+                          event.severity,
+                        )}
                       </Badge>
                     </td>
                     <td className="p-3">{event.module}</td>
                     <td className="p-3 font-mono text-xs">{event.errorCode}</td>
                     <td
+                      aria-label={event.message}
                       className="max-w-[260px] truncate p-3"
-                      title={event.message}
                     >
                       {event.message}
                     </td>
                     <td
+                      aria-label={event.route}
                       className="max-w-[180px] truncate p-3 font-mono text-xs"
-                      title={event.route}
                     >
                       {event.route}
                     </td>
                     <td className="p-3 font-mono text-xs">{event.country}</td>
                     <td className="p-3">{event.occurrenceCount}</td>
                     <td className="p-3 text-xs text-slate-600">
-                      {new Date(event.lastSeenAt).toLocaleString()}
+                      {safeFormatDate(event.lastSeenAt, locale)}
                     </td>
                     <td className="p-3">
                       {event.alertSent ? (
@@ -378,7 +384,6 @@ export function SecurityEventList({
                           className={cn(
                             "inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800",
                           )}
-                          role="img"
                         >
                           {sec.detail.alertSentYes}
                         </span>
@@ -386,7 +391,6 @@ export function SecurityEventList({
                         <span
                           aria-label={sec.detail.alertSentNo}
                           className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
-                          role="img"
                         >
                           {sec.detail.alertSentNo}
                         </span>

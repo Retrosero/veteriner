@@ -19,12 +19,14 @@
  * @since GOAL-067 (FAZ-6) düşük stok ve SKT uyarıları core
  */
 
-import { Injectable, Optional } from "@nestjs/common";
-import type { Prisma, StockAlertAckRecord as DbAck } from "@prisma/client";
 import { randomUUID } from "node:crypto";
+
+import { Injectable, Optional } from "@nestjs/common";
+
 import { PrismaService } from "../../prisma/prisma.service.js";
 
 import type { StockAlertAckRecord } from "../../common/stock-alerts/stock-alert.types.js";
+import type { Prisma, StockAlertAckRecord as DbAck } from "@prisma/client";
 
 @Injectable()
 export class StockAlertAcksRepository {

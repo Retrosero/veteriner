@@ -266,7 +266,7 @@ describe("DiagnosesService", () => {
         expect.objectContaining({
           // Vitest asymmetric matcher API'si `any` dondurur; bu assertion
           // yalnizca kalici taninin son durumunu dogrular.
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
           after: expect.objectContaining({ status: "resolved" }),
         }),
       );
@@ -306,7 +306,7 @@ describe("DiagnosesService", () => {
         expect.objectContaining({
           // Vitest asymmetric matcher API'si `any` dondurur; assertion
           // yalnizca durum gecisini dogrular.
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
           after: expect.objectContaining({ status: "chronic" }),
         }),
       );
@@ -348,7 +348,7 @@ describe("DiagnosesService", () => {
         expect.objectContaining({
           // Vitest asymmetric matcher API'si `any` dondurur; assertion
           // yalnizca durum gecisini dogrular.
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
           after: expect.objectContaining({ status: "ruled_out" }),
         }),
       );

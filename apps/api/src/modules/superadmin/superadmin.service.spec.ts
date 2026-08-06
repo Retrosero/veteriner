@@ -172,7 +172,7 @@ describe("SuperadminService", () => {
         expect.objectContaining({
           // Vitest asymmetric matcher API'si `any` dondurur; bu test yalnizca
           // Prisma `where.status` iletimini dogrular.
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
           where: expect.objectContaining({ status: "active" }),
         }),
       );

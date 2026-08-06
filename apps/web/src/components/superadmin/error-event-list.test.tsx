@@ -86,9 +86,32 @@ describe("ErrorEventList", () => {
     });
 
     await waitFor(() => {
-      expect(mocks.request).toHaveBeenLastCalledWith(
-        "/api/v1/superadmin/error-events?limit=50&offset=0&tenantId=tenant-acme&branchId=branch-1&module=clinic&errorCode=VET-CLINIC-0001&release=1.4.2&assignedToUserId=usr-dev-7&from=2026-08-01T00%3A00&to=2026-08-02T23%3A59",
-        { credentials: "include" },
+      // `from`/`to` datetime-local değerleri ISO-8601 formatına
+      // dönüştürülür; testte kullanılan `Date` çağrısı CI timezone'una
+      // bağlı olduğundan ham URL karşılaştırması yerine `URL` üzerinden
+      // parametre doğrulaması yapılır.
+      const lastCall = mocks.request.mock.calls.at(-1);
+      const calledPath = lastCall?.[0] as string;
+      const calledUrl = new URL(calledPath, "http://localhost");
+      expect(calledUrl.searchParams.get("tenantId")).toBe("tenant-acme");
+      expect(calledUrl.searchParams.get("branchId")).toBe("branch-1");
+      expect(calledUrl.searchParams.get("module")).toBe("clinic");
+      expect(calledUrl.searchParams.get("errorCode")).toBe("VET-CLINIC-0001");
+      expect(calledUrl.searchParams.get("release")).toBe("1.4.2");
+      expect(calledUrl.searchParams.get("assignedToUserId")).toBe("usr-dev-7");
+      // ISO formatına dönüştürülmüş ve `Date.parse` ile geri okunabilir
+      // olmalı; timezone kayması kabul edilebilir.
+      const fromParam = calledUrl.searchParams.get("from");
+      const toParam = calledUrl.searchParams.get("to");
+      expect(fromParam).not.toBeNull();
+      expect(toParam).not.toBeNull();
+      expect(Number.isNaN(Date.parse(fromParam as string))).toBe(false);
+      expect(Number.isNaN(Date.parse(toParam as string))).toBe(false);
+      expect(new Date(fromParam as string).toISOString()).toBe(
+        new Date("2026-08-01T00:00").toISOString(),
+      );
+      expect(new Date(toParam as string).toISOString()).toBe(
+        new Date("2026-08-02T23:59").toISOString(),
       );
     });
   });
@@ -118,7 +141,9 @@ describe("ErrorEventList", () => {
       ok: true,
       data: { items: [], total: 0 },
     });
-    fireEvent.click(view.getByRole("button", { name: "Listeyi yeniden yükle" }));
+    fireEvent.click(
+      view.getByRole("button", { name: "Listeyi yeniden yükle" }),
+    );
 
     await waitFor(() => {
       // İkinci başarılı istek gönderildi (toplamda en az 2 çağrı).

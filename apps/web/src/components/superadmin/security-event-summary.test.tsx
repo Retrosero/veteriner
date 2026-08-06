@@ -60,7 +60,9 @@ describe("SecurityEventSummary", () => {
   it("summary endpoint'ini çerezle çağırır ve kartları render eder", async () => {
     mocks.request.mockResolvedValue({ ok: true, data: summary });
 
-    const view = render(<SecurityEventSummary from="2026-08-01T00:00:00.000Z" locale="tr-TR" />);
+    const view = render(
+      <SecurityEventSummary from="2026-08-01T00:00:00.000Z" locale="tr-TR" />,
+    );
 
     await waitFor(() => {
       expect(mocks.request).toHaveBeenCalledWith(

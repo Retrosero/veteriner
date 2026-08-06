@@ -59,9 +59,11 @@ function pickCount(
   buckets: ReadonlyArray<{ count: number } & Record<string, unknown>>,
   key: string,
 ): number {
-  return buckets.find(
-    (bucket) => bucket["severity"] === key || bucket["status"] === key,
-  )?.count ?? 0;
+  return (
+    buckets.find(
+      (bucket) => bucket["severity"] === key || bucket["status"] === key,
+    )?.count ?? 0
+  );
 }
 
 /**

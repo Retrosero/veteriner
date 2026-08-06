@@ -16,9 +16,9 @@
 import { randomUUID } from "node:crypto";
 
 import { Injectable, Optional } from "@nestjs/common";
+import { Prisma, type Owner as PrismaOwner } from "@prisma/client";
 
 import { PrismaService } from "../../prisma/prisma.service.js";
-import { Prisma, type Owner as PrismaOwner } from "@prisma/client";
 
 import type {
   Owner,

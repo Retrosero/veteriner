@@ -12,6 +12,8 @@
  * Erişilebilirlik:
  * - `role="dialog"` + `aria-modal="true"`
  * - `aria-labelledby` form başlığına bağlanır
+ * - `FocusTrap` ile Tab/Shift+Tab klavye odağı kapsayıcı içinde
+ *   hapsolur; kapatma sonrası tetikleyici butona geri döner.
  * - Escape tuşu modal'ı kapatır (kapsayıcı tarafından yönetilir)
  * - Hata mesajları `role="alert"` ile duyurulur
  * - Submit butonu loading sırasında `aria-busy="true"`
@@ -23,15 +25,14 @@
 "use client";
 
 import { Button, Input } from "@vetniva/ui";
-import { useEffect, useState } from "react";
-
+import { useState } from "react";
 
 import { apiRequest } from "@/lib/api-client";
 import { safeLabelLookup } from "@/lib/safe-lookup";
 
-import type { RetentionLabels } from "./retention-labels";
-import type { Locale } from "@/lib/labels";
+import { FocusTrap } from "./focus-trap";
 
+import type { RetentionLabels } from "./retention-labels";
 
 const LOG_TYPES = [
   "audit_log",
@@ -60,7 +61,6 @@ type UpsertPayload = {
 };
 
 export type RetentionPolicyFormProps = {
-  locale: Locale;
   labels: RetentionLabels;
   onClose: () => void;
   onSaved: () => void;
@@ -72,7 +72,6 @@ export type RetentionPolicyFormProps = {
  * yeni oluşturma için kullanılır. Gelecekte `existing` prop'u ile
  * düzenleme varyantı eklenebilir.
  * @param root0
- * @param root0.locale
  * @param root0.labels
  * @param root0.onClose
  * @param root0.onSaved
@@ -91,15 +90,6 @@ export function RetentionPolicyForm({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
-
-  // İlk render'da ilk input'a odaklan
-  useEffect(() => {
-    const dialog = document.getElementById("retention-policy-modal");
-    const firstInput = dialog?.querySelector<HTMLInputElement>(
-      "input, select, button",
-    );
-    firstInput?.focus();
-  }, []);
 
   /**
    * Form alanlarını validate eder; geçersizse hata mesajı döner.
@@ -163,172 +153,176 @@ export function RetentionPolicyForm({
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4"
       onClick={onClose}
     >
-      <div
-        aria-labelledby="retention-policy-modal-title"
-        aria-modal="true"
-        className="w-full max-w-lg rounded-[14px] border border-slate-200 bg-white p-6 shadow-xl"
-        id="retention-policy-modal"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-      >
-        <div className="mb-4 flex items-start justify-between">
-          <div>
-            <h3
-              className="text-lg font-semibold text-slate-900"
-              id="retention-policy-modal-title"
-            >
-              {labels.form.titleNew}
-            </h3>
-            <p className="mt-1 text-sm text-slate-600">
-              {labels.form.tenantHint}
-            </p>
-          </div>
-          <button
-            aria-label={labels.common.close}
-            className="rounded p-1 text-slate-400 hover:text-slate-700"
-            onClick={onClose}
-            type="button"
-          >
-            ✕
-          </button>
-        </div>
-
-        {error ? (
-          <p
-            className="mb-3 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-800"
-            role="alert"
-          >
-            {error}
-          </p>
-        ) : null}
-        {validationError ? (
-          <p
-            className="mb-3 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800"
-            role="alert"
-          >
-            {validationError}
-          </p>
-        ) : null}
-
-        <form
-          aria-label={labels.form.titleNew}
-          className="space-y-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void handleSubmit();
-          }}
+      <FocusTrap active className="w-full max-w-lg">
+        <div
+          aria-labelledby="retention-policy-modal-title"
+          aria-modal="true"
+          className="rounded-[14px] border border-slate-200 bg-white p-6 shadow-xl"
+          id="retention-policy-modal"
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
         >
-          <label className="block text-sm text-slate-700">
-            <span className="font-medium">{labels.form.tenantLabel}</span>
-            <Input
-              aria-label={labels.form.tenantLabel}
-              className="mt-1"
-              onChange={(e) => setTenantId(e.target.value)}
-              placeholder={labels.form.tenantPlaceholder}
-              value={tenantId}
-            />
-          </label>
-          <label className="block text-sm text-slate-700">
-            <span className="font-medium">{labels.form.logTypeLabel}</span>
-            <select
-              aria-label={labels.form.logTypeLabel}
-              className="mt-1 h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm focus:border-clinic-500 focus:outline-none focus:ring-2 focus:ring-clinic-500/20"
-              onChange={(e) => setLogType(e.target.value as LogType)}
-              value={logType}
-            >
-              {LOG_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {safeLabelLookup(labels.logType, t, t)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block text-sm text-slate-700">
-            <span className="font-medium">{labels.form.severityLabel}</span>
-            <select
-              aria-label={labels.form.severityLabel}
-              className="mt-1 h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm focus:border-clinic-500 focus:outline-none focus:ring-2 focus:ring-clinic-500/20"
-              onChange={(e) => setSeverity(e.target.value as Severity)}
-              value={severity}
-            >
-              {SEVERITIES.map((s) => (
-                <option key={s} value={s}>
-                  {safeLabelLookup(labels.severity, s, s)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block text-sm text-slate-700">
-              <span className="font-medium">
-                {labels.form.retentionDaysLabel}
-              </span>
-              <Input
-                aria-label={labels.form.retentionDaysLabel}
-                className="mt-1"
-                inputMode="numeric"
-                min={1}
-                onChange={(e) => setRetentionDays(e.target.value)}
-                value={retentionDays}
-              />
-            </label>
-            <label className="block text-sm text-slate-700">
-              <span className="font-medium">
-                {labels.form.archiveAfterDaysLabel}
-              </span>
-              <Input
-                aria-label={labels.form.archiveAfterDaysLabel}
-                className="mt-1"
-                inputMode="numeric"
-                min={0}
-                onChange={(e) => setArchiveAfterDays(e.target.value)}
-                value={archiveAfterDays}
-              />
-            </label>
-          </div>
-          <label className="block text-sm text-slate-700">
-            <span className="font-medium">{labels.form.archiveStorageLabel}</span>
-            <select
-              aria-label={labels.form.archiveStorageLabel}
-              className="mt-1 h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm focus:border-clinic-500 focus:outline-none focus:ring-2 focus:ring-clinic-500/20"
-              onChange={(e) =>
-                setArchiveStorage(e.target.value as ArchiveStorage)
-              }
-              value={archiveStorage}
-            >
-              {ARCHIVE_STORAGES.map((s) => (
-                <option key={s} value={s}>
-                  {safeLabelLookup(labels.archiveStorage, s, s)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <p className="rounded bg-slate-50 p-2 text-xs text-slate-600">
-            {labels.form.redactPiiLabel}
-          </p>
-
-          <div className="mt-5 flex items-center justify-end gap-2 border-t border-slate-200 pt-4">
-            <Button
+          <div className="mb-4 flex items-start justify-between">
+            <div>
+              <h3
+                className="text-lg font-semibold text-slate-900"
+                id="retention-policy-modal-title"
+              >
+                {labels.form.titleNew}
+              </h3>
+              <p className="mt-1 text-sm text-slate-600">
+                {labels.form.tenantHint}
+              </p>
+            </div>
+            <button
+              aria-label={labels.common.close}
+              className="rounded p-1 text-slate-400 hover:text-slate-700"
               onClick={onClose}
-              size="md"
               type="button"
-              variant="secondary"
             >
-              {labels.form.cancel}
-            </Button>
-            <Button
-              aria-busy={submitting}
-              disabled={submitting}
-              isLoading={submitting}
-              size="md"
-              type="submit"
-              variant="primary"
-            >
-              {labels.form.submitCreate}
-            </Button>
+              ✕
+            </button>
           </div>
-        </form>
-      </div>
+
+          {error ? (
+            <p
+              className="mb-3 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+              role="alert"
+            >
+              {error}
+            </p>
+          ) : null}
+          {validationError ? (
+            <p
+              className="mb-3 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800"
+              role="alert"
+            >
+              {validationError}
+            </p>
+          ) : null}
+
+          <form
+            aria-label={labels.form.titleNew}
+            className="space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleSubmit();
+            }}
+          >
+            <label className="block text-sm text-slate-700">
+              <span className="font-medium">{labels.form.tenantLabel}</span>
+              <Input
+                aria-label={labels.form.tenantLabel}
+                className="mt-1"
+                onChange={(e) => setTenantId(e.target.value)}
+                placeholder={labels.form.tenantPlaceholder}
+                value={tenantId}
+              />
+            </label>
+            <label className="block text-sm text-slate-700">
+              <span className="font-medium">{labels.form.logTypeLabel}</span>
+              <select
+                aria-label={labels.form.logTypeLabel}
+                className="mt-1 h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm focus:border-clinic-500 focus:outline-none focus:ring-2 focus:ring-clinic-500/20"
+                onChange={(e) => setLogType(e.target.value as LogType)}
+                value={logType}
+              >
+                {LOG_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {safeLabelLookup(labels.logType, t, t)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-sm text-slate-700">
+              <span className="font-medium">{labels.form.severityLabel}</span>
+              <select
+                aria-label={labels.form.severityLabel}
+                className="mt-1 h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm focus:border-clinic-500 focus:outline-none focus:ring-2 focus:ring-clinic-500/20"
+                onChange={(e) => setSeverity(e.target.value as Severity)}
+                value={severity}
+              >
+                {SEVERITIES.map((s) => (
+                  <option key={s} value={s}>
+                    {safeLabelLookup(labels.severity, s, s)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block text-sm text-slate-700">
+                <span className="font-medium">
+                  {labels.form.retentionDaysLabel}
+                </span>
+                <Input
+                  aria-label={labels.form.retentionDaysLabel}
+                  className="mt-1"
+                  inputMode="numeric"
+                  min={1}
+                  onChange={(e) => setRetentionDays(e.target.value)}
+                  value={retentionDays}
+                />
+              </label>
+              <label className="block text-sm text-slate-700">
+                <span className="font-medium">
+                  {labels.form.archiveAfterDaysLabel}
+                </span>
+                <Input
+                  aria-label={labels.form.archiveAfterDaysLabel}
+                  className="mt-1"
+                  inputMode="numeric"
+                  min={0}
+                  onChange={(e) => setArchiveAfterDays(e.target.value)}
+                  value={archiveAfterDays}
+                />
+              </label>
+            </div>
+            <label className="block text-sm text-slate-700">
+              <span className="font-medium">
+                {labels.form.archiveStorageLabel}
+              </span>
+              <select
+                aria-label={labels.form.archiveStorageLabel}
+                className="mt-1 h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm focus:border-clinic-500 focus:outline-none focus:ring-2 focus:ring-clinic-500/20"
+                onChange={(e) =>
+                  setArchiveStorage(e.target.value as ArchiveStorage)
+                }
+                value={archiveStorage}
+              >
+                {ARCHIVE_STORAGES.map((s) => (
+                  <option key={s} value={s}>
+                    {safeLabelLookup(labels.archiveStorage, s, s)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <p className="rounded bg-slate-50 p-2 text-xs text-slate-600">
+              {labels.form.redactPiiLabel}
+            </p>
+
+            <div className="mt-5 flex items-center justify-end gap-2 border-t border-slate-200 pt-4">
+              <Button
+                onClick={onClose}
+                size="md"
+                type="button"
+                variant="secondary"
+              >
+                {labels.form.cancel}
+              </Button>
+              <Button
+                aria-busy={submitting}
+                disabled={submitting}
+                isLoading={submitting}
+                size="md"
+                type="submit"
+                variant="primary"
+              >
+                {labels.form.submitCreate}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </FocusTrap>
     </div>
   );
 }

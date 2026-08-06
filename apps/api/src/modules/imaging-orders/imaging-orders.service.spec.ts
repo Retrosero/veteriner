@@ -181,9 +181,7 @@ class ImagingOrdersRepositoryTestDouble {
   ): Promise<ImagingOrderRecord | null> {
     const rec = this.byId.get(id);
     if (!rec || rec.tenantId !== tenantId) return null;
-    const toIso = (
-      v: string | Date | null | undefined,
-    ): string | null => {
+    const toIso = (v: string | Date | null | undefined): string | null => {
       if (v === null || v === undefined) return null;
       return v instanceof Date ? v.toISOString() : v;
     };
@@ -197,8 +195,7 @@ class ImagingOrdersRepositoryTestDouble {
     if (patch.performedByUserId !== undefined)
       rec.performedByUserId = patch.performedByUserId;
     if (patch.contrastUse !== undefined) rec.contrastUse = patch.contrastUse;
-    if (patch.clinicalInfo !== undefined)
-      rec.clinicalInfo = patch.clinicalInfo;
+    if (patch.clinicalInfo !== undefined) rec.clinicalInfo = patch.clinicalInfo;
     if (patch.attachments !== undefined) rec.attachments = patch.attachments;
     if (patch.reportRevisions !== undefined)
       rec.reportRevisions = patch.reportRevisions;
@@ -244,7 +241,8 @@ describe("ImagingOrdersService", () => {
   let audit: AuditService;
 
   beforeEach(() => {
-    repo = new ImagingOrdersRepositoryTestDouble() as unknown as ImagingOrdersRepository;
+    repo =
+      new ImagingOrdersRepositoryTestDouble() as unknown as ImagingOrdersRepository;
     audit = makeAudit();
     service = new ImagingOrdersService(repo, audit);
   });

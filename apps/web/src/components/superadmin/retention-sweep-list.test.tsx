@@ -23,7 +23,10 @@ import { RetentionSweepList } from "./retention-sweep-list";
 
 describe("RetentionSweepList", () => {
   it("başlangıç isteğini çerezle gönderir", async () => {
-    mocks.request.mockResolvedValue({ ok: true, data: { items: [], total: 0 } });
+    mocks.request.mockResolvedValue({
+      ok: true,
+      data: { items: [], total: 0 },
+    });
     const view = render(<RetentionSweepList locale="tr-TR" />);
 
     await waitFor(() => {
@@ -36,7 +39,10 @@ describe("RetentionSweepList", () => {
   });
 
   it("tarih filtrelerini ISO-8601 olarak query'ye yazar", async () => {
-    mocks.request.mockResolvedValue({ ok: true, data: { items: [], total: 0 } });
+    mocks.request.mockResolvedValue({
+      ok: true,
+      data: { items: [], total: 0 },
+    });
     const view = render(<RetentionSweepList locale="tr-TR" />);
 
     fireEvent.change(view.getByLabelText("Başlangıç"), {
@@ -75,9 +81,7 @@ describe("RetentionSweepList", () => {
     });
     const view = render(<RetentionSweepList locale="tr-TR" />);
     await waitFor(() => {
-      expect(
-        view.getByLabelText("Detay: sw-1"),
-      ).toHaveAttribute(
+      expect(view.getByLabelText("Detay: sw-1")).toHaveAttribute(
         "href",
         "/tr-TR/superadmin/retention/sweeps/sw-1",
       );

@@ -13,19 +13,20 @@
  * @since GOAL-051 (FAZ-5) aşı uygulama kaydı core
  */
 
-import { Injectable, Optional } from "@nestjs/common";
-import type {
-  Prisma,
-  VaccineApplicationRecord as DbApplication,
-} from "@prisma/client";
 import { randomUUID } from "node:crypto";
-import { PrismaService } from "../../prisma/prisma.service.js";
+
+import { Injectable, Optional } from "@nestjs/common";
 
 import {
   toVaccineApplication,
   type VaccineApplicationRecord,
 } from "../../common/vaccines/vaccine-application.types.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
+import type {
+  Prisma,
+  VaccineApplicationRecord as DbApplication,
+} from "@prisma/client";
 import type {
   VaccineApplicationStatus,
   VaccineApplication,
@@ -71,9 +72,9 @@ export class VaccineApplicationsRepository {
       tx.vaccineApplicationRecord.create({
         data: {
           ...r,
-          lot: r.lot as Prisma.InputJsonValue,
+          lot: r.lot,
           dose: r.dose as Prisma.InputJsonValue,
-          stockMovementIds: r.stockMovementIds as Prisma.InputJsonValue,
+          stockMovementIds: r.stockMovementIds,
           applicationDate: new Date(r.applicationDate),
           createdAt: new Date(r.createdAt),
           updatedAt: new Date(r.updatedAt),
@@ -157,7 +158,7 @@ export class VaccineApplicationsRepository {
         : {}),
       ...(p.nextDueDate !== undefined ? { nextDueDate: p.nextDueDate } : {}),
       ...(p.notes !== undefined ? { notes: p.notes } : {}),
-      ...(p.lot !== undefined ? { lot: p.lot as Prisma.InputJsonValue } : {}),
+      ...(p.lot !== undefined ? { lot: p.lot } : {}),
       ...(p.status !== undefined ? { status: p.status } : {}),
       ...(p.updatedAt !== undefined
         ? { updatedAt: new Date(p.updatedAt) }
@@ -176,7 +177,7 @@ export class VaccineApplicationsRepository {
         ? { cancellationReason: p.cancellationReason }
         : {}),
       ...(p.stockMovementIds !== undefined
-        ? { stockMovementIds: p.stockMovementIds as Prisma.InputJsonValue }
+        ? { stockMovementIds: p.stockMovementIds }
         : {}),
     };
     const out = await this.inTenant(tenantId, (tx) =>

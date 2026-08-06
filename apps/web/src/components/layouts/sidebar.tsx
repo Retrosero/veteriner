@@ -250,27 +250,48 @@ export function Sidebar({ locale, open, onClose }: SidebarProps): JSX.Element {
       <aside
         aria-label="Birincil navigasyon"
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-gray-200 bg-white transition-transform lg:static lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 flex w-[248px] shrink-0 flex-col border-r border-[#E1E5E2] bg-white transition-transform lg:static lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full",
         )}
       >
         {/* Logo */}
-        <div className="flex h-16 items-center gap-2 border-b border-gray-200 px-5">
+        <div className="flex h-[72px] items-center gap-3 border-b border-[#ECEFED] px-5">
           <span
             aria-hidden="true"
-            className="grid h-8 w-8 place-items-center rounded-lg bg-clinic-700 text-white"
+            className="grid h-[34px] w-[34px] place-items-center rounded-lg bg-[#0D4D2E] text-white shadow-sm"
           >
-            <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-              <circle cx="12" cy="14" r="6" />
-              <circle cx="6" cy="8" r="2.5" />
-              <circle cx="18" cy="8" r="2.5" />
-              <circle cx="9" cy="4" r="2" />
-              <circle cx="15" cy="4" r="2" />
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-5 w-5"
+            >
+              <path
+                d="M12 2C6.5 2 2 6.5 2 12c0 3.5 1.8 6.6 4.5 8.4"
+                fill="none"
+              />
+              <path
+                d="M12 22c5.5 0 10-4.5 10-10 0-3.5-1.8-6.6-4.5-8.4"
+                fill="none"
+              />
+              <circle cx="12" cy="14" r="4" fill="currentColor" />
+              <circle cx="8" cy="8" r="1.75" fill="currentColor" />
+              <circle cx="16" cy="8" r="1.75" fill="currentColor" />
+              <circle cx="10" cy="4.5" r="1.25" fill="currentColor" />
+              <circle cx="14" cy="4.5" r="1.25" fill="currentColor" />
             </svg>
           </span>
-          <span className="text-base font-semibold text-clinic-800">
-            {labels.brand.name}
-          </span>
+          <div className="flex flex-col">
+            <span className="text-[17px] font-semibold leading-tight text-[#0D4D2E]">
+              {labels.brand.name}
+            </span>
+            <span className="text-xs font-normal text-[#5F6368]">
+              Klinik Yönetimi
+            </span>
+          </div>
         </div>
 
         {/* Birincil navigasyon */}
@@ -289,16 +310,16 @@ export function Sidebar({ locale, open, onClose }: SidebarProps): JSX.Element {
                     aria-current={active ? "page" : undefined}
                     onClick={onClose}
                     className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      "flex items-center gap-3 rounded-[10px] px-3.5 py-2.5 text-sm font-medium transition-colors",
                       active
-                        ? "bg-clinic-50 text-clinic-800"
-                        : "text-gray-700 hover:bg-gray-100",
+                        ? "bg-[#E6F4EC] text-[#0D4D2E]"
+                        : "text-[#4B5563] hover:bg-[#F1F5F1] hover:text-[#1D1D1F]",
                     )}
                   >
                     <span
                       className={cn(
-                        "h-5 w-5 shrink-0",
-                        active ? "text-clinic-700" : "text-gray-500",
+                        "h-5 w-5 shrink-0 transition-colors",
+                        active ? "text-[#0D4D2E]" : "text-[#5F6368]",
                       )}
                     >
                       {Icon[item.iconKey as keyof typeof Icon]}
@@ -312,7 +333,7 @@ export function Sidebar({ locale, open, onClose }: SidebarProps): JSX.Element {
         </nav>
 
         {/* İkincil navigasyon */}
-        <div className="border-t border-gray-200 px-3 py-4">
+        <div className="border-t border-[#ECEFED] px-3 py-4">
           <ul role="list" className="space-y-1">
             {SECONDARY_ITEMS.map((item) => {
               const href =
@@ -327,16 +348,16 @@ export function Sidebar({ locale, open, onClose }: SidebarProps): JSX.Element {
                     aria-current={active ? "page" : undefined}
                     onClick={onClose}
                     className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      "flex items-center gap-3 rounded-[10px] px-3.5 py-2.5 text-sm font-medium transition-colors",
                       active
-                        ? "bg-clinic-50 text-clinic-800"
-                        : "text-gray-700 hover:bg-gray-100",
+                        ? "bg-[#E6F4EC] text-[#0D4D2E]"
+                        : "text-[#4B5563] hover:bg-[#F1F5F1] hover:text-[#1D1D1F]",
                     )}
                   >
                     <span
                       className={cn(
-                        "h-5 w-5 shrink-0",
-                        active ? "text-clinic-700" : "text-gray-500",
+                        "h-5 w-5 shrink-0 transition-colors",
+                        active ? "text-[#0D4D2E]" : "text-[#5F6368]",
                       )}
                     >
                       {Icon[item.iconKey as keyof typeof Icon]}

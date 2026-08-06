@@ -11,17 +11,17 @@
  */
 
 import { Injectable, Optional } from "@nestjs/common";
-import { PrismaService } from "../../prisma/prisma.service.js";
-import type {
-  DiagnosisRecord as PrismaDiagnosis,
-  Prisma,
-} from "@prisma/client";
 
 import {
   toDiagnosis,
   type DiagnosisRecord,
 } from "../../common/diagnoses/diagnosis.types.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
+import type {
+  DiagnosisRecord as PrismaDiagnosis,
+  Prisma,
+} from "@prisma/client";
 import type {
   Diagnosis,
   DiagnosisCategory,

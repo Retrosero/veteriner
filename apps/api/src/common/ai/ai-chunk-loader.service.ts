@@ -59,10 +59,7 @@ export class AiChunkLoader {
    */
   private readonly staticChunks: LoadedChunk[] | null;
 
-  public constructor(
-    filePath: string,
-    staticChunks?: LoadedChunk[] | null,
-  ) {
+  public constructor(filePath: string, staticChunks?: LoadedChunk[] | null) {
     this.filePath = filePath;
     this.staticChunks = staticChunks ?? null;
     if (this.staticChunks !== null) {
@@ -185,8 +182,7 @@ export class AiChunkLoader {
 export function defaultChunkLoader(
   env: NodeJS.ProcessEnv = process.env,
 ): AiChunkLoader {
-  const relPath =
-    env["RAG_CHUNKS_PATH"] ?? "docs/ai/AI_CHUNKS.yaml";
+  const relPath = env["RAG_CHUNKS_PATH"] ?? "docs/ai/AI_CHUNKS.yaml";
   // Göreceli yol: process.cwd() repo kökü varsayılır.
   const absPath = path.isAbsolute(relPath)
     ? relPath
@@ -231,9 +227,9 @@ export function parseChunksYaml(raw: string): LoadedChunk[] {
         content,
         locale: localeRaw === "en-GB" ? "en-GB" : "tr-TR",
         keywords: Array.isArray((c as Record<string, unknown>)["keywords"])
-          ? (((c as Record<string, unknown>)["keywords"] as unknown[]).filter(
+          ? ((c as Record<string, unknown>)["keywords"] as unknown[]).filter(
               (k): k is string => typeof k === "string",
-            ))
+            )
           : [],
         source:
           typeof (c as Record<string, unknown>)["source"] === "string"

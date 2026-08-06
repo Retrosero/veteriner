@@ -24,7 +24,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
     <div
       ref={ref}
       className={cn(
-        "rounded-lg border border-gray-200 bg-white shadow-sm",
+        "rounded-[14px] border border-[#E1E5E2] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]",
         className,
       )}
       {...rest}
@@ -37,7 +37,7 @@ export const CardHeader = forwardRef<HTMLDivElement, CardProps>(
     return (
       <div
         ref={ref}
-        className={cn("border-b border-gray-200 px-4 py-3", className)}
+        className={cn("border-b border-[#ECEFED] px-5 py-4", className)}
         {...rest}
       />
     );
@@ -51,7 +51,7 @@ export const CardTitle = forwardRef<
   return (
     <h3
       ref={ref}
-      className={cn("text-base font-semibold text-gray-900", className)}
+      className={cn("text-[17px] font-semibold text-[#1D1D1F]", className)}
       {...rest}
     />
   );
@@ -64,7 +64,7 @@ export const CardDescription = forwardRef<
   return (
     <p
       ref={ref}
-      className={cn("mt-1 text-sm text-gray-600", className)}
+      className={cn("mt-1 text-sm text-[#5F6368]", className)}
       {...rest}
     />
   );
@@ -74,7 +74,7 @@ export const CardBody = forwardRef<HTMLDivElement, CardProps>(function CardBody(
   { className, ...rest },
   ref,
 ) {
-  return <div ref={ref} className={cn("px-4 py-4", className)} {...rest} />;
+  return <div ref={ref} className={cn("px-5 py-5", className)} {...rest} />;
 });
 
 export const CardFooter = forwardRef<HTMLDivElement, CardProps>(
@@ -83,7 +83,7 @@ export const CardFooter = forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         className={cn(
-          "flex items-center justify-end gap-2 border-t border-gray-200 px-4 py-3",
+          "flex items-center justify-end gap-2 border-t border-[#ECEFED] px-5 py-4",
           className,
         )}
         {...rest}

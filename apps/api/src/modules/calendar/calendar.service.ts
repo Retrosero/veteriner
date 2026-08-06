@@ -47,7 +47,6 @@ import {
   Optional,
 } from "@nestjs/common";
 import { ModuleRef } from "@nestjs/core";
-import { AppointmentsRepository } from "../appointments/appointments.repository.js";
 
 import { AuditService } from "../../common/audit/audit.service.js";
 import {
@@ -55,6 +54,7 @@ import {
   type DayOfWeek,
 } from "../../common/calendar/calendar.types.js";
 import { DomainError } from "../../common/errors/domain-error.js";
+import { AppointmentsRepository } from "../appointments/appointments.repository.js";
 
 import type { ActorContext } from "../../common/actor/actor-context.service.js";
 import type {

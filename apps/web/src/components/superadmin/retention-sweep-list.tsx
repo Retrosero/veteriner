@@ -20,7 +20,6 @@ import { Badge } from "@vetniva/ui";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-
 import { apiRequest } from "@/lib/api-client";
 import { getLabels, type Locale } from "@/lib/labels";
 

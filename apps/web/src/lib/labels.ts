@@ -502,7 +502,8 @@ const tr = {
       errorStack: "Stack trace",
       noInput: "Input kaydedilmemiş.",
       noOutput: "Output kaydedilmemiş.",
-      noErrorStack: "Bu run için stack trace saklanmıyor (başarılı veya terminal).",
+      noErrorStack:
+        "Bu run için stack trace saklanmıyor (başarılı veya terminal).",
       noUser: "Sistem",
       actionsHeading: "Aksiyonlar",
     },
@@ -949,8 +950,7 @@ const en = {
     progressBarLabel: "Onboarding progress",
     progressBarValue: "%{percent} complete",
     emptyStateTitle: "No matching scenario",
-    emptyStateHint:
-      "Try rephrasing your question or contact clinic staff.",
+    emptyStateHint: "Try rephrasing your question or contact clinic staff.",
     loadingSkeletonLabel: "Loading scenarios",
     shortcutHint: "Press '?' for help",
     autoDismissHint: "Auto-closing in 30 seconds",
@@ -1082,7 +1082,8 @@ const en = {
       notFound: "Error event not found.",
       changeStatus: "Status",
       saveStatus: "Save status",
-      statusUpdateError: "Status could not be updated; verify the transition rule.",
+      statusUpdateError:
+        "Status could not be updated; verify the transition rule.",
       assignment: {
         title: "Assignee",
         current: "Current assignee",
@@ -1237,7 +1238,8 @@ const en = {
       errorStack: "Stack trace",
       noInput: "No input recorded.",
       noOutput: "No output recorded.",
-      noErrorStack: "No stack trace is stored for this run (successful or terminal).",
+      noErrorStack:
+        "No stack trace is stored for this run (successful or terminal).",
       noUser: "System",
       actionsHeading: "Actions",
     },

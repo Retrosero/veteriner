@@ -344,7 +344,7 @@ export class SecurityEventsRepository implements OnModuleInit {
       release: row.release,
       severity: row.severity as SecurityEventRecord["severity"],
       fingerprint: row.fingerprint,
-      errorCode: row.errorCode as SecurityEventRecord["errorCode"],
+      errorCode: row.errorCode,
       message: row.message,
       statusCode: row.statusCode,
       ipAddress: row.ipAddress,
@@ -361,7 +361,7 @@ export class SecurityEventsRepository implements OnModuleInit {
 
   private toContextRecord(value: Prisma.JsonValue): Record<string, unknown> {
     return value !== null && typeof value === "object" && !Array.isArray(value)
-      ? (value as Record<string, unknown>)
+      ? value
       : {};
   }
 

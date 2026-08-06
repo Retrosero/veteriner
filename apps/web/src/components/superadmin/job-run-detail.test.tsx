@@ -62,10 +62,7 @@ describe("JobRunDetail", () => {
   it("detayı çerezle yükler, failed run için retry çağrısı yapar (happy-path)", async () => {
     mocks.request.mockImplementation(
       (path: string, init?: { method?: string; credentials?: string }) => {
-        if (
-          typeof path === "string" &&
-          path.includes("/attempts/")
-        ) {
+        if (typeof path === "string" && path.includes("/attempts/")) {
           return Promise.resolve({
             ok: true,
             data: { items: [], total: 0 },

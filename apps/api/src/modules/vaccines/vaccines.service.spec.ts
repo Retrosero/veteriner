@@ -301,9 +301,9 @@ describe("VaccinesService", () => {
         expect.objectContaining({
           // Vitest asymmetric matcher API'si `any` dondurur; assertion
           // sadece append-only oncesi durum snapshot'ini dogrular.
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
           before: expect.objectContaining({ isCore: true }),
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
           after: expect.objectContaining({ isCore: false }),
         }),
       );

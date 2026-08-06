@@ -18,12 +18,12 @@ import { randomUUID } from "node:crypto";
 import { Injectable, Optional } from "@nestjs/common";
 
 import { PrismaService } from "../../prisma/prisma.service.js";
-import type { Patient as PrismaPatient, Prisma } from "@prisma/client";
 
 import type {
   Patient,
   PatientCreateInput,
 } from "../../common/patients/patient.types.js";
+import type { Patient as PrismaPatient, Prisma } from "@prisma/client";
 
 /** Persist edilmiş patient record. */
 export interface PatientRecord {

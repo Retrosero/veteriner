@@ -17,14 +17,10 @@
  * @since GOAL-084 (FAZ-8) yatış ve kafes yönetimi core
  */
 
-import { Injectable, Optional } from "@nestjs/common";
-import type {
-  CageAssignmentRecord as DbAssignment,
-  CageRecord as DbCage,
-  HospitalizationRecord as DbHospitalization,
-  Prisma,
-} from "@prisma/client";
 import { randomUUID } from "node:crypto";
+
+import { Injectable, Optional } from "@nestjs/common";
+
 import { PrismaService } from "../../prisma/prisma.service.js";
 
 import type {
@@ -32,6 +28,12 @@ import type {
   CageRecord,
   HospitalizationRecord,
 } from "../../common/hospitalization/hospitalization.types.js";
+import type {
+  CageAssignmentRecord as DbAssignment,
+  CageRecord as DbCage,
+  HospitalizationRecord as DbHospitalization,
+  Prisma,
+} from "@prisma/client";
 import type { CageKind, HospitalizationStatus } from "@vetniva/contracts";
 
 /* --------------------------------------------------------------------------

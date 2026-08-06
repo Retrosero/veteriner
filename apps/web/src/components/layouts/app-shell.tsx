@@ -53,10 +53,10 @@ export function AppShell({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F7F8F7]">
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded-md focus:bg-clinic-700 focus:px-3 focus:py-2 focus:text-sm focus:text-white"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded-md focus:bg-[#167A4A] focus:px-3 focus:py-2 focus:text-sm focus:text-white"
       >
         İçeriğe geç
       </a>
@@ -82,7 +82,7 @@ export function AppShell({
             aria-label="Ana içerik"
             className="flex-1 px-4 py-6 sm:px-6 lg:px-8"
           >
-            <div className="mx-auto w-full max-w-7xl">{children}</div>
+            <div className="mx-auto w-full max-w-[1600px]">{children}</div>
           </main>
         </div>
       </div>

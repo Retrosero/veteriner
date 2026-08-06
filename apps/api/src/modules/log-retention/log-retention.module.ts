@@ -13,18 +13,22 @@
  * - JobRunRetentionTarget → JobRunsRepository
  * - PiiMasker (common/logging) arşivleme sırasında payload
  *   sanitization için kullanılır.
+ * - LogRetentionScheduler her gün saat 03:00'te sistem aktörü
+ *   ile runScheduledSweep() çağrısı yapar (FAZ-10 backend).
  *
  * audit_log / notification / request_log logType'ları için henüz
  * target tanımlı değildir (Faz 10+ audit modülü + bildirim
  * servisi); sweep sırasında bu tipler için bucket boş döner.
  *
  * @since GOAL-106 (FAZ-10) PII maskeleme ve log retention core
+ * @updated GOAL-106 (FAZ-10) scheduler entegrasyonu eklendi
  */
 
 import { Global, Module } from "@nestjs/common";
 
 import { LogRetentionController } from "./log-retention.controller.js";
 import { LogRetentionRepository } from "./log-retention.repository.js";
+import { LogRetentionScheduler } from "./log-retention.scheduler.js";
 import { LogRetentionService } from "./log-retention.service.js";
 import { LOG_RETENTION_TARGETS } from "./log-retention.targets.js";
 import { ErrorEventsModule } from "../error-events/error-events.module.js";
@@ -41,6 +45,7 @@ import { SecurityEventRetentionTarget } from "./targets/security-event.target.js
   providers: [
     LogRetentionRepository,
     LogRetentionService,
+    LogRetentionScheduler,
     ErrorEventRetentionTarget,
     SecurityEventRetentionTarget,
     JobRunRetentionTarget,
@@ -63,6 +68,6 @@ import { SecurityEventRetentionTarget } from "./targets/security-event.target.js
       ],
     },
   ],
-  exports: [LogRetentionService, LogRetentionRepository],
+  exports: [LogRetentionService, LogRetentionRepository, LogRetentionScheduler],
 })
 export class LogRetentionModule {}

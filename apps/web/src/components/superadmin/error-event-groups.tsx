@@ -23,7 +23,14 @@
 
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { apiRequest } from "../../lib/api-client";
 
@@ -322,7 +329,10 @@ export function ErrorEventGroups({
             </thead>
             <tbody>
               {data.items.map((group) => (
-                <tr className="border-t border-slate-100" key={group.fingerprint}>
+                <tr
+                  className="border-t border-slate-100"
+                  key={group.fingerprint}
+                >
                   <td className="p-3">
                     <button
                       className="text-left font-mono text-blue-700 underline decoration-slate-300 underline-offset-2 hover:text-blue-900"
@@ -391,12 +401,12 @@ function GroupDetailDialog({
 
   const load = useCallback((): void => {
     setError(null);
-    void apiRequest<ErrorEventGroupDetail>(path, { credentials: "include" }).then(
-      (result) => {
-        if (result.ok) setDetail(result.data);
-        else setError(labels.detailLoadFailed);
-      },
-    );
+    void apiRequest<ErrorEventGroupDetail>(path, {
+      credentials: "include",
+    }).then((result) => {
+      if (result.ok) setDetail(result.data);
+      else setError(labels.detailLoadFailed);
+    });
   }, [path, labels.detailLoadFailed]);
 
   useEffect(() => {
@@ -495,7 +505,9 @@ function GroupDetailDialog({
                 <dd>{detail.eventCount}</dd>
               </div>
               <div>
-                <dt className="text-slate-500">{labels.columns.uniqueTenants}</dt>
+                <dt className="text-slate-500">
+                  {labels.columns.uniqueTenants}
+                </dt>
                 <dd>{detail.uniqueTenants}</dd>
               </div>
             </dl>

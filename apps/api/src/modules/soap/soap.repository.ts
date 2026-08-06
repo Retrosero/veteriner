@@ -20,13 +20,14 @@
  */
 
 import { Injectable, Optional } from "@nestjs/common";
+
 import { PrismaService } from "../../prisma/prisma.service.js";
+
 import type {
   SoapNote as PrismaSoapNote,
   SoapAmend as PrismaSoapAmend,
   Prisma,
 } from "@prisma/client";
-
 import type { SoapNote, SoapStatus } from "@vetniva/contracts";
 
 /** Persist edilmiş SOAP amend (düzeltme) record. */
