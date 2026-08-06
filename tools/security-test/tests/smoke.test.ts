@@ -10,12 +10,13 @@
  * @since GOAL-123 (FAZ-12) guvenlik testi
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { runSecurityChecks, defaultFetch } from "../src/runner.js";
 import { SECURITY_CHECKS } from "../src/config.js";
-import { reportToMarkdown, reportToJson } from "../src/report.js";
-import type { SecurityStep } from "../src/types.js";
+import { reportToJson, reportToMarkdown } from "../src/report.js";
+import { type defaultFetch, runSecurityChecks } from "../src/runner.js";
+
+import type { SecurityRunReport, SecurityStep } from "../src/types.js";
 
 const AUTH = { token: "T", tenantId: "A", branchId: "B1" };
 const CROSS = { token: "T", tenantId: "B", branchId: "B2" };
@@ -55,7 +56,8 @@ describe("security-test smoke", () => {
     const json = reportToJson(report);
     expect(md).toContain("Guvenlik Testi Raporu");
     expect(md).toContain("Kontrol Sonuclari");
-    expect(JSON.parse(json).allPassed).toBe(report.allPassed);
+    const parsed = JSON.parse(json) as SecurityRunReport;
+    expect(parsed.allPassed).toBe(report.allPassed);
     expect(report.results.length).toBe(SECURITY_CHECKS.length);
   });
 });

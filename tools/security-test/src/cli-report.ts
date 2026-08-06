@@ -18,7 +18,8 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-import { reportToMarkdown, reportToJson } from "./report.js";
+import { reportToJson, reportToMarkdown } from "./report.js";
+
 import type { SecurityRunReport } from "./types.js";
 
 interface Args {

@@ -62,7 +62,11 @@ export interface PerformBackupOptions {
   /** Upload hedef konfigurasyonu. */
   upload?: UploadTarget;
   /** Custom uploader implementasyonu (testlerde mock). */
-  uploader?: (target: UploadTarget, localPath: string, key: string) => Promise<{ key: string; bytes: number }>;
+  uploader?: (
+    target: UploadTarget,
+    localPath: string,
+    key: string,
+  ) => Promise<{ key: string; bytes: number }>;
   /** Dry-run: dump alinmaz, sadece plan uretilir. */
   dryRun?: boolean;
   /** Su anki zaman (testlerde inject). */
@@ -79,7 +83,12 @@ export interface BackupPlan {
   database: string;
   outputFile: string;
   expectedSize: number;
-  upload?: { backend: UploadBackend; key: string; bucket: string; coldTier: ColdStorageTier };
+  upload?: {
+    backend: UploadBackend;
+    key: string;
+    bucket: string;
+    coldTier: ColdStorageTier;
+  };
   retention: { daily: number; weekly: number; monthly: number };
   rpoMinutes: number;
   rtoMinutes: number;
@@ -126,7 +135,10 @@ export interface RetentionSpec {
 }
 
 /** Tier bazinda retention spec uretir. */
-export function retentionForTier(tier: BackupTier, coldTier: ColdStorageTier): RetentionSpec {
+export function retentionForTier(
+  tier: BackupTier,
+  coldTier: ColdStorageTier,
+): RetentionSpec {
   const cfg = RPO_RTO_TIERS[tier];
   return {
     daily: cfg.retentionDaily,

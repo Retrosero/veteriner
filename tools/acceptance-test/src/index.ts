@@ -74,3 +74,13 @@ export {
   formatTimestamp,
 } from "./report.js";
 export type { ReportSummary, ReportInput } from "./report.js";
+
+export { parseFeedbackJson, flattenForScenario } from "./feedback-loader.js";
+export type { RawFeedbackFile } from "./feedback-loader.js";
+
+export { validateTenants } from "./tenants.js";
+export type {
+  TenantConfig,
+  TenantValidationError,
+  TenantsFile,
+} from "./tenants.js";

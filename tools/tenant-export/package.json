@@ -13,6 +13,7 @@
     "validate": "node --import tsx src/cli-validate.ts"
   },
   "dependencies": {
+    "@prisma/client": "^5.22.0",
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {

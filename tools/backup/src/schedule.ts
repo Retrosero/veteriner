@@ -71,7 +71,11 @@ export function buildSchedule(
   };
 }
 
-function tierDescription(tier: BackupTier, cron: string, walCron: string): string {
+function tierDescription(
+  tier: BackupTier,
+  cron: string,
+  walCron: string,
+): string {
   switch (tier) {
     case "pilot":
       return `Pilot tier: tam yedek (${cron}) + 5dk WAL streaming (${walCron}).`;
@@ -102,10 +106,7 @@ export function isValidCron(expr: string): boolean {
  * critical. Bu test/pilot ihtiyaclarini karsilar; production
  * scheduler icin `cron-parser` gibi kutuphane onerilir.
  */
-export function nextRunTime(
-  cron: string,
-  now: Date = new Date(),
-): Date | null {
+export function nextRunTime(cron: string, now: Date = new Date()): Date | null {
   if (!isValidCron(cron)) return null;
 
   const parts = cron.trim().split(/\s+/);
@@ -147,7 +148,9 @@ export function nextRunTime(
 }
 
 /** Tier env uzerinden okuma. */
-export function readTierFromEnv(env: NodeJS.ProcessEnv = process.env): BackupTier | null {
+export function readTierFromEnv(
+  env: NodeJS.ProcessEnv = process.env,
+): BackupTier | null {
   const raw = env[ENV_VARS.BACKUP_TIER];
   if (raw === "pilot" || raw === "production" || raw === "critical") {
     return raw;

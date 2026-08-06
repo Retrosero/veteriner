@@ -20,8 +20,9 @@ import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 import { SECURITY_CHECKS } from "./config.js";
-import { runSecurityChecks } from "./runner.js";
 import { reportToJson, reportToMarkdown } from "./report.js";
+import { runSecurityChecks } from "./runner.js";
+
 import type { SecurityAuthContext, SecurityCheck } from "./types.js";
 
 interface Args {

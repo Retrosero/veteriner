@@ -10,13 +10,14 @@
  * @since GOAL-123 (FAZ-12) guvenlik testi
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import {
-  reportToMarkdown,
-  reportToJson,
   describeResult,
+  reportToJson,
+  reportToMarkdown,
 } from "../src/report.js";
+
 import type { SecurityRunReport } from "../src/types.js";
 
 const BASE_REPORT: SecurityRunReport = {

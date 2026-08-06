@@ -16,6 +16,8 @@
  * @since GOAL-123 (FAZ-12) guvenlik testi
  */
 
+import { buildSeverityReport } from "./severity.js";
+
 import type {
   SecurityAuthContext,
   SecurityCheck,
@@ -318,6 +320,14 @@ export async function runSecurityChecks(
     skipCount,
     bySeverity,
     allPassed: failCount === 0,
+  };
+  // Severity raporu (ASVS seviyesi ile severity tutarliligi).
+  const severityReport = buildSeverityReport(results);
+  report.severityReport = {
+    total: severityReport.total,
+    consistent: severityReport.consistent,
+    inconsistent: severityReport.inconsistent,
+    topSlaDays: severityReport.topSlaDays,
   };
   if (crossTenantAuth?.tenantId !== undefined) {
     report.crossTenantId = crossTenantAuth.tenantId;

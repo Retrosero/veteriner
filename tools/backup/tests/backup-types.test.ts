@@ -12,7 +12,11 @@
 
 import { describe, it, expect } from "vitest";
 
-import { RPO_RTO_TIERS, rpoRtoForTier, type BackupTier } from "../src/backup-types.js";
+import {
+  RPO_RTO_TIERS,
+  rpoRtoForTier,
+  type BackupTier,
+} from "../src/backup-types.js";
 
 describe("RPO_RTO_TIERS", () => {
   it("3 tier tanimli (pilot/production/critical)", () => {

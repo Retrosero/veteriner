@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<!--
+  @file Pilot Geri Bildirim Formu (GOAL-121, FAZ-12).
+  @description Statik HTML; pilot kullanicinin 10 uctan uca pilot
+  senaryosunun her adimina 1-5 puan, yorum ve "gereksiz adim"
+  isareti vermesini saglar. Ciktisi panoya kopyalanir ve
+  `pnpm run -- ... --feedback-file=./feedback.json` ile
+  acceptance-test raporuna dahil edilir.
+
+  Not: Bu dosya tarayici tarafinda calisir; sunucu gerektirmez.
+  Daha sonra apps/web uzerine Next.js ile entegre edilecektir.
+-->
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>VetNiva Pilot Kabul Testi — Geri Bildirim Formu</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --card: #ffffff;
+      --ink: #1f2a44;
+      --muted: #6b7280;
+      --line: #e2e8f0;
+      --accent: #2563eb;
+      --good: #16a34a;
+      --bad: #dc2626;
+      --pill: #eef2ff;
+    }
+    body {
+      font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.5;
+    }
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--line);
+      padding: 20px 32px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    header h1 {
+      margin: 0 0 4px 0;
+      font-size: 1.4rem;
+    }
+    header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px 32px 120px;
+    }
+    .reviewer {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .reviewer label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .reviewer input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+    .scenario {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .scenario > summary {
+      cursor: pointer;
+      padding: 12px 20px;
+      font-weight: 600;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .scenario > summary::-webkit-details-marker { display: none; }
+    .scenario > summary::before {
+      content: "▸";
+      transition: transform 0.2s ease;
+      color: var(--muted);
+    }
+    .scenario[open] > summary::before {
+      transform: rotate(90deg);
+    }
+    .scenario .meta {
+      margin-left: auto;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .scenario .pill {
+      background: var(--pill);
+      color: var(--accent);
+      border-radius: 999px;
+      padding: 2px 10px;
+      font-size: 0.75rem;
+    }
+    .step {
+      border-top: 1px solid var(--line);
+      padding: 12px 20px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: start;
+    }
+    .step .label {
+      font-weight: 500;
+    }
+    .step .name {
+      font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: block;
+      margin-top: 2px;
+    }
+    .step .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: flex-end;
+    }
+    .step .rating {
+      display: flex;
+      gap: 4px;
+    }
+    .step .rating label {
+      cursor: pointer;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      color: var(--muted);
+      transition: all 0.15s ease;
+    }
+    .step .rating input { display: none; }
+    .step .rating input:checked + label {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+    .step .row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      font-size: 0.85rem;
+    }
+    .step textarea {
+      grid-column: 1 / 3;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 60px;
+    }
+    .step .unnecessary {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.8rem;
+      color: var(--bad);
+    }
+    footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--card);
+      border-top: 1px solid var(--line);
+      padding: 12px 32px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    }
+    footer button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    footer .primary {
+      background: var(--accent);
+      color: white;
+    }
+    footer .secondary {
+      background: transparent;
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+    footer .status {
+      margin-left: auto;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    .status-ok { color: var(--good); }
+    .status-err { color: var(--bad); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>VetNiva Pilot Kabul Testi — Geri Bildirim Formu</h1>
+    <p>10 uctan uca senaryo, 30 adim. 1-5 puan, yorum, "gereksiz adim" isareti. PII otomatik maskelenir.</p>
+  </header>
+  <main>
+    <div class="reviewer">
+      <div>
+        <label for="reviewer">Pilot kullanici (ad soyad veya rumuz)</label>
+        <input id="reviewer" placeholder="Dr. Pilot" autocomplete="off" />
+      </div>
+      <div>
+        <label for="tenantLabel">Tenant etiketi (opsiyonel)</label>
+        <input id="tenantLabel" placeholder="tenant-1" autocomplete="off" />
+      </div>
+    </div>
+    <div id="scenarios"></div>
+  </main>
+  <footer>
+    <button class="primary" id="copyBtn">JSON panoya kopyala</button>
+    <button class="secondary" id="downloadBtn">JSON indir</button>
+    <span class="status" id="status">Henuz geri bildirim yok.</span>
+  </footer>
+
+  <script>
+    // Senaryo katalogu (acceptance-test/src/config.ts ile ayni).
+    const SCENARIOS = [
+      {
+        key: "new_owner_patient",
+        title: "Yeni musteri ve hayvan kaydi",
+        module: "owner",
+        steps: [
+          { name: "create_owner", label: "Yeni musteri kaydi olustur" },
+          { name: "get_owner", label: "Musteri detayini goruntule" },
+          { name: "create_patient", label: "Yeni hayvan kaydi olustur" },
+          { name: "get_patient_timeline", label: "Hayvan zaman cizelgesini ac" },
+        ],
+      },
+      {
+        key: "appointment",
+        title: "Randevu olusturma ve yonetimi",
+        module: "appointment",
+        steps: [
+          { name: "list_calendar_today", label: "Bugunun takvimini ac" },
+          { name: "create_appointment", label: "Randevu olustur" },
+          { name: "get_appointment", label: "Randevu detayini ac" },
+        ],
+      },
+      {
+        key: "examination",
+        title: "Muayene baslatma ve tamamlama",
+        module: "examination",
+        steps: [
+          { name: "start_examination", label: "Muayene baslat" },
+          { name: "get_examination", label: "Muayene detayini ac" },
+          { name: "complete_examination", label: "Muayeneyi tamamla" },
+        ],
+      },
+      {
+        key: "vaccination",
+        title: "Asi uygulamasi ve asi karti",
+        module: "vaccination",
+        steps: [
+          { name: "create_vaccine_application", label: "Asi uygulamasi kaydet" },
+          { name: "get_vaccine_card", label: "Asi kartini goruntule" },
+        ],
+      },
+      {
+        key: "petshop_sale",
+        title: "Petshop satis",
+        module: "petshop",
+        steps: [
+          { name: "create_sale", label: "Petshop satis taslagi ac" },
+          { name: "get_sale", label: "Satis detayini gor" },
+          { name: "complete_sale", label: "Satisi tamamla" },
+        ],
+      },
+      {
+        key: "collection",
+        title: "Tahsilat",
+        module: "payment",
+        steps: [
+          { name: "create_payment", label: "Tahsilat kaydi ac" },
+          { name: "get_payment", label: "Tahsilat detayini gor" },
+        ],
+      },
+      {
+        key: "surgery",
+        title: "Ameliyat planlama ve tamamlama",
+        module: "surgery",
+        steps: [
+          { name: "create_surgery_plan", label: "Ameliyat plani olustur" },
+          { name: "start_surgery", label: "Ameliyati baslat" },
+          { name: "complete_surgery", label: "Ameliyati tamamla" },
+        ],
+      },
+      {
+        key: "hospitalization",
+        title: "Yatis ve kafes yonetimi",
+        module: "hospitalization",
+        steps: [
+          { name: "create_hospitalization", label: "Yatis ac" },
+          { name: "admit_hospitalization", label: "Yatisi aktiflestir" },
+          { name: "discharge_hospitalization", label: "Taburcu et" },
+        ],
+      },
+      {
+        key: "laboratory",
+        title: "Laboratuvar istegi",
+        module: "lab",
+        steps: [
+          { name: "create_lab_order", label: "Lab istegi ac" },
+          { name: "collect_lab_sample", label: "Numune al" },
+          { name: "start_lab_processing", label: "Numuneyi isleme al" },
+          { name: "complete_lab_order", label: "Is emrini kapat" },
+        ],
+      },
+      {
+        key: "portal",
+        title: "Hasta sahibi portali",
+        module: "portal",
+        steps: [
+          { name: "create_portal_request", label: "Online randevu talebi olustur" },
+          { name: "approve_portal_request", label: "Klinik talebi onaylar" },
+        ],
+      },
+    ];
+
+    // PII mask (server'daki maskPii ile ayni regex seti).
+    function maskPii(input) {
+      if (!input) return { text: input, masked: false };
+      let text = input;
+      let masked = false;
+      const patterns = [
+        /[\w.+-]+@[\w-]+\.[\w.-]+/g,
+        /\bTR\d{24}\b/g,
+        /\b[1-9][0-9]{9}[02468]\b|\b[5-9]\d{9}\b/g,
+        /\b0?5\d{9}\b|\+?90\s?5\d{9}\b/g,
+        /\b(?:\d[ -]?){13,19}\b/g,
+      ];
+      for (const re of patterns) {
+        text = text.replace(re, (m) => {
+          masked = true;
+          if (m.includes("@")) {
+            const at = m.indexOf("@");
+            const name = m.slice(0, at);
+            const local = name.length > 2 ? name[0] + "***" : "***";
+            return `${local}@***`;
+          }
+          if (m.startsWith("TR") && m.length === 26) {
+            return `TR** **** **** **** **${m.slice(-2)}`;
+          }
+          if (m.length >= 13) {
+            return `**** **** **** ${m.replace(/\D/g, "").slice(-4)}`;
+          }
+          return `${m.slice(0, 2)}***${m.slice(-2)}`;
+        });
+      }
+      return { text, masked };
+    }
+
+    // DOM insa
+    const root = document.getElementById("scenarios");
+    for (const sc of SCENARIOS) {
+      const details = document.createElement("details");
+      details.className = "scenario";
+      if (sc.key === "new_owner_patient") details.open = true;
+      const summary = document.createElement("summary");
+      summary.innerHTML = `<span>${sc.title}</span> <span class="pill">${sc.module}</span> <span class="meta">${sc.steps.length} adim</span>`;
+      details.appendChild(summary);
+      for (const step of sc.steps) {
+        const wrap = document.createElement("div");
+        wrap.className = "step";
+        wrap.innerHTML = `
+          <div>
+            <div class="label">${step.label}</div>
+            <code class="name">${step.name}</code>
+          </div>
+          <div class="actions">
+            <div class="rating" data-step="${step.name}">
+              ${[1, 2, 3, 4, 5]
+                .map(
+                  (n) => `
+                <input type="radio" id="${sc.key}-${step.name}-${n}" name="${sc.key}-${step.name}" value="${n}" />
+                <label for="${sc.key}-${step.name}-${n}">${n}</label>`,
+                )
+                .join("")}
+            </div>
+            <label class="unnecessary">
+              <input type="checkbox" data-unnecessary="${step.name}" /> gereksiz
+            </label>
+          </div>
+          <textarea data-comment="${step.name}" placeholder="Yorum (PII otomatik maskelenir)"></textarea>
+        `;
+        details.appendChild(wrap);
+      }
+      root.appendChild(details);
+    }
+
+    function buildJson() {
+      const reviewer = document.getElementById("reviewer").value.trim();
+      if (!reviewer) {
+        return { error: "Reviewer adi zorunlu" };
+      }
+      const tenantLabel = document.getElementById("tenantLabel").value.trim();
+      const out = { _meta: { generatedAt: new Date().toISOString(), reviewer, tenantLabel: tenantLabel || null } };
+      for (const sc of SCENARIOS) {
+        out[sc.key] = {};
+        for (const step of sc.steps) {
+          const rating = document.querySelector(
+            `input[name="${sc.key}-${step.name}"]:checked`,
+          );
+          const unnecessary = document.querySelector(
+            `[data-unnecessary="${step.name}"]`,
+          );
+          const comment = document.querySelector(
+            `[data-comment="${step.name}"]`,
+          ).value;
+          const ratingVal = rating ? Number(rating.value) : 0;
+          const masked = maskPii(comment);
+          out[sc.key][step.name] = {
+            reviewer,
+            rating: ratingVal,
+            comment: masked.text,
+            unnecessary: unnecessary && unnecessary.checked,
+            piiMasked: masked.masked,
+          };
+        }
+      }
+      return out;
+    }
+
+    const status = document.getElementById("status");
+    document.getElementById("copyBtn").addEventListener("click", async () => {
+      const data = buildJson();
+      if (data.error) {
+        status.textContent = data.error;
+        status.className = "status status-err";
+        return;
+      }
+      const json = JSON.stringify(data, null, 2);
+      try {
+        await navigator.clipboard.writeText(json);
+        status.textContent = `Kopyalandi (${json.length} byte). UAT_FEEDBACK_FILE olarak kaydedin.`;
+        status.className = "status status-ok";
+      } catch {
+        status.textContent = "Pano erisimi yok; JSON indir dugmesini kullanin.";
+        status.className = "status status-err";
+      }
+    });
+
+    document.getElementById("downloadBtn").addEventListener("click", () => {
+      const data = buildJson();
+      if (data.error) {
+        status.textContent = data.error;
+        status.className = "status status-err";
+        return;
+      }
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "feedback.json";
+      a.click();
+      URL.revokeObjectURL(url);
+      status.textContent = "feedback.json indirildi.";
+      status.className = "status status-ok";
+    });
+  </script>
+</body>
+</html>

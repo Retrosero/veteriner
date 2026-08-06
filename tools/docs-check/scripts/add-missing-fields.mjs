@@ -19,33 +19,171 @@ const target = resolve(repo, "docs/fields/fields.yaml");
 /** Entity -> [{ name, type, required, tr, en }] */
 const MISSING = {
   lab_order: [
-    ["tenantId", "uuid", true, "Lab order tenant ID FK.", "Lab order tenant ID FK reference."],
-    ["labTestId", "uuid", true, "Lab order katalog test ID.", "Lab order catalog test ID."],
-    ["labTestCode", "string", false, "Lab order test kodu (snapshot).", "Lab order test code (snapshot)."],
-    ["labTestName", "string", false, "Lab order test adı (snapshot).", "Lab order test name (snapshot)."],
-    ["sampleType", "string", false, "Lab order örnek tipi.", "Lab order sample type."],
-    ["unit", "string", false, "Lab order sonuç birimi.", "Lab order result unit."],
-    ["referenceRange", "string", false, "Lab order referans aralığı.", "Lab order reference range."],
-    ["price", "decimal", false, "Lab order fiyat (snapshot).", "Lab order price (snapshot)."],
-    ["priority", "enum", false, "Lab order öncelik seviyesi.", "Lab order priority level."],
-    ["createdBy", "uuid", true, "Lab order oluşturan kullanıcı ID.", "Lab order creator user ID."],
+    [
+      "tenantId",
+      "uuid",
+      true,
+      "Lab order tenant ID FK.",
+      "Lab order tenant ID FK reference.",
+    ],
+    [
+      "labTestId",
+      "uuid",
+      true,
+      "Lab order katalog test ID.",
+      "Lab order catalog test ID.",
+    ],
+    [
+      "labTestCode",
+      "string",
+      false,
+      "Lab order test kodu (snapshot).",
+      "Lab order test code (snapshot).",
+    ],
+    [
+      "labTestName",
+      "string",
+      false,
+      "Lab order test adı (snapshot).",
+      "Lab order test name (snapshot).",
+    ],
+    [
+      "sampleType",
+      "string",
+      false,
+      "Lab order örnek tipi.",
+      "Lab order sample type.",
+    ],
+    [
+      "unit",
+      "string",
+      false,
+      "Lab order sonuç birimi.",
+      "Lab order result unit.",
+    ],
+    [
+      "referenceRange",
+      "string",
+      false,
+      "Lab order referans aralığı.",
+      "Lab order reference range.",
+    ],
+    [
+      "price",
+      "decimal",
+      false,
+      "Lab order fiyat (snapshot).",
+      "Lab order price (snapshot).",
+    ],
+    [
+      "priority",
+      "enum",
+      false,
+      "Lab order öncelik seviyesi.",
+      "Lab order priority level.",
+    ],
+    [
+      "createdBy",
+      "uuid",
+      true,
+      "Lab order oluşturan kullanıcı ID.",
+      "Lab order creator user ID.",
+    ],
   ],
   lab_result: [
-    ["tenantId", "uuid", true, "Lab result tenant ID FK.", "Lab result tenant ID FK reference."],
-    ["labOrderId", "uuid", true, "Lab result bağlı olduğu lab order ID.", "Lab result parent lab order ID."],
-    ["revision", "number", false, "Lab result düzeltme revizyon numarası.", "Lab result amendment revision number."],
-    ["unit", "string", false, "Lab result ölçüm birimi.", "Lab result measurement unit."],
-    ["referenceRange", "string", false, "Lab result referans aralığı.", "Lab result reference range."],
-    ["enteredBy", "uuid", true, "Lab result giren kullanıcı ID.", "Lab result entered-by user ID."],
-    ["amendsResultId", "uuid", false, "Düzeltilen önceki lab result ID.", "Amended prior lab result ID."],
+    [
+      "tenantId",
+      "uuid",
+      true,
+      "Lab result tenant ID FK.",
+      "Lab result tenant ID FK reference.",
+    ],
+    [
+      "labOrderId",
+      "uuid",
+      true,
+      "Lab result bağlı olduğu lab order ID.",
+      "Lab result parent lab order ID.",
+    ],
+    [
+      "revision",
+      "number",
+      false,
+      "Lab result düzeltme revizyon numarası.",
+      "Lab result amendment revision number.",
+    ],
+    [
+      "unit",
+      "string",
+      false,
+      "Lab result ölçüm birimi.",
+      "Lab result measurement unit.",
+    ],
+    [
+      "referenceRange",
+      "string",
+      false,
+      "Lab result referans aralığı.",
+      "Lab result reference range.",
+    ],
+    [
+      "enteredBy",
+      "uuid",
+      true,
+      "Lab result giren kullanıcı ID.",
+      "Lab result entered-by user ID.",
+    ],
+    [
+      "amendsResultId",
+      "uuid",
+      false,
+      "Düzeltilen önceki lab result ID.",
+      "Amended prior lab result ID.",
+    ],
   ],
   imaging_order: [
-    ["tenantId", "uuid", true, "Imaging order tenant ID FK.", "Imaging order tenant ID FK reference."],
-    ["imagingTestId", "uuid", true, "Imaging order katalog test ID.", "Imaging order catalog test ID."],
-    ["imagingTestCode", "string", false, "Imaging order test kodu (snapshot).", "Imaging order test code (snapshot)."],
-    ["imagingTestName", "string", false, "Imaging order test adı (snapshot).", "Imaging order test name (snapshot)."],
-    ["priority", "enum", false, "Imaging order öncelik seviyesi.", "Imaging order priority level."],
-    ["createdBy", "uuid", true, "Imaging order oluşturan kullanıcı ID.", "Imaging order creator user ID."],
+    [
+      "tenantId",
+      "uuid",
+      true,
+      "Imaging order tenant ID FK.",
+      "Imaging order tenant ID FK reference.",
+    ],
+    [
+      "imagingTestId",
+      "uuid",
+      true,
+      "Imaging order katalog test ID.",
+      "Imaging order catalog test ID.",
+    ],
+    [
+      "imagingTestCode",
+      "string",
+      false,
+      "Imaging order test kodu (snapshot).",
+      "Imaging order test code (snapshot).",
+    ],
+    [
+      "imagingTestName",
+      "string",
+      false,
+      "Imaging order test adı (snapshot).",
+      "Imaging order test name (snapshot).",
+    ],
+    [
+      "priority",
+      "enum",
+      false,
+      "Imaging order öncelik seviyesi.",
+      "Imaging order priority level.",
+    ],
+    [
+      "createdBy",
+      "uuid",
+      true,
+      "Imaging order oluşturan kullanıcı ID.",
+      "Imaging order creator user ID.",
+    ],
   ],
 };
 
@@ -77,11 +215,17 @@ function insertFields(text, entity, fields) {
       let fieldsIdx = -1;
       while (j < lines.length) {
         const inner = lines[j];
-        if (inner.trim() === "fields:") { fieldsIdx = j; break; }
+        if (inner.trim() === "fields:") {
+          fieldsIdx = j;
+          break;
+        }
         if (/^  - id: /.test(inner) && j !== i + 1) break;
         j++;
       }
-      if (fieldsIdx < 0) { i++; continue; }
+      if (fieldsIdx < 0) {
+        i++;
+        continue;
+      }
       // Mevcut alanları topla
       const existing = new Set();
       let lastFieldLine = fieldsIdx;
@@ -94,7 +238,10 @@ function insertFields(text, entity, fields) {
           if (raw.startsWith(`${entity}.`)) {
             existing.add(raw.slice(entity.length + 1));
           }
-        } else if (/^  - id: /.test(ln) || (/^    - id: /.test(ln) && !ln.startsWith("      - id: "))) {
+        } else if (
+          /^  - id: /.test(ln) ||
+          (/^    - id: /.test(ln) && !ln.startsWith("      - id: "))
+        ) {
           break;
         }
         k++;

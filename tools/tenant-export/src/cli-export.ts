@@ -14,10 +14,19 @@
  *     --format=json --pii=strict \
  *     --out=./tenant-export.json --dry-run
  *
+ * Pilot senaryosu icin gercek Prisma veri kaynagi:
+ *   pnpm --filter @vetniva/tenant-export export -- \
+ *     --tenant=<uuid> --exported-by=<user-id> \
+ *     --datasets=owners,patients,examinations \
+ *     --format=json --pii=strict \
+ *     --out=./temp/tenant-export.json --with-prisma
+ *
  * @since GOAL-125 (FAZ-12) tenant veri disa aktarma
  */
 
 import { resolve } from "node:path";
+
+import { PrismaClient } from "@prisma/client";
 
 import {
   exportTenantData,
@@ -25,6 +34,7 @@ import {
   ALL_DATASETS,
 } from "./export.js";
 import { StandardPiiMasker } from "./pii-masker.js";
+import { PrismaTenantDataSource } from "./prisma-data-source.js";
 import type { ExportDataset, PiiCheckLevel } from "./types.js";
 
 interface Args {
@@ -40,6 +50,8 @@ interface Args {
   dryRun: boolean;
   /** Demo data toggle: bos liste yerine sentetik demo veri. */
   withDemoData: boolean;
+  /** Prisma data source toggle: gercek DB'ye baglanir. */
+  withPrisma: boolean;
 }
 
 function parseArgs(argv: ReadonlyArray<string>): Args {
@@ -52,6 +64,7 @@ function parseArgs(argv: ReadonlyArray<string>): Args {
     outFile: "./tenant-export.json",
     dryRun: false,
     withDemoData: false,
+    withPrisma: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -113,6 +126,8 @@ function parseArgs(argv: ReadonlyArray<string>): Args {
       args.dryRun = true;
     } else if (a === "--with-demo-data") {
       args.withDemoData = true;
+    } else if (a === "--with-prisma") {
+      args.withPrisma = true;
     }
   }
   return args;
@@ -176,49 +191,69 @@ async function main(): Promise<void> {
     process.exitCode = 2;
     return;
   }
+  if (args.withDemoData && args.withPrisma) {
+    process.stderr.write(
+      "HATA: --with-demo-data ve --with-prisma ayni anda kullanilamaz.\n",
+    );
+    process.exitCode = 2;
+    return;
+  }
 
-  const dataSource = args.withDemoData
-    ? new InMemoryTenantDataSource(buildDemoData())
-    : new InMemoryTenantDataSource(new Map());
+  let dataSource;
+  let prismaClient: PrismaClient | null = null;
+  if (args.withPrisma) {
+    prismaClient = new PrismaClient();
+    dataSource = new PrismaTenantDataSource(prismaClient);
+  } else if (args.withDemoData) {
+    dataSource = new InMemoryTenantDataSource(buildDemoData());
+  } else {
+    dataSource = new InMemoryTenantDataSource(new Map());
+  }
 
-  const result = await exportTenantData(
-    {
-      tenantId: args.tenantId,
-      exportedBy: args.exportedBy,
-      ...(args.tenantSlug ? { tenantSlug: args.tenantSlug } : {}),
-      datasets: args.datasets,
-      format: args.format,
-      piiCheck: args.piiCheck,
-      ...(args.country ? { country: args.country } : {}),
-      ...(args.release ? { release: args.release } : {}),
-    },
-    {
-      dataSource,
-      piiMasker: new StandardPiiMasker(),
-      outputFile: resolve(args.outFile),
-      dryRun: args.dryRun,
-    },
-  );
-
-  process.stdout.write(
-    JSON.stringify(
+  try {
+    const result = await exportTenantData(
       {
-        exportId: result.exportId,
-        tenantId: result.tenantId,
-        exportedAt: result.exportedAt,
-        totalRows: result.totalRows,
-        rowsPerDataset: result.rowsPerDataset,
-        outputFile: result.outputFile,
-        piiCheck: result.piiCheck,
-        piiFieldsDetected: result.piiFieldsDetected,
-        piiMasked: result.piiMasked,
-        auditEvent: result.auditEvent,
+        tenantId: args.tenantId,
+        exportedBy: args.exportedBy,
+        ...(args.tenantSlug ? { tenantSlug: args.tenantSlug } : {}),
+        datasets: args.datasets,
+        format: args.format,
+        piiCheck: args.piiCheck,
+        ...(args.country ? { country: args.country } : {}),
+        ...(args.release ? { release: args.release } : {}),
+      },
+      {
+        dataSource,
+        piiMasker: new StandardPiiMasker(),
+        outputFile: resolve(args.outFile),
         dryRun: args.dryRun,
       },
-      null,
-      2,
-    ) + "\n",
-  );
+    );
+
+    process.stdout.write(
+      JSON.stringify(
+        {
+          exportId: result.exportId,
+          tenantId: result.tenantId,
+          exportedAt: result.exportedAt,
+          totalRows: result.totalRows,
+          rowsPerDataset: result.rowsPerDataset,
+          outputFile: result.outputFile,
+          piiCheck: result.piiCheck,
+          piiFieldsDetected: result.piiFieldsDetected,
+          piiMasked: result.piiMasked,
+          auditEvent: result.auditEvent,
+          dryRun: args.dryRun,
+        },
+        null,
+        2,
+      ) + "\n",
+    );
+  } finally {
+    if (prismaClient) {
+      await prismaClient.$disconnect();
+    }
+  }
 }
 
 main().catch((err) => {

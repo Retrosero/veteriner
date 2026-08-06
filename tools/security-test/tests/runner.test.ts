@@ -11,10 +11,11 @@
  * @since GOAL-123 (FAZ-12) guvenlik testi
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { runSecurityChecks, buildAuthHeaders } from "../src/runner.js";
 import { SECURITY_CHECKS } from "../src/config.js";
+import { buildAuthHeaders, runSecurityChecks } from "../src/runner.js";
+
 import type {
   SecurityAuthContext,
   SecurityFetch,

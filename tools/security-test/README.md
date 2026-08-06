@@ -1,9 +1,9 @@
 # @vetniva/security-test (GOAL-123, FAZ-12)
 
 OWASP ASVS L1-L3 temelli güvenlik testi paketi. 9 kategoride
-14 kontrolün PASS/FAIL/SKIP durumunu, severity dağılımını ve
-remediation planlarını üretir. Tenant izolasyonu, PII mask ve
-audit kurallarına uyar.
+14 kontrolün PASS/FAIL/SKIP durumunu, severity dağılımını,
+ASVS-severity tutarlılığını ve remediation planlarını üretir.
+Tenant izolasyonu, PII mask ve audit kurallarına uyar.
 
 ## Kontrol Kategorileri (9)
 
@@ -21,13 +21,41 @@ audit kurallarına uyar.
 
 Toplam **14 kontrol**. Detay: `src/config.ts`.
 
+## Bileşenler
+
+| Dosya                            | Açıklama                                                       |
+| -------------------------------- | -------------------------------------------------------------- |
+| `src/config.ts`                  | 9 kategoride 14 kontrol kataloğu                               |
+| `src/types.ts`                   | SecurityCheck, SecurityResult, SecurityRunReport               |
+| `src/runner.ts`                  | `runSecurityChecks`; mock'lanabilir `fetchFn`                  |
+| `src/report.ts`                  | `reportToMarkdown` + `reportToJson` + `describeResult`         |
+| `src/severity.ts`                | OWASP ASVS L1/L2/L3 esleme + severity tutarlılık değerlendirme |
+| `src/cli-run.ts`                 | Pilot ortamda gerçek koşum (POST/GET + JSON/MD rapor)          |
+| `src/cli-report.ts`              | Mevcut JSON raporunu Markdown'a dönüştür                       |
+| `src/cli-validate.ts`            | Katalog tutarlılık doğrulama (key unique, kategori coverage)   |
+| `src/k6-shared.js`               | k6 ortak helper (authHeaders, PII mask, tenant boundary)       |
+| `tests/config.test.ts`           | 11 katalog doğrulama testi                                     |
+| `tests/runner.test.ts`           | 8 runner davranış testi                                        |
+| `tests/report.test.ts`           | 7 rapor üretici testi                                          |
+| `tests/smoke.test.ts`            | 1 uçtan uca smoke testi                                        |
+| `tests/severity.test.ts`         | 12 OWASP ASVS severity eşleme testi                            |
+| `tests/auth-roles.test.ts`       | 7 auth + authz senaryosu                                       |
+| `tests/tenant-isolation.test.ts` | 8 cross-tenant IDOR + tenant_isolation                         |
+| `tests/xss-csrf.test.ts`         | 8 XSS + CSRF senaryoları                                       |
+| `tests/sql-injection.test.ts`    | 7 SQL injection senaryoları                                    |
+| `tests/file-upload.test.ts`      | 7 file upload (MIME + size)                                    |
+| `tests/rate-limit.test.ts`       | 4 rate limit (429) senaryoları                                 |
+
 ## Kurulum
 
 ```bash
 # Tip kontrolü
 pnpm --filter @vetniva/security-test type-check
 
-# Birim testleri (31 test)
+# Lint
+pnpm --filter @vetniva/security-test lint
+
+# Birim testleri (toplam ~70 test)
 pnpm --filter @vetniva/security-test test
 
 # Katalog doğrulama (key unique, kategori coverage, ASVS seviyesi)
@@ -59,11 +87,28 @@ pnpm --filter @vetniva/security-test report -- \
 ## Çıktılar
 
 - `security-report.json` — yapısal rapor (`SecurityRunReport`)
+  - `passCount`, `failCount`, `skipCount`
+  - `bySeverity` (critical/high/medium/low/info)
+  - `severityReport` (ASVS-severity tutarlılık özeti)
 - `security-report.md` — insan-okur rapor:
-  - Özet tablo (PASS/FAIL/SKIP)
+  - PASS/FAIL/SKIP tablosu
   - Severity dağılımı
+  - ASVS + severity tutarlılık özeti
   - Her FAIL için remediation planı
   - SKIP kontrolleri listesi
+
+## Severity Mapping (OWASP ASVS L1/L2/L3)
+
+`severity.ts` modülü her kontrol için:
+
+1. **ASVS referansları** — kategori bazında ASVS V# linki
+   (ör. `auth` → V2.1, V2.2, V2.5, V2.7).
+2. **Minimum ASVS seviyesi** — her kategorinin asgari
+   ASVS seviyesi (IDOR/tenant_isolation L1, auth/CSRF L2).
+3. **Severity SLA** — critical=1, high=7, medium=30,
+   low=90, info=365 gün.
+4. **Tutarlılık değerlendirmesi** — ASVS seviyesi ile
+   severity uyumu (ör. IDOR + L1 + low → inconsistent).
 
 ## Ortam Değişkenleri (k6 ortak helper)
 
@@ -78,7 +123,7 @@ pnpm --filter @vetniva/security-test report -- \
 
 ## CI Entegrasyonu
 
-- **PR gate:** type-check + 31 test
+- **PR gate:** type-check + lint + ~70 test
 - **Pre-release:** validate (katalog doğrulama)
 - **Production gate:** `run` + manual review (24 saat SLA
   critical bulgular için)

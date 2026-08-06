@@ -47,10 +47,7 @@ export {
   preflightCheck,
   tierMatchesBackup,
 } from "./restore.js";
-export type {
-  PreFlightCheck,
-  RestoreOptions,
-} from "./restore.js";
+export type { PreFlightCheck, RestoreOptions } from "./restore.js";
 
 export {
   checksumFile,

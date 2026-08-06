@@ -18,6 +18,27 @@ pnpm --filter @vetniva/rag-chunk-producer produce:pages
 pnpm --filter @vetniva/rag-chunk-producer produce --source docs/errors
 ```
 
+### CLI Bayraklar (GOAL-116, FAZ-11)
+
+```bash
+# Kuru çalıştırma: dosya yazmadan plan istatistikleri.
+pnpm --filter @vetniva/rag-chunk-producer produce --source docs --dry-run
+
+# Hash modunda idempotent merge (içerik değişmişse güncelle).
+pnpm --filter @vetniva/rag-chunk-producer produce --source docs --hash-only
+
+# JSONL ihracatı (FAZ-12+ vektör DB loader için).
+pnpm --filter @vetniva/rag-chunk-producer produce --source docs --jsonl
+
+# JSON formatında çıktı (CI / orchestrator entegrasyonu).
+pnpm --filter @vetniva/rag-chunk-producer produce --source docs --dry-run --json
+```
+
+Bayraklar birleştirilebilir: `--dry-run --json`,
+`--hash-only --jsonl` vb. Detaylı komütasyon için
+[`docs/operations/RAG_CHUNK_PRODUCTION.md`](../../docs/operations/RAG_CHUNK_PRODUCTION.md)
+bakın.
+
 ### Programmatic
 
 ```ts
@@ -82,16 +103,25 @@ Detayli sema: `docs/ai/CHUNK_SCHEMA.md`.
 `mergeChunks()` fonksiyonu `AI_CHUNKS.yaml` dosyasina yeni
 chunk'lari eklerken asagidaki kurallari uygular:
 
-1. **Idempotency**: `chunk_id` zaten dosyada varsa yeni chunk
-   atlanir. Bu sayede ayni kaynak iki kez calistirildiginda
-   duplicate olusmaz.
-2. **Backward compatibility**: Eski format (sadece array) ve
+1. **Idempotency (varsayılan)**: `chunk_id` zaten dosyada
+   varsa yeni chunk atlanir. Bu sayede ayni kaynak iki kez
+   calistirildiginda duplicate olusmaz.
+2. **Hash-tabanlı dedup (`--hash-only`)**: `chunk_id` aynı
+   - `contentHash` aynıysa atla; `contentHash` değişmişse
+     mevcut kaydı yenisiyle değiştir. CI için "hangi docs
+     değişti?" sorusunu netleştirir.
+3. **Backward compatibility**: Eski format (sadece array) ve
    yeni format (mapping + chunks) desteklenir. Eski formatta
    yazilmis dosyalar otomatik olarak yeni formata migrate edilir.
-3. **Metadata preservation**: Mapping formatindaki metadata
+4. **Metadata preservation**: Mapping formatindaki metadata
    (version, generated_by vb.) merge sirasinda korunur.
-4. **Atomik yazma**: Dosya yazimi tek bir `writeFile` atomik
+5. **Atomik yazma**: Dosya yazimi tek bir `writeFile` atomik
    islemidir; basarisiz olursa dosya onceki haliyle kalir.
+6. **contentHash backfill**: Eski seed chunk'lar
+   (GOAL-005) `contentHash` içermez. İlk merge'de
+   `sha256:legacy:<chunk_id>` sentinel hash atanır;
+   sonraki gerçek üretimde eksik kayıt tam içerikle
+   değiştirilir.
 
 ## Testler
 

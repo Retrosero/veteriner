@@ -8,6 +8,7 @@
   "scripts": {
     "build": "node ../../node_modules/typescript/lib/tsc.js -p tsconfig.json",
     "type-check": "node ../../node_modules/typescript/lib/tsc.js -p tsconfig.json --noEmit",
+    "lint": "eslint src tests",
     "test": "vitest run",
     "run": "node --import tsx src/cli-run.ts",
     "report": "node --import tsx src/cli-report.ts",

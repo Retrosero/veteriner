@@ -10,9 +10,10 @@
  * @since GOAL-123 (FAZ-12) guvenlik testi
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { SECURITY_CHECKS, getCheck, listCheckKeys } from "../src/config.js";
+
 import type { SecurityControl } from "../src/types.js";
 
 describe("SECURITY_CHECKS katalogu", () => {

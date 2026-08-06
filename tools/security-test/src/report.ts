@@ -47,6 +47,23 @@ export function reportToMarkdown(report: SecurityRunReport): string {
   }
   lines.push("");
 
+  // ASVS severity tutarlilik ozeti
+  if (report.severityReport) {
+    const sr = report.severityReport;
+    lines.push("## ASVS + Severity Tutarliligi");
+    lines.push("");
+    lines.push(`- **Toplam kontrol:** ${sr.total}`);
+    lines.push(`- **Tutarli:** ${sr.consistent}`);
+    lines.push(`- **Tutarsiz:** ${sr.inconsistent}`);
+    lines.push(`- **En uzun SLA:** ${sr.topSlaDays} gun`);
+    if (sr.inconsistent > 0) {
+      lines.push(
+        "- **UYARI:** ASVS seviyesi ile severity uyumsuz; katalog gozden gecirilmeli.",
+      );
+    }
+    lines.push("");
+  }
+
   // PASS/FAIL/SKIP tablosu
   lines.push("## Kontrol Sonuclari");
   lines.push("");

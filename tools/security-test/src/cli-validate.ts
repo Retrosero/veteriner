@@ -14,6 +14,7 @@
  */
 
 import { SECURITY_CHECKS, getCheck, listCheckKeys } from "./config.js";
+
 import type { SecurityControl } from "./types.js";
 
 const EXPECTED_CONTROLS: ReadonlyArray<SecurityControl> = [

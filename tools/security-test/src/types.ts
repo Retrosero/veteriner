@@ -105,6 +105,18 @@ export interface SecurityResult {
   remediation?: string;
 }
 
+/** ASVS severity tutarlilik ozet bilgisi. */
+export interface SeveritySummary {
+  /** Toplam kontrol sayisi. */
+  total: number;
+  /** Tutarli (ASVS ile severity uyumlu) kontrol sayisi. */
+  consistent: number;
+  /** Tutarsiz kontrol sayisi. */
+  inconsistent: number;
+  /** En uzun SLA (gun) - tum kontroller icinden max. */
+  topSlaDays: number;
+}
+
 /** Tum sonuclarin toplu paketi. */
 export interface SecurityRunReport {
   runAt: string;
@@ -119,6 +131,8 @@ export interface SecurityRunReport {
   bySeverity: Readonly<Record<SecuritySeverity, number>>;
   /** Genel gecme durumu: fail=0 ise true. */
   allPassed: boolean;
+  /** ASVS + severity tutarlilik ozeti. */
+  severityReport?: SeveritySummary;
 }
 
 /**

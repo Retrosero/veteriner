@@ -20,7 +20,11 @@
 import { randomUUID } from "node:crypto";
 import { stat } from "node:fs/promises";
 
-import type { BackupResult, BackupTier, RestoreTestResult } from "./backup-types.js";
+import type {
+  BackupResult,
+  BackupTier,
+  RestoreTestResult,
+} from "./backup-types.js";
 
 /** Restore oncesi pre-flight kontrol sonucu. */
 export interface PreFlightCheck {
@@ -56,9 +60,14 @@ export interface RestoreOptions {
 }
 
 /** Gecici restore veritabani icin isim ureteci. */
-export function buildRestoreDatabaseName(prefix: string = "vetniva_restore_test_"): string {
+export function buildRestoreDatabaseName(
+  prefix: string = "vetniva_restore_test_",
+): string {
   // timestamp + uuid son 8 karakteri
-  const stamp = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
+  const stamp = new Date()
+    .toISOString()
+    .replace(/[-:.TZ]/g, "")
+    .slice(0, 14);
   const suffix = randomUUID().replace(/-/g, "").slice(0, 8);
   return `${prefix}${stamp}_${suffix}`;
 }
@@ -111,13 +120,18 @@ export async function preflightCheck(
   checks.push({
     name: "backup_file_size",
     ok: fileSize > 0,
-    detail: fileSize > 0
-      ? `Backup dosyasi ${fileSize} bytes (pozitif).`
-      : `Backup dosyasi bos veya okunamadi.`,
+    detail:
+      fileSize > 0
+        ? `Backup dosyasi ${fileSize} bytes (pozitif).`
+        : `Backup dosyasi bos veya okunamadi.`,
   });
 
   // 4) Tier degeri gecerli mi?
-  const validTiers: ReadonlyArray<BackupTier> = ["pilot", "production", "critical"];
+  const validTiers: ReadonlyArray<BackupTier> = [
+    "pilot",
+    "production",
+    "critical",
+  ];
   checks.push({
     name: "tier_valid",
     ok: validTiers.includes(tier),
@@ -151,9 +165,7 @@ export async function performRestore(
   );
   if (!preflight.ok) {
     const failed = preflight.checks.filter((c) => !c.ok).map((c) => c.name);
-    throw new Error(
-      `pre-flight basarisiz: ${failed.join(", ")}`,
-    );
+    throw new Error(`pre-flight basarisiz: ${failed.join(", ")}`);
   }
 
   if (options.dryRun) {
@@ -170,7 +182,9 @@ export async function performRestore(
   // pg_restore + sanity verify
   const runner = options.pgRestoreRunner;
   if (!runner) {
-    throw new Error("pgRestoreRunner zorunlu (production: tools/backup/restore-test.ps1)");
+    throw new Error(
+      "pgRestoreRunner zorunlu (production: tools/backup/restore-test.ps1)",
+    );
   }
   const result = await runner({
     container,

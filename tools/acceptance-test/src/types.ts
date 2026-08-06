@@ -184,6 +184,11 @@ export interface UatScenarioResult {
   totalDurationMs: number;
   steps: ReadonlyArray<UatStepResult>;
   /**
+   * Capraz-tenant pilot modunda senaryonun hangi tenant'tan
+   * geldigini gosteren etiket. Tek tenant modunda null.
+   */
+  tenantLabel?: string | null;
+  /**
    * Tum adimlar gecti mi (passed && fieldFound alanlari
    * tanimliysa onun da truthy olmasi).
    */
@@ -203,6 +208,21 @@ export interface UatScenarioResult {
 }
 
 /**
+ * Capraz-tenant pilot konfigurasyonu (coklu tenant modunda
+ * kullanilir). tenantId/branchId tekli modda UatRunResult
+ * uzerinde tutulur; burada yalnizca label/tenantId/branchId
+ * etiketi rapora yansir.
+ */
+export interface UatRunTenant {
+  /** Tenant etiketi (config veya dosyadan). */
+  label: string;
+  /** Tenant UUID. */
+  tenantId: string;
+  /** Branch UUID. */
+  branchId: string;
+}
+
+/**
  * Tum senaryolarin toplu calistirma sonucu.
  */
 export interface UatRunResult {
@@ -214,6 +234,11 @@ export interface UatRunResult {
   baseUrl: string;
   /** Tenant id (coklu tenant pilot calistirmasinda kullanilir). */
   tenantId: string | null;
+  /**
+   * Capraz-tenant pilot konfigurasyonu (bos ise tek tenant).
+   * Senaryolar `tenantLabel` ile etiketlenir.
+   */
+  tenants?: ReadonlyArray<UatRunTenant>;
   /** Senaryo sonuclari. */
   scenarios: ReadonlyArray<UatScenarioResult>;
   /** Genel gecme durumu. */

@@ -13,21 +13,32 @@
  */
 
 export type {
+  SecurityAsvsLevel,
+  SecurityAuthContext,
   SecurityCheck,
   SecurityControl,
-  SecurityAsvsLevel,
+  SecurityFetch,
+  SecurityResult,
+  SecurityRunReport,
   SecuritySeverity,
   SecurityStatus,
   SecurityStep,
-  SecurityResult,
-  SecurityRunReport,
-  SecurityFetch,
-  SecurityAuthContext,
 } from "./types.js";
 
 export { SECURITY_CHECKS, getCheck, listCheckKeys } from "./config.js";
 
-export { runSecurityChecks, defaultFetch, buildAuthHeaders } from "./runner.js";
+export { defaultFetch, runSecurityChecks, buildAuthHeaders } from "./runner.js";
 export type { RunSecurityOptions } from "./runner.js";
 
-export { reportToMarkdown, reportToJson, describeResult } from "./report.js";
+export { describeResult, reportToJson, reportToMarkdown } from "./report.js";
+
+export {
+  ASVS_LEVEL_WEIGHT,
+  ASVS_REFERENCES,
+  MIN_ASVS_BY_CONTROL,
+  SEVERITY_SLA_DAYS,
+  SEVERITY_WEIGHT,
+  assessSeverity,
+  buildSeverityReport,
+} from "./severity.js";
+export type { SeverityAssessment, SeverityReport } from "./severity.js";

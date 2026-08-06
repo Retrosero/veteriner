@@ -58,7 +58,10 @@ export function diffRowCounts(
   expected: Readonly<Record<string, number>>,
 ): Record<string, number> {
   const out: Record<string, number> = {};
-  const keys = new Set<string>([...Object.keys(actual), ...Object.keys(expected)]);
+  const keys = new Set<string>([
+    ...Object.keys(actual),
+    ...Object.keys(expected),
+  ]);
   for (const k of keys) {
     const a = actual[k] ?? 0;
     const e = expected[k] ?? 0;
@@ -91,12 +94,17 @@ export async function verifyChecksum(
  * checksum dogrulama, dosya boyutu dogrulama. Her kontrol
  * ok=false ise hata detayi ile birlikte doner.
  */
-export async function verifyRestore(options: VerifyOptions): Promise<VerifyResult> {
+export async function verifyRestore(
+  options: VerifyOptions,
+): Promise<VerifyResult> {
   const tolerance = options.tolerance ?? 0;
   const checks: Array<{ name: string; ok: boolean; detail: string }> = [];
 
   // 1) Row count karsilastirma
-  const diff = diffRowCounts(options.actualRowCounts, options.expectedRowCounts);
+  const diff = diffRowCounts(
+    options.actualRowCounts,
+    options.expectedRowCounts,
+  );
   for (const [table, delta] of Object.entries(diff)) {
     const ok = Math.abs(delta) <= tolerance;
     checks.push({

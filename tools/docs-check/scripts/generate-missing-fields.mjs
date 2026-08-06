@@ -97,10 +97,23 @@ function guessType(name) {
   if (name in TYPE_HINTS) return TYPE_HINTS[name];
   if (name.endsWith("Id") || name.endsWith("IdSchema")) return "uuid";
   if (name.endsWith("At") || name.endsWith("Date")) return "datetime";
-  if (name.endsWith("Count") || name.endsWith("Number") || name.endsWith("Qty")) return "number";
-  if (name.startsWith("is") || name.startsWith("has") || name.startsWith("can")) return "boolean";
-  if (name.endsWith("Amount") || name.endsWith("Price") || name.endsWith("Cost") || name.endsWith("Total")) return "decimal";
-  if (name.endsWith("Json") || name.endsWith("Payload") || name.endsWith("Metadata")) return "json";
+  if (name.endsWith("Count") || name.endsWith("Number") || name.endsWith("Qty"))
+    return "number";
+  if (name.startsWith("is") || name.startsWith("has") || name.startsWith("can"))
+    return "boolean";
+  if (
+    name.endsWith("Amount") ||
+    name.endsWith("Price") ||
+    name.endsWith("Cost") ||
+    name.endsWith("Total")
+  )
+    return "decimal";
+  if (
+    name.endsWith("Json") ||
+    name.endsWith("Payload") ||
+    name.endsWith("Metadata")
+  )
+    return "json";
   return "string";
 }
 
@@ -127,8 +140,8 @@ function buildFieldBlock(entity, name, type, required) {
     `        required: ${req}`,
     `        unique: false`,
     `        pii: false`,
-    `        description_tr: "${capitalize(entity)} ${name} alanı (otomatik üretildi)."` ,
-    `        description_en: "${capitalize(entity)} ${name} field (auto-generated)."` ,
+    `        description_tr: "${capitalize(entity)} ${name} alanı (otomatik üretildi)."`,
+    `        description_en: "${capitalize(entity)} ${name} field (auto-generated)."`,
     `        validation: "auto-generated; refine in follow-up"`,
     `        version: "1.0.0"`,
     ``,
@@ -148,7 +161,10 @@ function ensureEntityAndFields(text, entity, fields) {
   let out = text;
   // Var mı kontrol et
   const entityHeader = `  - id: ${entity}`;
-  if (!out.includes(`\n${entityHeader}\n`) && !out.startsWith(`${entityHeader}\n`)) {
+  if (
+    !out.includes(`\n${entityHeader}\n`) &&
+    !out.startsWith(`${entityHeader}\n`)
+  ) {
     // Yeni entity ekle
     const newEntity = [
       ``,
@@ -170,7 +186,10 @@ function ensureEntityAndFields(text, entity, fields) {
   let k = startIdx + 1;
   while (k < lines.length) {
     const ln = lines[k];
-    if (ln.trim() === "fields:") { fieldsIdx = k; break; }
+    if (ln.trim() === "fields:") {
+      fieldsIdx = k;
+      break;
+    }
     if (/^  - id: /.test(ln)) break;
     k++;
   }
@@ -183,8 +202,12 @@ function ensureEntityAndFields(text, entity, fields) {
     if (ln.startsWith("      - id: ")) {
       lastFieldLine = k;
       const raw = ln.trim().slice("- id: ".length);
-      if (raw.startsWith(`${entity}.`)) existing.add(raw.slice(entity.length + 1));
-    } else if (/^  - id: /.test(ln) || (/^    - id: /.test(ln) && !ln.startsWith("      - id: "))) {
+      if (raw.startsWith(`${entity}.`))
+        existing.add(raw.slice(entity.length + 1));
+    } else if (
+      /^  - id: /.test(ln) ||
+      (/^    - id: /.test(ln) && !ln.startsWith("      - id: "))
+    ) {
       break;
     }
     k++;
@@ -214,8 +237,15 @@ let cleaned;
 if (process.env.DOCS_CHECK_OUTPUT) {
   cleaned = await readFile(process.env.DOCS_CHECK_OUTPUT, "utf8");
 } else {
-  const proc = spawnSync("pnpm", ["docs:check"], { cwd: repo, encoding: "utf8", maxBuffer: 50 * 1024 * 1024 });
-  cleaned = ((proc.stdout || "") + (proc.stderr || "")).replace(/\u001b\[[0-9;]*m/g, "");
+  const proc = spawnSync("pnpm", ["docs:check"], {
+    cwd: repo,
+    encoding: "utf8",
+    maxBuffer: 50 * 1024 * 1024,
+  });
+  cleaned = ((proc.stdout || "") + (proc.stderr || "")).replace(
+    /\u001b\[[0-9;]*m/g,
+    "",
+  );
 }
 const missing = parseMissingFromDocsCheckOutput(cleaned);
 if (missing.size === 0) {
@@ -230,7 +260,9 @@ if (!apply) {
   console.log("[BİLGİ] Dry-run. Uygulamak için --apply ekleyin.");
   const sample = [...missing.entries()].slice(0, 5);
   for (const [ent, fs] of sample) {
-    console.log(`  ${ent}: ${[...fs].slice(0, 6).join(", ")}${fs.size > 6 ? "..." : ""}`);
+    console.log(
+      `  ${ent}: ${[...fs].slice(0, 6).join(", ")}${fs.size > 6 ? "..." : ""}`,
+    );
   }
   process.exit(0);
 }
@@ -244,4 +276,6 @@ for (const [entity, fields] of missing) {
   added += (text.length - before) / 200;
 }
 await writeFile(target, text, "utf8");
-console.log(`[OK] ~${Math.round(added)} alan eklendi → docs/fields/fields.yaml`);
+console.log(
+  `[OK] ~${Math.round(added)} alan eklendi → docs/fields/fields.yaml`,
+);

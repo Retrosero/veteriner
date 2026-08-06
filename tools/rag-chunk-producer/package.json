@@ -12,7 +12,10 @@
     "test": "vitest run",
     "produce": "node --import tsx src/index.ts",
     "produce:workflows": "node --import tsx src/index.ts --source docs/workflows",
-    "produce:pages": "node --import tsx src/index.ts --source docs/pages"
+    "produce:pages": "node --import tsx src/index.ts --source docs/pages",
+    "produce:dry-run": "node --import tsx src/index.ts --source docs --dry-run",
+    "produce:hash": "node --import tsx src/index.ts --source docs --hash-only",
+    "produce:jsonl": "node --import tsx src/index.ts --source docs --jsonl"
   },
   "dependencies": {
     "js-yaml": "^4.1.0"
