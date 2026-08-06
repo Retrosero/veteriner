@@ -42,6 +42,13 @@ export default [
       "dist/**",
       "coverage/**",
       "next-env.d.ts",
+      // Playwright smoke test konfigürasyonu ve senaryoları.
+      // `@playwright/test` paketi bu pakete bağımlı değildir
+      // (GOAL-127 kuralı: yeni paket ekleme); CI tarafında
+      // `pnpm dlx` ile indirilir. Bu yüzden lint/type-check
+      // kapsamı dışında tutulur.
+      "e2e/**",
+      "playwright.config.ts",
     ],
   },
   js.configs.recommended,

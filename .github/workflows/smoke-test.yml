@@ -1,0 +1,152 @@
+# GitHub Actions — VetNiva Smoke Test (GOAL-127)
+# Production/pilot deploy sonrası tarayıcı tabanlı 9 adımlık smoke
+# test paketini çalıştırır. Bu workflow PR bazlı değildir; yalnızca
+# manuel (`workflow_dispatch`) veya deploy hook'u
+# (`repository_dispatch`) ile tetiklenir.
+#
+# Tetikleyiciler:
+# - workflow_dispatch: Manuel çalıştırma. UI'dan `base_url` ve
+#   `browser` seçilebilir.
+# - repository_dispatch: Coolify webhook veya başka CI tarafından
+#   `production-deploy` / `pilot-deploy` event type ile
+#   tetiklenir. `client_payload.base_url` opsiyoneldir
+#   (yoksa pilot default kullanılır).
+#
+# Çalıştırma sırası:
+# 1. Checkout + pnpm install (frozen lockfile).
+# 2. Playwright runtime + chromium kurulumu (`pnpm dlx`).
+# 3. `pnpm dlx @playwright/test test` ile 5 spec dosyası.
+# 4. HTML rapor + test-results artifact olarak yüklenir.
+# 5. Hata olursa Slack/Webhook notification (opsiyonel, secret
+#    tanımlıysa).
+
+name: Smoke Test (Pilot / Production)
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Smoke test hedef URL'i (varsayılan: pilot)"
+        required: false
+        type: string
+        default: "https://vetniva.appsgo.cloud/"
+      browser:
+        description: "Tarayıcı projesi"
+        required: false
+        type: choice
+        default: "chromium"
+        options:
+          - chromium
+          - firefox
+          - webkit
+      spec_filter:
+        description: "Playwright --grep filtresi (boş = tümü)"
+        required: false
+        type: string
+        default: ""
+  repository_dispatch:
+    types: [production-deploy, pilot-deploy]
+
+# Smoke test pilot verisini kirletir; aynı workflow eş zamanlı
+# çalışırsa yarış koşulu oluşur. Bu yüzden eş zamanlı çalıştırma
+# kuyruğa alınır.
+concurrency:
+  group: smoke-${{ github.event.inputs.base_url || github.event.client_payload.base_url || 'pilot' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  # Tek doğruluk kaynağı: hedef URL. workflow_dispatch input >
+  # repository_dispatch payload > pilot default.
+  SMOKE_BASE_URL: ${{ github.event.inputs.base_url || github.event.client_payload.base_url || 'https://vetniva.appsgo.cloud/' }}
+  # Playwright sürümü tek noktada sabit. 1.49.x Node 20 ile uyumlu.
+  PLAYWRIGHT_VERSION: "1.49.1"
+  NODE_VERSION: "20"
+
+jobs:
+  smoke:
+    name: Playwright smoke (${{ github.event.inputs.browser || 'chromium' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: pnpm cache (store)
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: smoke-pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: smoke-pnpm-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: smoke-pw-${{ runner.os }}-${{ env.PLAYWRIGHT_VERSION }}
+          restore-keys: smoke-pw-${{ runner.os }}-
+
+      - name: Install Playwright browsers (chromium)
+        run: pnpm dlx @playwright/test@${{ env.PLAYWRIGHT_VERSION }} install --with-deps ${{ github.event.inputs.browser || 'chromium' }}
+
+      - name: Run smoke tests
+        id: smoke
+        run: |
+          set -euo pipefail
+          GREP_ARG=""
+          if [ -n "${{ github.event.inputs.spec_filter }}" ]; then
+            GREP_ARG="--grep=${{ github.event.inputs.spec_filter }}"
+          fi
+          pnpm dlx @playwright/test@${{ env.PLAYWRIGHT_VERSION }} \
+            test \
+            --config=apps/web/playwright.config.ts \
+            --reporter=html,github,list \
+            $GREP_ARG
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-html-report-${{ github.run_id }}
+          path: apps/web/playwright-report
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload test results (videos + screenshots)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-results-${{ github.run_id }}
+          path: apps/web/test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Notify failure (opsiyonel)
+        if: failure() && env.SMOKE_WEBHOOK_URL != ''
+        run: |
+          curl -fsS -X POST "$SMOKE_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -d "{\"text\":\"❌ VetNiva smoke test başarısız: ${{ env.SMOKE_BASE_URL }} (run ${{ github.run_id }})\"}" \
+            || echo "webhook unreachable; skipping"
+        env:
+          SMOKE_WEBHOOK_URL: ${{ secrets.SMOKE_WEBHOOK_URL }}
