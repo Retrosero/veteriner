@@ -9,7 +9,8 @@
     "type-check": "node ../../node_modules/typescript/lib/tsc.js -p tsconfig.json --noEmit",
     "lint": "eslint src tests",
     "test": "vitest run",
-    "validate": "node --import tsx src/validate.ts"
+    "validate": "node --import tsx src/validate.ts",
+    "dry-run": "node --import tsx src/dry-run.ts"
   },
   "devDependencies": {
     "@vetniva/config": "workspace:*",
