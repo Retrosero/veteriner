@@ -2552,6 +2552,35 @@ permissions:
     applies_to_roles: [OWNER, SUPERADMIN]
 
   # ----------------------------------------------------------------
+  # KVKK — Veri yaşam döngüsü (GOAL-126)
+  # ----------------------------------------------------------------
+  - permission: "kvkk:erasure:read"
+    description: "KVKK silme taleplerini listeleme (SUPERADMIN)."
+    resource_type: kvkk_erasure_request
+    action: read
+    tenant_scope: required
+    branch_scope: not_required
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, SUPERADMIN]
+
+  - permission: "clinic:tenant:export"
+    description: "Tenant verisinin KVKK Madde 11 / UK GDPR Madde 15 JSON export'ı."
+    resource_type: tenant
+    action: export
+    tenant_scope: required
+    branch_scope: optional
+    self_only: false
+    audit: true
+    pii: true
+    amend: false
+    system_only: false
+    applies_to_roles: [OWNER, SUPERADMIN]
+
+  # ----------------------------------------------------------------
   # NOTIFICATION — Bildirim
   # ----------------------------------------------------------------
   - permission: "common:notification:manage"

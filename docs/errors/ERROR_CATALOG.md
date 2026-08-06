@@ -312,17 +312,17 @@ bu katalogda yer almasını zorunlu kılar.
 
 ## Görüntüleme (IMG) — GOAL-093
 
-| Kod            | Ad                               | HTTP | Severity | Kaynak | Çözüm                                                             |
-| -------------- | -------------------------------- | ---- | -------- | ------ | ----------------------------------------------------------------- |
-| `VET-IMG-0001` | Görüntüleme isteği bulunamadı    | 404  | warning  | server | İstek ID'sini kontrol edin.                                       |
-| `VET-IMG-0002` | Geçersiz durum geçişi            | 409  | warning  | server | Sırasıyla ordered → scheduled → performed → reported → completed. |
-| `VET-IMG-0003` | Katalogda görüntüleme testi yok  | 422  | warning  | server | imagingTestId kontrol edin.                                       |
-| `VET-IMG-0004` | Katalog pasif                    | 422  | warning  | server | Aktif bir görüntüleme testi seçin.                                |
+| Kod            | Ad                                  | HTTP | Severity | Kaynak | Çözüm                                                             |
+| -------------- | ----------------------------------- | ---- | -------- | ------ | ----------------------------------------------------------------- |
+| `VET-IMG-0001` | Görüntüleme isteği bulunamadı       | 404  | warning  | server | İstek ID'sini kontrol edin.                                       |
+| `VET-IMG-0002` | Geçersiz durum geçişi               | 409  | warning  | server | Sırasıyla ordered → scheduled → performed → reported → completed. |
+| `VET-IMG-0003` | Katalogda görüntüleme testi yok     | 422  | warning  | server | imagingTestId kontrol edin.                                       |
+| `VET-IMG-0004` | Katalog pasif                       | 422  | warning  | server | Aktif bir görüntüleme testi seçin.                                |
 | `VET-IMG-0005` | Rapor düzeltme/amend için rapor yok | 404  | warning  | server | Önce rapor yazın (perform + report).                              |
-| `VET-IMG-0006` | Rapor onayı için yanlış durum    | 409  | warning  | server | Sipariş reported/amended olmalı.                                  |
-| `VET-IMG-0007` | Rapor bulunamadı                 | 422  | warning  | server | Önce rapor yazın.                                                 |
-| `VET-IMG-0008` | Son rapor zaten onaylanmış       | 409  | warning  | server | Düzeltme için amend kullanın.                                     |
-| `VET-IMG-0009` | Rapor düzeltme için yanlış durum | 409  | warning  | server | Sipariş reported/amended olmalı.                                  |
+| `VET-IMG-0006` | Rapor onayı için yanlış durum       | 409  | warning  | server | Sipariş reported/amended olmalı.                                  |
+| `VET-IMG-0007` | Rapor bulunamadı                    | 422  | warning  | server | Önce rapor yazın.                                                 |
+| `VET-IMG-0008` | Son rapor zaten onaylanmış          | 409  | warning  | server | Düzeltme için amend kullanın.                                     |
+| `VET-IMG-0009` | Rapor düzeltme için yanlış durum    | 409  | warning  | server | Sipariş reported/amended olmalı.                                  |
 
 ## Stok (STOCK)
 
@@ -472,11 +472,12 @@ bu katalogda yer almasını zorunlu kılar.
 
 ## KVKK
 
-| Kod             | Ad                           | HTTP | Severity | Kaynak | Çözüm                       |
-| --------------- | ---------------------------- | ---- | -------- | ------ | --------------------------- |
-| `VET-KVKK-0001` | KVKK silme talebi bulunamadı | 404  | warning  | server | Talep ID'sini kontrol edin. |
-| `VET-KVKK-0002` | KVKK talebi zaten işlenmiş   | 409  | warning  | server | Talep tekrar gönderilemez.  |
-| `VET-KVKK-0003` | Anonimleştirme başarısız     | 500  | critical | server | Manuel müdahale gerekir.    |
+| Kod             | Ad                           | HTTP | Severity | Kaynak | Çözüm                             |
+| --------------- | ---------------------------- | ---- | -------- | ------ | --------------------------------- |
+| `VET-KVKK-0001` | KVKK silme talebi bulunamadı | 404  | warning  | server | Talep ID'sini kontrol edin.       |
+| `VET-KVKK-0002` | KVKK talebi zaten işlenmiş   | 409  | warning  | server | Talep tekrar gönderilemez.        |
+| `VET-KVKK-0003` | Anonimleştirme başarısız     | 500  | critical | server | Manuel müdahale gerekir.          |
+| `VET-KVKK-0004` | Sahip farklı tenant'a ait    | 403  | warning  | server | Owner bu tenant kapsamında değil. |
 
 ## Rapor (REPORT)
 

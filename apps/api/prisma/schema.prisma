@@ -620,6 +620,49 @@ model Patient {
   @@map("patients")
 }
 
+/// KVKK silme (erasure) talebi. GOAL-126 (FAZ-12) veri yaşam
+/// döngüsünün kalıcı kaydı. Tenant-scoped; her talep tek bir owner'a
+/// bağlıdır. Durum geçişleri: pending → in_progress → completed/
+/// rejected. PII alanları (firstName, lastName, email, phone, taxId,
+/// address) uygulama adımında `kvkk-erased-<hash>` ile anonimleştirilir;
+/// tıbbi kayıtlar yasal saklama süresince (7 yıl) korunur.
+///
+/// Append-only yaklaşımı benimsenmemiştir: erasure uygulandığında
+/// kayıt güncellenir (status + completedAt) çünkü işlem tamamlandıktan
+/// sonra talep son durumunu korumalıdır. `metadata` JSON alanı PII
+/// içermeyen durum geçiş notlarını saklar.
+model KvkkErasureRequest {
+  id                      String    @id @default(uuid()) @db.Uuid
+  /// Tenant kapsamı; cross-tenant erasure izolasyonu için zorunlu.
+  tenantId                String    @map("tenant_id") @db.Uuid
+  /// Hasta sahibi (FK; tenant-scoped lookup için).
+  ownerId                 String    @map("owner_id") @db.Uuid
+  /// Talebi açan kullanıcı (null = portal/system).
+  requestedBy             String?   @map("requested_by") @db.Uuid
+  /// Talep gerekçesi (>=10, <=1000 karakter).
+  reason                  String    @db.VarChar(1000)
+  /// Durum: pending → in_progress → completed | rejected.
+  status                  String    @default("pending") @db.VarChar(20)
+  /// Talep oluşturulma zamanı.
+  requestedAt             DateTime  @default(now()) @map("requested_at") @db.Timestamptz(6)
+  /// Tamamlanma zamanı (null = henüz tamamlanmadı).
+  completedAt             DateTime? @map("completed_at") @db.Timestamptz(6)
+  /// Tamamlayan kullanıcı (SUPERADMIN).
+  completedBy             String?   @map("completed_by") @db.Uuid
+  /// Anonimleştirilen alan listesi (JSON string array).
+  redactedFields          Json?     @map("redacted_fields")
+  /// Yasal saklama nedeniyle tutulan tıbbi kayıt sayısı.
+  retainedMedicalRecords  Int       @default(0) @map("retained_medical_records")
+  /// Ek bağlam (idempotency_key, audit referansları).
+  metadata                Json?
+  /// Son güncelleme zamanı.
+  updatedAt               DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([tenantId, status, requestedAt])
+  @@index([tenantId, ownerId, requestedAt])
+  @@map("kvkk_erasure_requests")
+}
+
 /// Hasta sahipliği append-only geçmişidir. Aynı hasta için tek açık kayıt
 /// PostgreSQL partial unique index'iyle migration seviyesinde korunur.
 model OwnershipHistory {

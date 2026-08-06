@@ -199,6 +199,8 @@ export const PERMISSIONS = [
   "clinic:report:export",
   "audit:log:read",
   "audit:log:export",
+  "kvkk:erasure:read",
+  "clinic:tenant:export",
   "file:file:upload",
   "file:file:read",
   "file:file:delete",

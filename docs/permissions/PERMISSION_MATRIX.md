@@ -405,13 +405,15 @@ kendi hayvanlarına ait.
 
 ## Audit & Dosya (AUDIT / FILE)
 
-| Permission         | OWN | VET | STF | ADM | POR  |
-| ------------------ | :-: | :-: | :-: | :-: | :--: |
-| `audit:log:read`   |  ✓  |  —  |  —  |  ✓  |  —   |
-| `audit:log:export` |  ✓  |  —  |  —  |  ✓  |  —   |
-| `file:file:upload` |  ✓  |  ✓  |  ✓  |  —  | ✓(k) |
-| `file:file:read`   |  ✓  |  ✓  |  ✓  |  —  | ✓(k) |
-| `file:file:delete` |  ✓  |  ✓  |  —  |  —  |  —   |
+| Permission             | OWN | VET | STF | ADM | POR  |
+| ---------------------- | :-: | :-: | :-: | :-: | :--: |
+| `audit:log:read`       |  ✓  |  —  |  —  |  ✓  |  —   |
+| `audit:log:export`     |  ✓  |  —  |  —  |  ✓  |  —   |
+| `kvkk:erasure:read`    |  ✓  |  —  |  —  |  ✓  |  —   |
+| `clinic:tenant:export` |  ✓  |  —  |  —  |  ✓  |  —   |
+| `file:file:upload`     |  ✓  |  ✓  |  ✓  |  —  | ✓(k) |
+| `file:file:read`       |  ✓  |  ✓  |  ✓  |  —  | ✓(k) |
+| `file:file:delete`     |  ✓  |  ✓  |  —  |  —  |  —   |
 
 > **Not:** Audit log yalnızca OWNER ve SUPERADMIN. STAFF
 > kendi yaptığı işlemlerin audit izini göremez (sadece loglanır).

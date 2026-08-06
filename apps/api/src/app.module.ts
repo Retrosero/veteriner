@@ -57,6 +57,7 @@ import { IdentityModule } from "./modules/identity/identity.module.js";
 import { ImagingOrdersModule } from "./modules/imaging-orders/imaging-orders.module.js";
 import { InventoryModule } from "./modules/inventory/inventory.module.js";
 import { JobRunsModule } from "./modules/job-runs/job-runs.module.js";
+import { KvkkModule } from "./modules/kvkk/kvkk.module.js";
 import { LabAdaptersModule } from "./modules/lab-adapters/lab-adapters.module.js";
 import { LabOrdersModule } from "./modules/lab-orders/lab-orders.module.js";
 import { LabResultsModule } from "./modules/lab-results/lab-results.module.js";
@@ -165,6 +166,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     JobRunsModule,
     SecurityEventsModule,
     LogRetentionModule,
+    KvkkModule,
   ],
 })
 export class AppModule {}
