@@ -61,3 +61,25 @@ vi.mock("next/image", () => ({
     return React.createElement("img", { src, alt, ...rest });
   },
 }));
+
+/**
+ * GOAL-117 polish: jsdom `window.matchMedia` sağlamaz; a11y
+ * `prefers-reduced-motion` ve ortam sorguları için minimal bir
+ * no-op stub ekleriz. `matches: false` döner ki reduced-motion
+ * testlerinde ayrıca override edilebilsin.
+ */
+if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: (query: string): MediaQueryList => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: (): void => {},
+      removeListener: (): void => {},
+      addEventListener: (): void => {},
+      removeEventListener: (): void => {},
+      dispatchEvent: (): boolean => false,
+    }),
+  });
+}

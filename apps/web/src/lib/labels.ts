@@ -204,6 +204,19 @@ const tr = {
     empty: "Senaryo bulunamadı",
     loading: "Senaryolar yükleniyor...",
     errorGeneric: "Onboarding içeriği yüklenemedi.",
+    // GOAL-117 polish (a11y + visual + behavior)
+    stepIndicator: "Adım {current} / {total}",
+    progressBarLabel: "Onboarding ilerlemesi",
+    progressBarValue: "%{percent} tamamlandı",
+    emptyStateTitle: "Eşleşen senaryo yok",
+    emptyStateHint:
+      "Soruyu farklı kelimelerle ifade edin veya klinik personeline danışın.",
+    loadingSkeletonLabel: "Senaryolar yükleniyor",
+    shortcutHint: "Yardım için '?' tuşuna basın",
+    autoDismissHint: "30 saniye içinde kapanacak",
+    ariaStep1: "1. adım, rol seçimi",
+    ariaStep2: "2. adım, soru veya senaryo seçimi",
+    ariaStep3: "3. adım, sonuç ve adımlar",
   },
   // ---------------------------------------------------------------------------
   // SUPERADMIN panel (Faz 10) — ortak namespace
@@ -931,6 +944,19 @@ const en = {
     empty: "No scenarios available",
     loading: "Loading scenarios...",
     errorGeneric: "Could not load onboarding content.",
+    // GOAL-117 polish (a11y + visual + behavior)
+    stepIndicator: "Step {current} of {total}",
+    progressBarLabel: "Onboarding progress",
+    progressBarValue: "%{percent} complete",
+    emptyStateTitle: "No matching scenario",
+    emptyStateHint:
+      "Try rephrasing your question or contact clinic staff.",
+    loadingSkeletonLabel: "Loading scenarios",
+    shortcutHint: "Press '?' for help",
+    autoDismissHint: "Auto-closing in 30 seconds",
+    ariaStep1: "Step 1, role selection",
+    ariaStep2: "Step 2, question or scenario",
+    ariaStep3: "Step 3, result and steps",
   },
   // ---------------------------------------------------------------------------
   // SUPERADMIN panel (Faz 10) — common namespace

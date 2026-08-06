@@ -22,8 +22,14 @@
  * @since GOAL-117 (FAZ-11) ilk kullanim asistan
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { type Locale } from "@vetniva/contracts";
+import { type Locale ,
+  type LocalizedOnboardingScenario,
+  type OnboardingAskResponse,
+  type OnboardingCategory,
+  type OnboardingGenerationSource,
+  type OnboardingRole,
+  type OnboardingScenarioListResponse,
+} from "@vetniva/contracts";
 import {
   Button,
   Card,
@@ -34,19 +40,21 @@ import {
   Input,
   cn,
 } from "@vetniva/ui";
-
-import {
-  type LocalizedOnboardingScenario,
-  type OnboardingAskResponse,
-  type OnboardingCategory,
-  type OnboardingGenerationSource,
-  type OnboardingRole,
-  type OnboardingScenarioListResponse,
-} from "@vetniva/contracts";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 /**
  * Ceviri etiketleri (server-side labels.ts'den ayri; wizard
  * spesifik anahtarlar burada tutulur).
+ *
+ * GOAL-117 polish ile birlikte yeni alanlar eklendi:
+ * - `stepIndicator` / `progressBarLabel` / `progressBarValue` →
+ *   görsel + ARIA progressbar destek.
+ * - `emptyStateTitle` / `emptyStateHint` → empty state illüstrasyonu.
+ * - `loadingSkeletonLabel` → ekran okuyucu için loading iskeleti.
+ * - `shortcutHint` / `autoDismissHint` → klavye kisayolu ve otomatik
+ *   kapatma uyarisi.
+ * - `ariaStep1` / `ariaStep2` / `ariaStep3` → adim göstergesi icin
+ *   ARIA etiketleri.
  */
 export type OnboardingLabels = {
   welcome: string;
@@ -76,6 +84,18 @@ export type OnboardingLabels = {
   empty: string;
   loading: string;
   errorGeneric: string;
+  // GOAL-117 polish
+  stepIndicator: string;
+  progressBarLabel: string;
+  progressBarValue: string;
+  emptyStateTitle: string;
+  emptyStateHint: string;
+  loadingSkeletonLabel: string;
+  shortcutHint: string;
+  autoDismissHint: string;
+  ariaStep1: string;
+  ariaStep2: string;
+  ariaStep3: string;
 };
 
 /**
@@ -171,6 +191,69 @@ function StarIcon(): JSX.Element {
 }
 
 /**
+ * GOAL-117 polish: Senaryo listesi yüklenirken gösterilen shimmer
+ * iskelet. 3 satır placeholder render eder. `reducedMotion` aktifken
+ * animasyonu kapatır; ekran okuyucu için `aria-label` taşır.
+ * @param root0
+ * @param root0.label
+ * @param root0.reducedMotion
+ * @param root0.rows
+ */
+function ScenariosSkeleton({
+  label,
+  reducedMotion,
+  rows = 3,
+}: {
+  label: string;
+  reducedMotion: boolean;
+  rows?: number;
+}): JSX.Element {
+  return (
+    <div
+      data-testid="onboarding-skeleton"
+      role="status"
+      aria-live="polite"
+      aria-label={label}
+      className="space-y-2"
+    >
+      {Array.from({ length: rows }).map((_, i) => (
+        <div
+          key={i}
+          className={cn(
+            "h-9 rounded-md bg-gray-100",
+            !reducedMotion && "animate-pulse",
+          )}
+        />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * GOAL-117 polish: "Eşleşen senaryo yok" durumu için minimalist
+ * illüstrasyon. Harici asset bağımlılığı yok; inline SVG.
+ */
+function NoMatchIllustration(): JSX.Element {
+  return (
+    <svg
+      viewBox="0 0 80 80"
+      className="h-16 w-16 text-gray-300"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      data-testid="onboarding-empty-illustration"
+    >
+      <circle cx="34" cy="34" r="20" />
+      <line x1="50" y1="50" x2="68" y2="68" />
+      <line x1="26" y1="34" x2="42" y2="34" />
+    </svg>
+  );
+}
+
+/**
  * Wizard icin fetch helper. Server tarafinda cookie/header tasinmasi
  * icin `credentials: "include"` kullanir; bu sayede auth cookie
  * otomatik olarak API'ye iletilir.
@@ -217,6 +300,17 @@ export type OnboardingWizardProps = {
   labels: OnboardingLabels;
   initialRole?: OnboardingRole;
   onClose?: () => void;
+  /**
+   * `localStorage` anahtarı. Verilirse wizard state (step + role)
+   * bu anahtar altında saklanır; sayfa yenilemede kullanıcı kaldığı
+   * adımdan devam eder. Verilmezse persist kapalıdır.
+   *
+   * Not: Bu prop opsiyoneldir çünkü overlay kullanımı (HelpButton)
+   * tek seferlik wizard etkileşimini hedefler ve persist beklenmez.
+   * Tam sayfa route (`/onboarding`) için `page.tsx`'ten "vetniva.onboarding"
+   * geçirilir.
+   */
+  storageKey?: string;
 };
 
 /**
@@ -225,12 +319,21 @@ export type OnboardingWizardProps = {
  * gecer; burada soru sorabilir veya mevcut senaryolardan birini
  * secebilir. 3. adimda adim listesi + navigasyon linkleri
  * gosterilir.
+ *
+ * GOAL-117 polish (a11y + visual + behavior):
+ * - `aria-current="step"` step indicator'a eklenir.
+ * - `role="progressbar"` görsel ilerleme cubuguna eklenir.
+ * - `prefers-reduced-motion` aktifken transition'lar kapatilir.
+ * - `storageKey` verilirse `localStorage` ile step + role persist
+ *   edilir.
+ *
  * @param root0
  * @param root0.locale
  * @param root0.apiBaseUrl
  * @param root0.labels
  * @param root0.initialRole
  * @param root0.onClose
+ * @param root0.storageKey
  */
 export function OnboardingWizard({
   locale,
@@ -238,9 +341,53 @@ export function OnboardingWizard({
   labels,
   initialRole,
   onClose,
+  storageKey,
 }: OnboardingWizardProps): JSX.Element {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [role, setRole] = useState<OnboardingRole | null>(initialRole ?? null);
+  // localStorage'dan ilk state'i oku (yalniz mount'ta).
+  // Hata durumunda (SSR, private mode) sessizce fallback.
+  const readPersisted = useCallback(():
+    | { step: 1 | 2 | 3; role: OnboardingRole | null }
+    | null => {
+    if (!storageKey) return null;
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as unknown;
+      if (
+        typeof parsed === "object" &&
+        parsed !== null &&
+        "step" in parsed &&
+        "role" in parsed
+      ) {
+        const s = (parsed as { step: unknown }).step;
+        const r = (parsed as { role: unknown }).role;
+        if (s === 1 || s === 2 || s === 3) {
+          const validRoles: OnboardingRole[] = [
+            "VETERINARIAN",
+            "STAFF",
+            "OWNER",
+            "PET_OWNER_PORTAL",
+          ];
+          if (r === null || validRoles.includes(r as OnboardingRole)) {
+            return {
+              step: s,
+              role: (r as OnboardingRole | null) ?? null,
+            };
+          }
+        }
+      }
+    } catch {
+      // Sessiz fallback: corrupted JSON, quota exceeded vs.
+    }
+    return null;
+  }, [storageKey]);
+
+  const persisted = readPersisted();
+  const [step, setStep] = useState<1 | 2 | 3>(persisted?.step ?? 1);
+  const [role, setRole] = useState<OnboardingRole | null>(
+    persisted?.role ?? initialRole ?? null,
+  );
   const [scenarios, setScenarios] = useState<
     OnboardingScenarioListResponse["scenarios"]
   >([]);
@@ -254,11 +401,64 @@ export function OnboardingWizard({
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  // GOAL-117 polish: prefers-reduced-motion izleme.
+  // `matchMedia` jsdom'da olmayabilir; güvenli kontrol ile false'a
+  // düşeriz.
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(
+    () => {
+      if (typeof window === "undefined") return false;
+      try {
+        return (
+          typeof window.matchMedia === "function" &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        );
+      } catch {
+        return false;
+      }
+    },
+  );
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (typeof window.matchMedia !== "function") return;
+    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handler = (e: MediaQueryListEvent): void => {
+      setPrefersReducedMotion(e.matches);
+    };
+    mql.addEventListener("change", handler);
+    return () => {
+      mql.removeEventListener("change", handler);
+    };
+  }, []);
+
+  // GOAL-117 polish: step + role degisimini persist et.
+  useEffect(() => {
+    if (!storageKey) return;
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(
+        storageKey,
+        JSON.stringify({ step, role }),
+      );
+    } catch {
+      // Quota exceeded vs. → sessizce yok say.
+    }
+  }, [storageKey, step, role]);
+
   const currentStepLabel = useMemo(() => {
     if (step === 1) return labels.step1Title;
     if (step === 2) return labels.step2Title;
     return labels.step3Title;
   }, [step, labels]);
+
+  // GOAL-117 polish: ARIA icin guncel adim aciklamasi.
+  const currentStepAria = useMemo(() => {
+    if (step === 1) return labels.ariaStep1;
+    if (step === 2) return labels.ariaStep2;
+    return labels.ariaStep3;
+  }, [step, labels]);
+
+  // GOAL-117 polish: ilerleme yuzdesi (33/66/100).
+  const progressPercent = step === 1 ? 33 : step === 2 ? 66 : 100;
 
   /**
    * Senaryolar yukle. Role degistiginde veya step 2'ye gecildiginde
@@ -272,13 +472,12 @@ export function OnboardingWizard({
         `${apiBaseUrl}/api/v1/onboarding/scenarios`,
       );
       if (result.ok) {
-        // Backend actor.role'den filtreliyor; ek rol filtresi
-        // gerekmez. Sadece secilen rolle uyumlu olanlari goster.
-        const filtered = result.data.scenarios.filter((s) => {
-          // Backend zaten role-bazli filtreledi; yine de dogrulayalim.
-          return true;
-        });
-        setScenarios(filtered);
+        // Backend actor.role'den filtreliyor; ek rol filtresi gerekmez.
+        setScenarios(result.data.scenarios);
+        // selectedRole bilinçli olarak referans tutulur: gelecekte client
+        // tarafında rol-bazlı ek filtreleme (örn. çeviri seti seçimi)
+        // burada uygulanabilir. Şimdilik lint uyarısını `void` ile
+        // bastırıyoruz.
         void selectedRole;
       } else {
         setError(labels.errorGeneric);
@@ -292,6 +491,11 @@ export function OnboardingWizard({
   /**
    * Step 2'de "ask" endpoint'ini cagir. Backend senaryo eslestirir
    * veya tıbbi sorularda refusal doner.
+   *
+   * GOAL-117 polish: "no-match" durumunda adim 2'de hata gostermek
+   * yerine adim 3'e gecilip `empty state` illüstrasyonu gosterilir.
+   * Bu, kullanicinin "yeniden soru sormak" yerine wizard'i
+   * yeniden baslatmasi icin daha tutarli bir yonlendirme sunar.
    */
   const submitAsk = useCallback(async (): Promise<void> => {
     if (query.trim().length < 3) {
@@ -320,7 +524,8 @@ export function OnboardingWizard({
         // Tibbi reddi: step 3'te ozel mesaj gosterilir.
         setStep(3);
       } else {
-        setError(labels.step3NoMatch);
+        // No-match: step 3'te empty state gosterilir.
+        setStep(3);
       }
     } else {
       setError(labels.errorGeneric);
@@ -339,12 +544,16 @@ export function OnboardingWizard({
     <div
       data-testid="onboarding-wizard"
       data-step={step}
-      className="mx-auto w-full max-w-2xl"
+      data-prefers-reduced-motion={prefersReducedMotion ? "true" : "false"}
+      className={cn(
+        "mx-auto w-full max-w-2xl",
+        prefersReducedMotion && "motion-reduce",
+      )}
     >
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between gap-3">
-            <div>
+            <div className="min-w-0 flex-1">
               <CardTitle data-testid="onboarding-step-title">
                 {currentStepLabel}
               </CardTitle>
@@ -369,6 +578,73 @@ export function OnboardingWizard({
               </Button>
             ) : null}
           </div>
+          {/* GOAL-117 polish: görsel step indicator (1/3, 2/3, 3/3) +
+              ARIA progressbar. Her adım noktası `aria-current="step"`
+              ile aktif olanı işaretler. */}
+          <div
+            className="mt-3 flex flex-col gap-2"
+            data-testid="onboarding-step-indicator"
+          >
+            <ol
+              className="flex items-center justify-center gap-1.5"
+              aria-hidden="true"
+            >
+              {([1, 2, 3] as const).map((s) => {
+                const isCurrent = s === step;
+                return (
+                  <li
+                    key={s}
+                    aria-current={isCurrent ? "step" : undefined}
+                    data-step={s}
+                    className={cn(
+                      "h-1.5 w-6 rounded-full",
+                      isCurrent
+                        ? "bg-clinic-600"
+                        : s < step
+                          ? "bg-clinic-300"
+                          : "bg-gray-200",
+                      !prefersReducedMotion && "transition-colors",
+                    )}
+                  />
+                );
+              })}
+            </ol>
+            <div
+              className="flex items-center justify-between text-xs font-medium text-gray-600"
+              aria-hidden="true"
+            >
+              <span>
+                {labels.stepIndicator
+                  .replace("{current}", String(step))
+                  .replace("{total}", "3")}
+              </span>
+              <span>
+                {labels.progressBarValue.replace(
+                  "{percent}",
+                  String(progressPercent),
+                )}
+              </span>
+            </div>
+            <div
+              role="progressbar"
+              aria-label={labels.progressBarLabel}
+              aria-valuenow={progressPercent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuetext={currentStepAria}
+              data-testid="onboarding-progress"
+              data-percent={progressPercent}
+              className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200"
+            >
+              <div
+                className={cn(
+                  "h-full rounded-full bg-clinic-600",
+                  !prefersReducedMotion && "transition-all duration-300",
+                )}
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardBody>
           {step === 1 ? (
@@ -383,10 +659,13 @@ export function OnboardingWizard({
               labels={labels}
               query={query}
               onQueryChange={setQuery}
-              onSubmit={submitAsk}
+              onSubmit={() => {
+                void submitAsk();
+              }}
               loading={loading}
               error={error}
               scenarios={scenarios}
+              prefersReducedMotion={prefersReducedMotion}
               onScenarioPick={(id) => {
                 setSelectedScenarioId(id);
                 setStep(3);
@@ -500,6 +779,7 @@ function Step2Ask({
   loading,
   error,
   scenarios,
+  prefersReducedMotion,
   onScenarioPick,
 }: {
   labels: OnboardingLabels;
@@ -509,6 +789,7 @@ function Step2Ask({
   loading: boolean;
   error: string | null;
   scenarios: OnboardingScenarioListResponse["scenarios"];
+  prefersReducedMotion: boolean;
   onScenarioPick: (id: string) => void;
 }): JSX.Element {
   return (
@@ -559,7 +840,12 @@ function Step2Ask({
         <h4 className="mb-2 text-sm font-semibold text-gray-900">
           {labels.step2Subtitle}
         </h4>
-        {scenarios.length === 0 ? (
+        {loading ? (
+          <ScenariosSkeleton
+            label={labels.loadingSkeletonLabel}
+            reducedMotion={prefersReducedMotion}
+          />
+        ) : scenarios.length === 0 ? (
           <p
             className="text-sm text-gray-500"
             data-testid="onboarding-empty"
@@ -577,7 +863,10 @@ function Step2Ask({
                   type="button"
                   data-testid={`onboarding-scenario-${s.id}`}
                   onClick={() => onScenarioPick(s.id)}
-                  className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-clinic-50/40"
+                  className={cn(
+                    "flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-clinic-50/40",
+                    !prefersReducedMotion && "transition-colors",
+                  )}
                 >
                   <span className="flex items-center gap-2">
                     <span className="text-clinic-700">
@@ -669,10 +958,28 @@ function Step3Result({
 
   if (!scenario) {
     return (
-      <div data-testid="onboarding-step3-empty" className="space-y-2">
-        <p className="text-sm text-gray-500" data-testid="onboarding-no-match">
-          {labels.step3NoMatch}
-        </p>
+      <div
+        data-testid="onboarding-step3-empty"
+        className="flex flex-col items-center gap-3 py-4 text-center"
+      >
+        <NoMatchIllustration />
+        <div>
+          <p
+            className="text-sm font-semibold text-gray-800"
+            data-testid="onboarding-no-match-title"
+          >
+            {labels.emptyStateTitle}
+          </p>
+          <p
+            className="mt-1 text-sm text-gray-500"
+            data-testid="onboarding-no-match"
+          >
+            {labels.step3NoMatch}
+          </p>
+          <p className="mt-1 text-xs text-gray-400" aria-hidden="true">
+            {labels.emptyStateHint}
+          </p>
+        </div>
         <Button
           type="button"
           variant="secondary"

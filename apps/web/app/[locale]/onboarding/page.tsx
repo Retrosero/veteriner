@@ -59,6 +59,18 @@ function getOnboardingLabels(
   empty: string;
   loading: string;
   errorGeneric: string;
+  // GOAL-117 polish (a11y + visual + behavior)
+  stepIndicator: string;
+  progressBarLabel: string;
+  progressBarValue: string;
+  emptyStateTitle: string;
+  emptyStateHint: string;
+  loadingSkeletonLabel: string;
+  shortcutHint: string;
+  autoDismissHint: string;
+  ariaStep1: string;
+  ariaStep2: string;
+  ariaStep3: string;
 } {
   if (locale === "en-GB") {
     return {
@@ -90,6 +102,17 @@ function getOnboardingLabels(
       empty: "No scenarios available",
       loading: "Loading scenarios...",
       errorGeneric: "Could not load onboarding content.",
+      stepIndicator: "Step {current} of {total}",
+      progressBarLabel: "Onboarding progress",
+      progressBarValue: "%{percent} complete",
+      emptyStateTitle: "No matching scenario",
+      emptyStateHint: "Try rephrasing your question or contact clinic staff.",
+      loadingSkeletonLabel: "Loading scenarios",
+      shortcutHint: "Press '?' for help",
+      autoDismissHint: "Auto-closing in 30 seconds",
+      ariaStep1: "Step 1, role selection",
+      ariaStep2: "Step 2, question or scenario",
+      ariaStep3: "Step 3, result and steps",
     };
   }
   return {
@@ -121,6 +144,18 @@ function getOnboardingLabels(
     empty: "Senaryo bulunamadi",
     loading: "Senaryolar yukleniyor...",
     errorGeneric: "Onboarding icerigi yuklenemedi.",
+    stepIndicator: "Adim {current} / {total}",
+    progressBarLabel: "Onboarding ilerlemesi",
+    progressBarValue: "%{percent} tamamlandi",
+    emptyStateTitle: "Eslesen senaryo yok",
+    emptyStateHint:
+      "Soruyu farkli kelimelerle ifade edin veya klinik personeline danisin.",
+    loadingSkeletonLabel: "Senaryolar yukleniyor",
+    shortcutHint: "Yardim icin '?' tusuna basin",
+    autoDismissHint: "30 saniye icinde kapanacak",
+    ariaStep1: "1. adim, rol secimi",
+    ariaStep2: "2. adim, soru veya senaryo secimi",
+    ariaStep3: "3. adim, sonuc ve adimlar",
   };
 }
 
@@ -186,6 +221,7 @@ export default async function OnboardingPage({
         locale={locale}
         apiBaseUrl={apiBaseUrl}
         labels={onboardingLabels}
+        storageKey={`vetniva.onboarding.${locale}`}
       />
     </AppShell>
   );

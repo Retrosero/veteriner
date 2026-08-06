@@ -54,6 +54,18 @@ const LABELS: OnboardingLabels = {
   empty: "Senaryo yok",
   loading: "Yukleniyor...",
   errorGeneric: "Hata olustu",
+  // GOAL-117 polish
+  stepIndicator: "Adim {current} / {total}",
+  progressBarLabel: "Onboarding ilerlemesi",
+  progressBarValue: "%{percent} tamamlandi",
+  emptyStateTitle: "Eslesen senaryo yok",
+  emptyStateHint: "Soruyu farkli sekilde ifade edin",
+  loadingSkeletonLabel: "Senaryolar yukleniyor",
+  shortcutHint: "Yardim icin '?' tusuna basin",
+  autoDismissHint: "30 saniye icinde kapanacak",
+  ariaStep1: "1. adim, rol secimi",
+  ariaStep2: "2. adim, soru veya senaryo secimi",
+  ariaStep3: "3. adim, sonuc ve adimlar",
 };
 
 const LOCALE: Locale = "tr-TR";
@@ -115,7 +127,7 @@ describe("OnboardingWizard", () => {
 
   beforeEach(() => {
     fetchSpy = vi.fn();
-    global.fetch = fetchSpy as unknown as typeof global.fetch;
+    global.fetch = fetchSpy;
   });
 
   afterEach(() => {
@@ -284,5 +296,309 @@ describe("OnboardingWizard", () => {
     );
     const backBtn = screen.getByTestId("onboarding-back");
     expect(backBtn).toBeDisabled();
+  });
+
+  /**
+   * GOAL-117 polish: a11y — step indicator görsel + ARIA progressbar.
+   * - `role="progressbar"` + aria-valuenow/min/max mevcut.
+   * - `aria-valuetext` güncel adımı açıklar.
+   * - `data-percent` CSS'e bağımlı kalmadan test edilebilir.
+   * - `data-step` mevcut adımı yansıtır.
+   */
+  it("step indicator + progressbar aria degerlerini gunceller", async () => {
+    fetchSpy.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers(),
+      json: async () => SAMPLE_SCENARIOS,
+    });
+    render(
+      <OnboardingWizard
+        locale={LOCALE}
+        apiBaseUrl={API_BASE}
+        labels={LABELS}
+      />,
+    );
+
+    // Step 1
+    const progress1 = screen.getByTestId("onboarding-progress");
+    expect(progress1).toHaveAttribute("role", "progressbar");
+    expect(progress1).toHaveAttribute("aria-valuenow", "33");
+    expect(progress1).toHaveAttribute("aria-valuemin", "0");
+    expect(progress1).toHaveAttribute("aria-valuemax", "100");
+    expect(progress1).toHaveAttribute("aria-valuetext", LABELS.ariaStep1);
+    expect(progress1).toHaveAttribute("data-percent", "33");
+
+    // Step 2'ye gec
+    fireEvent.click(screen.getByTestId("onboarding-role-VETERINARIAN"));
+    fireEvent.click(screen.getByTestId("onboarding-next"));
+    await waitFor(() => {
+      expect(screen.getByTestId("onboarding-step2")).toBeInTheDocument();
+    });
+    const progress2 = screen.getByTestId("onboarding-progress");
+    expect(progress2).toHaveAttribute("aria-valuenow", "66");
+    expect(progress2).toHaveAttribute("data-percent", "66");
+    expect(progress2).toHaveAttribute("aria-valuetext", LABELS.ariaStep2);
+
+    // Step 3'e gec (senaryo sec)
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("onboarding-scenario-create-patient"),
+      ).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId("onboarding-scenario-create-patient"));
+    await waitFor(() => {
+      expect(screen.getByTestId("onboarding-step3")).toBeInTheDocument();
+    });
+    const progress3 = screen.getByTestId("onboarding-progress");
+    expect(progress3).toHaveAttribute("aria-valuenow", "100");
+    expect(progress3).toHaveAttribute("data-percent", "100");
+    expect(progress3).toHaveAttribute("aria-valuetext", LABELS.ariaStep3);
+  });
+
+  /**
+   * GOAL-117 polish: a11y — `aria-current="step"` her adimin
+   * gorsel gostergesine eklenir. (Step indicator noktalari uzerinde)
+   */
+  it("aria-current step gostergesinde aktif adimi isaretler", () => {
+    render(
+      <OnboardingWizard
+        locale={LOCALE}
+        apiBaseUrl={API_BASE}
+        labels={LABELS}
+      />,
+    );
+    const indicator = screen.getByTestId("onboarding-step-indicator");
+    // Step 1'de current 1 olmali.
+    const current = indicator.querySelector('[aria-current="step"]');
+    expect(current).not.toBeNull();
+    expect(current?.getAttribute("data-step")).toBe("1");
+  });
+
+  /**
+   * GOAL-117 polish: visual — Step 2'de loading sirasinda skeleton
+   * goruntulenir, "loading" string metin olarak gozukmez.
+   */
+  it("step 2 loading sirasinda skeleton render eder", async () => {
+    // Senaryolar uzun suren fetch ile simule edilir; ilk fetch
+    // scenarios, ardindan ask tetiklenir ve ask calisirken
+    // skeleton gorunmeli.
+    let resolveScenarios: (value: unknown) => void = () => {};
+    const scenariosPromise = new Promise((resolve) => {
+      resolveScenarios = resolve;
+    });
+    fetchSpy.mockReturnValueOnce(scenariosPromise).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        json: async () => ({
+          query_id: "req-1",
+          answer: "...",
+          generationSource: "template",
+          scenario: SAMPLE_SCENARIO_DETAIL,
+          duration_ms: 5,
+        }),
+      });
+
+    render(
+      <OnboardingWizard
+        locale={LOCALE}
+        apiBaseUrl={API_BASE}
+        labels={LABELS}
+      />,
+    );
+
+    // Step 1 -> rol -> ileri
+    fireEvent.click(screen.getByTestId("onboarding-role-STAFF"));
+    fireEvent.click(screen.getByTestId("onboarding-next"));
+    // Step 2 gorunene kadar bekle
+    await screen.findByTestId("onboarding-step2");
+
+    // Henuz fetch resolve edilmedi; skeleton gorunmeli.
+    expect(screen.getByTestId("onboarding-skeleton")).toBeInTheDocument();
+
+    // Skeleton'un aria-label'i set edilmeli.
+    const skeleton = screen.getByTestId("onboarding-skeleton");
+    expect(skeleton).toHaveAttribute(
+      "aria-label",
+      LABELS.loadingSkeletonLabel,
+    );
+
+    // Senaryolari coz; skeleton kaybolmali, liste gorunmeli.
+    resolveScenarios({
+      ok: true,
+      status: 200,
+      headers: new Headers(),
+      json: async () => SAMPLE_SCENARIOS,
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("onboarding-skeleton")).not.toBeInTheDocument();
+    });
+    expect(screen.getByTestId("onboarding-scenarios")).toBeInTheDocument();
+  });
+
+  /**
+   * GOAL-117 polish: visual — Step 3 "no match" durumunda illüstrasyon
+   * ve genisletilmis baslik/hint render edilir.
+   */
+  it("step 3 no-match empty state illustrasyonu ve basliklari gosterir", async () => {
+    fetchSpy
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        json: async () => SAMPLE_SCENARIOS,
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        json: async () => ({
+          query_id: "req-empty",
+          answer: "",
+          generationSource: "template",
+          duration_ms: 3,
+        }),
+      });
+
+    render(
+      <OnboardingWizard
+        locale={LOCALE}
+        apiBaseUrl={API_BASE}
+        labels={LABELS}
+      />,
+    );
+
+    // Step 1 -> 2 -> ask (eslemedi) -> 3
+    fireEvent.click(screen.getByTestId("onboarding-role-STAFF"));
+    fireEvent.click(screen.getByTestId("onboarding-next"));
+    await screen.findByTestId("onboarding-step2");
+
+    const input = screen.getByTestId("onboarding-query");
+    fireEvent.change(input, { target: { value: "bilinmeyen bir sey" } });
+    fireEvent.click(screen.getByTestId("onboarding-submit"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("onboarding-step3-empty")).toBeInTheDocument();
+    });
+    expect(
+      screen.getByTestId("onboarding-empty-illustration"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId("onboarding-no-match-title").textContent,
+    ).toMatch(LABELS.emptyStateTitle);
+  });
+
+  /**
+   * GOAL-117 polish: behavior — localStorage ile step + role persist.
+   * `storageKey` verildiginde, wizard mount edildiginde state'i
+   * localStorage'dan yukler ve her degisimde geri yazar.
+   */
+  it("storageKey ile step + role localStorage'a persist edilir", () => {
+    const storageKey = "vetniva.onboarding.test";
+    window.localStorage.clear();
+    render(
+      <OnboardingWizard
+        locale={LOCALE}
+        apiBaseUrl={API_BASE}
+        labels={LABELS}
+        storageKey={storageKey}
+      />,
+    );
+
+    // Baslangicta localStorage bos (henuz degisiklik yok).
+    // Rol sec sonrasi persist et.
+    fireEvent.click(screen.getByTestId("onboarding-role-OWNER"));
+    const raw = window.localStorage.getItem(storageKey);
+    expect(raw).not.toBeNull();
+    const parsed = JSON.parse(raw ?? "{}") as {
+      step: number;
+      role: string | null;
+    };
+    expect(parsed.role).toBe("OWNER");
+    expect(parsed.step).toBe(1);
+  });
+
+  it("storageKey ile mount aninda localStorage'dan state yukler", () => {
+    const storageKey = "vetniva.onboarding.restore";
+    window.localStorage.setItem(
+      storageKey,
+      JSON.stringify({ step: 2, role: "STAFF" }),
+    );
+    fetchSpy.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers(),
+      json: async () => SAMPLE_SCENARIOS,
+    });
+    render(
+      <OnboardingWizard
+        locale={LOCALE}
+        apiBaseUrl={API_BASE}
+        labels={LABELS}
+        storageKey={storageKey}
+      />,
+    );
+    // Step 2 dogrudan acilmali.
+    expect(screen.getByTestId("onboarding-wizard").dataset["step"]).toBe("2");
+    // OWNER rol butonu secili OLMAMAli (STAFF secili olmali).
+    const staffBtn = screen.queryByTestId("onboarding-role-STAFF");
+    expect(staffBtn).toBeNull();
+    // Step 2'deyiz, step2 elemanlari gorunmeli.
+    expect(screen.getByTestId("onboarding-step2")).toBeInTheDocument();
+  });
+
+  it("storageKey ile corrupted JSON sessizce yok sayilir", () => {
+    const storageKey = "vetniva.onboarding.corrupt";
+    window.localStorage.setItem(storageKey, "{not-json");
+    render(
+      <OnboardingWizard
+        locale={LOCALE}
+        apiBaseUrl={API_BASE}
+        labels={LABELS}
+        storageKey={storageKey}
+      />,
+    );
+    // Hata firlatmadan step 1'de baslamali.
+    expect(screen.getByTestId("onboarding-wizard").dataset["step"]).toBe("1");
+  });
+
+  /**
+   * GOAL-117 polish: a11y — `prefers-reduced-motion: reduce` aktifken
+   * `data-prefers-reduced-motion="true"` wizard root'unda yer alir.
+   */
+  it("prefers-reduced-motion aktif oldugunda root'ta data attr set edilir", () => {
+    // `vi.stubGlobal` ile guvenli override; try/finally icinde
+    // `unstubAllGlobals` ile eski haline doner.
+    const stubFn: (query: string) => MediaQueryList = (
+      query: string,
+    ): MediaQueryList => ({
+      matches: query.includes("reduce"),
+      media: query,
+      onchange: null,
+      addListener: (): void => {},
+      removeListener: (): void => {},
+      addEventListener: (): void => {},
+      removeEventListener: (): void => {},
+      dispatchEvent: (): boolean => false,
+    });
+    vi.stubGlobal("matchMedia", stubFn);
+    try {
+      render(
+        <OnboardingWizard
+          locale={LOCALE}
+          apiBaseUrl={API_BASE}
+          labels={LABELS}
+        />,
+      );
+      expect(
+        screen.getByTestId("onboarding-wizard").dataset[
+          "prefersReducedMotion"
+        ],
+      ).toBe("true");
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
