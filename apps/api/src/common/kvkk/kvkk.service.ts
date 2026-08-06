@@ -150,8 +150,10 @@ export class KvkkService {
    * @param tenantId
    */
   public async exportTenantData(tenantId: string): Promise<TenantDataExport> {
+    // Ham tenantId loglanmaz; yalnızca 8-karakter hash
+    // (PII_MASKING.md + LOG_RETENTION ile uyumlu).
     this.logger.warn(
-      `KVKK tenant data export: tenant=${tenantId} requested_by=${hashUserId(tenantId)}`,
+      `KVKK tenant data export: tenant_hash=${hashUserId(tenantId)}`,
     );
     return {
       exportedAt: new Date().toISOString(),
