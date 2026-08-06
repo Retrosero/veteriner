@@ -520,3 +520,13 @@ i18n:check` parity temiz geçti. Dokümantasyon uyarıları Faz 10–12 yayın
   zorunluluğu ile hedef tenant/tür/miktar doğrulamasını DB katmanına taşıdı;
   servis `VET-CD-0007` ile kullanıcıya anlaşılır red verir. Temiz PostgreSQL
   üzerinde tam E2E smoke 19/19 geçti.
+
+> 6 Agustos 2026 lint kapisi: @vetniva/worker icin 3 hata + 1 uyari
+(ag-chunk-job.ts -- kullanilmayan start, var olmayan rule icin
+eslint-disable yorumu, dinamik equire('node:fs')), ve
+@vetniva/backup icin 11 hata + 1 uyari (
+ow.toISOString() unsafe
+call -- options.now ?? (() => new Date())() operator onceligi, import
+order, anchored cron regex gerekceli disable) temizlendi. pnpm lint
+14/14 gorevde sifir hata / sifir uyari ile gecti. Commit: 57f5575 +
+456ab38.
