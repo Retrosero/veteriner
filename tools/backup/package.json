@@ -5,7 +5,9 @@
   "type": "module",
   "description": "PostgreSQL yedekleme + restore test araclari (GOAL-124, FAZ-12). RPO/RTO tier destegi, AES-256 at-rest, retention policy.",
   "scripts": {
+    "build": "node ../../node_modules/typescript/lib/tsc.js -p tsconfig.json",
     "type-check": "node ../../node_modules/typescript/lib/tsc.js -p tsconfig.json --noEmit",
+    "lint": "eslint src tests",
     "test": "vitest run",
     "validate": "node --import tsx src/validate.ts"
   },
