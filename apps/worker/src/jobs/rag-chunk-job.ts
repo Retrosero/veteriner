@@ -18,6 +18,7 @@
  */
 
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import path from "node:path";
 
 import { z } from "zod";
@@ -88,7 +89,6 @@ export async function processRagChunkJob(
   }
 
   const data = parsed.data;
-  const start = Date.now();
   const childLogger = logger.child({
     module: "worker",
     action: "rag-chunk-job",
@@ -242,15 +242,9 @@ function findRepoRoot(): string {
   ];
   for (const dir of candidates) {
     // pnpm-workspace.yaml marker'ı repo kökü kabul edilir.
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- Worker kendi kökü aranıyor.
     const marker = path.join(dir, "pnpm-workspace.yaml");
     try {
-      // require('node:fs') lazy import to keep bundle slim.
-      // Burada senkron kontrol yeterli; repo kökü milisaniyelik
-      // gecikme tolere eder.
-      // eslint-disable-next-line @typescript-eslint/no-require-imports, global-require -- Node fs senkron çağrısı, sadece bu yardımcıda.
-      const fs = require("node:fs") as typeof import("node:fs");
-      if (fs.existsSync(marker)) return dir;
+      if (existsSync(marker)) return dir;
     } catch {
       // Devam: sonraki aday.
     }
