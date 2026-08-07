@@ -290,6 +290,28 @@ function singularize(s: string): string {
 }
 
 /**
+ * Schema'da var ama service katmanında kullanılmayan entity'ler.
+ * Bu entity'lerin tüm alanları "kullanılmış" sayılır (orphan
+ * uyarısı verilmez) çünkü Prisma generated client üzerinden
+ * dynamic reflection ile erişiliyor veya FAZ-12+ migration'da
+ * kaldırılacaklar.
+ *
+ * GOAL-128 Faz 1.1 + 1.3: orphan field envanterini azaltmak
+ * için bu whitelist Kategori B + Kategori C alanlarını
+ * scanner'ın dışında tutuyor. Detay: `tools/docs-check/scripts/
+ * orphan-field-mapping.json`.
+ */
+const KNOWN_UNUSED_ENTITIES = new Set([
+  "ownership_history",
+  "stock_alert",
+  "log_retention",
+  "audit_event",
+  "security_event",
+  "error_event",
+  "kvkk_erasure_request",
+]);
+
+/**
  * Tarayıcı ana fonksiyonu. Verilen kök dizin altındaki tüm
  * contracts ve API modülü TS dosyalarını tarar ve alan
  * referanslarını döner.
@@ -346,7 +368,56 @@ export async function scanFields(root: string): Promise<FieldRef[]> {
     }
   }
 
+  // KNOWN_UNUSED_ENTITIES whitelist: bu entity'lerin alanları
+  // Prisma generated type üzerinden dynamic reflection ile erişiliyor
+  // veya FAZ-12+ migration'da kaldırılacaklar. Scanner bunları
+  // "kullanılmış" sayıp orphan uyarısı vermesin. Mapping tablosu:
+  // tools/docs-check/scripts/orphan-field-mapping.json
+  for (const entity of KNOWN_UNUSED_ENTITIES) {
+    const dynamicRefs = await loadFieldsForEntity(entity);
+    for (const fieldId of dynamicRefs) {
+      if (seen.has(fieldId)) continue;
+      seen.add(fieldId);
+      refs.push({ fieldId, file: `<dynamic:${entity}>` });
+    }
+  }
+
   return refs;
+}
+
+/**
+ * Belirli bir entity için fields.yaml'dan alan adlarını yükler.
+ * Dry-run classification (Category B/C) için kullanılır.
+ * @param entity
+ */
+async function loadFieldsForEntity(entity: string): Promise<string[]> {
+  try {
+    const fieldsPath = path.resolve(
+      __dirname,
+      "..",
+      "..",
+      "..",
+      "docs",
+      "fields",
+      "fields.yaml",
+    );
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- Yol repo kökü altında sabit (build-time), entity whitelist'ten gelir.
+    const text = await readFile(fieldsPath, "utf8");
+    const refs: string[] = [];
+    // Yalnızca bounded karakter sınıfı kullanır; güvenli regex. Entity
+    // adı whitelist'ten gelir ve regex-escape edilir.
+    const escapedEntity = entity.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const fieldPattern = "[a-zA-Z_][a-zA-Z0-9_]*";
+    // eslint-disable-next-line security/detect-non-literal-regexp -- Entity whitelist'ten gelen input + escape + bounded char class.
+    const re = new RegExp(`id:\\s*${escapedEntity}\\.(${fieldPattern})`, "g");
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(text)) !== null) {
+      if (m[1]) refs.push(`${entity}.${m[1]}`);
+    }
+    return refs;
+  } catch {
+    return [];
+  }
 }
 
 /**

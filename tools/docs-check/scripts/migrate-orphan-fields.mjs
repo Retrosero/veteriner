@@ -41,6 +41,9 @@ const targetJson = process.argv
 const targetMd = process.argv
   .find((a) => a.startsWith("--out-md="))
   ?.split("=")[1];
+const fromFile = process.argv
+  .find((a) => a.startsWith("--from-file="))
+  ?.split("=")[1];
 
 /**
  * `pnpm docs:check` ciktisindaki orphan field satirlarini parse et.
@@ -50,14 +53,25 @@ const targetMd = process.argv
 function parseOrphanList(stdout) {
   const lines = stdout.split("\n");
   const orphans = [];
-  const re = /field:(\w+)\.(\w+)/;
+  // Sadece "orphan" kelimesi iceren satirlar orphan'dur; "field:" pattern'i
+  // baska baglamlarda da gecabilir (kullanilan alanlar icin uyari disi).
+  const orphanRe = /field:(\w+)\.(\w+)/;
   for (const line of lines) {
-    const m = line.match(re);
+    if (!line.includes("orphan")) continue;
+    const m = line.match(orphanRe);
     if (m) {
       orphans.push({ entity: m[1], field: m[2], fieldId: `${m[1]}.${m[2]}` });
     }
   }
   return orphans;
+}
+
+/**
+ * pnpm docs:check ANSI renkli cikti uretebilir; temizle.
+ */
+function stripAnsi(text) {
+  // eslint-disable-next-line no-control-regex
+  return text.replace(/\u001b\[[0-9;]*m/g, "");
 }
 
 /**
@@ -220,14 +234,27 @@ function renderMarkdown({ orphans, classification, projected }) {
 // 1) Mapping'i oku
 const mapping = JSON.parse(await readFile(mappingFile, "utf8"));
 
-// 2) `pnpm docs:check` ciktisini al
-const docsCheck = spawnSync("pnpm", ["docs:check"], {
-  cwd: repo,
-  encoding: "utf8",
-  shell: true,
-});
-const stdout = (docsCheck.stdout || "") + (docsCheck.stderr || "");
-const orphans = parseOrphanList(stdout);
+// 2) Orphan field listesini al. Iki yol:
+//    a) --from-file: onceden kaydedilmis pnpm docs:check ciktisindan oku.
+//    b) pnpm docs:check --force (subprocess + ANSI temizleme).
+let orphans = [];
+if (fromFile) {
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- CLI arg'dan gelen dosya yolu (kullanici kontrollu).
+  const fileText = await readFile(resolve(repo, fromFile), "utf8");
+  orphans = parseOrphanList(stripAnsi(fileText));
+} else {
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- Sabit build tool adi.
+  const docsCheck = spawnSync("pnpm", ["docs:check", "--force"], {
+    cwd: repo,
+    encoding: "utf8",
+    shell: true,
+    env: { ...process.env, NO_COLOR: "1", FORCE_COLOR: "0" },
+  });
+  const docsStdout = stripAnsi(
+    (docsCheck.stdout || "") + (docsCheck.stderr || ""),
+  );
+  orphans = parseOrphanList(docsStdout);
+}
 
 // 3) Sinifla
 const classification = classifyOrphans(orphans, mapping);
