@@ -120,10 +120,17 @@ jobs:
       # apps/worker (RAG pipeline) testleri FAZ-12+'ya ertelendi — `processRagChunkJob`
       # child process spawn davranisi CI runner'larinda lokalden farkli davraniyor;
       # pilot release icin kritik degil (worker build/type-check zaten yesil).
+      # CI'da turbo `--filter` ve cache davranisi farkli sonuc veriyor; bu yuzden
+      # turbo yerine dogrudan pnpm --filter ile her paket calistiriliyor.
       - name: Run unit tests
         run: |
           set -o pipefail
-          pnpm turbo run test --filter=!./tools/* --filter=!@vetniva/worker 2>&1 | tee test-output.log
+          pnpm --filter @vetniva/api test 2>&1 | tee test-output.log
+          pnpm --filter @vetniva/web test 2>&1 | tee -a test-output.log
+          pnpm --filter @vetniva/contracts test 2>&1 | tee -a test-output.log
+          pnpm --filter @vetniva/i18n test 2>&1 | tee -a test-output.log
+          pnpm --filter @vetniva/ui test 2>&1 | tee -a test-output.log
+          pnpm --filter @vetniva/config test 2>&1 | tee -a test-output.log
           echo "::notice::Test exit code: $?"
       - if: always()
         uses: actions/upload-artifact@v4
