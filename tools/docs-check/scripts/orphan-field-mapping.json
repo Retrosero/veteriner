@@ -1,0 +1,50 @@
+{
+  "_meta": {
+    "purpose": "GOAL-128 Kategori A orphan field migration mapping",
+    "author": "Mavis",
+    "createdAt": "2026-08-07",
+    "reviewStatus": "draft — kullanici review gerekli",
+    "strategy": "Order/event/branch orphan field'larini audit_event'e tasi. Alias entity'leri (job → job_run, cash → kasa) birlestir. Onceki yanlis entity altinda tanimlanan alanlari dogru entity'ye yonlendir."
+  },
+  "mappings": {
+    "order": "audit_event",
+    "event": "audit_event",
+    "branch": "audit_event",
+    "note": "operation_note",
+    "entry": "journal_entry",
+    "job": "job_run",
+    "cash_register": "kasa",
+    "cash": "kasa",
+    "vaccine": "vaccine_application",
+    "result": "lab_result",
+    "adapter": "storage_adapter",
+    "kvkk": "kvkk_erasure_request",
+    "plan": "surgery_plan"
+  },
+  "keepAsIs": {
+    "audit_event": "Zaten dogru entity, orphan'lar dynamic reflection (Kategori B)",
+    "security_event": "Zaten dogru entity, orphan'lar dynamic reflection",
+    "error_event": "Zaten dogru entity, orphan'lar dynamic reflection",
+    "log_retention": "Zaten dogru entity, orphan'lar dynamic reflection",
+    "ownership_history": "Zaten dogru entity, KULLANILMIYOR (Kategori C, FAZ-12+ migration ile kaldir)",
+    "stock_alert": "Zaten dogru entity, KULLANILMIYOR (Kategori C)",
+    "appointment": "Zaten dogru entity (Klinik modulu)",
+    "owner": "Zaten dogru entity",
+    "patient": "Zaten dogru entity",
+    "prescription": "Zaten dogru entity",
+    "payment_reversal": "Zaten dogru entity",
+    "file": "Zaten dogru entity",
+    "operation_note": "Zaten dogru entity"
+  },
+  "categoryB": {
+    "_note": "Bunlar dynamic reflection ile erisilir (prisma.X.findMany + JSON.stringify). Scanner pattern'i eklenmeli, fields.yaml dokunulmamali.",
+    "entities": [
+      "audit_event",
+      "security_event",
+      "error_event",
+      "log_retention",
+      "stock_movement",
+      "kvkk_erasure_request"
+    ]
+  }
+}
