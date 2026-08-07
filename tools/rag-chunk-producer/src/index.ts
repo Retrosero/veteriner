@@ -15,8 +15,8 @@ import { join, relative, sep } from "node:path";
 
 import { load as parseYaml, dump as stringifyYaml } from "js-yaml";
 
-import { HASH_PREFIX, contentHash } from "./hash";
-import { writeJsonl } from "./jsonl";
+import { HASH_PREFIX, contentHash } from "./hash.js";
+import { writeJsonl } from "./jsonl.js";
 
 /* --------------------------------------------------------------------------
  * Tipler
