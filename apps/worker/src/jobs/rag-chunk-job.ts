@@ -132,8 +132,19 @@ async function runProducerAsChild(
   );
 
   // Windows'ta forward slash'ler Node tarafından kabul edilir, ancak
-  // shellescape için normalleştirilir.
-  const args = ["--import", "tsx", producerEntry, "--source", data.source];
+  // shellescape için normalleştirilir. `--output` mutlaka geçilir;
+  // producer default olarak repo kökündeki `docs/ai/AI_CHUNKS.yaml`
+  // dosyasına yazar — test fixture'ı bu davranışa güvenemez, sandbox
+  // yalıtımı için payload'daki `output` yolu kullanılmalıdır.
+  const args = [
+    "--import",
+    "tsx",
+    producerEntry,
+    "--source",
+    data.source,
+    "--output",
+    data.output,
+  ];
 
   return new Promise<RagChunkJobResult>((resolve, reject) => {
     const child = spawn(process.execPath, args, {
