@@ -269,29 +269,32 @@ describe("Vaccination PostgreSQL RLS", () => {
     await adminPrisma.$disconnect();
   });
 
-  itDb("tenant bağlamı yokken vaccine_applications satırı göstermez veya yazdırmaz", async () => {
-    expect(await appPrisma.vaccineApplicationRecord.findMany()).toEqual([]);
-    await expect(
-      appPrisma.vaccineApplicationRecord.create({
-        data: {
-          id: `vaca-unauth-${randomUUID().slice(0, 8)}`,
-          tenantId: tenantAId,
-          patientId: patientAId,
-          protocolId: protocolAId,
-          lot: { lotNumber: "UNAUTH", stockProductId: "PROD-A" },
-          administeredBy: "rls-e2e",
-          applicationDate: new Date(),
-          nextDueDate: null,
-          notes: "Unauthorized write",
-          status: "active",
-          createdBy: "rls-e2e",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          stockMovementIds: "[]",
-        },
-      }),
-    ).rejects.toBeDefined();
-  });
+  itDb(
+    "tenant bağlamı yokken vaccine_applications satırı göstermez veya yazdırmaz",
+    async () => {
+      expect(await appPrisma.vaccineApplicationRecord.findMany()).toEqual([]);
+      await expect(
+        appPrisma.vaccineApplicationRecord.create({
+          data: {
+            id: `vaca-unauth-${randomUUID().slice(0, 8)}`,
+            tenantId: tenantAId,
+            patientId: patientAId,
+            protocolId: protocolAId,
+            lot: { lotNumber: "UNAUTH", stockProductId: "PROD-A" },
+            administeredBy: "rls-e2e",
+            applicationDate: new Date(),
+            nextDueDate: null,
+            notes: "Unauthorized write",
+            status: "active",
+            createdBy: "rls-e2e",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            stockMovementIds: "[]",
+          },
+        }),
+      ).rejects.toBeDefined();
+    },
+  );
 
   itDb("doğru tenant bağlamı yalnızca kendi kaydını açar", async () => {
     const visibleA = await withTenant(tenantAId, async (tx) => {
@@ -315,180 +318,219 @@ describe("Vaccination PostgreSQL RLS", () => {
     expect(visibleB).not.toContain(seededApplicationAId);
   });
 
-  itDb("Repository persistedById tenant-scoped: cross-tenant null döner", async () => {
-    const inTenantA = await vaccinationsRepository.persistedById(
-      tenantAId,
-      seededApplicationAId,
-    );
-    const inTenantBWithForeignId = await vaccinationsRepository.persistedById(
-      tenantBId,
-      seededApplicationAId,
-    );
-    const inTenantAWithBTenantId = await vaccinationsRepository.persistedById(
-      tenantAId,
-      seededApplicationBId,
-    );
+  itDb(
+    "Repository persistedById tenant-scoped: cross-tenant null döner",
+    async () => {
+      const inTenantA = await vaccinationsRepository.persistedById(
+        tenantAId,
+        seededApplicationAId,
+      );
+      const inTenantBWithForeignId = await vaccinationsRepository.persistedById(
+        tenantBId,
+        seededApplicationAId,
+      );
+      const inTenantAWithBTenantId = await vaccinationsRepository.persistedById(
+        tenantAId,
+        seededApplicationBId,
+      );
 
-    expect(inTenantA?.id).toBe(seededApplicationAId);
-    expect(inTenantBWithForeignId).toBeNull();
-    expect(inTenantAWithBTenantId).toBeNull();
-  });
+      expect(inTenantA?.id).toBe(seededApplicationAId);
+      expect(inTenantBWithForeignId).toBeNull();
+      expect(inTenantAWithBTenantId).toBeNull();
+    },
+  );
 
-  itDb("Repository search tenant-scoped: doğru tenant kendi kayıtlarını sayar", async () => {
-    const aResults = vaccinationsRepository.search(tenantAId, {
-      limit: 20,
-      offset: 0,
-    });
-    const bResults = vaccinationsRepository.search(tenantBId, {
-      limit: 20,
-      offset: 0,
-    });
+  itDb(
+    "Repository search tenant-scoped: doğru tenant kendi kayıtlarını sayar",
+    async () => {
+      const aResults = vaccinationsRepository.search(tenantAId, {
+        limit: 20,
+        offset: 0,
+      });
+      const bResults = vaccinationsRepository.search(tenantBId, {
+        limit: 20,
+        offset: 0,
+      });
 
-    expect(aResults.items.map((r) => r.id)).toEqual([seededApplicationAId]);
-    expect(aResults.total).toBe(1);
-    expect(bResults.items.map((r) => r.id).sort()).toEqual(
-      [seededApplicationBId, foreignApplicationId].sort(),
-    );
-    expect(bResults.total).toBe(2);
-  });
+      expect(aResults.items.map((r) => r.id)).toEqual([seededApplicationAId]);
+      expect(aResults.total).toBe(1);
+      expect(bResults.items.map((r) => r.id).sort()).toEqual(
+        [seededApplicationBId, foreignApplicationId].sort(),
+      );
+      expect(bResults.total).toBe(2);
+    },
+  );
 
-  itDb("Repository search patientId filtresi cross-tenant izolasyonu korur", async () => {
-    const aOnBPatient = vaccinationsRepository.search(tenantAId, {
-      limit: 20,
-      offset: 0,
-      patientId: patientBId,
-    });
-    const aOnAPatient = vaccinationsRepository.search(tenantAId, {
-      limit: 20,
-      offset: 0,
-      patientId: patientAId,
-    });
+  itDb(
+    "Repository search patientId filtresi cross-tenant izolasyonu korur",
+    async () => {
+      const aOnBPatient = vaccinationsRepository.search(tenantAId, {
+        limit: 20,
+        offset: 0,
+        patientId: patientBId,
+      });
+      const aOnAPatient = vaccinationsRepository.search(tenantAId, {
+        limit: 20,
+        offset: 0,
+        patientId: patientAId,
+      });
 
-    expect(aOnBPatient.items).toEqual([]);
-    expect(aOnAPatient.items.map((r) => r.id)).toEqual([seededApplicationAId]);
-  });
+      expect(aOnBPatient.items).toEqual([]);
+      expect(aOnAPatient.items.map((r) => r.id)).toEqual([
+        seededApplicationAId,
+      ]);
+    },
+  );
 
-  itDb("Repository listByPatient tenant-scoped: cross-tenant null/boş döner", async () => {
-    const aOnA = vaccinationsRepository.listByPatient(tenantAId, patientAId, 50);
-    const aOnB = vaccinationsRepository.listByPatient(tenantAId, patientBId, 50);
+  itDb(
+    "Repository listByPatient tenant-scoped: cross-tenant null/boş döner",
+    async () => {
+      const aOnA = vaccinationsRepository.listByPatient(
+        tenantAId,
+        patientAId,
+        50,
+      );
+      const aOnB = vaccinationsRepository.listByPatient(
+        tenantAId,
+        patientBId,
+        50,
+      );
 
-    expect(aOnA.map((r) => r.id)).toEqual([seededApplicationAId]);
-    expect(aOnB).toEqual([]);
-  });
+      expect(aOnA.map((r) => r.id)).toEqual([seededApplicationAId]);
+      expect(aOnB).toEqual([]);
+    },
+  );
 
-  itDb("Repository search protocolId filtresi yalnızca kendi tenant'ında eşleşir", async () => {
-    const aOnAProtocol = vaccinationsRepository.search(tenantAId, {
-      limit: 20,
-      offset: 0,
-      protocolId: protocolAId,
-    });
-    const aOnBProtocol = vaccinationsRepository.search(tenantAId, {
-      limit: 20,
-      offset: 0,
-      protocolId: protocolBId,
-    });
+  itDb(
+    "Repository search protocolId filtresi yalnızca kendi tenant'ında eşleşir",
+    async () => {
+      const aOnAProtocol = vaccinationsRepository.search(tenantAId, {
+        limit: 20,
+        offset: 0,
+        protocolId: protocolAId,
+      });
+      const aOnBProtocol = vaccinationsRepository.search(tenantAId, {
+        limit: 20,
+        offset: 0,
+        protocolId: protocolBId,
+      });
 
-    expect(aOnAProtocol.items.map((r) => r.id)).toEqual([seededApplicationAId]);
-    expect(aOnBProtocol.items).toEqual([]);
-  });
+      expect(aOnAProtocol.items.map((r) => r.id)).toEqual([
+        seededApplicationAId,
+      ]);
+      expect(aOnBProtocol.items).toEqual([]);
+    },
+  );
 
-  itDb("Repository insert kendi tenant context'inde yeni kayıt ekler", async () => {
-    const newId = `vaca-ins-${randomUUID().slice(0, 8)}`;
-    const inserted = await vaccinationsRepository.persist({
-      id: newId,
-      tenantId: tenantAId,
-      patientId: patientAId,
-      protocolId: protocolAId,
-      lot: {
-        lot: "LOT-INS-001",
-        expiryDate: "2026-12-31",
-        stockProductId: "PROD-A",
-      },
-      dose: { amount: 1, unit: "ml" },
-      administeredBy: "rls-e2e",
-      applicationDate: new Date().toISOString(),
-      nextDueDate: null,
-      notes: "Inserted via RLS test",
-      status: "active",
-      createdBy: "rls-e2e",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      amendedAt: null,
-      amendedBy: null,
-      amendedReason: null,
-      cancelledAt: null,
-      cancellationReason: null,
-      stockMovementIds: [],
-    });
-
-    expect(inserted.tenantId).toBe(tenantAId);
-    expect(inserted.id).toBe(newId);
-    expect(inserted.notes).toBe("Inserted via RLS test");
-
-    const visible = await withTenant(tenantAId, async (tx) =>
-      tx.vaccineApplicationRecord.findUnique({ where: { id: newId } }),
-    );
-    const invisible = await withTenant(tenantBId, async (tx) =>
-      tx.vaccineApplicationRecord.findUnique({ where: { id: newId } }),
-    );
-
-    expect(visible?.id).toBe(newId);
-    expect(invisible).toBeNull();
-  });
-
-  itDb("Repository persistedUpdate doğru tenant'ta başarılı (cancel)", async () => {
-    const updated = await vaccinationsRepository.persistedUpdate(
-      tenantAId,
-      seededApplicationAId,
-      {
-        status: "cancelled",
-        cancelledAt: new Date().toISOString(),
-        cancellationReason: "RLS test cancel",
+  itDb(
+    "Repository insert kendi tenant context'inde yeni kayıt ekler",
+    async () => {
+      const newId = `vaca-ins-${randomUUID().slice(0, 8)}`;
+      const inserted = await vaccinationsRepository.persist({
+        id: newId,
+        tenantId: tenantAId,
+        patientId: patientAId,
+        protocolId: protocolAId,
+        lot: {
+          lot: "LOT-INS-001",
+          expiryDate: "2026-12-31",
+          stockProductId: "PROD-A",
+        },
+        dose: { amount: 1, unit: "ml" },
+        administeredBy: "rls-e2e",
+        applicationDate: new Date().toISOString(),
+        nextDueDate: null,
+        notes: "Inserted via RLS test",
+        status: "active",
+        createdBy: "rls-e2e",
+        createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      },
-    );
-    expect(updated?.id).toBe(seededApplicationAId);
-    expect(updated?.status).toBe("cancelled");
-    expect(updated?.cancellationReason).toBe("RLS test cancel");
-  });
+        amendedAt: null,
+        amendedBy: null,
+        amendedReason: null,
+        cancelledAt: null,
+        cancellationReason: null,
+        stockMovementIds: [],
+      });
 
-  itDb("Repository persistedUpdate cross-tenant: null ile sonuçlanır", async () => {
-    const result = await vaccinationsRepository.persistedUpdate(
-      tenantAId,
-      seededApplicationBId,
-      {
-        status: "cancelled",
-        cancelledAt: new Date().toISOString(),
-        cancellationReason: "Cross-tenant attack",
-        updatedAt: new Date().toISOString(),
-      },
-    );
-    expect(result).toBeNull();
+      expect(inserted.tenantId).toBe(tenantAId);
+      expect(inserted.id).toBe(newId);
+      expect(inserted.notes).toBe("Inserted via RLS test");
 
-    const untouched = await adminPrisma.vaccineApplicationRecord.findUnique({
-      where: { id: seededApplicationBId },
-    });
-    expect(untouched?.status).toBe("active");
-    expect(untouched?.cancellationReason).toBeNull();
-  });
+      const visible = await withTenant(tenantAId, async (tx) =>
+        tx.vaccineApplicationRecord.findUnique({ where: { id: newId } }),
+      );
+      const invisible = await withTenant(tenantBId, async (tx) =>
+        tx.vaccineApplicationRecord.findUnique({ where: { id: newId } }),
+      );
 
-  itDb("App role yalnızca SELECT/INSERT/UPDATE yetkisine sahiptir", async () => {
-    const privs = await adminPrisma.$queryRawUnsafe<
-      Array<{ privilege_type: string; table_name: string }>
-    >(`
+      expect(visible?.id).toBe(newId);
+      expect(invisible).toBeNull();
+    },
+  );
+
+  itDb(
+    "Repository persistedUpdate doğru tenant'ta başarılı (cancel)",
+    async () => {
+      const updated = await vaccinationsRepository.persistedUpdate(
+        tenantAId,
+        seededApplicationAId,
+        {
+          status: "cancelled",
+          cancelledAt: new Date().toISOString(),
+          cancellationReason: "RLS test cancel",
+          updatedAt: new Date().toISOString(),
+        },
+      );
+      expect(updated?.id).toBe(seededApplicationAId);
+      expect(updated?.status).toBe("cancelled");
+      expect(updated?.cancellationReason).toBe("RLS test cancel");
+    },
+  );
+
+  itDb(
+    "Repository persistedUpdate cross-tenant: null ile sonuçlanır",
+    async () => {
+      const result = await vaccinationsRepository.persistedUpdate(
+        tenantAId,
+        seededApplicationBId,
+        {
+          status: "cancelled",
+          cancelledAt: new Date().toISOString(),
+          cancellationReason: "Cross-tenant attack",
+          updatedAt: new Date().toISOString(),
+        },
+      );
+      expect(result).toBeNull();
+
+      const untouched = await adminPrisma.vaccineApplicationRecord.findUnique({
+        where: { id: seededApplicationBId },
+      });
+      expect(untouched?.status).toBe("active");
+      expect(untouched?.cancellationReason).toBeNull();
+    },
+  );
+
+  itDb(
+    "App role yalnızca SELECT/INSERT/UPDATE yetkisine sahiptir",
+    async () => {
+      const privs = await adminPrisma.$queryRawUnsafe<
+        Array<{ privilege_type: string; table_name: string }>
+      >(`
       SELECT privilege_type, table_name
       FROM information_schema.role_table_grants
       WHERE grantee = '${appRoleName}'
         AND table_name IN ('vaccine_applications', 'vaccine_protocols')
       ORDER BY table_name, privilege_type;
     `);
-    const appPrivs = privs
-      .filter((p) => p.table_name === "vaccine_applications")
-      .map((p) => p.privilege_type);
-    const protoPrivs = privs
-      .filter((p) => p.table_name === "vaccine_protocols")
-      .map((p) => p.privilege_type);
-    expect(appPrivs).toEqual(["INSERT", "SELECT", "UPDATE"]);
-    expect(protoPrivs).toEqual(["INSERT", "SELECT", "UPDATE"]);
-  });
+      const appPrivs = privs
+        .filter((p) => p.table_name === "vaccine_applications")
+        .map((p) => p.privilege_type);
+      const protoPrivs = privs
+        .filter((p) => p.table_name === "vaccine_protocols")
+        .map((p) => p.privilege_type);
+      expect(appPrivs).toEqual(["INSERT", "SELECT", "UPDATE"]);
+      expect(protoPrivs).toEqual(["INSERT", "SELECT", "UPDATE"]);
+    },
+  );
 });

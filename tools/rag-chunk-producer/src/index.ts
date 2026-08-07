@@ -15,8 +15,8 @@ import { join, relative, sep } from "node:path";
 
 import { load as parseYaml, dump as stringifyYaml } from "js-yaml";
 
-import { HASH_PREFIX, contentHash } from "./hash.js";
-import { writeJsonl } from "./jsonl.js";
+import { HASH_PREFIX, contentHash } from "./hash";
+import { writeJsonl } from "./jsonl";
 
 /* --------------------------------------------------------------------------
  * Tipler
@@ -306,9 +306,7 @@ export async function mergeChunks(
   try {
     const raw = await readFile(outputFile, "utf8");
     const parsed = parseYaml(raw) as
-      | ProducedChunk[]
-      | Record<string, unknown>
-      | null;
+      ProducedChunk[] | Record<string, unknown> | null;
     if (Array.isArray(parsed)) {
       // Eski kök-listesi formatı, kayıpsız biçimde yeni şemaya taşınır.
       existing = parsed;
@@ -459,7 +457,16 @@ export async function runPipeline(
   config: PipelineConfig,
   options: PipelineOptions = {},
 ): Promise<
-  | { mode: "executed"; total: number; byType: Record<string, number>; byLocale: Record<string, number>; added: number; skipped: number; updated: number; jsonlPath?: string }
+  | {
+      mode: "executed";
+      total: number;
+      byType: Record<string, number>;
+      byLocale: Record<string, number>;
+      added: number;
+      skipped: number;
+      updated: number;
+      jsonlPath?: string;
+    }
   | { mode: "dry-run"; plan: PipelinePlan }
 > {
   if (options.dryRun === true) {
@@ -511,13 +518,13 @@ export async function runPipeline(
  * `runPipelinePlan` tarafından paylaşılır; ortak format
  * normalizasyonu burada toplanır.
  */
-async function readExistingChunks(outputFile: string): Promise<ProducedChunk[]> {
+async function readExistingChunks(
+  outputFile: string,
+): Promise<ProducedChunk[]> {
   try {
     const raw = await readFile(outputFile, "utf8");
     const parsed = parseYaml(raw) as
-      | ProducedChunk[]
-      | Record<string, unknown>
-      | null;
+      ProducedChunk[] | Record<string, unknown> | null;
     if (Array.isArray(parsed)) return parsed;
     if (parsed && typeof parsed === "object") {
       const chunks = parsed["chunks"];
@@ -538,7 +545,10 @@ function jsonlPathFor(yamlPath: string): string {
 }
 
 /** `arr` üzerinde `keyFn` ile gruplanmış sayım. */
-function countBy<T>(arr: ReadonlyArray<T>, keyFn: (t: T) => string): Record<string, number> {
+function countBy<T>(
+  arr: ReadonlyArray<T>,
+  keyFn: (t: T) => string,
+): Record<string, number> {
   const out: Record<string, number> = {};
   for (const item of arr) {
     const k = keyFn(item);

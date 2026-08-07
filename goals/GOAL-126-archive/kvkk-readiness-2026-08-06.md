@@ -23,41 +23,41 @@ döngüsü core service hazır:
 
 ## Unit Test Sonuçları
 
-| Test | Sayı | Durum |
-| --- | --- | --- |
-| createErasureRequest — temel | 4 | ✅ |
-| applyErasure — PII alanları | 3 | ✅ |
-| exportTenantData — JSON format | 5 | ✅ |
-| LEGAL_RETENTION_YEARS sabitleri | 4 | ✅ |
-| **Toplam** | **16** | **✅ 16/16** |
+| Test                            | Sayı   | Durum        |
+| ------------------------------- | ------ | ------------ |
+| createErasureRequest — temel    | 4      | ✅           |
+| applyErasure — PII alanları     | 3      | ✅           |
+| exportTenantData — JSON format  | 5      | ✅           |
+| LEGAL_RETENTION_YEARS sabitleri | 4      | ✅           |
+| **Toplam**                      | **16** | **✅ 16/16** |
 
 Çalıştırma: `pnpm --filter @vetniva/api test -- src/common/kvkk`
 
 ## KVKK Madde 11 + UK GDPR Article 15 Uyum
 
-| Talep | VetNiva Karşılığı | Durum |
-| --- | --- | --- |
-| KVKK M.11/a — Veriye erişim | `exportTenantData()` JSON | ✅ Core |
-| KVKK M.11/b — Düzeltme | Amendment pattern (append-only) | ✅ Mevcut |
-| KVKK M.11/c — Silme | `createErasureRequest` + `applyErasure` | ✅ Core |
-| KVKK M.11/d — İşlemenin kısıtlanması | Legal hold (SUPERADMIN) | 🟡 Manuel |
-| UK GDPR Art.15 — Subject access | `exportTenantData` | ✅ Core |
-| UK GDPR Art.17 — Right to erasure | Erasure request flow | ✅ Core |
-| UK GDPR Art.25 — Privacy by design | PII `pii: true` flag | ✅ Mevcut |
+| Talep                                | VetNiva Karşılığı                       | Durum     |
+| ------------------------------------ | --------------------------------------- | --------- |
+| KVKK M.11/a — Veriye erişim          | `exportTenantData()` JSON               | ✅ Core   |
+| KVKK M.11/b — Düzeltme               | Amendment pattern (append-only)         | ✅ Mevcut |
+| KVKK M.11/c — Silme                  | `createErasureRequest` + `applyErasure` | ✅ Core   |
+| KVKK M.11/d — İşlemenin kısıtlanması | Legal hold (SUPERADMIN)                 | 🟡 Manuel |
+| UK GDPR Art.15 — Subject access      | `exportTenantData`                      | ✅ Core   |
+| UK GDPR Art.17 — Right to erasure    | Erasure request flow                    | ✅ Core   |
+| UK GDPR Art.25 — Privacy by design   | PII `pii: true` flag                    | ✅ Mevcut |
 
 ## Anonimleştirme Standardı
 
 6 PII alanı `kvkk-erased-<sha256(userId+field).slice(0,8)>` formatında
 değiştirilir:
 
-| Alan | Hash örneği |
-| --- | --- |
+| Alan      | Hash örneği            |
+| --------- | ---------------------- |
 | firstName | `kvkk-erased-a3b8c2d1` |
-| lastName | `kvkk-erased-7f9e1a4b` |
-| email | `kvkk-erased-2c5d8e6f` |
-| phone | `kvkk-erased-b4c7e0a9` |
-| taxId | `kvkk-erased-5d8a1f3c` |
-| address | `kvkk-erased-9e2b4c7d` |
+| lastName  | `kvkk-erased-7f9e1a4b` |
+| email     | `kvkk-erased-2c5d8e6f` |
+| phone     | `kvkk-erased-b4c7e0a9` |
+| taxId     | `kvkk-erased-5d8a1f3c` |
+| address   | `kvkk-erased-9e2b4c7d` |
 
 Hash userId'ye bağlı; aynı kullanıcının farklı alanları farklı hash alır.
 

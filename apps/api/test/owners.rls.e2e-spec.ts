@@ -166,20 +166,23 @@ describe("Owner PostgreSQL RLS", () => {
     await adminPrisma.$disconnect();
   });
 
-  itDb("tenant bağlamı yokken owners satırı göstermez veya yazdırmaz", async () => {
-    expect(await appPrisma.owner.findMany()).toEqual([]);
-    await expect(
-      appPrisma.owner.create({
-        data: {
-          id: randomUUID(),
-          tenantId: tenantAId,
-          firstName: "Unauthorized",
-          lastName: "Write",
-          phone: `+90555999${randomUUID().slice(0, 4)}`,
-        },
-      }),
-    ).rejects.toBeDefined();
-  });
+  itDb(
+    "tenant bağlamı yokken owners satırı göstermez veya yazdırmaz",
+    async () => {
+      expect(await appPrisma.owner.findMany()).toEqual([]);
+      await expect(
+        appPrisma.owner.create({
+          data: {
+            id: randomUUID(),
+            tenantId: tenantAId,
+            firstName: "Unauthorized",
+            lastName: "Write",
+            phone: `+90555999${randomUUID().slice(0, 4)}`,
+          },
+        }),
+      ).rejects.toBeDefined();
+    },
+  );
 
   itDb("doğru tenant bağlamı yalnızca kendi kaydını açar", async () => {
     const visibleA = await withTenant(tenantAId, async (tx) => {
@@ -192,111 +195,124 @@ describe("Owner PostgreSQL RLS", () => {
     });
 
     expect(visibleA).toEqual([seededOwnerAId]);
-    expect(visibleB.sort()).toEqual(
-      [seededOwnerBId, foreignOwnerId].sort(),
-    );
+    expect(visibleB.sort()).toEqual([seededOwnerBId, foreignOwnerId].sort());
     expect(visibleA).not.toContain(seededOwnerBId);
     expect(visibleB).not.toContain(seededOwnerAId);
   });
 
-  itDb("Repository findById tenant-scoped: cross-tenant null döner", async () => {
-    const inTenantA = ownersRepository.findById(tenantAId, seededOwnerAId);
-    const inTenantBWithForeignId = ownersRepository.findById(
-      tenantBId,
-      seededOwnerAId,
-    );
-    const inTenantAWithBTenantId = ownersRepository.findById(
-      tenantAId,
-      seededOwnerBId,
-    );
+  itDb(
+    "Repository findById tenant-scoped: cross-tenant null döner",
+    async () => {
+      const inTenantA = ownersRepository.findById(tenantAId, seededOwnerAId);
+      const inTenantBWithForeignId = ownersRepository.findById(
+        tenantBId,
+        seededOwnerAId,
+      );
+      const inTenantAWithBTenantId = ownersRepository.findById(
+        tenantAId,
+        seededOwnerBId,
+      );
 
-    expect(inTenantA?.id).toBe(seededOwnerAId);
-    expect(inTenantBWithForeignId).toBeNull();
-    expect(inTenantAWithBTenantId).toBeNull();
-  });
+      expect(inTenantA?.id).toBe(seededOwnerAId);
+      expect(inTenantBWithForeignId).toBeNull();
+      expect(inTenantAWithBTenantId).toBeNull();
+    },
+  );
 
-  itDb("Repository findByPhone tenant-scoped: cross-tenant null döner", async () => {
-    const adminRow = await adminPrisma.owner.findUnique({
-      where: { id: seededOwnerAId },
-    });
-    const aPhone = adminRow?.phone ?? "";
-    const aRow = ownersRepository.findByPhone(tenantAId, aPhone);
-    const bSeesA = ownersRepository.findByPhone(tenantBId, aPhone);
+  itDb(
+    "Repository findByPhone tenant-scoped: cross-tenant null döner",
+    async () => {
+      const adminRow = await adminPrisma.owner.findUnique({
+        where: { id: seededOwnerAId },
+      });
+      const aPhone = adminRow?.phone ?? "";
+      const aRow = ownersRepository.findByPhone(tenantAId, aPhone);
+      const bSeesA = ownersRepository.findByPhone(tenantBId, aPhone);
 
-    expect(aRow?.id).toBe(seededOwnerAId);
-    expect(bSeesA).toBeNull();
-  });
+      expect(aRow?.id).toBe(seededOwnerAId);
+      expect(bSeesA).toBeNull();
+    },
+  );
 
-  itDb("Repository search tenant-scoped: doğru tenant kendi kayıtlarını sayar", async () => {
-    const aResults = ownersRepository.search(tenantAId, {
-      limit: 20,
-      offset: 0,
-    });
-    const bResults = ownersRepository.search(tenantBId, {
-      limit: 20,
-      offset: 0,
-    });
+  itDb(
+    "Repository search tenant-scoped: doğru tenant kendi kayıtlarını sayar",
+    async () => {
+      const aResults = ownersRepository.search(tenantAId, {
+        limit: 20,
+        offset: 0,
+      });
+      const bResults = ownersRepository.search(tenantBId, {
+        limit: 20,
+        offset: 0,
+      });
 
-    expect(aResults.items.map((r) => r.id)).toEqual([seededOwnerAId]);
-    expect(aResults.total).toBe(1);
-    expect(bResults.items.map((r) => r.id).sort()).toEqual(
-      [seededOwnerBId, foreignOwnerId].sort(),
-    );
-    expect(bResults.total).toBe(2);
-  });
+      expect(aResults.items.map((r) => r.id)).toEqual([seededOwnerAId]);
+      expect(aResults.total).toBe(1);
+      expect(bResults.items.map((r) => r.id).sort()).toEqual(
+        [seededOwnerBId, foreignOwnerId].sort(),
+      );
+      expect(bResults.total).toBe(2);
+    },
+  );
 
-  itDb("Repository search search filtresi yalnızca kendi tenant'ında eşleşir", async () => {
-    const aResults = ownersRepository.search(tenantAId, {
-      limit: 20,
-      offset: 0,
-      search: "Ayşe",
-    });
-    const bResults = ownersRepository.search(tenantBId, {
-      limit: 20,
-      offset: 0,
-      search: "Ayşe",
-    });
-    const bSeesOwn = ownersRepository.search(tenantBId, {
-      limit: 20,
-      offset: 0,
-      search: "Mehmet",
-    });
+  itDb(
+    "Repository search search filtresi yalnızca kendi tenant'ında eşleşir",
+    async () => {
+      const aResults = ownersRepository.search(tenantAId, {
+        limit: 20,
+        offset: 0,
+        search: "Ayşe",
+      });
+      const bResults = ownersRepository.search(tenantBId, {
+        limit: 20,
+        offset: 0,
+        search: "Ayşe",
+      });
+      const bSeesOwn = ownersRepository.search(tenantBId, {
+        limit: 20,
+        offset: 0,
+        search: "Mehmet",
+      });
 
-    expect(aResults.items.map((r) => r.id)).toEqual([seededOwnerAId]);
-    expect(bResults.items).toEqual([]);
-    expect(bSeesOwn.items.map((r) => r.id)).toEqual([seededOwnerBId]);
-  });
+      expect(aResults.items.map((r) => r.id)).toEqual([seededOwnerAId]);
+      expect(bResults.items).toEqual([]);
+      expect(bSeesOwn.items.map((r) => r.id)).toEqual([seededOwnerBId]);
+    },
+  );
 
-  itDb("Repository insert kendi tenant context'inde yeni kayıt ekler", async () => {
-    const newId = randomUUID();
-    const inserted = await ownersRepository.persist({
-      id: newId,
-      tenantId: tenantAId,
-      firstName: "Inserted",
-      lastName: "ViaRLS",
-      phone: `+90555444${randomUUID().slice(0, 4)}`,
-      email: null,
-      taxId: null,
-      address: null,
-      consents: { kvkk: true, marketing: false },
-      createdAt: new Date().toISOString(),
-      archivedAt: null,
-    });
+  itDb(
+    "Repository insert kendi tenant context'inde yeni kayıt ekler",
+    async () => {
+      const newId = randomUUID();
+      const inserted = await ownersRepository.persist({
+        id: newId,
+        tenantId: tenantAId,
+        firstName: "Inserted",
+        lastName: "ViaRLS",
+        phone: `+90555444${randomUUID().slice(0, 4)}`,
+        email: null,
+        taxId: null,
+        address: null,
+        consents: { kvkk: true, marketing: false },
+        createdAt: new Date().toISOString(),
+        archivedAt: null,
+      });
 
-    expect(inserted.tenantId).toBe(tenantAId);
-    expect(inserted.id).toBe(newId);
-    expect(inserted.firstName).toBe("Inserted");
+      expect(inserted.tenantId).toBe(tenantAId);
+      expect(inserted.id).toBe(newId);
+      expect(inserted.firstName).toBe("Inserted");
 
-    const visible = await withTenant(tenantAId, async (tx) =>
-      tx.owner.findUnique({ where: { id: newId } }),
-    );
-    const invisible = await withTenant(tenantBId, async (tx) =>
-      tx.owner.findUnique({ where: { id: newId } }),
-    );
+      const visible = await withTenant(tenantAId, async (tx) =>
+        tx.owner.findUnique({ where: { id: newId } }),
+      );
+      const invisible = await withTenant(tenantBId, async (tx) =>
+        tx.owner.findUnique({ where: { id: newId } }),
+      );
 
-    expect(visible?.id).toBe(newId);
-    expect(invisible).toBeNull();
-  });
+      expect(visible?.id).toBe(newId);
+      expect(invisible).toBeNull();
+    },
+  );
 
   itDb("Repository update (in-memory) doğru tenant'ta başarılı", async () => {
     const updated = ownersRepository.update({
@@ -316,33 +332,39 @@ describe("Owner PostgreSQL RLS", () => {
     expect(updated.lastName).toBe("Güncellendi");
   });
 
-  itDb("Repository archive cross-tenant: P2025/null ile sonuçlanır", async () => {
-    // archivePersisted async (Prisma path) — RLS USING clause satırı
-    // göstermediği için updateMany 0 satır etkiler ve null döner.
-    const result = await ownersRepository.archivePersisted(
-      tenantAId,
-      seededOwnerBId,
-      new Date().toISOString(),
-    );
-    expect(result).toBeNull();
+  itDb(
+    "Repository archive cross-tenant: P2025/null ile sonuçlanır",
+    async () => {
+      // archivePersisted async (Prisma path) — RLS USING clause satırı
+      // göstermediği için updateMany 0 satır etkiler ve null döner.
+      const result = await ownersRepository.archivePersisted(
+        tenantAId,
+        seededOwnerBId,
+        new Date().toISOString(),
+      );
+      expect(result).toBeNull();
 
-    const untouched = await adminPrisma.owner.findUnique({
-      where: { id: seededOwnerBId },
-    });
-    expect(untouched?.archivedAt).toBeNull();
-  });
+      const untouched = await adminPrisma.owner.findUnique({
+        where: { id: seededOwnerBId },
+      });
+      expect(untouched?.archivedAt).toBeNull();
+    },
+  );
 
-  itDb("App role yalnızca SELECT/INSERT/UPDATE yetkisine sahiptir", async () => {
-    const privs = await adminPrisma.$queryRawUnsafe<
-      Array<{ privilege_type: string }>
-    >(`
+  itDb(
+    "App role yalnızca SELECT/INSERT/UPDATE yetkisine sahiptir",
+    async () => {
+      const privs = await adminPrisma.$queryRawUnsafe<
+        Array<{ privilege_type: string }>
+      >(`
       SELECT privilege_type
       FROM information_schema.role_table_grants
       WHERE grantee = '${appRoleName}'
         AND table_name = 'owners'
       ORDER BY privilege_type;
     `);
-    const types = privs.map((p) => p.privilege_type);
-    expect(types).toEqual(["INSERT", "SELECT", "UPDATE"]);
-  });
+      const types = privs.map((p) => p.privilege_type);
+      expect(types).toEqual(["INSERT", "SELECT", "UPDATE"]);
+    },
+  );
 });

@@ -30,7 +30,9 @@ if (rlsSkip) {
 
 const STUB_DATABASE_URL = "postgresql://stub:stub@localhost:5432/stub";
 
-const admin = new PrismaClient({ datasources: { db: { url: migratorUrl ?? STUB_DATABASE_URL } } });
+const admin = new PrismaClient({
+  datasources: { db: { url: migratorUrl ?? STUB_DATABASE_URL } },
+});
 const appRole = "vetniva_error_events_e2e_app";
 const appUrl = new URL(runtimeUrl ?? STUB_DATABASE_URL);
 appUrl.username = appRole;

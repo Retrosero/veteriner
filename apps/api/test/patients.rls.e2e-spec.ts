@@ -194,22 +194,25 @@ describe("Patient PostgreSQL RLS", () => {
     await adminPrisma.$disconnect();
   });
 
-  itDb("tenant bağlamı yokken patients satırı göstermez veya yazdırmaz", async () => {
-    expect(await appPrisma.patient.findMany()).toEqual([]);
-    await expect(
-      appPrisma.patient.create({
-        data: {
-          id: randomUUID(),
-          tenantId: tenantAId,
-          ownerId: ownerAId,
-          name: "Unauthorized write",
-          species: "dog",
-          gender: "female",
-          neutered: false,
-        },
-      }),
-    ).rejects.toBeDefined();
-  });
+  itDb(
+    "tenant bağlamı yokken patients satırı göstermez veya yazdırmaz",
+    async () => {
+      expect(await appPrisma.patient.findMany()).toEqual([]);
+      await expect(
+        appPrisma.patient.create({
+          data: {
+            id: randomUUID(),
+            tenantId: tenantAId,
+            ownerId: ownerAId,
+            name: "Unauthorized write",
+            species: "dog",
+            gender: "female",
+            neutered: false,
+          },
+        }),
+      ).rejects.toBeDefined();
+    },
+  );
 
   itDb("doğru tenant bağlamı yalnızca kendi kaydını açar", async () => {
     const visibleA = await withTenant(tenantAId, async (tx) => {
@@ -229,125 +232,146 @@ describe("Patient PostgreSQL RLS", () => {
     expect(visibleB).not.toContain(seededPatientAId);
   });
 
-  itDb("Repository findById tenant-scoped: cross-tenant null döner", async () => {
-    const inTenantA = patientsRepository.findById(tenantAId, seededPatientAId);
-    const inTenantBWithForeignId = patientsRepository.findById(
-      tenantBId,
-      seededPatientAId,
-    );
-    const inTenantAWithBTenantId = patientsRepository.findById(
-      tenantAId,
-      seededPatientBId,
-    );
+  itDb(
+    "Repository findById tenant-scoped: cross-tenant null döner",
+    async () => {
+      const inTenantA = patientsRepository.findById(
+        tenantAId,
+        seededPatientAId,
+      );
+      const inTenantBWithForeignId = patientsRepository.findById(
+        tenantBId,
+        seededPatientAId,
+      );
+      const inTenantAWithBTenantId = patientsRepository.findById(
+        tenantAId,
+        seededPatientBId,
+      );
 
-    expect(inTenantA?.id).toBe(seededPatientAId);
-    expect(inTenantBWithForeignId).toBeNull();
-    expect(inTenantAWithBTenantId).toBeNull();
-  });
+      expect(inTenantA?.id).toBe(seededPatientAId);
+      expect(inTenantBWithForeignId).toBeNull();
+      expect(inTenantAWithBTenantId).toBeNull();
+    },
+  );
 
-  itDb("Repository findByMicrochip tenant-scoped: cross-tenant null döner", async () => {
-    const aRow = patientsRepository.findByMicrochip(
-      tenantAId,
-      "900111000000001",
-    );
-    const bSeesA = patientsRepository.findByMicrochip(
-      tenantBId,
-      "900111000000001",
-    );
+  itDb(
+    "Repository findByMicrochip tenant-scoped: cross-tenant null döner",
+    async () => {
+      const aRow = patientsRepository.findByMicrochip(
+        tenantAId,
+        "900111000000001",
+      );
+      const bSeesA = patientsRepository.findByMicrochip(
+        tenantBId,
+        "900111000000001",
+      );
 
-    expect(aRow?.id).toBe(seededPatientAId);
-    expect(bSeesA).toBeNull();
-  });
+      expect(aRow?.id).toBe(seededPatientAId);
+      expect(bSeesA).toBeNull();
+    },
+  );
 
-  itDb("Repository search tenant-scoped: doğru tenant kendi kayıtlarını sayar", async () => {
-    const aResults = patientsRepository.search(tenantAId, {
-      limit: 20,
-      offset: 0,
-    });
-    const bResults = patientsRepository.search(tenantBId, {
-      limit: 20,
-      offset: 0,
-    });
+  itDb(
+    "Repository search tenant-scoped: doğru tenant kendi kayıtlarını sayar",
+    async () => {
+      const aResults = patientsRepository.search(tenantAId, {
+        limit: 20,
+        offset: 0,
+      });
+      const bResults = patientsRepository.search(tenantBId, {
+        limit: 20,
+        offset: 0,
+      });
 
-    expect(aResults.items.map((r) => r.id)).toEqual([seededPatientAId]);
-    expect(aResults.total).toBe(1);
-    expect(bResults.items.map((r) => r.id).sort()).toEqual(
-      [seededPatientBId, foreignPatientId].sort(),
-    );
-    expect(bResults.total).toBe(2);
-  });
+      expect(aResults.items.map((r) => r.id)).toEqual([seededPatientAId]);
+      expect(aResults.total).toBe(1);
+      expect(bResults.items.map((r) => r.id).sort()).toEqual(
+        [seededPatientBId, foreignPatientId].sort(),
+      );
+      expect(bResults.total).toBe(2);
+    },
+  );
 
-  itDb("Repository search search filtresi yalnızca kendi tenant'ında eşleşir", async () => {
-    const aResults = patientsRepository.search(tenantAId, {
-      limit: 20,
-      offset: 0,
-      search: "Karabaş",
-    });
-    const bResults = patientsRepository.search(tenantBId, {
-      limit: 20,
-      offset: 0,
-      search: "Karabaş",
-    });
-    const aForeign = patientsRepository.search(tenantAId, {
-      limit: 20,
-      offset: 0,
-      search: "Minnoş",
-    });
+  itDb(
+    "Repository search search filtresi yalnızca kendi tenant'ında eşleşir",
+    async () => {
+      const aResults = patientsRepository.search(tenantAId, {
+        limit: 20,
+        offset: 0,
+        search: "Karabaş",
+      });
+      const bResults = patientsRepository.search(tenantBId, {
+        limit: 20,
+        offset: 0,
+        search: "Karabaş",
+      });
+      const aForeign = patientsRepository.search(tenantAId, {
+        limit: 20,
+        offset: 0,
+        search: "Minnoş",
+      });
 
-    expect(aResults.items.map((r) => r.id)).toEqual([seededPatientAId]);
-    expect(bResults.items).toEqual([]);
-    expect(aForeign.items).toEqual([]);
-  });
+      expect(aResults.items.map((r) => r.id)).toEqual([seededPatientAId]);
+      expect(bResults.items).toEqual([]);
+      expect(aForeign.items).toEqual([]);
+    },
+  );
 
-  itDb("Repository search ownerId filtresi cross-tenant izolasyonu korur", async () => {
-    const bResults = patientsRepository.search(tenantAId, {
-      limit: 20,
-      offset: 0,
-      ownerId: ownerBId,
-    });
-    const aResults = patientsRepository.search(tenantAId, {
-      limit: 20,
-      offset: 0,
-      ownerId: ownerAId,
-    });
+  itDb(
+    "Repository search ownerId filtresi cross-tenant izolasyonu korur",
+    async () => {
+      const bResults = patientsRepository.search(tenantAId, {
+        limit: 20,
+        offset: 0,
+        ownerId: ownerBId,
+      });
+      const aResults = patientsRepository.search(tenantAId, {
+        limit: 20,
+        offset: 0,
+        ownerId: ownerAId,
+      });
 
-    expect(bResults.items).toEqual([]);
-    expect(aResults.items.map((r) => r.id)).toEqual([seededPatientAId]);
-  });
+      expect(bResults.items).toEqual([]);
+      expect(aResults.items.map((r) => r.id)).toEqual([seededPatientAId]);
+    },
+  );
 
-  itDb("Repository insert kendi tenant context'inde yeni kayıt ekler", async () => {
-    const newId = randomUUID();
-    const inserted = await patientsRepository.persist({
-      id: newId,
-      tenantId: tenantAId,
-      ownerId: ownerAId,
-      name: "Inserted via RLS test",
-      species: "dog",
-      breed: null,
-      birthDate: null,
-      gender: "male",
-      microchip: `90011100000009${randomUUID().slice(0, 1)}`.slice(0, 15),
-      color: null,
-      neutered: true,
-      notes: null,
-      createdAt: new Date().toISOString(),
-      archivedAt: null,
-    });
+  itDb(
+    "Repository insert kendi tenant context'inde yeni kayıt ekler",
+    async () => {
+      const newId = randomUUID();
+      const inserted = await patientsRepository.persist({
+        id: newId,
+        tenantId: tenantAId,
+        ownerId: ownerAId,
+        name: "Inserted via RLS test",
+        species: "dog",
+        breed: null,
+        birthDate: null,
+        gender: "male",
+        microchip: `90011100000009${randomUUID().slice(0, 1)}`.slice(0, 15),
+        color: null,
+        neutered: true,
+        notes: null,
+        createdAt: new Date().toISOString(),
+        archivedAt: null,
+      });
 
-    expect(inserted.tenantId).toBe(tenantAId);
-    expect(inserted.id).toBe(newId);
-    expect(inserted.name).toBe("Inserted via RLS test");
+      expect(inserted.tenantId).toBe(tenantAId);
+      expect(inserted.id).toBe(newId);
+      expect(inserted.name).toBe("Inserted via RLS test");
 
-    const visible = await withTenant(tenantAId, async (tx) =>
-      tx.patient.findUnique({ where: { id: newId } }),
-    );
-    const invisible = await withTenant(tenantBId, async (tx) =>
-      tx.patient.findUnique({ where: { id: newId } }),
-    );
+      const visible = await withTenant(tenantAId, async (tx) =>
+        tx.patient.findUnique({ where: { id: newId } }),
+      );
+      const invisible = await withTenant(tenantBId, async (tx) =>
+        tx.patient.findUnique({ where: { id: newId } }),
+      );
 
-    expect(visible?.id).toBe(newId);
-    expect(invisible).toBeNull();
-  });
+      expect(visible?.id).toBe(newId);
+      expect(invisible).toBeNull();
+    },
+  );
 
   itDb("Repository updateOwner doğru tenant'ta başarılı", async () => {
     const newOwnerId = randomUUID();
@@ -376,31 +400,37 @@ describe("Patient PostgreSQL RLS", () => {
     expect(persisted?.ownerId).toBe(newOwnerId);
   });
 
-  itDb("Repository updateOwner cross-tenant: P2025/null ile sonuçlanır", async () => {
-    const result = patientsRepository.updateOwner(
-      tenantAId,
-      seededPatientBId,
-      ownerAId,
-    );
-    expect(result).toBeNull();
+  itDb(
+    "Repository updateOwner cross-tenant: P2025/null ile sonuçlanır",
+    async () => {
+      const result = patientsRepository.updateOwner(
+        tenantAId,
+        seededPatientBId,
+        ownerAId,
+      );
+      expect(result).toBeNull();
 
-    const untouched = await adminPrisma.patient.findUnique({
-      where: { id: seededPatientBId },
-    });
-    expect(untouched?.ownerId).toBe(ownerBId);
-  });
+      const untouched = await adminPrisma.patient.findUnique({
+        where: { id: seededPatientBId },
+      });
+      expect(untouched?.ownerId).toBe(ownerBId);
+    },
+  );
 
-  itDb("App role yalnızca SELECT/INSERT/UPDATE yetkisine sahiptir", async () => {
-    const privs = await adminPrisma.$queryRawUnsafe<
-      Array<{ privilege_type: string }>
-    >(`
+  itDb(
+    "App role yalnızca SELECT/INSERT/UPDATE yetkisine sahiptir",
+    async () => {
+      const privs = await adminPrisma.$queryRawUnsafe<
+        Array<{ privilege_type: string }>
+      >(`
       SELECT privilege_type
       FROM information_schema.role_table_grants
       WHERE grantee = '${appRoleName}'
         AND table_name = 'patients'
       ORDER BY privilege_type;
     `);
-    const types = privs.map((p) => p.privilege_type);
-    expect(types).toEqual(["INSERT", "SELECT", "UPDATE"]);
-  });
+      const types = privs.map((p) => p.privilege_type);
+      expect(types).toEqual(["INSERT", "SELECT", "UPDATE"]);
+    },
+  );
 });

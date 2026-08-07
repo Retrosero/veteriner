@@ -330,29 +330,32 @@ describe("Prescription PostgreSQL RLS", () => {
     await adminPrisma.$disconnect();
   });
 
-  itDb("tenant bağlamı yokken prescriptions satırı göstermez veya yazdırmaz", async () => {
-    expect(await appPrisma.prescriptionRecord.findMany()).toEqual([]);
-    await expect(
-      appPrisma.prescriptionRecord.create({
-        data: {
-          id: `prsc-unauth-${randomUUID().slice(0, 8)}`,
-          tenantId: tenantAId,
-          examinationId: examAId,
-          patientId: patientAId,
-          veterinarianId: vetAId,
-          notes: "Unauthorized write",
-          status: "active",
-          prescribedAt: new Date(),
-          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          dispensedAt: null,
-          dispensedBy: null,
-          cancelReason: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      }),
-    ).rejects.toBeDefined();
-  });
+  itDb(
+    "tenant bağlamı yokken prescriptions satırı göstermez veya yazdırmaz",
+    async () => {
+      expect(await appPrisma.prescriptionRecord.findMany()).toEqual([]);
+      await expect(
+        appPrisma.prescriptionRecord.create({
+          data: {
+            id: `prsc-unauth-${randomUUID().slice(0, 8)}`,
+            tenantId: tenantAId,
+            examinationId: examAId,
+            patientId: patientAId,
+            veterinarianId: vetAId,
+            notes: "Unauthorized write",
+            status: "active",
+            prescribedAt: new Date(),
+            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            dispensedAt: null,
+            dispensedBy: null,
+            cancelReason: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        }),
+      ).rejects.toBeDefined();
+    },
+  );
 
   itDb("doğru tenant bağlamı yalnızca kendi kaydını açar", async () => {
     const visibleA = await withTenant(tenantAId, async (tx) => {
@@ -376,171 +379,199 @@ describe("Prescription PostgreSQL RLS", () => {
     expect(visibleB).not.toContain(seededPrescriptionAId);
   });
 
-  itDb("Repository persistedFindById tenant-scoped: cross-tenant null döner", async () => {
-    const inTenantA = await prescriptionsRepository.persistedFindById(
-      tenantAId,
-      seededPrescriptionAId,
-    );
-    const inTenantBWithForeignId =
-      await prescriptionsRepository.persistedFindById(
-        tenantBId,
+  itDb(
+    "Repository persistedFindById tenant-scoped: cross-tenant null döner",
+    async () => {
+      const inTenantA = await prescriptionsRepository.persistedFindById(
+        tenantAId,
         seededPrescriptionAId,
       );
-    const inTenantAWithBTenantId =
-      await prescriptionsRepository.persistedFindById(
-        tenantAId,
-        seededPrescriptionBId,
+      const inTenantBWithForeignId =
+        await prescriptionsRepository.persistedFindById(
+          tenantBId,
+          seededPrescriptionAId,
+        );
+      const inTenantAWithBTenantId =
+        await prescriptionsRepository.persistedFindById(
+          tenantAId,
+          seededPrescriptionBId,
+        );
+
+      expect(inTenantA?.id).toBe(seededPrescriptionAId);
+      expect(inTenantBWithForeignId).toBeNull();
+      expect(inTenantAWithBTenantId).toBeNull();
+    },
+  );
+
+  itDb(
+    "Repository search tenant-scoped: doğru tenant kendi kayıtlarını sayar",
+    async () => {
+      const aResults = prescriptionsRepository.search(tenantAId, {
+        limit: 20,
+        offset: 0,
+      });
+      const bResults = prescriptionsRepository.search(tenantBId, {
+        limit: 20,
+        offset: 0,
+      });
+
+      expect(aResults.items.map((r) => r.id)).toEqual([seededPrescriptionAId]);
+      expect(aResults.total).toBe(1);
+      expect(bResults.items.map((r) => r.id).sort()).toEqual(
+        [seededPrescriptionBId, foreignPrescriptionId].sort(),
+      );
+      expect(bResults.total).toBe(2);
+    },
+  );
+
+  itDb(
+    "Repository search patientId filtresi cross-tenant izolasyonu korur",
+    async () => {
+      const aOnBPatient = prescriptionsRepository.search(tenantAId, {
+        limit: 20,
+        offset: 0,
+        patientId: patientBId,
+      });
+      const aOnAPatient = prescriptionsRepository.search(tenantAId, {
+        limit: 20,
+        offset: 0,
+        patientId: patientAId,
+      });
+
+      expect(aOnBPatient.items).toEqual([]);
+      expect(aOnAPatient.items.map((r) => r.id)).toEqual([
+        seededPrescriptionAId,
+      ]);
+    },
+  );
+
+  itDb(
+    "Repository search status filtresi yalnızca kendi tenant'ında eşleşir",
+    async () => {
+      const aActive = prescriptionsRepository.search(tenantAId, {
+        limit: 20,
+        offset: 0,
+        status: "active",
+      });
+      const aDispensed = prescriptionsRepository.search(tenantAId, {
+        limit: 20,
+        offset: 0,
+        status: "dispensed",
+      });
+
+      expect(aActive.items.map((r) => r.id)).toEqual([seededPrescriptionAId]);
+      expect(aDispensed.items).toEqual([]);
+    },
+  );
+
+  itDb(
+    "Repository insert kendi tenant context'inde yeni kayıt ekler",
+    async () => {
+      const newId = `prsc-ins-${randomUUID().slice(0, 8)}`;
+      const inserted = await prescriptionsRepository.persist({
+        id: newId,
+        tenantId: tenantAId,
+        examinationId: examAId,
+        patientId: patientAId,
+        veterinarianId: vetAId,
+        items: [
+          {
+            drugName: "Inserted Drug",
+            dosage: "1mg",
+            frequency: "once_daily",
+            durationDays: 5,
+            route: "oral",
+          },
+        ],
+        notes: "Inserted via RLS test",
+        status: "active",
+        prescribedAt: new Date().toISOString(),
+        expiresAt: new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000,
+        ).toISOString(),
+        dispensedAt: null,
+        dispensedBy: null,
+        cancelReason: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      expect(inserted.tenantId).toBe(tenantAId);
+      expect(inserted.id).toBe(newId);
+      expect(inserted.notes).toBe("Inserted via RLS test");
+
+      const visible = await withTenant(tenantAId, async (tx) =>
+        tx.prescriptionRecord.findUnique({ where: { id: newId } }),
+      );
+      const invisible = await withTenant(tenantBId, async (tx) =>
+        tx.prescriptionRecord.findUnique({ where: { id: newId } }),
       );
 
-    expect(inTenantA?.id).toBe(seededPrescriptionAId);
-    expect(inTenantBWithForeignId).toBeNull();
-    expect(inTenantAWithBTenantId).toBeNull();
-  });
+      expect(visible?.id).toBe(newId);
+      expect(invisible).toBeNull();
+    },
+  );
 
-  itDb("Repository search tenant-scoped: doğru tenant kendi kayıtlarını sayar", async () => {
-    const aResults = prescriptionsRepository.search(tenantAId, {
-      limit: 20,
-      offset: 0,
-    });
-    const bResults = prescriptionsRepository.search(tenantBId, {
-      limit: 20,
-      offset: 0,
-    });
-
-    expect(aResults.items.map((r) => r.id)).toEqual([seededPrescriptionAId]);
-    expect(aResults.total).toBe(1);
-    expect(bResults.items.map((r) => r.id).sort()).toEqual(
-      [seededPrescriptionBId, foreignPrescriptionId].sort(),
-    );
-    expect(bResults.total).toBe(2);
-  });
-
-  itDb("Repository search patientId filtresi cross-tenant izolasyonu korur", async () => {
-    const aOnBPatient = prescriptionsRepository.search(tenantAId, {
-      limit: 20,
-      offset: 0,
-      patientId: patientBId,
-    });
-    const aOnAPatient = prescriptionsRepository.search(tenantAId, {
-      limit: 20,
-      offset: 0,
-      patientId: patientAId,
-    });
-
-    expect(aOnBPatient.items).toEqual([]);
-    expect(aOnAPatient.items.map((r) => r.id)).toEqual([seededPrescriptionAId]);
-  });
-
-  itDb("Repository search status filtresi yalnızca kendi tenant'ında eşleşir", async () => {
-    const aActive = prescriptionsRepository.search(tenantAId, {
-      limit: 20,
-      offset: 0,
-      status: "active",
-    });
-    const aDispensed = prescriptionsRepository.search(tenantAId, {
-      limit: 20,
-      offset: 0,
-      status: "dispensed",
-    });
-
-    expect(aActive.items.map((r) => r.id)).toEqual([seededPrescriptionAId]);
-    expect(aDispensed.items).toEqual([]);
-  });
-
-  itDb("Repository insert kendi tenant context'inde yeni kayıt ekler", async () => {
-    const newId = `prsc-ins-${randomUUID().slice(0, 8)}`;
-    const inserted = await prescriptionsRepository.persist({
-      id: newId,
-      tenantId: tenantAId,
-      examinationId: examAId,
-      patientId: patientAId,
-      veterinarianId: vetAId,
-      items: [
+  itDb(
+    "Repository persistedUpdate doğru tenant'ta başarılı (cancel)",
+    async () => {
+      const updated = await prescriptionsRepository.persistedUpdate(
+        tenantAId,
+        seededPrescriptionAId,
         {
-          drugName: "Inserted Drug",
-          dosage: "1mg",
-          frequency: "once_daily",
-          durationDays: 5,
-          route: "oral",
+          status: "cancelled",
+          cancelReason: "RLS test cancel",
+          updatedAt: new Date().toISOString(),
         },
-      ],
-      notes: "Inserted via RLS test",
-      status: "active",
-      prescribedAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      dispensedAt: null,
-      dispensedBy: null,
-      cancelReason: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+      );
+      expect(updated?.id).toBe(seededPrescriptionAId);
+      expect(updated?.status).toBe("cancelled");
+      expect(updated?.cancelReason).toBe("RLS test cancel");
+    },
+  );
 
-    expect(inserted.tenantId).toBe(tenantAId);
-    expect(inserted.id).toBe(newId);
-    expect(inserted.notes).toBe("Inserted via RLS test");
+  itDb(
+    "Repository persistedUpdate cross-tenant: null ile sonuçlanır",
+    async () => {
+      const result = await prescriptionsRepository.persistedUpdate(
+        tenantAId,
+        seededPrescriptionBId,
+        {
+          status: "cancelled",
+          cancelReason: "Cross-tenant attack",
+          updatedAt: new Date().toISOString(),
+        },
+      );
+      expect(result).toBeNull();
 
-    const visible = await withTenant(tenantAId, async (tx) =>
-      tx.prescriptionRecord.findUnique({ where: { id: newId } }),
-    );
-    const invisible = await withTenant(tenantBId, async (tx) =>
-      tx.prescriptionRecord.findUnique({ where: { id: newId } }),
-    );
+      const untouched = await adminPrisma.prescriptionRecord.findUnique({
+        where: { id: seededPrescriptionBId },
+      });
+      expect(untouched?.status).toBe("active");
+      expect(untouched?.cancelReason).toBeNull();
+    },
+  );
 
-    expect(visible?.id).toBe(newId);
-    expect(invisible).toBeNull();
-  });
-
-  itDb("Repository persistedUpdate doğru tenant'ta başarılı (cancel)", async () => {
-    const updated = await prescriptionsRepository.persistedUpdate(
-      tenantAId,
-      seededPrescriptionAId,
-      {
-        status: "cancelled",
-        cancelReason: "RLS test cancel",
-        updatedAt: new Date().toISOString(),
-      },
-    );
-    expect(updated?.id).toBe(seededPrescriptionAId);
-    expect(updated?.status).toBe("cancelled");
-    expect(updated?.cancelReason).toBe("RLS test cancel");
-  });
-
-  itDb("Repository persistedUpdate cross-tenant: null ile sonuçlanır", async () => {
-    const result = await prescriptionsRepository.persistedUpdate(
-      tenantAId,
-      seededPrescriptionBId,
-      {
-        status: "cancelled",
-        cancelReason: "Cross-tenant attack",
-        updatedAt: new Date().toISOString(),
-      },
-    );
-    expect(result).toBeNull();
-
-    const untouched = await adminPrisma.prescriptionRecord.findUnique({
-      where: { id: seededPrescriptionBId },
-    });
-    expect(untouched?.status).toBe("active");
-    expect(untouched?.cancelReason).toBeNull();
-  });
-
-  itDb("App role yalnızca SELECT/INSERT/UPDATE yetkisine sahiptir", async () => {
-    const privs = await adminPrisma.$queryRawUnsafe<
-      Array<{ privilege_type: string; table_name: string }>
-    >(`
+  itDb(
+    "App role yalnızca SELECT/INSERT/UPDATE yetkisine sahiptir",
+    async () => {
+      const privs = await adminPrisma.$queryRawUnsafe<
+        Array<{ privilege_type: string; table_name: string }>
+      >(`
       SELECT privilege_type, table_name
       FROM information_schema.role_table_grants
       WHERE grantee = '${appRoleName}'
         AND table_name IN ('prescriptions', 'prescription_items')
       ORDER BY table_name, privilege_type;
     `);
-    const presPrivs = privs
-      .filter((p) => p.table_name === "prescriptions")
-      .map((p) => p.privilege_type);
-    const itemPrivs = privs
-      .filter((p) => p.table_name === "prescription_items")
-      .map((p) => p.privilege_type);
-    expect(presPrivs).toEqual(["INSERT", "SELECT", "UPDATE"]);
-    expect(itemPrivs).toEqual(["INSERT", "SELECT", "UPDATE"]);
-  });
+      const presPrivs = privs
+        .filter((p) => p.table_name === "prescriptions")
+        .map((p) => p.privilege_type);
+      const itemPrivs = privs
+        .filter((p) => p.table_name === "prescription_items")
+        .map((p) => p.privilege_type);
+      expect(presPrivs).toEqual(["INSERT", "SELECT", "UPDATE"]);
+      expect(itemPrivs).toEqual(["INSERT", "SELECT", "UPDATE"]);
+    },
+  );
 });

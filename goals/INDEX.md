@@ -108,26 +108,26 @@
 
 ### 6 Ağustos 2026 — Pilot + Production Hardening Sprint (21 commit)
 
-| # | Commit | Kategori | Özet |
-| --- | --- | --- | --- |
-| 1 | c3845ab | docs:check | 2012 HATA → 0 |
-| 2 | 6a288f8 | backup | tier-aware dry-run |
-| 3 | cd747e3 | security | 100/100 unit + 14 ASVS |
-| 4 | ac17fc9 | load-test | 71/71 unit + 7 k6 senaryo |
-| 5 | 8de9714 | kvkk | 16 unit + PII log fix |
-| 6 | 7830b24 | tenant-export | 21/21 unit + demo dry-run |
-| 7 | eacf00f | release | production release readiness |
-| 8 | 8842be6 | rls | 64 RLS E2E coverage raporu |
-| 9 | 530b1e6 | onboarding | polish readiness + 4 kategori öneri |
-| 10 | 53bb66a | smoke | pilot smoke test planı (9 adım + 4 demo user) |
-| 11 | 69fea2d | rls test | 10 cross-tenant IDOR senaryosu |
-| 12 | 3802b92 | onboarding | wizard polish (a11y + visual + behavior) |
-| 13 | dd31ac0 | docs:check | Tailwind state/breakpoint prefix filter |
-| 14 | 2622eae | ci | smoke test Playwright workflow (9 senaryo) |
-| 15 | 80c6837 | security | CVE audit (50 zafiyet, 1 critical Next.js) |
-| 16 | ac8473d | kvkk | erasure flow + 4 endpoint |
-| 17 | 8c5006e | rls test | 5 modül × 10 senaryo (50 RLS E2E) |
-| 18 | e3e4209 | deps | Next.js 14.2.35 + Prisma error_event modelleri |
-| 19 | a255dc8 | roadmap | 6 Ağu lint cleanup log |
-| 20 | 456ab38 | backup | backup/restore TS implementation + lint |
-| 21 | 57f5575 | worker | rag-chunk-job lint temizliği |
+| #   | Commit  | Kategori      | Özet                                           |
+| --- | ------- | ------------- | ---------------------------------------------- |
+| 1   | c3845ab | docs:check    | 2012 HATA → 0                                  |
+| 2   | 6a288f8 | backup        | tier-aware dry-run                             |
+| 3   | cd747e3 | security      | 100/100 unit + 14 ASVS                         |
+| 4   | ac17fc9 | load-test     | 71/71 unit + 7 k6 senaryo                      |
+| 5   | 8de9714 | kvkk          | 16 unit + PII log fix                          |
+| 6   | 7830b24 | tenant-export | 21/21 unit + demo dry-run                      |
+| 7   | eacf00f | release       | production release readiness                   |
+| 8   | 8842be6 | rls           | 64 RLS E2E coverage raporu                     |
+| 9   | 530b1e6 | onboarding    | polish readiness + 4 kategori öneri            |
+| 10  | 53bb66a | smoke         | pilot smoke test planı (9 adım + 4 demo user)  |
+| 11  | 69fea2d | rls test      | 10 cross-tenant IDOR senaryosu                 |
+| 12  | 3802b92 | onboarding    | wizard polish (a11y + visual + behavior)       |
+| 13  | dd31ac0 | docs:check    | Tailwind state/breakpoint prefix filter        |
+| 14  | 2622eae | ci            | smoke test Playwright workflow (9 senaryo)     |
+| 15  | 80c6837 | security      | CVE audit (50 zafiyet, 1 critical Next.js)     |
+| 16  | ac8473d | kvkk          | erasure flow + 4 endpoint                      |
+| 17  | 8c5006e | rls test      | 5 modül × 10 senaryo (50 RLS E2E)              |
+| 18  | e3e4209 | deps          | Next.js 14.2.35 + Prisma error_event modelleri |
+| 19  | a255dc8 | roadmap       | 6 Ağu lint cleanup log                         |
+| 20  | 456ab38 | backup        | backup/restore TS implementation + lint        |
+| 21  | 57f5575 | worker        | rag-chunk-job lint temizliği                   |

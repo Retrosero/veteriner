@@ -251,28 +251,31 @@ describe("Examination PostgreSQL RLS", () => {
     await adminPrisma.$disconnect();
   });
 
-  itDb("tenant bağlamı yokken examinations satırı göstermez veya yazdırmaz", async () => {
-    expect(await appPrisma.examination.findMany()).toEqual([]);
-    await expect(
-      appPrisma.examination.create({
-        data: {
-          id: `exam-unauth-${randomUUID().slice(0, 8)}`,
-          tenantId: tenantAId,
-          patientId: patientAId,
-          veterinarianId: vetAId,
-          status: "draft",
-          type: "general",
-          chiefComplaint: "Unauthorized write",
-          startedAt: new Date(),
-          completedAt: null,
-          signedAt: null,
-          signedBy: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      }),
-    ).rejects.toBeDefined();
-  });
+  itDb(
+    "tenant bağlamı yokken examinations satırı göstermez veya yazdırmaz",
+    async () => {
+      expect(await appPrisma.examination.findMany()).toEqual([]);
+      await expect(
+        appPrisma.examination.create({
+          data: {
+            id: `exam-unauth-${randomUUID().slice(0, 8)}`,
+            tenantId: tenantAId,
+            patientId: patientAId,
+            veterinarianId: vetAId,
+            status: "draft",
+            type: "general",
+            chiefComplaint: "Unauthorized write",
+            startedAt: new Date(),
+            completedAt: null,
+            signedAt: null,
+            signedBy: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        }),
+      ).rejects.toBeDefined();
+    },
+  );
 
   itDb("doğru tenant bağlamı yalnızca kendi kaydını açar", async () => {
     const visibleA = await withTenant(tenantAId, async (tx) => {
@@ -290,114 +293,129 @@ describe("Examination PostgreSQL RLS", () => {
     expect(visibleB).not.toContain(seededExamAId);
   });
 
-  itDb("Repository persistedFind tenant-scoped: cross-tenant null döner", async () => {
-    const inTenantA = await examinationsRepository.persistedFind(
-      tenantAId,
-      seededExamAId,
-    );
-    const inTenantBWithForeignId = await examinationsRepository.persistedFind(
-      tenantBId,
-      seededExamAId,
-    );
-    const inTenantAWithBTenantId = await examinationsRepository.persistedFind(
-      tenantAId,
-      seededExamBId,
-    );
+  itDb(
+    "Repository persistedFind tenant-scoped: cross-tenant null döner",
+    async () => {
+      const inTenantA = await examinationsRepository.persistedFind(
+        tenantAId,
+        seededExamAId,
+      );
+      const inTenantBWithForeignId = await examinationsRepository.persistedFind(
+        tenantBId,
+        seededExamAId,
+      );
+      const inTenantAWithBTenantId = await examinationsRepository.persistedFind(
+        tenantAId,
+        seededExamBId,
+      );
 
-    expect(inTenantA?.id).toBe(seededExamAId);
-    expect(inTenantBWithForeignId).toBeNull();
-    expect(inTenantAWithBTenantId).toBeNull();
-  });
+      expect(inTenantA?.id).toBe(seededExamAId);
+      expect(inTenantBWithForeignId).toBeNull();
+      expect(inTenantAWithBTenantId).toBeNull();
+    },
+  );
 
-  itDb("Repository search tenant-scoped: doğru tenant kendi kayıtlarını sayar", async () => {
-    const aResults = examinationsRepository.search(tenantAId, {
-      limit: 20,
-      offset: 0,
-    });
-    const bResults = examinationsRepository.search(tenantBId, {
-      limit: 20,
-      offset: 0,
-    });
+  itDb(
+    "Repository search tenant-scoped: doğru tenant kendi kayıtlarını sayar",
+    async () => {
+      const aResults = examinationsRepository.search(tenantAId, {
+        limit: 20,
+        offset: 0,
+      });
+      const bResults = examinationsRepository.search(tenantBId, {
+        limit: 20,
+        offset: 0,
+      });
 
-    expect(aResults.items.map((r) => r.id)).toEqual([seededExamAId]);
-    expect(aResults.total).toBe(1);
-    expect(bResults.items.map((r) => r.id).sort()).toEqual(
-      [seededExamBId, foreignExamId].sort(),
-    );
-    expect(bResults.total).toBe(2);
-  });
+      expect(aResults.items.map((r) => r.id)).toEqual([seededExamAId]);
+      expect(aResults.total).toBe(1);
+      expect(bResults.items.map((r) => r.id).sort()).toEqual(
+        [seededExamBId, foreignExamId].sort(),
+      );
+      expect(bResults.total).toBe(2);
+    },
+  );
 
-  itDb("Repository search patientId filtresi cross-tenant izolasyonu korur", async () => {
-    const aOnBPatient = examinationsRepository.search(tenantAId, {
-      limit: 20,
-      offset: 0,
-      patientId: patientBId,
-    });
-    const aOnAPatient = examinationsRepository.search(tenantAId, {
-      limit: 20,
-      offset: 0,
-      patientId: patientAId,
-    });
+  itDb(
+    "Repository search patientId filtresi cross-tenant izolasyonu korur",
+    async () => {
+      const aOnBPatient = examinationsRepository.search(tenantAId, {
+        limit: 20,
+        offset: 0,
+        patientId: patientBId,
+      });
+      const aOnAPatient = examinationsRepository.search(tenantAId, {
+        limit: 20,
+        offset: 0,
+        patientId: patientAId,
+      });
 
-    expect(aOnBPatient.items).toEqual([]);
-    expect(aOnAPatient.items.map((r) => r.id)).toEqual([seededExamAId]);
-  });
+      expect(aOnBPatient.items).toEqual([]);
+      expect(aOnAPatient.items.map((r) => r.id)).toEqual([seededExamAId]);
+    },
+  );
 
-  itDb("Repository search status filtresi yalnızca kendi tenant'ında eşleşir", async () => {
-    const aStatusInProgress = examinationsRepository.search(tenantAId, {
-      limit: 20,
-      offset: 0,
-      status: "in_progress",
-    });
-    const aStatusCompleted = examinationsRepository.search(tenantAId, {
-      limit: 20,
-      offset: 0,
-      status: "completed",
-    });
-    const bStatusCompleted = examinationsRepository.search(tenantBId, {
-      limit: 20,
-      offset: 0,
-      status: "completed",
-    });
+  itDb(
+    "Repository search status filtresi yalnızca kendi tenant'ında eşleşir",
+    async () => {
+      const aStatusInProgress = examinationsRepository.search(tenantAId, {
+        limit: 20,
+        offset: 0,
+        status: "in_progress",
+      });
+      const aStatusCompleted = examinationsRepository.search(tenantAId, {
+        limit: 20,
+        offset: 0,
+        status: "completed",
+      });
+      const bStatusCompleted = examinationsRepository.search(tenantBId, {
+        limit: 20,
+        offset: 0,
+        status: "completed",
+      });
 
-    expect(aStatusInProgress.items.map((r) => r.id)).toEqual([seededExamAId]);
-    expect(aStatusCompleted.items).toEqual([]);
-    expect(bStatusCompleted.items.map((r) => r.id)).toEqual([seededExamBId]);
-  });
+      expect(aStatusInProgress.items.map((r) => r.id)).toEqual([seededExamAId]);
+      expect(aStatusCompleted.items).toEqual([]);
+      expect(bStatusCompleted.items.map((r) => r.id)).toEqual([seededExamBId]);
+    },
+  );
 
-  itDb("Repository insert kendi tenant context'inde yeni kayıt ekler", async () => {
-    const newId = `exam-ins-${randomUUID().slice(0, 8)}`;
-    const inserted = await examinationsRepository.persist({
-      id: newId,
-      tenantId: tenantAId,
-      patientId: patientAId,
-      veterinarianId: vetAId,
-      appointmentId: null,
-      status: "in_progress",
-      type: "consultation",
-      chiefComplaint: "Inserted via RLS test",
-      startedAt: new Date().toISOString(),
-      completedAt: null,
-      signedAt: null,
-      signedBy: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+  itDb(
+    "Repository insert kendi tenant context'inde yeni kayıt ekler",
+    async () => {
+      const newId = `exam-ins-${randomUUID().slice(0, 8)}`;
+      const inserted = await examinationsRepository.persist({
+        id: newId,
+        tenantId: tenantAId,
+        patientId: patientAId,
+        veterinarianId: vetAId,
+        appointmentId: null,
+        status: "in_progress",
+        type: "consultation",
+        chiefComplaint: "Inserted via RLS test",
+        startedAt: new Date().toISOString(),
+        completedAt: null,
+        signedAt: null,
+        signedBy: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
 
-    expect(inserted.tenantId).toBe(tenantAId);
-    expect(inserted.id).toBe(newId);
-    expect(inserted.chiefComplaint).toBe("Inserted via RLS test");
+      expect(inserted.tenantId).toBe(tenantAId);
+      expect(inserted.id).toBe(newId);
+      expect(inserted.chiefComplaint).toBe("Inserted via RLS test");
 
-    const visible = await withTenant(tenantAId, async (tx) =>
-      tx.examination.findUnique({ where: { id: newId } }),
-    );
-    const invisible = await withTenant(tenantBId, async (tx) =>
-      tx.examination.findUnique({ where: { id: newId } }),
-    );
+      const visible = await withTenant(tenantAId, async (tx) =>
+        tx.examination.findUnique({ where: { id: newId } }),
+      );
+      const invisible = await withTenant(tenantBId, async (tx) =>
+        tx.examination.findUnique({ where: { id: newId } }),
+      );
 
-    expect(visible?.id).toBe(newId);
-    expect(invisible).toBeNull();
-  });
+      expect(visible?.id).toBe(newId);
+      expect(invisible).toBeNull();
+    },
+  );
 
   itDb("Repository persistedUpdate doğru tenant'ta başarılı", async () => {
     const updated = await examinationsRepository.persistedUpdate(
@@ -414,44 +432,50 @@ describe("Examination PostgreSQL RLS", () => {
     expect(updated?.completedAt).toBeTruthy();
   });
 
-  itDb("Repository persistedUpdate cross-tenant: null ile sonuçlanır", async () => {
-    const result = await examinationsRepository.persistedUpdate(
-      tenantAId,
-      seededExamBId,
-      {
-        status: "completed",
-        completedAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    );
-    expect(result).toBeNull();
+  itDb(
+    "Repository persistedUpdate cross-tenant: null ile sonuçlanır",
+    async () => {
+      const result = await examinationsRepository.persistedUpdate(
+        tenantAId,
+        seededExamBId,
+        {
+          status: "completed",
+          completedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      );
+      expect(result).toBeNull();
 
-    const untouched = await adminPrisma.examination.findUnique({
-      where: { id: seededExamBId },
-    });
-    expect(untouched?.status).toBe("completed");
-    expect(untouched?.completedAt?.toISOString()).toBe(
-      "2026-08-02T10:30:00.000Z",
-    );
-  });
+      const untouched = await adminPrisma.examination.findUnique({
+        where: { id: seededExamBId },
+      });
+      expect(untouched?.status).toBe("completed");
+      expect(untouched?.completedAt?.toISOString()).toBe(
+        "2026-08-02T10:30:00.000Z",
+      );
+    },
+  );
 
-  itDb("App role yalnızca SELECT/INSERT/UPDATE yetkisine sahiptir", async () => {
-    const privs = await adminPrisma.$queryRawUnsafe<
-      Array<{ privilege_type: string; table_name: string }>
-    >(`
+  itDb(
+    "App role yalnızca SELECT/INSERT/UPDATE yetkisine sahiptir",
+    async () => {
+      const privs = await adminPrisma.$queryRawUnsafe<
+        Array<{ privilege_type: string; table_name: string }>
+      >(`
       SELECT privilege_type, table_name
       FROM information_schema.role_table_grants
       WHERE grantee = '${appRoleName}'
         AND table_name IN ('examinations', 'examination_amends')
       ORDER BY table_name, privilege_type;
     `);
-    const examinationsPrivs = privs
-      .filter((p) => p.table_name === "examinations")
-      .map((p) => p.privilege_type);
-    const amendPrivs = privs
-      .filter((p) => p.table_name === "examination_amends")
-      .map((p) => p.privilege_type);
-    expect(examinationsPrivs).toEqual(["INSERT", "SELECT", "UPDATE"]);
-    expect(amendPrivs).toEqual(["INSERT", "SELECT", "UPDATE"]);
-  });
+      const examinationsPrivs = privs
+        .filter((p) => p.table_name === "examinations")
+        .map((p) => p.privilege_type);
+      const amendPrivs = privs
+        .filter((p) => p.table_name === "examination_amends")
+        .map((p) => p.privilege_type);
+      expect(examinationsPrivs).toEqual(["INSERT", "SELECT", "UPDATE"]);
+      expect(amendPrivs).toEqual(["INSERT", "SELECT", "UPDATE"]);
+    },
+  );
 });

@@ -1,6 +1,6 @@
 version: 1.0.0
 generated_by: GOAL-005
-generated_at: "2026-07-30"
+generated_at: '2026-07-30'
 chunks:
   - chunk_id: glossary-owner
     type: glossary
@@ -4770,7 +4770,7 @@ chunks:
     last_verified_at: 2026-07-30T00:00:00.000Z
     confidence: high
     pii: false
-    title: "Örnek use case: Appointments modülü devre dışı"
+    title: 'Örnek use case: Appointments modülü devre dışı'
     content: |
       Senaryo: Bir klinik tenant'ı deneysel olarak "appointments"
       modülünü kapatmak istiyor. Sebep: pilot sürümde randevu
@@ -7900,7 +7900,7 @@ chunks:
     entity: ..\..\..\AppData\Local\Temp\vetniva-rag-cron-PDbL6E\workflows\vaccine.md
     locale: tr-TR
     version: 1.0.0
-    last_verified_at: "2026-08-06"
+    last_verified_at: '2026-08-06'
     confidence: high
     pii: false
     title: Aşı Kaydı Oluşturma
@@ -7927,7 +7927,7 @@ chunks:
     entity: ..\..\..\AppData\Local\Temp\vetniva-rag-cron-PDbL6E\workflows\vaccine.md
     locale: tr-TR
     version: 1.0.0
-    last_verified_at: "2026-08-06"
+    last_verified_at: '2026-08-06'
     confidence: high
     pii: false
     title: Aşı Hatırlatma
@@ -7946,7 +7946,7 @@ chunks:
     entity: ..\..\..\AppData\Local\Temp\vetniva-rag-cron-XpqwB5\workflows\owner.md
     locale: tr-TR
     version: 1.0.0
-    last_verified_at: "2026-08-06"
+    last_verified_at: '2026-08-06'
     confidence: high
     pii: false
     title: Hasta Sahibi Ekleme
@@ -7964,3 +7964,96 @@ chunks:
     related_pages: []
     related_api: []
     contentHash: sha256:cbd94758329848a9933042bbcd152f28037d3c276263034f361cca35af314682
+  - chunk_id: flow-..\..\..\AppData\Local\Temp\vetniva-rag-cron-Di4vjI\workflows\vaccine-a-kayd-olu-turma
+    type: glossary
+    source: ../../../AppData/Local/Temp/vetniva-rag-cron-Di4vjI/workflows/vaccine.md
+    entity: ..\..\..\AppData\Local\Temp\vetniva-rag-cron-Di4vjI\workflows\vaccine.md
+    locale: tr-TR
+    version: 1.0.0
+    last_verified_at: '2026-08-07'
+    confidence: high
+    pii: false
+    title: Aşı Kaydı Oluşturma
+    content: >-
+      Bir hayvana aşı uygulaması kaydetmek için önce hasta detay sayfasını açın. POST
+      /api/v1/clinic/vaccines/applications kullanılır.
+    keywords:
+      - kaydı
+      - oluşturma
+      - hayvana
+      - uygulaması
+      - kaydetmek
+      - önce
+      - hasta
+      - detay
+    related_chunks: []
+    related_pages: []
+    related_api:
+      - /api/v1/clinic/vaccines/applications
+    contentHash: sha256:fcea70da8be10cf063c0516f840924eadcaf855e4dcd1cf43238d786dd6b2d1e
+  - chunk_id: flow-..\..\..\AppData\Local\Temp\vetniva-rag-cron-Di4vjI\workflows\vaccine-a-hat-rlatma
+    type: glossary
+    source: ../../../AppData/Local/Temp/vetniva-rag-cron-Di4vjI/workflows/vaccine.md
+    entity: ..\..\..\AppData\Local\Temp\vetniva-rag-cron-Di4vjI\workflows\vaccine.md
+    locale: tr-TR
+    version: 1.0.0
+    last_verified_at: '2026-08-07'
+    confidence: high
+    pii: false
+    title: Aşı Hatırlatma
+    content: Sistem her Pzt 09:00'da hatırlatma üretir.
+    keywords:
+      - hatırlatma
+      - sistem
+      - üretir
+    related_chunks: []
+    related_pages: []
+    related_api: []
+    contentHash: sha256:add57ad613e29517ebe02dbbca0b6c3526a9a8212c252bdd70b2feaee4df5b1f
+  - chunk_id: flow-..\..\..\AppData\Local\Temp\vetniva-rag-cron-e7Tj5L\workflows\owner-hasta-sahibi-ekleme
+    type: glossary
+    source: ../../../AppData/Local/Temp/vetniva-rag-cron-e7Tj5L/workflows/owner.md
+    entity: ..\..\..\AppData\Local\Temp\vetniva-rag-cron-e7Tj5L\workflows\owner.md
+    locale: tr-TR
+    version: 1.0.0
+    last_verified_at: '2026-08-07'
+    confidence: high
+    pii: false
+    title: Hasta Sahibi Ekleme
+    content: Yeni bir hasta sahibi eklemek için önce sahip araması yapılır.
+    keywords:
+      - hasta
+      - sahibi
+      - ekleme
+      - yeni
+      - eklemek
+      - önce
+      - sahip
+      - araması
+    related_chunks: []
+    related_pages: []
+    related_api: []
+    contentHash: sha256:ec63c225fae17cb70bb1d3cbc111aa43f3783be8ac7d9a2bc302a12a7daa8367
+  - chunk_id: >-
+      flow-..\..\..\AppData\Local\Temp\vetniva-rag-cron-nOvHSm\workflows\register-register-a-new-owner
+    type: glossary
+    source: ../../../AppData/Local/Temp/vetniva-rag-cron-nOvHSm/workflows/register.md
+    entity: ..\..\..\AppData\Local\Temp\vetniva-rag-cron-nOvHSm\workflows\register.md
+    locale: tr-TR
+    version: 1.0.0
+    last_verified_at: '2026-08-07'
+    confidence: high
+    pii: false
+    title: Register a New Owner
+    content: Steps to register a new patient owner in the clinic system.
+    keywords:
+      - register
+      - owner
+      - steps
+      - patient
+      - clinic
+      - system
+    related_chunks: []
+    related_pages: []
+    related_api: []
+    contentHash: sha256:2449f8f61c4c3c282a773403d0a71e0579a0eff3dd73cc080dcb5dfb02dd818b

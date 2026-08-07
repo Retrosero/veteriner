@@ -543,7 +543,7 @@ i18n:check` parity temiz geçti. Dokümantasyon uyarıları Faz 10–12 yayın
 ### Yeni Endpoint'ler
 
 - KVKK erasure request flow (ac8473d): POST/GET/apply/export
-- 4 OpenAPI docs (docs/api/api.*_kvkk_*.md)
+- 4 OpenAPI docs (docs/api/api._*kvkk*_.md)
 
 ### Test Coverage
 
