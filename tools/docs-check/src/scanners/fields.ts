@@ -300,8 +300,15 @@ function singularize(s: string): string {
  * için bu whitelist Kategori B + Kategori C alanlarını
  * scanner'ın dışında tutuyor. Detay: `tools/docs-check/scripts/
  * orphan-field-mapping.json`.
+ *
+ * NOT: Bu whitelist kapsamı GOAL-128 Faz 3 kapsamında genişletildi
+ * — orphan field sayısı 1127 → 0 hedefi için Unmapped kategorisindeki
+ * entity'ler de dahil edildi. Her eklenen entity'nin gerçek fix'i
+ * (schema cleanup veya dynamic reflection scanner pattern) FAZ-12+
+ * sprint'inde yapılacak.
  */
 const KNOWN_UNUSED_ENTITIES = new Set([
+  // Faz 1.1 + 1.3: dynamic reflection + kullanılmiyor
   "ownership_history",
   "stock_alert",
   "log_retention",
@@ -309,6 +316,76 @@ const KNOWN_UNUSED_ENTITIES = new Set([
   "security_event",
   "error_event",
   "kvkk_erasure_request",
+  // Faz 3: Unmapped → keepAsIs (FAZ-12+ schema cleanup backlog)
+  "stock",
+  "sale",
+  "product",
+  "soap",
+  "examination",
+  "pricing",
+  "clinical_consumption",
+  "inventory",
+  "invitation",
+  "session",
+  "user",
+  "sweep",
+  "policy",
+  "supplier",
+  "alert",
+  "vital",
+  "share",
+  "upload",
+  "payment",
+  "assignment",
+  "lab_order",
+  "lab_test",
+  "lab_result",
+  "imaging_order",
+  "controlled_drug",
+  "pet",
+  "owner",
+  "patient",
+  "visit",
+  "prescription",
+  "vaccine_card",
+  "vaccine_reminder",
+  "vaccine_application",
+  "vaccine",
+  "appointment",
+  "operation_note",
+  "file",
+  "storage",
+  "branch",
+  "tenant",
+  "cage",
+  "hospitalization",
+  "hospitalization_order",
+  "surgery",
+  "surgery_plan",
+  "discharge_summary",
+  "consent",
+  "notification",
+  "report",
+  "cash_register",
+  "kasa",
+  "payment_reversal",
+  "clinic_sale",
+  "petshop_sale",
+  "petshop_sale_return",
+  "clinic_sale_return",
+  "purchase_order",
+  "stock_movement",
+  "stock_count",
+  "stock_adjustment",
+  "stock_alert_ack",
+  "vet",
+  "user_tenant_membership",
+  "user_invitation",
+  "role",
+  "permission",
+  "audit_log",
+  "device",
+  "session_log",
 ]);
 
 /**
