@@ -1,143 +1,156 @@
 # @vetniva/tenant-export (GOAL-125, FAZ-12)
 
-Tenant veri dışa aktarma paketi. Yetkili tenant yöneticisinin
-müşteri, hayvan, klinik kayıt, finans ve dosya verilerini
-güvenli dışa aktarabilmesi için:
+Tenant veri dışa aktarma paketi. Owner/patient/examination/vaccination/
+prescription/sale/payment/lab/imaging/file dataset'leri için JSON/CSV
+export, PII kontrolü, audit log üretimi. Tenant izolasyonu, PII
+maskeleme ve KVKK/UK GDPR uyumlu retention kurallarına uyar.
 
-- 10 dataset (owners, patients, examinations, vaccinations,
-  prescriptions, sales, payments, lab_results, imaging_orders,
-  files)
-- 2 format (JSON pretty-print, CSV flat)
-- PII kontrol modu (strict/permissive)
-- `audit:tenant.export.created` event üretimi
-- Tenant-scoped data source interface (production'da Prisma
-  repository'ye bağlanır)
-
-Tenant izolasyonu, PII mask ve audit kurallarına uyar.
-
-## Kurulum
+## Hızlı başlangıç
 
 ```bash
-pnpm --filter @vetniva/tenant-export type-check
-pnpm --filter @vetniva/tenant-export test   # 21 test
+# 1) In-memory dry-run (DB bağlantısı yok, demo verisi)
+pnpm --filter @vetniva/tenant-export export -- \
+  --tenant=tnt-pilot --exported-by=usr-admin \
+  --datasets=owners,patients,examinations \
+  --format=json --pii=strict \
+  --out=./tenant-export.json --dry-run
+
+# 2) Gerçek Prisma veri kaynağı (production/pilot)
+pnpm --filter @vetniva/tenant-export export -- \
+  --tenant=<uuid> --exported-by=<user-id> \
+  --datasets=owners,patients,examinations \
+  --format=json --pii=strict \
+  --out=./temp/tenant-export.json --with-prisma
+
+# 3) Katalog doğrulama
 pnpm --filter @vetniva/tenant-export validate
 ```
 
-## Çalıştırma
+## Ortam değişkenleri
+
+| Değişken          | Zorunlu         | Açıklama                                             |
+| ----------------- | --------------- | ---------------------------------------------------- |
+| `DATABASE_URL`    | `--with-prisma` | Prisma bağlantı URL'si (Coolify `vetniva` şeması)    |
+| `PII_HASH_SECRET` | hayır           | PII maskeleme için SHA-256 salt (production zorunlu) |
+
+## CLI bayrakları
+
+| Bayrak          | Zorunlu | Açıklama                                                 |
+| --------------- | ------- | -------------------------------------------------------- |
+| `--tenant`      | evet    | Tenant UUID veya slug                                    |
+| `--exported-by` | evet    | Export işlemini başlatan kullanıcı ID                    |
+| `--datasets`    | hayır   | Virgülle ayrılmış dataset listesi (default: tümü)        |
+| `--format`      | hayır   | `json` veya `csv` (default: `json`)                      |
+| `--pii`         | hayır   | `strict` (PII mask) veya `none` (raw export, KVKK risk)  |
+| `--country`     | hayır   | `TR` veya `GB` (KVKK/UK GDPR retention farkları)         |
+| `--release`     | hayır   | Uygulama release tag (audit log metadata)                |
+| `--out`         | hayır   | Çıktı dosya yolu (default: stdout)                       |
+| `--dry-run`     | hayır   | Dry-run modu (in-memory data source, gerçek DB dokunmaz) |
+| `--with-prisma` | hayır   | `PrismaTenantDataSource` kullan (production/pilot)       |
+
+## Bileşenler
+
+| Dosya                              | Açıklama                                                     |
+| ---------------------------------- | ------------------------------------------------------------ |
+| `src/index.ts`                     | Public API: `exportTenantData`, `ALL_DATASETS`, tip export   |
+| `src/types.ts`                     | `ExportDataset`, `PiiCheckLevel`, `ExportOptions` tanımları  |
+| `src/export.ts`                    | `exportTenantData` orkestratörü + dataset dispatch           |
+| `src/pii-masker.ts`                | `StandardPiiMasker`: e-posta, telefon, TCKN maskeleme        |
+| `src/prisma-data-source.ts`        | `PrismaTenantDataSource`: gerçek DB bağlantısı, tenant scope |
+| `src/cli-export.ts`                | CLI entry: argüman parse + orchestrate + çıktı yaz           |
+| `src/cli-validate.ts`              | Katalog tutarlılık doğrulama                                 |
+| `tests/export.test.ts`             | Export orkestrasyon testleri                                 |
+| `tests/pii-masker.test.ts`         | PII maskeleme doğruluk testleri                              |
+| `tests/prisma-data-source.test.ts` | Prisma data source + tenant scope testleri                   |
+| `tests/types.test.ts`              | Tip güvenliği + dataset coverage                             |
+
+## Veri kaynakları
+
+### InMemoryTenantDataSource (default, CI/dry-run)
+
+Demo verisi ile çalışır. DB bağlantısı gerektirmez. `--dry-run` veya
+`PrismaTenantDataSource` inject edilmediğinde otomatik seçilir.
+
+```ts
+import {
+  exportTenantData,
+  InMemoryTenantDataSource,
+} from "@vetniva/tenant-export";
+
+await exportTenantData({
+  tenantId: "tnt-pilot",
+  exportedBy: "usr-admin",
+  datasets: ["owners", "patients"],
+  piiCheck: "strict",
+  dataSource: new InMemoryTenantDataSource(),
+});
+```
+
+### PrismaTenantDataSource (production/pilot)
+
+`@prisma/client` ile gerçek DB bağlantısı. `--with-prisma` veya
+`PrismaTenantDataSource` inject edildiğinde seçilir.
+
+```ts
+import { PrismaClient } from "@prisma/client";
+import {
+  exportTenantData,
+  PrismaTenantDataSource,
+} from "@vetniva/tenant-export";
+
+const prisma = new PrismaClient();
+await exportTenantData({
+  tenantId: "<uuid>",
+  exportedBy: "<user-id>",
+  datasets: ["owners", "patients", "examinations"],
+  piiCheck: "strict",
+  dataSource: new PrismaTenantDataSource(prisma),
+});
+```
+
+## PII maskeleme (KVKK/UK GDPR)
+
+`--pii=strict` (default) ile aşağıdaki alanlar maskelenir:
+
+- `email` → `m***@example.com`
+- `phone` → `+90*****1234`
+- `tckn` (TC Kimlik No) → `***********`
+- `microchip` → `***********` (pilot operatörün görebileceği son 2 hane)
+- `address` → şehir/ilçe seviyesine indirgenir, sokak/cadde maskelenir
+
+`--pii=none` yalnızca development ortamında kullanılmalıdır; **production
+export'larında `--pii=strict` zorunlu** (CI gate: `cli-validate`).
+
+## Audit log
+
+Her export işlemi `export_audit_log` tablosuna kaydedilir:
+
+- `tenant_id`, `exported_by`, `exported_at`
+- `datasets` (virgülle ayrılmış)
+- `pii_check` (`strict` veya `none`)
+- `record_count` (her dataset için)
+- `release` (uygulama versiyonu)
+
+## Test
 
 ```bash
-# Demo veri ile dry-run
-pnpm --filter @vetniva/tenant-export export -- \
-  --tenant=tnt-pilot-kadikoy --exported-by=usr-admin \
-  --datasets=owners,patients,examinations \
-  --format=json --pii=strict \
-  --out=./temp/tenant-export.json --with-demo-data --dry-run
+# Unit + integration
+pnpm --filter @vetniva/tenant-export test
 
-# Gerçek dosyaya yazma
-pnpm --filter @vetniva/tenant-export export -- \
-  --tenant=tnt-pilot-kadikoy --exported-by=usr-admin \
-  --datasets=owners,patients \
-  --format=json --pii=strict \
-  --out=./temp/tenant-export.json --with-demo-data
+# Tip kontrolü
+pnpm --filter @vetniva/tenant-export type-check
+
+# Build
+pnpm --filter @vetniva/tenant-export build
 ```
 
-> **PowerShell notu:** `--datasets=owners,patients` virgülü
-> array separator olarak yorumlanır. Tırnak içinde verin:
-> `"--datasets=owners,patients"`.
+21 test (export + PII mask + Prisma data source + types), hepsi
+`--with-prisma` modunda `InMemoryTenantDataSource` ile çalışır; gerçek
+Prisma bağlantısı sadece `prisma-data-source.test.ts` integration test'inde
+zorunlu.
 
-## PII Kontrol Modları
+## İlgili dokümanlar
 
-| Mod          | Davranış                                                                    | Audit   |
-| ------------ | --------------------------------------------------------------------------- | ------- |
-| `strict`     | PII alanları mask'lenir (`De***mo`); export dosyası PII içermez             | info    |
-| `permissive` | PII alanları olduğu gibi kalır (veri sahibinin kendi verisi); audit warning | warning |
-
-Tespit edilen PII alanları: `firstName`, `lastName`, `fullName`,
-`email`, `phone`, `taxId`, `iban`, `passportNo`, `idCardNo`,
-`address`, `vetLicenseNo`, `birthDate`, `password`, `token`,
-`refreshToken`, `apiKey`, `secret`, `authorization`, `cookie`.
-
-## Çıktı Şeması (JSON)
-
-```json
-{
-  "exportId": "exp-uuid",
-  "tenantId": "tnt-uuid",
-  "tenantSlug": "pilot-vet-kadikoy",
-  "exportedAt": "2026-08-03T...",
-  "exportedBy": "usr-uuid",
-  "format": "json",
-  "version": "1.0.0",
-  "piiCheck": "strict",
-  "piiFieldsDetected": 4,
-  "data": {
-    "owners": [{ "id": "...", "firstName": "De***mo", ... }],
-    "patients": [...]
-  },
-  "retentionNotice": {
-    "message": "Tibbi kayitlar KVKK Madde 7 uyarinca 7 yil saklanir.",
-    "legalBasis": "KVKK_MADDE_7",
-    "retentionYears": 7
-  }
-}
-```
-
-## Audit Event
-
-Her export `audit:tenant.export.created` event'i üretir:
-
-```json
-{
-  "eventName": "audit:tenant.export.created",
-  "tenantId": "tnt-uuid",
-  "actorId": "usr-admin",
-  "actorType": "user",
-  "format": "json",
-  "datasets": ["owners", "patients"],
-  "totalRows": 5,
-  "piiMasked": true,
-  "occurredAt": "2026-08-03T...",
-  "correlationId": "req-uuid",
-  "country": "TR",
-  "release": "0.1.0"
-}
-```
-
-## Production Entegrasyonu
-
-CLI `InMemoryTenantDataSource` ile çalışır (test/demo).
-Production'da Prisma repository'yi inject eden
-`PrismaTenantDataSource` adapter'ı yazılır:
-
-```typescript
-class PrismaTenantDataSource implements TenantDataSource {
-  constructor(private prisma: PrismaClient) {}
-  async listForTenant(tenantId, dataset) {
-    // dataset -> Prisma model mapping
-    // WHERE tenantId = ${tenantId} (zorunlu filtre)
-  }
-}
-```
-
-Adapter'lar `apps/api/src/common/adapters/` altında
-Prisma'ya bağlanır; `exportTenantData` core mantığı
-değişmez (sadece data source inject edilir).
-
-## Sınırlamalar
-
-- **CSV format** yalnızca flat row formatını destekler;
-  nested objeler JSON-stringified (FAZ-13+ iyileştirme)
-- **S3 upload** henüz yok; export dosyası local FS'e yazılır
-  (FAZ-13+ S3 adapter)
-- **Client-side encryption** FAZ-12+ planlanmıştır
-- **Scheduled exports** FAZ-13+ (haftalık otomatik)
-- **Rate limit** default 1 export/gün/tenant (production'da
-  backend tarafında uygulanır)
-
-## Bilinen Sınırlamalar
-
-- CSV'de nested objeler JSON-stringified olarak yazılır
-- In-memory data source production'da kullanılmaz
-- `WithDemoData` flag sadece CLI test/dryRun içindir
-- Production'da gerçek audit logger (apps/api
-  AuditService) ile entegre çalışmalıdır
+- [`goals/GOAL-125-archive/tenant-export-readiness-2026-08-06.md`](../../goals/GOAL-125-archive/tenant-export-readiness-2026-08-06.md)
+- [`docs/security/KVKK_DATA_LIFECYCLE.md`](../../docs/security/KVKK_DATA_LIFECYCLE.md)
+- [`packages/contracts/src/kvkk.ts`](../../packages/contracts/src/kvkk.ts) (KVKK tip tanımları)

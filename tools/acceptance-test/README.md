@@ -281,7 +281,28 @@ raporunda "gereksiz adım" işaretli olanlar ayrıca listelenir.
   `tools/rag-chunk-producer` ile yapılır; burada yalnızca ham
   çıktı üretilir.
 
-## 11) Testler
+## 11) Bileşenler
+
+| Dosya                           | Açıklama                                                                                    |
+| ------------------------------- | ------------------------------------------------------------------------------------------- |
+| `src/index.ts`                  | Public API: `buildFeedback`, `buildTenantConfig`, tip export                                |
+| `src/types.ts`                  | `UatStepResult`, `UatFeedback`, `UatScenarioKey`, `UatRunResult`                            |
+| `src/feedback.ts`               | `buildFeedback`: CLI tabanlı geri bildirim üretici (rating + yorum)                         |
+| `src/feedback-loader.ts`        | `loadFeedbackFile`: JSON dosyadan pilot geri bildirimi yükleyici (PII mask, hata toleransı) |
+| `src/tenants.ts`                | `buildTenantConfig` + JSON doğrulayıcı: çoklu-tenant sıralı koşum                           |
+| `src/cli-run.ts`                | CLI entry: argüman parse + senaryo orkestrasyonu + çıktı yaz                                |
+| `src/cli-report.ts`             | JSON → Markdown rapor üretici                                                               |
+| `src/config.ts`                 | 10 senaryo + 4-tenant koleksiyonu (bilinen anahtarlar)                                      |
+| `src/runner.ts`                 | Sıralı koşum + placeholder çözümleyici + rapor üretici                                      |
+| `tests/runner.test.ts`          | Senaryo orkestrasyonu + placeholder çözümleme testleri                                      |
+| `tests/report.test.ts`          | Markdown/JSON rapor üretici testleri                                                        |
+| `tests/config.test.ts`          | 10 senaryo + dataset kapsamı doğrulama                                                      |
+| `tests/feedback.test.ts`        | `buildFeedback` + PII mask testleri                                                         |
+| `tests/feedback-loader.test.ts` | JSON dosya yükleme + hata toleransı testleri                                                |
+| `tests/tenants.test.ts`         | `buildTenantConfig` + JSON doğrulayıcı testleri                                             |
+| `tests/smoke.test.ts`           | Uçtan uca smoke (in-memory mock, gerçek API dokunmaz)                                       |
+
+## 12) Testler
 
 ```powershell
 Set-Location C:\Users\retro\Documents\GitHub\veteriner\tools\acceptance-test
@@ -289,9 +310,9 @@ pnpm type-check
 pnpm test
 ```
 
-74 vitest + yeni eklenen acceptance/feedback/multi-tenant testleri.
+~80 vitest (config, runner, report, feedback, feedback-loader, tenants, smoke).
 
-## 12) İlgili dokümanlar
+## 13) İlgili dokümanlar
 
 - `docs/operations/PILOT_ACCEPTANCE.md` — kabul kriteri sözlüğü
 - `docs/operations/PERFORMANCE_LOAD.md` — performans + yük testi

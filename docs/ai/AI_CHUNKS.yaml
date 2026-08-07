@@ -1,6 +1,6 @@
 version: 1.0.0
 generated_by: GOAL-005
-generated_at: '2026-07-30'
+generated_at: "2026-07-30"
 chunks:
   - chunk_id: glossary-owner
     type: glossary
@@ -4770,7 +4770,7 @@ chunks:
     last_verified_at: 2026-07-30T00:00:00.000Z
     confidence: high
     pii: false
-    title: 'Örnek use case: Appointments modülü devre dışı'
+    title: "Örnek use case: Appointments modülü devre dışı"
     content: |
       Senaryo: Bir klinik tenant'ı deneysel olarak "appointments"
       modülünü kapatmak istiyor. Sebep: pilot sürümde randevu
@@ -7900,7 +7900,7 @@ chunks:
     entity: ..\..\..\AppData\Local\Temp\vetniva-rag-cron-PDbL6E\workflows\vaccine.md
     locale: tr-TR
     version: 1.0.0
-    last_verified_at: '2026-08-06'
+    last_verified_at: "2026-08-06"
     confidence: high
     pii: false
     title: Aşı Kaydı Oluşturma
@@ -7927,7 +7927,7 @@ chunks:
     entity: ..\..\..\AppData\Local\Temp\vetniva-rag-cron-PDbL6E\workflows\vaccine.md
     locale: tr-TR
     version: 1.0.0
-    last_verified_at: '2026-08-06'
+    last_verified_at: "2026-08-06"
     confidence: high
     pii: false
     title: Aşı Hatırlatma
@@ -7946,7 +7946,7 @@ chunks:
     entity: ..\..\..\AppData\Local\Temp\vetniva-rag-cron-XpqwB5\workflows\owner.md
     locale: tr-TR
     version: 1.0.0
-    last_verified_at: '2026-08-06'
+    last_verified_at: "2026-08-06"
     confidence: high
     pii: false
     title: Hasta Sahibi Ekleme
@@ -7970,7 +7970,7 @@ chunks:
     entity: ..\..\..\AppData\Local\Temp\vetniva-rag-cron-Di4vjI\workflows\vaccine.md
     locale: tr-TR
     version: 1.0.0
-    last_verified_at: '2026-08-07'
+    last_verified_at: "2026-08-07"
     confidence: high
     pii: false
     title: Aşı Kaydı Oluşturma
@@ -7997,7 +7997,7 @@ chunks:
     entity: ..\..\..\AppData\Local\Temp\vetniva-rag-cron-Di4vjI\workflows\vaccine.md
     locale: tr-TR
     version: 1.0.0
-    last_verified_at: '2026-08-07'
+    last_verified_at: "2026-08-07"
     confidence: high
     pii: false
     title: Aşı Hatırlatma
@@ -8016,7 +8016,7 @@ chunks:
     entity: ..\..\..\AppData\Local\Temp\vetniva-rag-cron-e7Tj5L\workflows\owner.md
     locale: tr-TR
     version: 1.0.0
-    last_verified_at: '2026-08-07'
+    last_verified_at: "2026-08-07"
     confidence: high
     pii: false
     title: Hasta Sahibi Ekleme
@@ -8041,7 +8041,7 @@ chunks:
     entity: ..\..\..\AppData\Local\Temp\vetniva-rag-cron-nOvHSm\workflows\register.md
     locale: tr-TR
     version: 1.0.0
-    last_verified_at: '2026-08-07'
+    last_verified_at: "2026-08-07"
     confidence: high
     pii: false
     title: Register a New Owner

@@ -131,6 +131,8 @@ pnpm --filter @vetniva/rag-chunk-producer test
 
 - `tests/producer.test.ts` — chunkMarkdown, chunkYaml,
   mergeChunks temel davranis testleri.
+- `tests/hash.test.ts` — `contentHash` SHA-256 normalizasyon + dedup
+  testleri (boşluk, satır sonu, Türkçe karakter, hash stability).
 - Worker tarafinda `apps/worker/src/workers/rag-chunk.worker.spec.ts`
   — spawn modu + scheduler uçtan uca testleri.
 

@@ -18,38 +18,38 @@ başlangıçta zaten yanlış entity'ye yazılmış.
 
 ## 2) Envanter (entity bazında, top 30)
 
-| Entity               | Orphan Count | Olası gerçek entity                                    |
-| -------------------- | ------------ | ------------------------------------------------------ |
-| `order`              | **92**       | `audit_event` veya `error_event`                       |
-| `event`              | **72**       | `audit_event` (eventName, eventType, eventData)        |
-| `stock`              | **69**       | `stock_movement` veya `inventory`                      |
-| `note`               | **54**       | `operation_note` (note'lar ayrı entity)                |
-| `entry`              | **50**       | `journal_entry` veya `stock_movement_entry`            |
-| `job`                | **48**       | `job_run` (zaten `job_run` var, duplicate)             |
-| `sale`               | **44**       | `petshop_sale` veya `clinic_sale` (büyük ihtimalle)    |
-| `cash_register`      | **41**       | `kasa` (zaten `kasa` var)                              |
-| `cash`               | **41**       | `kasa` (alias?)                                        |
-| `vaccine`            | **39**       | `vaccine_application` veya `vaccine_card`              |
-| `result`             | **38**       | `lab_result` veya `error_event.result`                 |
-| `adapter`            | **36**       | `adapter_log` (storage adapter'leri)                  |
-| `ownership_history`  | **35**       | Doğru entity, sadece kodda kullanılmıyor                |
-| `job_run`            | **33**       | Doğru entity, dynamic access                           |
-| `kvkk`               | **32**       | `kvkk_erasure_request`                                 |
-| `log_retention`      | **31**       | Doğru entity                                           |
-| `product`            | **31**       | `product` (büyük ihtimalle doğru)                      |
-| `stock_alert`        | **31**       | Doğru entity                                           |
-| `owner`              | **30**       | Doğru entity                                           |
-| `appointment`        | **29**       | Doğru entity                                           |
-| `branch`             | **28**       | `audit_event` (audit alanları)                         |
-| `plan`               | **26**       | `surgery_plan` veya `treatment_plan`                   |
-| `stock_movement`     | **26**       | Doğru entity                                           |
-| `security_event`     | **25**       | Doğru entity                                           |
-| `payment_reversal`   | **25**       | Doğru entity                                           |
-| `prescription`       | **24**       | Doğru entity                                           |
-| `error_event`        | **24**       | Doğru entity                                           |
-| `file`               | **24**       | Doğru entity                                           |
-| `operation_note`     | **24**       | Doğru entity                                           |
-| `pricing`            | **21**       | Doğru entity                                           |
+| Entity              | Orphan Count | Olası gerçek entity                                 |
+| ------------------- | ------------ | --------------------------------------------------- |
+| `order`             | **92**       | `audit_event` veya `error_event`                    |
+| `event`             | **72**       | `audit_event` (eventName, eventType, eventData)     |
+| `stock`             | **69**       | `stock_movement` veya `inventory`                   |
+| `note`              | **54**       | `operation_note` (note'lar ayrı entity)             |
+| `entry`             | **50**       | `journal_entry` veya `stock_movement_entry`         |
+| `job`               | **48**       | `job_run` (zaten `job_run` var, duplicate)          |
+| `sale`              | **44**       | `petshop_sale` veya `clinic_sale` (büyük ihtimalle) |
+| `cash_register`     | **41**       | `kasa` (zaten `kasa` var)                           |
+| `cash`              | **41**       | `kasa` (alias?)                                     |
+| `vaccine`           | **39**       | `vaccine_application` veya `vaccine_card`           |
+| `result`            | **38**       | `lab_result` veya `error_event.result`              |
+| `adapter`           | **36**       | `adapter_log` (storage adapter'leri)                |
+| `ownership_history` | **35**       | Doğru entity, sadece kodda kullanılmıyor            |
+| `job_run`           | **33**       | Doğru entity, dynamic access                        |
+| `kvkk`              | **32**       | `kvkk_erasure_request`                              |
+| `log_retention`     | **31**       | Doğru entity                                        |
+| `product`           | **31**       | `product` (büyük ihtimalle doğru)                   |
+| `stock_alert`       | **31**       | Doğru entity                                        |
+| `owner`             | **30**       | Doğru entity                                        |
+| `appointment`       | **29**       | Doğru entity                                        |
+| `branch`            | **28**       | `audit_event` (audit alanları)                      |
+| `plan`              | **26**       | `surgery_plan` veya `treatment_plan`                |
+| `stock_movement`    | **26**       | Doğru entity                                        |
+| `security_event`    | **25**       | Doğru entity                                        |
+| `payment_reversal`  | **25**       | Doğru entity                                        |
+| `prescription`      | **24**       | Doğru entity                                        |
+| `error_event`       | **24**       | Doğru entity                                        |
+| `file`              | **24**       | Doğru entity                                        |
+| `operation_note`    | **24**       | Doğru entity                                        |
+| `pricing`           | **21**       | Doğru entity                                        |
 
 **Top 30 = ~1050 orphan (%93)**. Geri kalan 30 entity ~77 alan
 tutar.
@@ -72,6 +72,7 @@ order.input, order.details, order.sessionId, order.auditEventId
 ```
 
 Aynı şekilde:
+
 - `branch.actor*` ve `branch.auditEventId` → `audit_event.*`
 - `note.*` (54) → `operation_note.*` (zaten `operation_note` var, alias)
 - `entry.*` (50) → `stock_movement.*` veya `journal_entry`
@@ -87,6 +88,7 @@ Aynı şekilde:
 ### Kategori B: Dynamic reflection (kodda referansı yok ama çalışıyor, ~200 alan)
 
 Bazı alanlar **dinamik reflection** ile erişiliyor:
+
 - Audit log alanları (security_event, error_event, log_retention) —
   `prisma.${entity}.findMany({ select: { ... } })` pattern'i
 - Storage adapter alanları — runtime type checking
@@ -94,6 +96,7 @@ Bazı alanlar **dinamik reflection** ile erişiliyor:
 
 Bunlar scanner tarafından yakalanamıyor çünkü string literal
 olarak kodda yoklar. **Scanner'ı geliştirmek** gerek:
+
 - `Prisma.${entity}.*` pattern'lerini tarama
 - `JSON.stringify(obj)` içindeki property'leri heuristic çıkarma
 - `Object.keys(obj)` veya `for ... in obj` pattern'lerini tarama
@@ -107,6 +110,7 @@ olarak kodda yoklar. **Scanner'ı geliştirmek** gerek:
 - `appointment.*` (29) — `medical_record` üzerinden erişim olabilir
 
 Bu alanlar **gerçekten kullanılmıyor**. İki seçenek:
+
 1. **Schema'dan kaldır** (migration ile)
 2. **fields.yaml'dan kaldır** (orphan check amacı dışı)
 
@@ -156,14 +160,14 @@ alanları oraya taşı. Veya bu alanlar `tenant_audit` veya
 
 ## 5) Tahmini etki
 
-| Adım | Orphan sayısı | Kümülatif |
-| ---- | ------------- | --------- |
-| Başlangıç | 1127 | 1127 |
-| Faz 1.3 (Category C temizleme) | -100 | 1027 |
-| Faz 1.2 (Category A taşıma) | -400 | 627 |
-| Faz 2.4 (Category D taşıma) | -50 | 577 |
-| Faz 2.5 (Category B scanner) | -200 | 377 |
-| Faz 2.6 (final audit) | -377 | **0** |
+| Adım                           | Orphan sayısı | Kümülatif |
+| ------------------------------ | ------------- | --------- |
+| Başlangıç                      | 1127          | 1127      |
+| Faz 1.3 (Category C temizleme) | -100          | 1027      |
+| Faz 1.2 (Category A taşıma)    | -400          | 627       |
+| Faz 2.4 (Category D taşıma)    | -50           | 577       |
+| Faz 2.5 (Category B scanner)   | -200          | 377       |
+| Faz 2.6 (final audit)          | -377          | **0**     |
 
 **Hedef:** 3 hafta içinde 1127 → 0, CI gate `error` seviyesine geri.
 
