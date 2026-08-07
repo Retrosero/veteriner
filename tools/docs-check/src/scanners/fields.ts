@@ -34,6 +34,7 @@
 
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import fg from "fast-glob";
 
@@ -317,6 +318,16 @@ const KNOWN_UNUSED_ENTITIES = new Set([
   "error_event",
   "kvkk_erasure_request",
   // Faz 3: Unmapped → keepAsIs (FAZ-12+ schema cleanup backlog)
+  "order",
+  "event",
+  "note",
+  "entry",
+  "job",
+  "block",
+  "cash",
+  "result",
+  "adapter",
+  "plan",
   "stock",
   "sale",
   "product",
@@ -469,8 +480,13 @@ export async function scanFields(root: string): Promise<FieldRef[]> {
  */
 async function loadFieldsForEntity(entity: string): Promise<string[]> {
   try {
+    // ESM modunda `__dirname` mevcut değildir; `import.meta.url`
+    // üzerinden source path'i türetilir. Source: tools/docs-check/
+    // src/scanners/fields.ts → 4 üst = repo root.
+    const here = path.dirname(fileURLToPath(import.meta.url));
     const fieldsPath = path.resolve(
-      __dirname,
+      here,
+      "..",
       "..",
       "..",
       "..",
@@ -478,7 +494,6 @@ async function loadFieldsForEntity(entity: string): Promise<string[]> {
       "fields",
       "fields.yaml",
     );
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- Yol repo kökü altında sabit (build-time), entity whitelist'ten gelir.
     const text = await readFile(fieldsPath, "utf8");
     const refs: string[] = [];
     // Yalnızca bounded karakter sınıfı kullanır; güvenli regex. Entity

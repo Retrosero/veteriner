@@ -155,14 +155,18 @@ export const testSchema = z.object({
     expect(ids).not.toContain("tenant.let");
   });
 
-  it("Schema içermeyen dosyada boş liste döner", async () => {
+  it("Schema içermeyen dosyada boş kod refs döner (dynamic ref'ler hariç)", async () => {
     await writeFile(
       path.join(root, "packages/contracts/src/empty.ts"),
       `export const noSchema = "hello world";\n`,
     );
 
     const refs = await scanFields(root);
-    expect(refs).toEqual([]);
+    // Schema olmayan dosyada kod-tabanlı ref üretilmez; sadece
+    // KNOWN_UNUSED_ENTITIES whitelist'inden gelen dynamic ref'ler
+    // (Prisma generated type / dynamic reflection) bulunabilir.
+    const codeRefs = refs.filter((r) => !r.file.startsWith("<dynamic:"));
+    expect(codeRefs).toEqual([]);
   });
 
   it("Her referans için dosya yolu döner", async () => {

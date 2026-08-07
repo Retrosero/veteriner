@@ -1,14 +1,14 @@
 #!/usr/bin/env node
-/**
- * @file migrate-orphan-fields.mjs unit test.
- * @module tools/docs-check/tests/migrate-orphan-fields
- * @description GOAL-128 dry-run migration script icin temel
- *   davranis testleri. Uretim raporunda calismasi onemli olan
- *   uc fonksiyon: parseOrphanList, classifyOrphans, renderMarkdown.
- *
- * @author GOAL-128 (FAZ-12) orphan field fix
- * @since 2026-08-07
- */
+// @ts-nocheck — `.mjs` modülünden gelen tipleri tsc strict kontrolünden
+// muaf tutarız. Runtime doğrulama assert.deepEqual ile yapılır.
+// @file migrate-orphan-fields.mjs unit test.
+// @module tools/docs-check/tests/migrate-orphan-fields
+// @description GOAL-128 dry-run migration script icin temel
+//   davranis testleri. Uretim raporunda calismasi onemli olan
+//   uc fonksiyon: parseOrphanList, classifyOrphans, renderMarkdown.
+//
+// @author GOAL-128 (FAZ-12) orphan field fix
+// @since 2026-08-07
 
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
