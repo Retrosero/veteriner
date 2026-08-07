@@ -188,12 +188,13 @@ export async function run(root: string): Promise<RunResult> {
   }
 
   // 6b) Sözlükte tanımlı olup kodda hiç referansı olmayan alanlar
-  //     (orphan) — uyarı düzeyinde. Bu alanlar kullanılmıyor olabilir.
+  //     (orphan). GOAL-128 Faz 3: scanner whitelist ile 0 orphan
+  //     hedefi. Severity 'error' (CI gate fail eder eğer orphan varsa).
   const referencedFieldIds = new Set(fieldRefs.map((r) => r.fieldId));
   for (const fieldId of docs.fieldIds) {
     if (!referencedFieldIds.has(fieldId)) {
       issues.push({
-        severity: "warning",
+        severity: "error",
         path: `field:${fieldId}`,
         message: `Alan sözlüğünde tanımlı ancak kodda referansı yok (orphan): docs/fields/fields.yaml`,
       });

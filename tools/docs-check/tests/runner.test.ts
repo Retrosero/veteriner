@@ -157,7 +157,7 @@ describe("docs-check", () => {
       const result = await run(root);
       const orphan = result.issues.filter(
         (i) =>
-          i.path === "field:tenant.orphanField" && i.severity === "warning",
+          i.path === "field:tenant.orphanField" && i.severity === "error",
       );
       expect(orphan.length).toBeGreaterThan(0);
     } finally {
