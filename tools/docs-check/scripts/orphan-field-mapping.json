@@ -19,7 +19,8 @@
     "result": "lab_result",
     "adapter": "storage_adapter",
     "kvkk": "kvkk_erasure_request",
-    "plan": "surgery_plan"
+    "plan": "surgery_plan",
+    "tenant": "tenant_stats"
   },
   "keepAsIs": {
     "audit_event": "Zaten dogru entity, orphan'lar dynamic reflection (Kategori B)",
