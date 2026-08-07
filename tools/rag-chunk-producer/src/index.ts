@@ -12,6 +12,7 @@
 import { createHash } from "node:crypto";
 import { readdir, readFile, writeFile, stat } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
+import { pathToFileURL } from "node:url";
 
 import { load as parseYaml, dump as stringifyYaml } from "js-yaml";
 
@@ -768,7 +769,8 @@ async function main(): Promise<void> {
 }
 
 const isMain =
-  import.meta.url === `file:///${process.argv[1]?.replace(/\\/g, "/")}`;
+  process.argv[1] !== undefined &&
+  import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
   void main();
 }
