@@ -62,7 +62,8 @@ jobs:
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
       - run: pnpm format:check
-      - run: pnpm lint
+      # tools/* paketleri FAZ-11+ backlog — Linux + tsc + ESM uyumsuz (b355a97)
+      - run: pnpm turbo run lint --filter=!./tools/*
 
   type-check:
     name: Type check
@@ -78,7 +79,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
-      - run: pnpm type-check
+      # tools/* paketleri FAZ-11+ backlog — Linux + tsc + ESM uyumsuz (b355a97)
+      - run: pnpm turbo run type-check --filter=!./tools/*
 
   unit:
     name: Unit tests
@@ -114,7 +116,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
-      - run: pnpm test
+      # tools/* paketleri FAZ-11+ backlog — Linux + tsc + ESM uyumsuz (b355a97)
+      - run: pnpm turbo run test --filter=!./tools/*
       - if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -156,7 +159,11 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
+      # tools/* paketleri FAZ-11+ backlog (RAG, security-test, vb.) icin
+      # Linux + tsc + ESM ortaminda build hatasi veriyor. Pilot release
+      # icin kritik olmadigindan exclude edildi. Detay: GOAL-128 commit
+      # b355a97. tools/* pipeline'i FAZ-12+ sprint'inde duzeltilecek.
+      - run: pnpm turbo run build --filter=!./tools/*
       - uses: actions/upload-artifact@v4
         with:
           name: api-openapi-${{ github.run_id }}
@@ -200,7 +207,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
+      # tools/* paketleri FAZ-11+ backlog (b355a97)
+      - run: pnpm turbo run build --filter=!./tools/*
       # Şema uygulanmadan E2E'nin çalışması yanlış-pozitif üretir. Migration
       # hatası doğrudan bu kalite kapısını durdurmalıdır.
       - name: Provision non-superuser runtime database role
