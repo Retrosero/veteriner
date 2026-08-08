@@ -1,0 +1,34 @@
+page_id: web.app.locale.patients
+route: "/[locale]/patients"
+module: clinic
+title_key: nav.patients
+purpose:
+  tr-TR: "Hasta listesini, arama araçlarını ve durum özetlerini Stitch tasarımıyla gösterir."
+  en-GB: "Shows the patient list, search tools, and status summaries in the Stitch design."
+allowed_roles: [OWNER, VETERINARIAN, STAFF]
+required_permissions: ["clinic:patient:read"]
+prerequisites: ["Aktif tenant üyeliği."]
+fields: []
+actions:
+  - key: create_patient
+    description:
+      tr-TR: "Yeni hasta kaydı ekranını açar."
+      en-GB: "Opens the new patient record screen."
+    button_label_key: common.create
+    required_permission: "clinic:patient:create"
+    confirm: false
+    destructive: false
+step_by_step:
+  tr-TR: ["Hasta listesini inceleyin.", "Yeni Hasta ile kayıt ekranını açın."]
+  en-GB:
+    ["Review the patient list.", "Use New Patient to open the record screen."]
+possible_errors: []
+related_pages:
+  - web.app.locale.patients.new
+  - "web.app.locale.patients.[id]"
+related_api: []
+keywords:
+  tr-TR: [hasta, liste, mikroçip]
+  en-GB: [patient, list, microchip]
+version: "1.0.0"
+last_verified_at: "2026-08-07"

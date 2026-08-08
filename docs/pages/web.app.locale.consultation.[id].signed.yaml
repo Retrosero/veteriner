@@ -1,0 +1,32 @@
+page_id: web.app.locale.consultation.[id].signed
+route: "/[locale]/consultation/[id]/signed"
+module: clinic
+title_key: nav.consultation
+purpose:
+  tr-TR: "İmzalanmış muayene kaydını salt okunur denetim bağlamıyla gösterir."
+  en-GB: "Shows a signed consultation record in a read-only audit context."
+allowed_roles: [OWNER, VETERINARIAN]
+required_permissions: ["clinic:consultation:read"]
+prerequisites: ["Aktif tenant üyeliği."]
+fields: []
+actions: []
+step_by_step:
+  tr-TR:
+    [
+      "İmzalı kaydı inceleyin.",
+      "Düzeltme gerektiğinde amendment akışını başlatın.",
+    ]
+  en-GB:
+    [
+      "Review the signed record.",
+      "Start an amendment when correction is needed.",
+    ]
+possible_errors: []
+related_pages:
+  - "web.app.locale.consultation.[id]"
+related_api: []
+keywords:
+  tr-TR: [imza, muayene, denetim]
+  en-GB: [signature, consultation, audit]
+version: "1.0.0"
+last_verified_at: "2026-08-07"

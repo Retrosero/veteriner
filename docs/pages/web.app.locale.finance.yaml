@@ -1,0 +1,23 @@
+page_id: web.app.locale.finance
+route: "/[locale]/finance"
+module: finance
+title_key: nav.finance
+purpose:
+  tr-TR: "Tahsilat, alacak ve finansal işlem özetlerini Stitch tasarımıyla gösterir."
+  en-GB: "Shows collection, receivable, and financial transaction summaries in the Stitch design."
+allowed_roles: [OWNER, VETERINARIAN, STAFF]
+required_permissions: []
+prerequisites: ["Aktif tenant üyeliği."]
+fields: []
+actions: []
+step_by_step:
+  tr-TR: ["Finans özetini ve son işlemleri inceleyin."]
+  en-GB: ["Review the finance summary and recent transactions."]
+possible_errors: []
+related_pages: [web.app.locale.petshop]
+related_api: []
+keywords:
+  tr-TR: [finans, tahsilat, gelir]
+  en-GB: [finance, collection, revenue]
+version: "1.0.0"
+last_verified_at: "2026-08-07"

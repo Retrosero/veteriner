@@ -203,12 +203,12 @@ describe("Owner PostgreSQL RLS", () => {
   itDb(
     "Repository findById tenant-scoped: cross-tenant null döner",
     async () => {
-      const inTenantA = ownersRepository.findById(tenantAId, seededOwnerAId);
-      const inTenantBWithForeignId = ownersRepository.findById(
+      const inTenantA = await ownersRepository.findPersistedById(tenantAId, seededOwnerAId);
+      const inTenantBWithForeignId = await ownersRepository.findPersistedById(
         tenantBId,
         seededOwnerAId,
       );
-      const inTenantAWithBTenantId = ownersRepository.findById(
+      const inTenantAWithBTenantId = await ownersRepository.findPersistedById(
         tenantAId,
         seededOwnerBId,
       );
@@ -226,8 +226,8 @@ describe("Owner PostgreSQL RLS", () => {
         where: { id: seededOwnerAId },
       });
       const aPhone = adminRow?.phone ?? "";
-      const aRow = ownersRepository.findByPhone(tenantAId, aPhone);
-      const bSeesA = ownersRepository.findByPhone(tenantBId, aPhone);
+      const aRow = await ownersRepository.findPersistedByPhone(tenantAId, aPhone);
+      const bSeesA = await ownersRepository.findPersistedByPhone(tenantBId, aPhone);
 
       expect(aRow?.id).toBe(seededOwnerAId);
       expect(bSeesA).toBeNull();
@@ -237,11 +237,11 @@ describe("Owner PostgreSQL RLS", () => {
   itDb(
     "Repository search tenant-scoped: doğru tenant kendi kayıtlarını sayar",
     async () => {
-      const aResults = ownersRepository.search(tenantAId, {
+      const aResults = await ownersRepository.searchPersisted(tenantAId, {
         limit: 20,
         offset: 0,
       });
-      const bResults = ownersRepository.search(tenantBId, {
+      const bResults = await ownersRepository.searchPersisted(tenantBId, {
         limit: 20,
         offset: 0,
       });
@@ -258,17 +258,17 @@ describe("Owner PostgreSQL RLS", () => {
   itDb(
     "Repository search search filtresi yalnızca kendi tenant'ında eşleşir",
     async () => {
-      const aResults = ownersRepository.search(tenantAId, {
+      const aResults = await ownersRepository.searchPersisted(tenantAId, {
         limit: 20,
         offset: 0,
         search: "Ayşe",
       });
-      const bResults = ownersRepository.search(tenantBId, {
+      const bResults = await ownersRepository.searchPersisted(tenantBId, {
         limit: 20,
         offset: 0,
         search: "Ayşe",
       });
-      const bSeesOwn = ownersRepository.search(tenantBId, {
+      const bSeesOwn = await ownersRepository.searchPersisted(tenantBId, {
         limit: 20,
         offset: 0,
         search: "Mehmet",

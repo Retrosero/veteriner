@@ -1,0 +1,31 @@
+page_id: web.app.locale.vaccinations
+route: "/[locale]/vaccinations"
+module: vaccination
+title_key: nav.vaccinations
+purpose:
+  tr-TR: "Aşı takvimi, yaklaşan uygulamalar ve durum özetlerini Stitch tasarım sistemiyle gösterir."
+  en-GB: "Shows vaccination scheduling, upcoming administrations, and status summaries in the Stitch design system."
+allowed_roles: [OWNER, VETERINARIAN, STAFF]
+required_permissions: []
+prerequisites: ["Aktif tenant üyeliği."]
+fields: []
+actions: []
+step_by_step:
+  tr-TR:
+    [
+      "Yaklaşan aşı uygulamalarını inceleyin.",
+      "Hasta ve aşı durumunu doğrulayın.",
+    ]
+  en-GB:
+    [
+      "Review upcoming vaccination administrations.",
+      "Verify the patient and vaccination status.",
+    ]
+possible_errors: []
+related_pages: [web.app.locale.patients]
+related_api: []
+keywords:
+  tr-TR: [aşı, takvim, uygulama]
+  en-GB: [vaccination, schedule, administration]
+version: "1.0.0"
+last_verified_at: "2026-08-07"

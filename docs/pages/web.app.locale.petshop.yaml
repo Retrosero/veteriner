@@ -1,0 +1,23 @@
+page_id: web.app.locale.petshop
+route: "/[locale]/petshop"
+module: petshop
+title_key: nav.petshop
+purpose:
+  tr-TR: "Petshop ürün listesi, stok uyarıları ve POS satış taslağını gösterir."
+  en-GB: "Shows the petshop product list, stock alerts, and POS sale draft."
+allowed_roles: [OWNER, VETERINARIAN, STAFF]
+required_permissions: []
+prerequisites: ["Aktif tenant üyeliği."]
+fields: []
+actions: []
+step_by_step:
+  tr-TR: ["Ürün stok durumunu inceleyin.", "POS sepet özetini kontrol edin."]
+  en-GB: ["Review product stock state.", "Check the POS basket summary."]
+possible_errors: []
+related_pages: [web.app.locale.finance]
+related_api: []
+keywords:
+  tr-TR: [petshop, stok, satış]
+  en-GB: [petshop, stock, sale]
+version: "1.0.0"
+last_verified_at: "2026-08-07"

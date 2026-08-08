@@ -235,15 +235,15 @@ describe("Patient PostgreSQL RLS", () => {
   itDb(
     "Repository findById tenant-scoped: cross-tenant null döner",
     async () => {
-      const inTenantA = patientsRepository.findById(
+      const inTenantA = await patientsRepository.findPersistedById(
         tenantAId,
         seededPatientAId,
       );
-      const inTenantBWithForeignId = patientsRepository.findById(
+      const inTenantBWithForeignId = await patientsRepository.findPersistedById(
         tenantBId,
         seededPatientAId,
       );
-      const inTenantAWithBTenantId = patientsRepository.findById(
+      const inTenantAWithBTenantId = await patientsRepository.findPersistedById(
         tenantAId,
         seededPatientBId,
       );
@@ -257,13 +257,17 @@ describe("Patient PostgreSQL RLS", () => {
   itDb(
     "Repository findByMicrochip tenant-scoped: cross-tenant null döner",
     async () => {
-      const aRow = patientsRepository.findByMicrochip(
+      const seeded = await adminPrisma.patient.findUnique({
+        where: { id: seededPatientAId },
+      });
+      const microchip = seeded?.microchip ?? "";
+      const aRow = await patientsRepository.findPersistedByMicrochip(
         tenantAId,
-        "900111000000001",
+        microchip,
       );
-      const bSeesA = patientsRepository.findByMicrochip(
+      const bSeesA = await patientsRepository.findPersistedByMicrochip(
         tenantBId,
-        "900111000000001",
+        microchip,
       );
 
       expect(aRow?.id).toBe(seededPatientAId);
@@ -274,11 +278,11 @@ describe("Patient PostgreSQL RLS", () => {
   itDb(
     "Repository search tenant-scoped: doğru tenant kendi kayıtlarını sayar",
     async () => {
-      const aResults = patientsRepository.search(tenantAId, {
+      const aResults = await patientsRepository.searchPersisted(tenantAId, {
         limit: 20,
         offset: 0,
       });
-      const bResults = patientsRepository.search(tenantBId, {
+      const bResults = await patientsRepository.searchPersisted(tenantBId, {
         limit: 20,
         offset: 0,
       });
@@ -295,17 +299,17 @@ describe("Patient PostgreSQL RLS", () => {
   itDb(
     "Repository search search filtresi yalnızca kendi tenant'ında eşleşir",
     async () => {
-      const aResults = patientsRepository.search(tenantAId, {
+      const aResults = await patientsRepository.searchPersisted(tenantAId, {
         limit: 20,
         offset: 0,
         search: "Karabaş",
       });
-      const bResults = patientsRepository.search(tenantBId, {
+      const bResults = await patientsRepository.searchPersisted(tenantBId, {
         limit: 20,
         offset: 0,
         search: "Karabaş",
       });
-      const aForeign = patientsRepository.search(tenantAId, {
+      const aForeign = await patientsRepository.searchPersisted(tenantAId, {
         limit: 20,
         offset: 0,
         search: "Minnoş",
@@ -320,12 +324,12 @@ describe("Patient PostgreSQL RLS", () => {
   itDb(
     "Repository search ownerId filtresi cross-tenant izolasyonu korur",
     async () => {
-      const bResults = patientsRepository.search(tenantAId, {
+      const bResults = await patientsRepository.searchPersisted(tenantAId, {
         limit: 20,
         offset: 0,
         ownerId: ownerBId,
       });
-      const aResults = patientsRepository.search(tenantAId, {
+      const aResults = await patientsRepository.searchPersisted(tenantAId, {
         limit: 20,
         offset: 0,
         ownerId: ownerAId,
@@ -385,7 +389,7 @@ describe("Patient PostgreSQL RLS", () => {
       },
     });
 
-    const updated = patientsRepository.updateOwner(
+    const updated = await patientsRepository.updatePersistedOwner(
       tenantAId,
       seededPatientAId,
       newOwnerId,
@@ -403,7 +407,7 @@ describe("Patient PostgreSQL RLS", () => {
   itDb(
     "Repository updateOwner cross-tenant: P2025/null ile sonuçlanır",
     async () => {
-      const result = patientsRepository.updateOwner(
+      const result = await patientsRepository.updatePersistedOwner(
         tenantAId,
         seededPatientBId,
         ownerAId,

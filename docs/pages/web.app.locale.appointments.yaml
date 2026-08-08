@@ -1,0 +1,25 @@
+page_id: web.app.locale.appointments
+route: "/[locale]/appointments"
+module: calendar
+title_key: nav.appointments
+purpose:
+  tr-TR: "Günlük randevu programını ve hasta akışını Stitch tasarım sistemiyle gösterir."
+  en-GB: "Shows the daily appointment schedule and patient flow in the Stitch design system."
+allowed_roles: [OWNER, VETERINARIAN, STAFF]
+required_permissions: []
+prerequisites: ["Aktif tenant üyeliği."]
+fields: []
+actions: []
+step_by_step:
+  tr-TR:
+    ["Günlük randevu programını inceleyin.", "Randevu durumlarını takip edin."]
+  en-GB:
+    ["Review the daily appointment schedule.", "Track appointment statuses."]
+possible_errors: []
+related_pages: [web.app.locale.patients, "web.app.locale.consultation.[id]"]
+related_api: []
+keywords:
+  tr-TR: [randevu, takvim, bekleyen]
+  en-GB: [appointment, calendar, waiting]
+version: "1.0.0"
+last_verified_at: "2026-08-07"

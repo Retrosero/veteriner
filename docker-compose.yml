@@ -94,6 +94,8 @@ services:
       # Yerel gelistirme icin uygulamalar host'ta calistirilir; bu container
       # profili production davranisini gercekci olarak dogrular.
       STORAGE_DRIVER: ${STORAGE_DRIVER:-s3}
+      # Yerel demo ortamında izin verilen güvenli geliştirme override'ları.
+      STORAGE_ALLOW_LOCAL: ${STORAGE_ALLOW_LOCAL:-false}
       S3_BUCKET: ${S3_BUCKET}
       S3_REGION: ${S3_REGION:-eu-central-1}
       S3_ENDPOINT: ${S3_ENDPOINT}
@@ -101,6 +103,7 @@ services:
       S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
       S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-false}
       SCAN_DRIVER: ${SCAN_DRIVER:-clamav}
+      SCAN_ALLOW_NOOP: ${SCAN_ALLOW_NOOP:-false}
       CLAMAV_SOCKET: ${CLAMAV_SOCKET}
       CLAMAV_HOST: ${CLAMAV_HOST}
       CLAMAV_PORT: ${CLAMAV_PORT:-3310}

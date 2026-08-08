@@ -17,6 +17,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "node ../../tools/db/migrate-with-migrator.mjs",
     "db:verify-runtime-role": "node scripts/verify-runtime-role.mjs",
+    "seed:pilot": "tsx src/common/seed/seed-pilot-cli.ts",
     "clean": "rimraf dist .turbo"
   },
   "dependencies": {

@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+
+<html lang="tr-TR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Petshop - VetNiva</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-surface-variant": "#3f4941",
+                    "tertiary-container": "#a94e54",
+                    "info-pale": "#EAF3FB",
+                    "success-pale": "#EAF6EC",
+                    "primary-deep": "#0D4D2E",
+                    "input-border": "#D5DBD7",
+                    "tertiary": "#8b373d",
+                    "surface-grouped": "#F1F5F1",
+                    "text-tertiary": "#86868B",
+                    "success": "#248A3D",
+                    "warning-pale": "#FFF4E5",
+                    "info": "#2775B6",
+                    "surface-container": "#ebefe8",
+                    "primary-container": "#167a4a",
+                    "border-standard": "#E1E5E2",
+                    "secondary-fixed-dim": "#c8c6c8",
+                    "tertiary-fixed-dim": "#ffb3b5",
+                    "primary-hover": "#10633B",
+                    "surface-elevated": "#FFFFFF",
+                    "on-primary-fixed": "#002110",
+                    "primary": "#005f37",
+                    "on-primary-fixed-variant": "#00522e",
+                    "primary-selected": "#E6F4EC",
+                    "surface-container-highest": "#dfe4dd",
+                    "error-container": "#ffdad6",
+                    "outline-variant": "#bec9be",
+                    "surface": "#f6fbf4",
+                    "surface-bg": "#F7F8F7",
+                    "on-background": "#181d19",
+                    "on-secondary-container": "#636264",
+                    "warning": "#B86B00",
+                    "secondary-container": "#e2dfe1",
+                    "error": "#ba1a1a",
+                    "on-error-container": "#93000a",
+                    "on-secondary-fixed": "#1b1b1d",
+                    "on-primary": "#ffffff",
+                    "on-primary-container": "#a9ffc6",
+                    "on-secondary-fixed-variant": "#474649",
+                    "tertiary-fixed": "#ffdada",
+                    "secondary": "#5f5e60",
+                    "danger-pale": "#FCEBEA",
+                    "text-nav-inactive": "#4B5563",
+                    "primary-fixed-dim": "#7ed9a0",
+                    "surface-table-header": "#F6F8F6",
+                    "on-tertiary-fixed": "#40000b",
+                    "background": "#f6fbf4",
+                    "divider-standard": "#ECEFED",
+                    "primary-fixed": "#9af6bb",
+                    "surface-bright": "#f6fbf4",
+                    "surface-container-high": "#e5e9e3",
+                    "on-tertiary-fixed-variant": "#7c2b33",
+                    "surface-container-low": "#f0f5ee",
+                    "on-secondary": "#ffffff",
+                    "inverse-primary": "#7ed9a0",
+                    "secondary-fixed": "#e4e2e4",
+                    "on-surface": "#181d19",
+                    "on-tertiary-container": "#ffe6e6",
+                    "on-error": "#ffffff",
+                    "primary-wash": "#F0F8F3",
+                    "text-secondary": "#5F6368",
+                    "surface-variant": "#dfe4dd",
+                    "inverse-surface": "#2d322d",
+                    "on-tertiary": "#ffffff",
+                    "surface-tint": "#006d3f",
+                    "surface-container-lowest": "#ffffff",
+                    "inverse-on-surface": "#edf2eb",
+                    "outline": "#6f7a70",
+                    "surface-dim": "#d7dbd5",
+                    "danger": "#C3362C"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter-mobile": "16px",
+                    "base": "8px",
+                    "component-gap": "16px",
+                    "header-height": "72px",
+                    "sidebar-width": "248px",
+                    "section-gap": "24px",
+                    "gutter-desktop": "32px",
+                    "major-gap": "32px"
+            },
+            "fontFamily": {
+                    "body-sm": [
+                            "Inter"
+                    ],
+                    "page-title": [
+                            "Inter"
+                    ],
+                    "table-data": [
+                            "Inter"
+                    ],
+                    "body-lg": [
+                            "Inter"
+                    ],
+                    "section-title": [
+                            "Inter"
+                    ],
+                    "metadata": [
+                            "Inter"
+                    ],
+                    "label": [
+                            "Inter"
+                    ]
+            },
+            "fontSize": {
+                    "body-sm": [
+                            "15px",
+                            {
+                                    "lineHeight": "22px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "page-title": [
+                            "28px",
+                            {
+                                    "lineHeight": "34px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "table-data": [
+                            "15px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "body-lg": [
+                            "17px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "section-title": [
+                            "20px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "metadata": [
+                            "11px",
+                            {
+                                    "lineHeight": "16px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label": [
+                            "13px",
+                            {
+                                    "lineHeight": "18px",
+                                    "fontWeight": "500"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #E1E5E2;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: #c8c6c8;
+        }
+    </style>
+</head>
+<body class="bg-surface-bg text-on-surface font-body-sm min-h-screen flex antialiased">
+<!-- SideNavBar -->
+<nav class="bg-surface dark:bg-surface w-sidebar-width h-screen fixed left-0 top-0 border-r border-border-standard dark:border-outline-variant flex flex-col py-6 px-4 gap-component-gap z-20">
+<div class="mb-4 px-2">
+<h1 class="font-page-title text-page-title font-semibold text-primary-deep dark:text-primary-fixed">VetNiva</h1>
+<p class="font-metadata text-metadata text-secondary">Klinik Yönetimi</p>
+</div>
+<div class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-secondary hover:bg-surface-container-low transition-colors duration-200 active:scale-[0.98] transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span class="font-label text-label">Anasayfa</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-secondary hover:bg-surface-container-low transition-colors duration-200 active:scale-[0.98] transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">pets</span>
+<span class="font-label text-label">Hastalar</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-secondary hover:bg-surface-container-low transition-colors duration-200 active:scale-[0.98] transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">calendar_today</span>
+<span class="font-label text-label">Randevular</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-secondary hover:bg-surface-container-low transition-colors duration-200 active:scale-[0.98] transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">stethoscope</span>
+<span class="font-label text-label">Muayene</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-secondary hover:bg-surface-container-low transition-colors duration-200 active:scale-[0.98] transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">vaccines</span>
+<span class="font-label text-label">Aşılar</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary-selected text-primary font-semibold active:scale-[0.98] transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">shopping_bag</span>
+<span class="font-label text-label">Petshop</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-secondary hover:bg-surface-container-low transition-colors duration-200 active:scale-[0.98] transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">payments</span>
+<span class="font-label text-label">Finans</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Wrapper -->
+<div class="ml-sidebar-width flex-1 flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="bg-surface/80 backdrop-blur-md dark:bg-surface/80 h-header-height sticky top-0 border-b border-border-standard dark:border-outline-variant flex items-center justify-between px-gutter-desktop w-full z-10">
+<div class="flex items-center flex-1 max-w-md">
+<div class="relative w-full focus-within:ring-2 focus-within:ring-primary/20 rounded-lg">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary text-[20px]">search</span>
+<input class="w-full h-10 pl-10 pr-4 bg-surface-container-low border border-input-border rounded-lg text-body-sm font-body-sm focus:outline-none focus:border-primary-container text-on-surface placeholder:text-text-tertiary transition-colors" placeholder="Ürün, barkod veya kategori ara..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-text-secondary hover:text-primary transition-colors p-2 rounded-full hover:bg-surface-container-low">
+<span class="material-symbols-outlined text-[24px]">notifications</span>
+</button>
+<button class="text-text-secondary hover:text-primary transition-colors p-2 rounded-full hover:bg-surface-container-low">
+<span class="material-symbols-outlined text-[24px]">business_center</span>
+</button>
+<div class="h-8 w-8 rounded-full bg-surface-dim overflow-hidden border border-border-standard">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="A clean, professional headshot of a veterinarian in a modern clinical setting. Bright, natural lighting, soft background blur. The person is smiling confidently, wearing a white coat." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2E2b4eEkcpHBpDMHoTSzEHr2HjHad0p2hhQUg_CGkXgRG7otXWKYufVACIvMLwcnZSGs15kV0FhEdkeyiwc41ujLJZHjxPAWH1E3e8EWid5yJ0YjaQzbAEYGA9D4W0Wj7ScrRU20DXYRWSN5U_xy_SvNIuVQxoFSIaW7Q9XlwNivq0L5FhCZuvaJytufdK7c73n3WwrxDbVRGkZH3MFkhnB3y1PXdpKFS_hB62wzMgOugnXAUB3QanA"/>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<main class="flex-1 p-gutter-desktop flex flex-col gap-section-gap overflow-y-auto">
+<!-- Page Header & Tabs -->
+<div class="flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<h2 class="font-page-title text-page-title text-on-surface">Petshop</h2>
+<button class="bg-primary-container hover:bg-primary-hover text-on-primary font-label text-label px-4 h-[42px] rounded-[10px] flex items-center gap-2 transition-colors">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                        Yeni Ürün
+                    </button>
+</div>
+<!-- Tabs -->
+<div class="flex items-center gap-6 border-b border-border-standard">
+<button class="pb-3 border-b-2 border-primary-container text-primary-container font-label text-label px-1">Ürünler</button>
+<button class="pb-3 border-b-2 border-transparent text-secondary hover:text-on-surface font-label text-label px-1 transition-colors">Stok Hareketleri</button>
+<button class="pb-3 border-b-2 border-transparent text-secondary hover:text-on-surface font-label text-label px-1 transition-colors">Satın Alma</button>
+<button class="pb-3 border-b-2 border-transparent text-secondary hover:text-on-surface font-label text-label px-1 transition-colors">Tedarikçiler</button>
+</div>
+</div>
+<!-- Bento Grid Layout for Content -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-major-gap h-full pb-8">
+<!-- Main Product Table Area (Spans 2 columns on large screens) -->
+<div class="xl:col-span-2 flex flex-col gap-4 bg-surface-elevated border border-border-standard rounded-xl overflow-hidden">
+<!-- Table Filters/Toolbar -->
+<div class="p-4 flex items-center justify-between border-b border-border-standard bg-surface-table-header">
+<div class="flex items-center gap-2">
+<span class="font-label text-label text-on-surface">Tüm Ürünler</span>
+<span class="bg-surface-dim text-secondary font-metadata text-metadata px-2 py-0.5 rounded-full">124</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-secondary hover:text-on-surface hover:bg-surface-container-low rounded-lg transition-colors border border-input-border bg-surface-elevated">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+</button>
+<button class="p-2 text-secondary hover:text-on-surface hover:bg-surface-container-low rounded-lg transition-colors border border-input-border bg-surface-elevated">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+</div>
+</div>
+<!-- Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-border-standard bg-surface-bg text-secondary font-metadata text-metadata uppercase tracking-wider">
+<th class="py-3 px-4 font-medium sticky left-0 bg-surface-bg z-10 w-64">Ürün</th>
+<th class="py-3 px-4 font-medium">Barkod</th>
+<th class="py-3 px-4 font-medium">Kategori</th>
+<th class="py-3 px-4 font-medium">Depo/Raf</th>
+<th class="py-3 px-4 font-medium text-right">Mevcut Stok</th>
+<th class="py-3 px-4 font-medium text-right">Durum</th>
+<th class="py-3 px-4 font-medium text-center w-16">İşlemler</th>
+</tr>
+</thead>
+<tbody class="font-table-data text-table-data divide-y divide-border-standard">
+<!-- Row 1 -->
+<tr class="hover:bg-[#F7FBF8] transition-colors group">
+<td class="py-3 px-4 sticky left-0 bg-surface-elevated group-hover:bg-[#F7FBF8] transition-colors flex items-center gap-3">
+<div class="w-10 h-10 rounded border border-border-standard overflow-hidden bg-surface-dim shrink-0">
+<img alt="Product Image" class="w-full h-full object-cover" data-alt="A professional studio product shot of a 12kg bag of premium cat food. Clean white background, soft studio lighting highlighting the packaging details. The bag is green and white with a silhouette of a cat. Modern, clinical visual style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCrqhzZ0Sj7K1f7F0zM_FYvcER3mepZ-PcliWStZfxALCIlpF19Ridd_TsVZw2361hC2cTHDj-HINn87MqFLOI1GuI3d5xsDMXe1X3WwCzoAdGuXVKhM3WLSNrW6Lt97V-G_XWx_dywPBJbSeHt8dTBHa76SIOI-MHaAvjCOY2MUahc1LsYiq8aRkB9ogA2F12V-YQhhOpAHLvscjLyLtrFVsYaBjKqMFSvqwOs2fUfqJWqY1TUp2UVkw"/>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="text-on-surface font-medium truncate">Kedi Maması 12kg</span>
+<span class="text-secondary font-metadata text-metadata truncate">Pro Plan Sterilised</span>
+</div>
+</td>
+<td class="py-3 px-4 text-text-secondary whitespace-nowrap">869012345678</td>
+<td class="py-3 px-4 whitespace-nowrap">Diyet Mama</td>
+<td class="py-3 px-4 whitespace-nowrap">Ana Depo / A-12</td>
+<td class="py-3 px-4 text-right whitespace-nowrap">
+<div class="flex flex-col items-end">
+<span class="font-medium text-warning">4 Adet</span>
+<span class="text-text-tertiary font-metadata text-metadata">Min: 10</span>
+</div>
+</td>
+<td class="py-3 px-4 text-right whitespace-nowrap">
+<span class="inline-flex items-center gap-1 bg-warning-pale text-warning border border-warning/20 font-metadata text-metadata px-2 py-1 rounded-md">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+                                            Düşük Stok
+                                        </span>
+</td>
+<td class="py-3 px-4 text-center">
+<button class="text-secondary hover:text-on-surface p-1 rounded-full hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_horiz</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-[#F7FBF8] transition-colors group">
+<td class="py-3 px-4 sticky left-0 bg-surface-elevated group-hover:bg-[#F7FBF8] transition-colors flex items-center gap-3">
+<div class="w-10 h-10 rounded border border-border-standard overflow-hidden bg-surface-dim shrink-0">
+<img alt="Product Image" class="w-full h-full object-cover" data-alt="A professional studio product shot of a small bottle of dog shampoo. Clean white background, bright lighting. The bottle is minimalist with a light green label. Clinical, premium aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCzhvVTvtX4VIZEI8DidOl13pCYdO7rs7WXahX_8QbdOyjFXWM1dWwsVfRJz2oMwLkVZVrg_1LYqo90opipFox7D3KXTX1yWXJonbLOZIR-JZg20GOV_zdtE6j_C83rq6PIy3ogyhKwMNc0ik2mwccelIr6iiB3gYVC9oV_ObHTGlzle-UwBNpqH52IKWPka6h9yWEcpl828PLqOO41kFXqUGmRZ4YMlcvSXz1kkz8TJeRcDRSmq-_tw"/>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="text-on-surface font-medium truncate">Hipoalerjenik Şampuan</span>
+<span class="text-secondary font-metadata text-metadata truncate">DermaCare 250ml</span>
+</div>
+</td>
+<td class="py-3 px-4 text-text-secondary whitespace-nowrap">869098765432</td>
+<td class="py-3 px-4 whitespace-nowrap">Kozmetik</td>
+<td class="py-3 px-4 whitespace-nowrap">Klinik / Raf-2</td>
+<td class="py-3 px-4 text-right whitespace-nowrap">
+<div class="flex flex-col items-end">
+<span class="font-medium text-on-surface">24 Adet</span>
+<span class="text-text-tertiary font-metadata text-metadata">Min: 5</span>
+</div>
+</td>
+<td class="py-3 px-4 text-right whitespace-nowrap">
+<span class="inline-flex items-center gap-1 bg-success-pale text-success border border-success/20 font-metadata text-metadata px-2 py-1 rounded-md">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                                            Yeterli
+                                        </span>
+</td>
+<td class="py-3 px-4 text-center">
+<button class="text-secondary hover:text-on-surface p-1 rounded-full hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_horiz</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Placeholder -->
+<div class="p-4 border-t border-border-standard flex items-center justify-between text-secondary font-metadata text-metadata mt-auto bg-surface-elevated">
+<span>Gösterilen: 1-10 / 124</span>
+<div class="flex gap-1">
+<button class="p-1 border border-border-standard rounded hover:bg-surface-container-low disabled:opacity-50"><span class="material-symbols-outlined text-[16px]">chevron_left</span></button>
+<button class="p-1 border border-border-standard rounded hover:bg-surface-container-low"><span class="material-symbols-outlined text-[16px]">chevron_right</span></button>
+</div>
+</div>
+</div>
+<!-- POS Side Panel (Glassmorphism inspired card) -->
+<div class="xl:col-span-1 bg-surface-elevated border border-border-standard rounded-xl shadow-[0_1px_2px_rgba(0,0,0,.04),0_8px_24px_rgba(20,45,30,.06)] flex flex-col h-[calc(100vh-180px)] sticky top-24">
+<!-- POS Header -->
+<div class="p-4 border-b border-border-standard flex items-center justify-between bg-surface-table-header rounded-t-xl">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container">point_of_sale</span>
+<h3 class="font-section-title text-section-title text-on-surface">Satış (POS)</h3>
+</div>
+<button class="text-secondary hover:text-error transition-colors p-1">
+<span class="material-symbols-outlined text-[20px]">delete_sweep</span>
+</button>
+</div>
+<!-- POS Quick Add & Categories -->
+<div class="p-4 border-b border-border-standard flex flex-col gap-3">
+<div class="relative w-full focus-within:ring-2 focus-within:ring-primary/20 rounded-lg">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary text-[18px]">barcode_scanner</span>
+<input class="w-full h-[44px] pl-10 pr-4 bg-surface-bg border border-input-border rounded-lg text-body-sm font-body-sm focus:outline-none focus:border-primary-container text-on-surface placeholder:text-text-tertiary transition-colors" placeholder="Barkod okut veya ara..." type="text"/>
+</div>
+<div class="flex flex-wrap gap-2">
+<button class="px-3 py-1.5 bg-surface-container-low border border-border-standard rounded-md font-metadata text-metadata text-on-surface hover:border-primary-container transition-colors whitespace-nowrap">Diyet Mama</button>
+<button class="px-3 py-1.5 bg-surface-container-low border border-border-standard rounded-md font-metadata text-metadata text-on-surface hover:border-primary-container transition-colors whitespace-nowrap">Aksesuar</button>
+<button class="px-3 py-1.5 bg-surface-container-low border border-border-standard rounded-md font-metadata text-metadata text-on-surface hover:border-primary-container transition-colors whitespace-nowrap">İlaç</button>
+</div>
+</div>
+<!-- Cart Items -->
+<div class="flex-1 overflow-y-auto p-4 flex flex-col gap-3 bg-surface-bg">
+<!-- Cart Item -->
+<div class="bg-surface-elevated p-3 rounded-lg border border-border-standard flex gap-3 items-center">
+<div class="w-12 h-12 rounded border border-border-standard overflow-hidden bg-surface-dim shrink-0">
+<img alt="Item Image" class="w-full h-full object-cover" data-alt="A professional studio shot of a medium sized colorful dog toy, a woven rope bone. Clean white background, soft shadow. Clinical, clean visual style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9UE5iqFGgDfZ4aHhT3-CjGIrQ-bW2KRBgbIO2m_njhe7EeDJg1QOh3kUrP5TZhjt72xuMIxgKodDkMkpvgKHHys-V1eAIayNfHhrtPMSLz8B5jkNzBFI26zyQ8d4UnsmatbSH7JTdobwvKGbT9dMyKLHwt_VfSsDv7vYaZYeueXPRypk9L6F6nozIQ4bNshvIuzwCj4047zDqJzmqf7Huwar8PdGZkQZ6mLxEFFo0ArgNz15rEUU6Pw"/>
+</div>
+<div class="flex-1 min-w-0 flex flex-col">
+<span class="font-label text-label text-on-surface truncate">Köpek Oyuncak İpi</span>
+<span class="font-metadata text-metadata text-primary-deep font-semibold">120,00 ₺</span>
+</div>
+<div class="flex items-center gap-2 border border-border-standard rounded-md p-0.5 bg-surface-bg">
+<button class="w-6 h-6 flex items-center justify-center text-secondary hover:text-on-surface bg-surface-elevated rounded shadow-sm"><span class="material-symbols-outlined text-[16px]">remove</span></button>
+<span class="font-label text-label w-4 text-center">1</span>
+<button class="w-6 h-6 flex items-center justify-center text-secondary hover:text-on-surface bg-surface-elevated rounded shadow-sm"><span class="material-symbols-outlined text-[16px]">add</span></button>
+</div>
+</div>
+<!-- Empty State Example (Hidden for now to show items)
+                        <div class="h-full flex flex-col items-center justify-center text-secondary gap-2 opacity-50">
+                            <span class="material-symbols-outlined text-[48px] font-light">shopping_cart</span>
+                            <span class="font-body-sm text-body-sm">Sepet boş</span>
+                        </div>
+                        -->
+</div>
+<!-- Totals & Checkout -->
+<div class="p-4 border-t border-border-standard bg-surface-elevated rounded-b-xl flex flex-col gap-4">
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-center font-body-sm text-body-sm text-secondary">
+<span>Ara Toplam</span>
+<span>101,69 ₺</span>
+</div>
+<div class="flex justify-between items-center font-body-sm text-body-sm text-secondary">
+<span>KDV (%18)</span>
+<span>18,31 ₺</span>
+</div>
+<div class="flex justify-between items-center pt-2 border-t border-border-standard mt-1">
+<span class="font-section-title text-section-title text-on-surface">Toplam</span>
+<span class="font-section-title text-section-title text-primary-deep">120,00 ₺</span>
+</div>
+</div>
+<button class="w-full bg-primary-container hover:bg-primary-hover text-on-primary font-label text-label h-[42px] rounded-[10px] flex items-center justify-center gap-2 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[18px]">credit_card</span>
+                            Tahsilata Geç
+                        </button>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

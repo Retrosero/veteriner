@@ -1,0 +1,23 @@
+page_id: web.app.locale.design-system
+route: "/[locale]/design-system"
+module: settings
+title_key: design_system.title
+purpose:
+  tr-TR: "VetNiva Stitch tasarım sisteminin renk ve ortak bileşen referanslarını gösterir."
+  en-GB: "Shows VetNiva Stitch design-system colour and shared-component references."
+allowed_roles: [OWNER, VETERINARIAN, STAFF]
+required_permissions: []
+prerequisites: ["Aktif tenant üyeliği."]
+fields: []
+actions: []
+step_by_step:
+  tr-TR: ["Renk ve bileşen referanslarını inceleyin."]
+  en-GB: ["Review colour and component references."]
+possible_errors: []
+related_pages: []
+related_api: []
+keywords:
+  tr-TR: [tasarım, token, bileşen]
+  en-GB: [design, token, component]
+version: "1.0.0"
+last_verified_at: "2026-08-07"

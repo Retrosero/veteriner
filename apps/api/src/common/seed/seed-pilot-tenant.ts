@@ -17,6 +17,8 @@
  * @since GOAL-120 (FAZ-12) pilot tenant kurulumu
  */
 
+import { randomUUID } from "node:crypto";
+
 import { Injectable, Logger } from "@nestjs/common";
 import { PrismaClient } from "@prisma/client";
 
@@ -134,6 +136,26 @@ export const PILOT_SEED: PilotSeed = {
 };
 
 /**
+ * Pilot kullanıcı parolalarını mutasyon başlamadan doğrular.
+ * Böylece eksik secret nedeniyle yarım tenant/şube kurulumu oluşmaz.
+ */
+export function resolvePilotPasswords(
+  env: NodeJS.ProcessEnv = process.env,
+): Record<string, string> {
+  const passwords: Record<string, string> = {};
+
+  for (const user of PILOT_SEED.users) {
+    const password = env[user.passwordEnv];
+    if (!password || password.trim().length === 0) {
+      throw new Error(`Missing env ${user.passwordEnv} for pilot user ${user.email}`);
+    }
+    passwords[user.passwordEnv] = password;
+  }
+
+  return passwords;
+}
+
+/**
  * Pilot seed servisi. Production'da hata fırlatır;
  * development + test + staging'de çalışır.
  */
@@ -157,45 +179,51 @@ export class PilotSeedService {
       );
     }
 
+    // Tüm secret'lar önce doğrulanır; ardından tek seed akışı başlatılır.
+    const passwords = resolvePilotPasswords();
+
     this.logger.warn(
       `Pilot seed running: tenant=${PILOT_SEED.tenant.slug} (${PILOT_SEED.tenant.id})`,
     );
 
-    // 1. Tenant + branch (idempotent; var olanı atla).
-    await this.upsertTenant(PILOT_SEED.tenant);
-    await this.upsertBranch(PILOT_SEED.branch);
+    try {
+      // 1. Tenant + branch (idempotent; var olanı atla).
+      await this.upsertTenant(PILOT_SEED.tenant);
+      await this.upsertBranch(PILOT_SEED.branch);
 
-    // 2. Kullanıcılar (parolalar env'den).
-    let usersCreated = 0;
-    for (const user of PILOT_SEED.users) {
-      const password = process.env[user.passwordEnv];
-      if (!password) {
-        throw new Error(
-          `Missing env ${user.passwordEnv} for pilot user ${user.email}`,
-        );
+      // 2. Kullanıcılar (parolalar yalnızca doğrulanmış env'den).
+      let usersCreated = 0;
+      for (const user of PILOT_SEED.users) {
+        const password = passwords[user.passwordEnv];
+        if (!password) {
+          throw new Error(`Validated pilot secret is unavailable: ${user.passwordEnv}`);
+        }
+        const passwordHash = await hashPassword(password);
+        await this.upsertUser({ ...user, passwordHash });
+        usersCreated += 1;
       }
-      const passwordHash = await hashPassword(password);
-      await this.upsertUser({ ...user, passwordHash });
-      usersCreated += 1;
-    }
 
-    let ownersCreated = 0;
-    for (const owner of PILOT_SEED.owners) {
-      await this.upsertOwner(owner);
-      ownersCreated += 1;
-    }
-    let patientsCreated = 0;
-    for (const patient of PILOT_SEED.patients) {
-      await this.upsertPatient(patient);
-      patientsCreated += 1;
-    }
+      let ownersCreated = 0;
+      for (const owner of PILOT_SEED.owners) {
+        await this.upsertOwner(owner);
+        ownersCreated += 1;
+      }
+      let patientsCreated = 0;
+      for (const patient of PILOT_SEED.patients) {
+        await this.upsertPatient(patient);
+        patientsCreated += 1;
+      }
 
-    this.logger.log(
-      `Pilot seed complete: users=${usersCreated} owners=${ownersCreated} patients=${patientsCreated}`,
-    );
+      await this.recordSeedAudit();
 
-    await this.prisma.$disconnect();
-    return { usersCreated, ownersCreated, patientsCreated };
+      this.logger.log(
+        `Pilot seed complete: users=${usersCreated} owners=${ownersCreated} patients=${patientsCreated}`,
+      );
+
+      return { usersCreated, ownersCreated, patientsCreated };
+    } finally {
+      await this.prisma.$disconnect();
+    }
   }
 
   /* ----------------------------------------------------------------
@@ -328,6 +356,35 @@ export class PilotSeedService {
           name: p.name,
           species: p.species,
           archivedAt: null,
+        },
+      });
+    });
+  }
+
+  /** Pilot kurulumunun izlenebilir, kimlik bilgisi içermeyen audit kaydını yazar. */
+  private async recordSeedAudit(): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.tenant_id', ${PILOT_SEED.tenant.id}, true)`;
+      await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'true', true)`;
+      await tx.auditEvent.create({
+        data: {
+          id: randomUUID(),
+          eventName: "audit:tenant.seed_pilot",
+          tenantId: PILOT_SEED.tenant.id,
+          actorType: "system",
+          targetType: "tenant",
+          targetId: PILOT_SEED.tenant.id,
+          action: "create",
+          correlationId: "seed-pilot-tenant",
+          country: "TR",
+          severity: "info",
+          metadata: {
+            source: "seed-pilot-cli",
+            branchId: PILOT_SEED.branch.id,
+            userCount: PILOT_SEED.users.length,
+            ownerCount: PILOT_SEED.owners.length,
+            patientCount: PILOT_SEED.patients.length,
+          },
         },
       });
     });

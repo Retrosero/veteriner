@@ -343,11 +343,11 @@ describe("Vaccination PostgreSQL RLS", () => {
   itDb(
     "Repository search tenant-scoped: doğru tenant kendi kayıtlarını sayar",
     async () => {
-      const aResults = vaccinationsRepository.search(tenantAId, {
+      const aResults = await vaccinationsRepository.persistedSearch(tenantAId, {
         limit: 20,
         offset: 0,
       });
-      const bResults = vaccinationsRepository.search(tenantBId, {
+      const bResults = await vaccinationsRepository.persistedSearch(tenantBId, {
         limit: 20,
         offset: 0,
       });
@@ -364,12 +364,12 @@ describe("Vaccination PostgreSQL RLS", () => {
   itDb(
     "Repository search patientId filtresi cross-tenant izolasyonu korur",
     async () => {
-      const aOnBPatient = vaccinationsRepository.search(tenantAId, {
+      const aOnBPatient = await vaccinationsRepository.persistedSearch(tenantAId, {
         limit: 20,
         offset: 0,
         patientId: patientBId,
       });
-      const aOnAPatient = vaccinationsRepository.search(tenantAId, {
+      const aOnAPatient = await vaccinationsRepository.persistedSearch(tenantAId, {
         limit: 20,
         offset: 0,
         patientId: patientAId,
@@ -385,12 +385,12 @@ describe("Vaccination PostgreSQL RLS", () => {
   itDb(
     "Repository listByPatient tenant-scoped: cross-tenant null/boş döner",
     async () => {
-      const aOnA = vaccinationsRepository.listByPatient(
+      const aOnA = await vaccinationsRepository.persistedByPatient(
         tenantAId,
         patientAId,
         50,
       );
-      const aOnB = vaccinationsRepository.listByPatient(
+      const aOnB = await vaccinationsRepository.persistedByPatient(
         tenantAId,
         patientBId,
         50,
@@ -404,12 +404,12 @@ describe("Vaccination PostgreSQL RLS", () => {
   itDb(
     "Repository search protocolId filtresi yalnızca kendi tenant'ında eşleşir",
     async () => {
-      const aOnAProtocol = vaccinationsRepository.search(tenantAId, {
+      const aOnAProtocol = await vaccinationsRepository.persistedSearch(tenantAId, {
         limit: 20,
         offset: 0,
         protocolId: protocolAId,
       });
-      const aOnBProtocol = vaccinationsRepository.search(tenantAId, {
+      const aOnBProtocol = await vaccinationsRepository.persistedSearch(tenantAId, {
         limit: 20,
         offset: 0,
         protocolId: protocolBId,

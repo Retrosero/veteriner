@@ -1,0 +1,23 @@
+page_id: web.app.locale.settings.clinic
+route: "/[locale]/settings/clinic"
+module: settings
+title_key: nav.settings
+purpose:
+  tr-TR: "Klinik kimliği, iletişim ve bölgesel ayarlar formunu Stitch tasarımıyla gösterir."
+  en-GB: "Shows the clinic identity, contact, and regional-settings form in the Stitch design."
+allowed_roles: [OWNER]
+required_permissions: []
+prerequisites: ["Aktif tenant üyeliği."]
+fields: []
+actions: []
+step_by_step:
+  tr-TR: ["Klinik bilgilerini ve bölgesel ayarları inceleyin."]
+  en-GB: ["Review clinic information and regional settings."]
+possible_errors: []
+related_pages: [web.app.locale.settings.users]
+related_api: []
+keywords:
+  tr-TR: [ayarlar, klinik, iletişim]
+  en-GB: [settings, clinic, contact]
+version: "1.0.0"
+last_verified_at: "2026-08-07"

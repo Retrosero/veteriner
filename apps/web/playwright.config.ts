@@ -25,10 +25,8 @@
  * Bu dosya `@playwright/test` paketine bağımlıdır; paket
  * `pnpm dlx` ile çalışma zamanında indirilir, `package.json`'a
  * eklenmez (bkz. GOAL-127 "Yeni paket bağımlılığı yok" kuralı).
- * @security Kimlik bilgileri (demo user şifreleri) `.env.test` veya
- * CI secret'larından değil, smoke test senaryolarındaki sabitlerden
- * gelir. Bu yalnızca pilot ortamı için geçerlidir; production'da
- * dinamik credential rotasyonu zorunludur.
+ * @security Kimlik bilgileri yalnızca local environment veya CI
+ * secret'larından gelir; test kaynaklarında sabit parola tutulmaz.
  * @since GOAL-127 (FAZ-12) production release gate
  */
 

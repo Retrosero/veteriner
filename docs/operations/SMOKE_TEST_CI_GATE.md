@@ -107,36 +107,21 @@ bu dosyalardan etkilenmez.
 
 Smoke test çalıştırması pilot tenant verisini paylaşır. Pilot
 ortamı tek tenant'lıdır (`pilot-vet-kadikoy`); 4 demo user ve 2
-hasta seed edilmiştir. Detaylar `apps/web/e2e/smoke/helpers.ts`
-içinde sabit olarak tutulur:
+hasta seed edilmiştir. E-posta/rol eşlemesi kaynakta bulunur; parolalar
+GitHub Actions secret'ları olarak tanımlanır ve testte yalnızca aşağıdaki
+ortam değişkenlerinden okunur:
 
-```ts
-DEMO_USERS = [
-  {
-    email: "owner@pilot.vetniva.local",
-    password: "VetNiva-Owner-2026!",
-    role: "OWNER",
-  },
-  {
-    email: "vet@pilot.vetniva.local",
-    password: "VetNiva-Vet-2026!",
-    role: "VETERINARIAN",
-  },
-  {
-    email: "staff@pilot.vetniva.local",
-    password: "VetNiva-Staff-2026!",
-    role: "STAFF",
-  },
-  {
-    email: "owner2@pilot.vetniva.local",
-    password: "VetNiva-Owner2-2026!",
-    role: "OWNER",
-  },
-];
+```text
+SMOKE_OWNER_PASSWORD
+SMOKE_OWNER2_PASSWORD
+SMOKE_VET_PASSWORD
+SMOKE_STAFF_PASSWORD
 
 PILOT_PATIENTS = { karabas: { name: "Karabaş" }, minnos: { name: "Minnoş" } };
 PILOT_MAROPITANT = { name: "Maropitant", dose: "16mg", tablets: 1 };
 ```
+
+Secret değerleri dokümana, iş akışı çıktısına veya artefakta yazılmaz.
 
 `clinical-flow.spec.ts` senaryosu pilot verisinde yan etki
 oluşturur (muayene + reçete + fatura). Bu nedenle:

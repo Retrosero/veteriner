@@ -122,12 +122,9 @@ jobs:
       # pilot release icin kritik degil (worker build/type-check zaten yesil).
       # CI'da turbo `--filter` ve cache davranisi farkli sonuc veriyor; bu yuzden
       # turbo yerine dogrudan pnpm --filter ile her paket calistiriliyor.
-      # NOT: CI runner ortaminda (service container + runtime) bazi test'ler
-      # beklenmedik sekilde fail oluyor; pilot release sprint'ini blokelememek
-      # icin `continue-on-error: true` ile yesil sayiliyor. Unit testler lokalde
-      # ve WSL'da basarili; CI-spesifik fail'ler FAZ-12+ sprint'inde arastirilacak.
+      # Unit testler kalite kapisidir; herhangi bir paket basarisiz olursa CI
+      # basarisiz olmali ve pilot yayinina ilerlenmemelidir.
       - name: Run unit tests
-        continue-on-error: true
         run: |
           set -o pipefail
           pnpm --filter @vetniva/api test 2>&1 | tee test-output.log
@@ -259,15 +256,10 @@ jobs:
           done
           echo "API health endpoint did not become ready within 60 seconds."
           exit 1
-      # NOT: `@vetniva/api#e2e:smoke` vitest tabanli HTTP smoke testleri
-      # DATABASE_MIGRATOR_URL zorunlulugu, kendi NestJS bootstrap'i ve
-      # RLS fixture verisi nedeniyle CI runner ortaminda kirilgan
-      # (lokalde 2 dosya fail, 12 RLS testi skip). Pilot release
-      # sprint'ini blokelememek icin `continue-on-error: true` ile
-      # yesil sayiliyor. Playwright tabanli smoke testler (`apps/web/e2e/smoke/`)
-      # ise ayri bir fazda (smoke test plani) devreye alinacak.
+      # Vitest tabanli HTTP/RLS smoke senaryolari migration sonrasi gercek
+      # runtime roluyla calisir. Hata, tenant izolasyonu veya yetki gerilemesi
+      # pilot yayini bloke etmelidir.
       - name: Run e2e:smoke
-        continue-on-error: true
         run: pnpm e2e:smoke 2>&1 | tee e2e-smoke.log
       - if: always()
         uses: actions/upload-artifact@v4

@@ -1,0 +1,23 @@
+page_id: web.app.locale.patients.filters
+route: "/[locale]/patients/filters"
+module: clinic
+title_key: nav.patients
+purpose:
+  tr-TR: "Hasta listesinin açık filtre durumunu gösterir."
+  en-GB: "Shows the open filter state for the patient list."
+allowed_roles: [OWNER, VETERINARIAN, STAFF]
+required_permissions: ["clinic:patient:read"]
+prerequisites: ["Aktif tenant üyeliği."]
+fields: []
+actions: []
+step_by_step:
+  tr-TR: ["Filtre seçeneklerini inceleyin."]
+  en-GB: ["Review filter options."]
+possible_errors: []
+related_pages: [web.app.locale.patients]
+related_api: []
+keywords:
+  tr-TR: [hasta, filtre]
+  en-GB: [patient, filter]
+version: "1.0.0"
+last_verified_at: "2026-08-07"

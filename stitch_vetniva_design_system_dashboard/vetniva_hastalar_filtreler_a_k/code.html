@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+
+<html lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VetClinic Premium - Hastalar (Filtreler)</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-surface": "#181d19",
+                      "surface-grouped": "#F1F5F1",
+                      "inverse-surface": "#2d322d",
+                      "text-secondary": "#5F6368",
+                      "info-pale": "#EAF3FB",
+                      "on-secondary-fixed-variant": "#474649",
+                      "surface-dim": "#d7dbd5",
+                      "danger": "#C3362C",
+                      "outline-variant": "#bec9be",
+                      "success": "#248A3D",
+                      "surface-bg": "#F7F8F7",
+                      "surface-container-low": "#f0f5ee",
+                      "secondary-fixed": "#e4e2e4",
+                      "secondary-container": "#e2dfe1",
+                      "tertiary-fixed": "#ffdada",
+                      "inverse-on-surface": "#edf2eb",
+                      "on-error": "#ffffff",
+                      "on-primary": "#ffffff",
+                      "surface-container": "#ebefe8",
+                      "tertiary-container": "#a94e54",
+                      "on-surface-variant": "#3f4941",
+                      "success-pale": "#EAF6EC",
+                      "on-primary-fixed": "#002110",
+                      "primary-fixed-dim": "#7ed9a0",
+                      "warning-pale": "#FFF4E5",
+                      "primary-container": "#167a4a",
+                      "background": "#f6fbf4",
+                      "on-error-container": "#93000a",
+                      "on-secondary-container": "#636264",
+                      "divider-standard": "#ECEFED",
+                      "on-secondary-fixed": "#1b1b1d",
+                      "tertiary-fixed-dim": "#ffb3b5",
+                      "input-border": "#D5DBD7",
+                      "surface-container-highest": "#dfe4dd",
+                      "error-container": "#ffdad6",
+                      "outline": "#6f7a70",
+                      "tertiary": "#8b373d",
+                      "surface-elevated": "#FFFFFF",
+                      "surface-variant": "#dfe4dd",
+                      "warning": "#B86B00",
+                      "surface": "#f6fbf4",
+                      "on-tertiary-fixed": "#40000b",
+                      "primary-selected": "#E6F4EC",
+                      "text-tertiary": "#86868B",
+                      "border-standard": "#E1E5E2",
+                      "on-primary-fixed-variant": "#00522e",
+                      "primary-hover": "#10633B",
+                      "on-background": "#181d19",
+                      "on-tertiary-container": "#ffe6e6",
+                      "primary-fixed": "#9af6bb",
+                      "info": "#2775B6",
+                      "primary-wash": "#F0F8F3",
+                      "on-primary-container": "#a9ffc6",
+                      "primary": "#005f37",
+                      "danger-pale": "#FCEBEA",
+                      "text-nav-inactive": "#4B5563",
+                      "secondary-fixed-dim": "#c8c6c8",
+                      "on-tertiary": "#ffffff",
+                      "error": "#ba1a1a",
+                      "on-tertiary-fixed-variant": "#7c2b33",
+                      "surface-tint": "#006d3f",
+                      "surface-bright": "#f6fbf4",
+                      "surface-table-header": "#F6F8F6",
+                      "on-secondary": "#ffffff",
+                      "inverse-primary": "#7ed9a0",
+                      "secondary": "#5f5e60",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-container-high": "#e5e9e3",
+                      "primary-deep": "#0D4D2E"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "sidebar-width": "248px",
+                      "major-gap": "32px",
+                      "gutter-desktop": "32px",
+                      "component-gap": "16px",
+                      "section-gap": "24px",
+                      "base": "8px",
+                      "gutter-mobile": "16px",
+                      "header-height": "72px"
+              },
+              "fontFamily": {
+                      "label": [
+                              "Inter"
+                      ],
+                      "table-data": [
+                              "Inter"
+                      ],
+                      "metadata": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "page-title": [
+                              "Inter"
+                      ],
+                      "section-title": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "label": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "table-data": [
+                              "15px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "metadata": [
+                              "11px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-sm": [
+                              "15px",
+                              {
+                                      "lineHeight": "22px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-lg": [
+                              "17px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "page-title": [
+                              "28px",
+                              {
+                                      "lineHeight": "34px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "section-title": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        .custom-shadow-modal {
+            box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(20,45,30,.06);
+        }
+      </style>
+</head>
+<body class="bg-surface text-on-surface font-body-sm min-h-screen flex">
+<!-- SideNavBar -->
+<nav class="bg-surface dark:bg-inverse-surface text-primary dark:text-inverse-primary font-label text-label w-sidebar-width h-screen fixed left-0 top-0 border-r border-border-standard dark:border-outline-variant flex flex-col h-full py-section-gap px-component-gap z-50">
+<div class="flex items-center gap-3 mb-section-gap px-3">
+<div class="w-10 h-10 rounded-lg bg-primary-container text-on-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined">pets</span>
+</div>
+<div>
+<h1 class="text-page-title font-page-title text-primary dark:text-inverse-primary tracking-tight" style="font-size: 16px; line-height: 20px;">VetClinic Premium</h1>
+<p class="text-metadata font-metadata text-text-secondary">Veteriner Yönetim Sistemi</p>
+</div>
+</div>
+<ul class="flex-1 space-y-1">
+<li>
+<a class="flex items-center gap-3 px-3 py-2 text-text-nav-inactive dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-variant transition-colors duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px]">home</span>
+<span>Anasayfa</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 bg-primary-selected dark:bg-primary-container text-primary-deep dark:text-on-primary-container rounded-lg rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">pets</span>
+<span>Hastalar</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 text-text-nav-inactive dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-variant transition-colors duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px]">calendar_month</span>
+<span>Randevular</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 text-text-nav-inactive dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-variant transition-colors duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px]">stethoscope</span>
+<span>Muayene</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 text-text-nav-inactive dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-variant transition-colors duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px]">vaccines</span>
+<span>Aşılar</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 text-text-nav-inactive dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-variant transition-colors duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px]">shopping_basket</span>
+<span>Petshop</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 text-text-nav-inactive dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-variant transition-colors duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px]">payments</span>
+<span>Finans</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 text-text-nav-inactive dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-variant transition-colors duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span>Ayarlar</span>
+</a>
+</li>
+</ul>
+<div class="mt-auto">
+<a class="flex items-center gap-3 px-3 py-2 text-text-nav-inactive dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-variant transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined text-[20px]">logout</span>
+<span>Çıkış</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 ml-sidebar-width flex flex-col min-h-screen relative">
+<!-- TopNavBar -->
+<header class="bg-surface-bg dark:bg-surface-dim text-primary dark:text-inverse-primary font-label text-label h-header-height sticky top-0 z-40 bg-surface-bg dark:bg-surface-dim flex justify-between items-center px-gutter-desktop">
+<div class="flex items-center flex-1 max-w-xl relative">
+<span class="material-symbols-outlined absolute left-3 text-text-tertiary">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-elevated border border-input-border rounded-lg focus:outline-none focus:border-primary-fixed-dim focus:ring-3 focus:ring-primary-selected transition-all text-body-sm font-body-sm h-[44px]" placeholder="Hasta, sahip veya telefon ara..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-danger rounded-full border-2 border-surface-bg"></span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined">business_center</span>
+</button>
+<div class="w-10 h-10 rounded-full bg-surface-container-highest overflow-hidden border border-border-standard ml-2 cursor-pointer">
+<img alt="Kullanıcı Avatarı" class="w-full h-full object-cover" data-alt="A professional headshot of a veterinarian in a clinical setting, soft lighting, modern, confident expression, high quality, realistic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAd1slgCL-c_kyiyGbtATZ4dG87Dg3M1bBzksdkz48NEQzjtMJU4Bd0NryuakYHLPkNFSf043fJO9FAwUJMMyxhRxA31Yu8jy51ghtM-ZHPLkh84ZIj-uxyyIsYUkNA2m6lOzfIhuydXfaS8y9fwZ7OBUx3yYDcExxbhGhkIsrOyim5XkmpBI0sqP_wksmGtSBTsy1juMMPcG-skbjpwvu9qNWa9SIzgQEpyo7y-P7AiRPDeNJ9O2L5bQ"/>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<main class="flex-1 p-gutter-desktop relative">
+<!-- Dimming Overlay for Popover -->
+<div class="absolute inset-0 bg-on-surface/5 z-20 pointer-events-none rounded-tl-xl transition-opacity"></div>
+<div class="flex justify-between items-center mb-section-gap">
+<div>
+<h2 class="text-page-title font-page-title text-on-surface">Hastalar</h2>
+<p class="text-text-secondary font-body-sm text-body-sm mt-1">Klinikte kayıtlı tüm hastaların listesi.</p>
+</div>
+<button class="bg-primary-container hover:bg-primary-hover text-on-primary font-label text-label px-4 py-2 rounded-lg h-[42px] flex items-center gap-2 transition-colors">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                    Yeni Kayıt
+                </button>
+</div>
+<!-- Toolbar & Filter Area -->
+<div class="bg-surface-elevated border border-border-standard rounded-t-xl p-4 flex justify-between items-center relative z-30">
+<div class="flex gap-2">
+<button class="px-4 py-2 rounded-lg text-body-sm font-body-sm text-on-surface bg-surface-container hover:bg-surface-container-high transition-colors">Tümü (142)</button>
+<button class="px-4 py-2 rounded-lg text-body-sm font-body-sm text-text-secondary hover:bg-surface-container transition-colors">Tedavide (12)</button>
+<button class="px-4 py-2 rounded-lg text-body-sm font-body-sm text-text-secondary hover:bg-surface-container transition-colors">Taburcu (130)</button>
+</div>
+<div class="relative">
+<!-- Filter Button (Active State) -->
+<button class="px-4 py-2 rounded-lg text-body-sm font-body-sm text-primary-deep bg-primary-selected border border-primary-fixed-dim hover:bg-primary-wash transition-colors flex items-center gap-2 h-[42px]">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+                        Filtrele
+                        <span class="bg-primary-container text-on-primary text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold ml-1">2</span>
+</button>
+<!-- Filter Popover -->
+<div class="absolute right-0 top-[50px] w-[360px] bg-surface-elevated rounded-xl border border-border-standard custom-shadow-modal z-50 flex flex-col">
+<!-- Header -->
+<div class="px-5 py-4 border-b border-border-standard flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant">filter_list</span>
+<h3 class="text-section-title font-section-title text-on-surface" style="font-size: 16px; line-height: 24px;">Filtreler</h3>
+</div>
+<button class="text-text-secondary hover:text-on-surface font-label text-label transition-colors">Temizle</button>
+</div>
+<!-- Content -->
+<div class="p-5 overflow-y-auto max-h-[614px] flex flex-col gap-6">
+<!-- Section: Durum -->
+<div>
+<h4 class="text-label font-label text-on-surface mb-3">Durum</h4>
+<div class="flex flex-col gap-2">
+<label class="flex items-center gap-3 cursor-pointer">
+<input checked="" class="w-4 h-4 rounded text-primary-container focus:ring-primary-selected border-input-border" type="checkbox"/>
+<span class="text-body-sm font-body-sm text-on-surface">Aktif</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer">
+<input class="w-4 h-4 rounded text-primary-container focus:ring-primary-selected border-input-border" type="checkbox"/>
+<span class="text-body-sm font-body-sm text-on-surface">Pasif</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer">
+<input class="w-4 h-4 rounded text-primary-container focus:ring-primary-selected border-input-border" type="checkbox"/>
+<span class="text-body-sm font-body-sm text-on-surface">Arşivlenmiş</span>
+</label>
+</div>
+</div>
+<!-- Section: Tür -->
+<div>
+<h4 class="text-label font-label text-on-surface mb-3">Tür</h4>
+<div class="flex flex-wrap gap-2">
+<button class="px-3 py-1.5 rounded-lg border border-primary-container bg-primary-selected text-primary-deep text-label font-label transition-colors">Kedi</button>
+<button class="px-3 py-1.5 rounded-lg border border-border-standard bg-surface text-text-secondary hover:bg-surface-container-low transition-colors">Köpek</button>
+<button class="px-3 py-1.5 rounded-lg border border-border-standard bg-surface text-text-secondary hover:bg-surface-container-low transition-colors">Kuş</button>
+<button class="px-3 py-1.5 rounded-lg border border-border-standard bg-surface text-text-secondary hover:bg-surface-container-low transition-colors">Diğer</button>
+</div>
+</div>
+<!-- Section: Sağlık Uyarıları -->
+<div>
+<h4 class="text-label font-label text-on-surface mb-3">Sağlık Uyarıları</h4>
+<div class="flex flex-col gap-2">
+<label class="flex items-center gap-3 cursor-pointer">
+<input checked="" class="w-4 h-4 rounded text-primary-container focus:ring-primary-selected border-input-border" type="checkbox"/>
+<span class="text-body-sm font-body-sm text-on-surface">Alerji var</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer">
+<input class="w-4 h-4 rounded text-primary-container focus:ring-primary-selected border-input-border" type="checkbox"/>
+<span class="text-body-sm font-body-sm text-on-surface">Kronik hastalık</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer">
+<input class="w-4 h-4 rounded text-primary-container focus:ring-primary-selected border-input-border" type="checkbox"/>
+<span class="text-body-sm font-body-sm text-on-surface">Agresif</span>
+</label>
+</div>
+</div>
+<!-- Section: Son Ziyaret -->
+<div>
+<h4 class="text-label font-label text-on-surface mb-3">Son Ziyaret</h4>
+<div class="flex items-center gap-3">
+<div class="flex-1">
+<input class="w-full h-[40px] px-3 bg-surface border border-input-border rounded-lg text-body-sm font-body-sm focus:outline-none focus:border-primary-fixed-dim focus:ring-3 focus:ring-primary-selected text-text-secondary" type="date"/>
+</div>
+<span class="text-text-tertiary">-</span>
+<div class="flex-1">
+<input class="w-full h-[40px] px-3 bg-surface border border-input-border rounded-lg text-body-sm font-body-sm focus:outline-none focus:border-primary-fixed-dim focus:ring-3 focus:ring-primary-selected text-text-secondary" type="date"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<div class="px-5 py-4 border-t border-border-standard bg-surface-table-header rounded-b-xl flex justify-end gap-3">
+<button class="px-4 py-2 h-[42px] rounded-lg border border-border-standard bg-surface-elevated text-on-surface font-label text-label hover:bg-surface-container-low transition-colors">Vazgeç</button>
+<button class="px-4 py-2 h-[42px] rounded-lg bg-primary-container hover:bg-primary-hover text-on-primary font-label text-label transition-colors">Uygula</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Table Area (Dimmed context) -->
+<div class="bg-surface-elevated border border-t-0 border-border-standard rounded-b-xl overflow-hidden relative z-10">
+<table class="w-full text-left">
+<thead class="bg-surface-table-header border-b border-border-standard">
+<tr>
+<th class="py-3 px-4 font-label text-label text-text-secondary w-1/4">Hasta / Sahip</th>
+<th class="py-3 px-4 font-label text-label text-text-secondary w-1/6">Tür / Irk</th>
+<th class="py-3 px-4 font-label text-label text-text-secondary w-1/6">Son Ziyaret</th>
+<th class="py-3 px-4 font-label text-label text-text-secondary w-1/4">Uyarılar</th>
+<th class="py-3 px-4 font-label text-label text-text-secondary w-12 text-center">İşlemler</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-standard">
+<tr class="hover:bg-surface-grouped transition-colors opacity-60">
+<td class="py-4 px-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden">
+<img alt="Hasta Foto" class="w-full h-full object-cover" data-alt="A cute golden retriever puppy looking at the camera, soft lighting, high quality, realistic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCjWyqSulah9Otp09Lxb7BfCE-KKBuwPcwoIx8sCDq6wjlsDS1p_Hs5qbHXGd5fBjIOvT5HHXmjcvDCUQ7shPkm0WMB92X3Nwni6rlKxvNn8RAE58gRSUdHgowcmB3lX9lqXFjOMohG8xCIijFUyYD_gOjiUdQVlUckzS0N-lx-aMHlvkzWeQ49pHmWLUQMkU-H_6gXikyXWDFOHPN3nobFwroeKX8TjTX9jgedQ8Mz8BWU6CwFrM9noA"/>
+</div>
+<div>
+<p class="text-body-sm font-body-sm font-medium text-on-surface">Max</p>
+<p class="text-metadata font-metadata text-text-secondary">Ahmet Yılmaz</p>
+</div>
+</div>
+</td>
+<td class="py-4 px-4 text-body-sm font-body-sm text-on-surface">Köpek <span class="text-text-tertiary">/ Golden</span></td>
+<td class="py-4 px-4 text-body-sm font-body-sm text-text-secondary">12 Eki 2023</td>
+<td class="py-4 px-4">
+<div class="flex flex-wrap gap-1">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-warning-pale text-warning text-metadata font-metadata border border-warning/20">
+<span class="material-symbols-outlined text-[12px]">warning</span> Alerji
+                                    </span>
+</div>
+</td>
+<td class="py-4 px-4 text-center">
+<button class="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-text-secondary transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_horiz</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-grouped transition-colors opacity-60">
+<td class="py-4 px-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden">
+<span class="material-symbols-outlined text-text-secondary">pets</span>
+</div>
+<div>
+<p class="text-body-sm font-body-sm font-medium text-on-surface">Luna</p>
+<p class="text-metadata font-metadata text-text-secondary">Ayşe Demir</p>
+</div>
+</div>
+</td>
+<td class="py-4 px-4 text-body-sm font-body-sm text-on-surface">Kedi <span class="text-text-tertiary">/ Tekir</span></td>
+<td class="py-4 px-4 text-body-sm font-body-sm text-text-secondary">05 Kas 2023</td>
+<td class="py-4 px-4">
+</td>
+<td class="py-4 px-4 text-center">
+<button class="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-text-secondary transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_horiz</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</main>
+</div>
+</body></html>

@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+
+<html class="light" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VetNiva - İmzalanmış Muayene Kaydı</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "divider-standard": "#ECEFED",
+                    "on-primary-fixed-variant": "#00522e",
+                    "primary-fixed": "#9af6bb",
+                    "on-tertiary-container": "#ffe6e6",
+                    "secondary-fixed": "#e4e2e4",
+                    "primary-hover": "#10633B",
+                    "on-background": "#181d19",
+                    "tertiary": "#8b373d",
+                    "text-tertiary": "#86868B",
+                    "primary-wash": "#F0F8F3",
+                    "secondary-container": "#e2dfe1",
+                    "outline-variant": "#bec9be",
+                    "on-primary-fixed": "#002110",
+                    "error": "#ba1a1a",
+                    "success": "#248A3D",
+                    "surface-container-high": "#e5e9e3",
+                    "info": "#2775B6",
+                    "inverse-surface": "#2d322d",
+                    "surface-grouped": "#F1F5F1",
+                    "error-container": "#ffdad6",
+                    "info-pale": "#EAF3FB",
+                    "outline": "#6f7a70",
+                    "surface-tint": "#006d3f",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-fixed-variant": "#7c2b33",
+                    "primary-deep": "#0D4D2E",
+                    "primary-container": "#167a4a",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-bright": "#f6fbf4",
+                    "primary-fixed-dim": "#7ed9a0",
+                    "danger-pale": "#FCEBEA",
+                    "danger": "#C3362C",
+                    "surface-container": "#ebefe8",
+                    "on-secondary-fixed-variant": "#474649",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-fixed": "#1b1b1d",
+                    "surface-bg": "#F7F8F7",
+                    "surface-table-header": "#F6F8F6",
+                    "tertiary-fixed-dim": "#ffb3b5",
+                    "surface-container-low": "#f0f5ee",
+                    "tertiary-fixed": "#ffdada",
+                    "border-standard": "#E1E5E2",
+                    "on-tertiary-fixed": "#40000b",
+                    "on-error-container": "#93000a",
+                    "on-error": "#ffffff",
+                    "on-surface-variant": "#3f4941",
+                    "on-surface": "#181d19",
+                    "text-secondary": "#5F6368",
+                    "surface-dim": "#d7dbd5",
+                    "surface": "#f6fbf4",
+                    "on-primary-container": "#a9ffc6",
+                    "secondary": "#5f5e60",
+                    "on-secondary-container": "#636264",
+                    "tertiary-container": "#a94e54",
+                    "surface-variant": "#dfe4dd",
+                    "warning": "#B86B00",
+                    "warning-pale": "#FFF4E5",
+                    "surface-container-highest": "#dfe4dd",
+                    "inverse-primary": "#7ed9a0",
+                    "inverse-on-surface": "#edf2eb",
+                    "background": "#f6fbf4",
+                    "primary-selected": "#E6F4EC",
+                    "input-border": "#D5DBD7",
+                    "secondary-fixed-dim": "#c8c6c8",
+                    "on-primary": "#ffffff",
+                    "text-nav-inactive": "#4B5563",
+                    "success-pale": "#EAF6EC",
+                    "surface-elevated": "#FFFFFF",
+                    "primary": "#005f37"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "section-gap": "24px",
+                    "major-gap": "32px",
+                    "header-height": "72px",
+                    "base": "8px",
+                    "gutter-mobile": "16px",
+                    "gutter-desktop": "32px",
+                    "component-gap": "16px",
+                    "sidebar-width": "248px"
+            },
+            "fontFamily": {
+                    "section-title": ["Inter", "sans-serif"],
+                    "table-data": ["Inter", "sans-serif"],
+                    "label": ["Inter", "sans-serif"],
+                    "metadata": ["Inter", "sans-serif"],
+                    "body-sm": ["Inter", "sans-serif"],
+                    "body-lg": ["Inter", "sans-serif"],
+                    "page-title": ["Inter", "sans-serif"]
+            },
+            "fontSize": {
+                    "section-title": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "table-data": ["15px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "label": ["13px", {"lineHeight": "18px", "fontWeight": "500"}],
+                    "metadata": ["11px", {"lineHeight": "16px", "fontWeight": "400"}],
+                    "body-sm": ["15px", {"lineHeight": "22px", "fontWeight": "400"}],
+                    "body-lg": ["17px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "page-title": ["28px", {"lineHeight": "34px", "fontWeight": "600"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: theme('colors.background'); }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .material-symbols-outlined.fill { font-variation-settings: 'FILL' 1; }
+    </style>
+</head>
+<body class="text-on-surface flex flex-col md:flex-row min-h-screen">
+<!-- SideNavBar (Desktop) -->
+<nav class="hidden md:flex flex-col h-full py-base px-base fixed left-0 top-0 w-[248px] bg-surface-container-lowest border-r border-border-standard z-20">
+<div class="mb-major-gap px-2 mt-2">
+<h1 class="font-page-title text-page-title font-bold text-primary flex flex-col">
+                VetNiva
+                <span class="font-metadata text-metadata text-text-secondary font-normal mt-1">Premium Management</span>
+</h1>
+</div>
+<button class="w-full bg-primary-container text-on-primary h-[42px] rounded-[10px] flex items-center justify-center font-label text-label hover:bg-primary-hover transition-colors mb-section-gap shadow-sm">
+<span class="material-symbols-outlined mr-2 text-[18px]">add</span>
+            Yeni Kayıt
+        </button>
+<div class="flex-1 space-y-1">
+<a class="flex items-center px-3 py-2.5 rounded-[10px] text-text-nav-inactive hover:bg-primary-wash hover:text-primary transition-colors font-label text-label group" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px] group-hover:text-primary transition-colors">dashboard</span>
+                Anasayfa
+            </a>
+<a class="flex items-center px-3 py-2.5 rounded-[10px] text-text-nav-inactive hover:bg-primary-wash hover:text-primary transition-colors font-label text-label group" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px] group-hover:text-primary transition-colors">pets</span>
+                Hastalar
+            </a>
+<a class="flex items-center px-3 py-2.5 rounded-[10px] text-text-nav-inactive hover:bg-primary-wash hover:text-primary transition-colors font-label text-label group" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px] group-hover:text-primary transition-colors">calendar_today</span>
+                Randevular
+            </a>
+<a class="flex items-center px-3 py-2.5 rounded-[10px] bg-primary-selected text-primary font-semibold font-label text-label opacity-90 transition-all duration-150 group" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px] fill">medical_services</span>
+                Muayene
+            </a>
+<a class="flex items-center px-3 py-2.5 rounded-[10px] text-text-nav-inactive hover:bg-primary-wash hover:text-primary transition-colors font-label text-label group" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px] group-hover:text-primary transition-colors">vaccines</span>
+                Aşılar
+            </a>
+<a class="flex items-center px-3 py-2.5 rounded-[10px] text-text-nav-inactive hover:bg-primary-wash hover:text-primary transition-colors font-label text-label group" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px] group-hover:text-primary transition-colors">shopping_bag</span>
+                Petshop
+            </a>
+<a class="flex items-center px-3 py-2.5 rounded-[10px] text-text-nav-inactive hover:bg-primary-wash hover:text-primary transition-colors font-label text-label group" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px] group-hover:text-primary transition-colors">payments</span>
+                Finans
+            </a>
+</div>
+<div class="mt-auto space-y-1 pt-4 border-t border-divider-standard">
+<a class="flex items-center px-3 py-2.5 rounded-[10px] text-text-nav-inactive hover:bg-primary-wash hover:text-primary transition-colors font-label text-label group" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px] group-hover:text-primary transition-colors">settings</span>
+                Ayarlar
+            </a>
+<a class="flex items-center px-3 py-2.5 rounded-[10px] text-text-nav-inactive hover:bg-primary-wash hover:text-primary transition-colors font-label text-label group" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px] group-hover:text-primary transition-colors">help_outline</span>
+                Destek
+            </a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-[248px] flex flex-col min-h-screen">
+<!-- TopNavBar (Desktop) -->
+<header class="hidden md:flex justify-between items-center px-gutter-desktop w-full fixed top-0 right-0 h-[72px] left-[248px] bg-surface border-b border-border-standard z-10">
+<div class="flex items-center gap-6">
+<!-- Navigation Links -->
+<nav class="flex space-x-6">
+<a class="text-text-secondary hover:text-primary-hover transition-colors font-body-sm text-body-sm" href="#">Klinik Değiştir</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-text-secondary hover:text-primary-hover transition-colors rounded-full p-1">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-dim border border-border-standard overflow-hidden flex items-center justify-center cursor-pointer">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A professional headshot of a veterinarian in a clinical setting, soft natural lighting, light mode aesthetic, corporate modern style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5wBzXAiJ30Oj6KReFGYljCYuynwa1AsLRt8neKDqHFSpVkBvc_nmww_u3MIQ3794rUTUiO6zMAiaVmccKmxeVdXZxUyGsT7vWx66H4HzJEo4wIKq2vRaTgdbQeWsNn253TPf4OOqtXqlWOAjNoEQmgx6RbLwm1PnYM-5yKtaetiESjRnDCoaQ0B4Y6o82BEPVyekoc1ehru7xu5X88r0ak9i9O7bpzRt8-cYs_fFvzGoI9hXIsk2AOA"/>
+</div>
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="flex-1 mt-0 md:mt-[72px] p-gutter-mobile md:p-gutter-desktop bg-background flex flex-col lg:flex-row gap-major-gap">
+<!-- Left Column: Clinical Record (Read Only) -->
+<div class="flex-1 flex flex-col gap-component-gap">
+<!-- Patient Strip Header (Read Only Mode) -->
+<div class="bg-surface-elevated border border-border-standard rounded-[12px] p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 rounded-full bg-surface-dim border-2 border-surface overflow-hidden relative shadow-sm">
+<img alt="Pamuk" class="w-full h-full object-cover" data-alt="A fluffy white Angora cat looking calmly at the camera, clinical veterinary setting background, bright white clean lighting, modern soft shadows." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAG_fU2bFBJ-1qQOhv97RotUBDkHdS36xg1AEW-szJfdBlSUZN3ecFW9DnOulgUKM2nLIqTOqZpH_e4M6oMq7f43K6KvyLt28SKQvlhh-Mgr1F44wDxMaTvwOY5kfNNkEs708vMULV77GA4lpNpG3ojf174fiZz06QIvNLbFeVAOIhj_-YUNPdZM4ehtVprVqqCkx68O2B1bcsBGAwBKnzeEtGxy7iG6pKJMD0mXrhfpSBCX46Fmebxzg"/>
+</div>
+<div>
+<div class="flex items-center gap-3 mb-1">
+<h2 class="font-section-title text-section-title text-on-surface">Pamuk</h2>
+<span class="bg-surface-container-high text-text-nav-inactive px-2 py-0.5 rounded-full font-metadata text-metadata flex items-center gap-1 border border-border-standard">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+                                    İmzalandı
+                                </span>
+</div>
+<div class="flex flex-wrap items-center gap-x-4 gap-y-1 font-body-sm text-body-sm text-text-secondary">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">pets</span> Kedi, Ankara Kedisi</span>
+<span class="text-divider-standard">•</span>
+<span>Dişi (Kısır)</span>
+<span class="text-divider-standard">•</span>
+<span>3 Yaş, 4.2 kg</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col items-end text-right">
+<div class="font-label text-label text-on-surface mb-1">Hekim: Dr. Ayşe Yılmaz</div>
+<div class="font-metadata text-metadata text-text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">history</span>
+                            İmzalanma: 4 Ağustos 2026, 11:20
+                        </div>
+</div>
+</div>
+<!-- Alert for Locked State -->
+<div class="bg-info-pale border border-info/20 rounded-[10px] p-4 flex items-start gap-3">
+<span class="material-symbols-outlined text-info mt-0.5">info</span>
+<div>
+<h4 class="font-label text-label text-on-surface">Salt Okunur Kayıt</h4>
+<p class="font-body-sm text-body-sm text-text-secondary mt-1">Bu muayene kaydı imzalanmış ve kilitlenmiştir. Üzerinde değişiklik yapılamaz. Yanlışlık olduğunu düşünüyorsanız bir düzeltme kaydı oluşturabilirsiniz.</p>
+</div>
+</div>
+<!-- Clinical Content (Read Only Sections) -->
+<div class="bg-surface-elevated border border-border-standard rounded-[12px] flex flex-col overflow-hidden">
+<!-- Section: Şikayet -->
+<div class="p-6 border-b border-border-standard last:border-0 relative">
+<div class="absolute top-6 right-6 text-text-tertiary">
+<span class="material-symbols-outlined text-[20px]">lock</span>
+</div>
+<h3 class="font-label text-label text-on-surface mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-text-secondary text-[18px]">chat</span>
+                            Şikayet / Anamnez
+                        </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+                            Hasta sahibi son 2 gündür iştahsızlık ve kusma şikayeti ile başvurdu. Kusmuk sarı köpüklü ve günde 3-4 kez tekrarlıyor. Su içiyor ancak mama yemiyor. Halsizlik mevcut. Dışkılama en son dün sabah normal kıvamda gerçekleşmiş.
+                        </p>
+</div>
+<!-- Section: Vital Bulgular -->
+<div class="p-6 border-b border-border-standard last:border-0 relative bg-surface-table-header/30">
+<div class="absolute top-6 right-6 text-text-tertiary">
+<span class="material-symbols-outlined text-[20px]">lock</span>
+</div>
+<h3 class="font-label text-label text-on-surface mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-text-secondary text-[18px]">favorite</span>
+                            Vital Bulgular
+                        </h3>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="bg-surface rounded-lg p-3 border border-border-standard">
+<div class="font-metadata text-metadata text-text-secondary mb-1">Ateş</div>
+<div class="font-body-lg text-body-lg text-on-surface font-medium flex items-center justify-between">
+                                    39.2 °C <span class="text-warning font-label text-[12px] bg-warning-pale px-1.5 py-0.5 rounded">Hafif Yüksek</span>
+</div>
+</div>
+<div class="bg-surface rounded-lg p-3 border border-border-standard">
+<div class="font-metadata text-metadata text-text-secondary mb-1">Nabız</div>
+<div class="font-body-lg text-body-lg text-on-surface font-medium">140 /dk</div>
+</div>
+<div class="bg-surface rounded-lg p-3 border border-border-standard">
+<div class="font-metadata text-metadata text-text-secondary mb-1">Solunum</div>
+<div class="font-body-lg text-body-lg text-on-surface font-medium">32 /dk</div>
+</div>
+<div class="bg-surface rounded-lg p-3 border border-border-standard">
+<div class="font-metadata text-metadata text-text-secondary mb-1">CRT</div>
+<div class="font-body-lg text-body-lg text-on-surface font-medium">&lt; 2 sn</div>
+</div>
+</div>
+</div>
+<!-- Section: SOAP -->
+<div class="p-6 border-b border-border-standard last:border-0 relative">
+<div class="absolute top-6 right-6 text-text-tertiary">
+<span class="material-symbols-outlined text-[20px]">lock</span>
+</div>
+<h3 class="font-label text-label text-on-surface mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-text-secondary text-[18px]">fact_check</span>
+                            Klinik Bulgular
+                        </h3>
+<div class="space-y-4">
+<div>
+<span class="font-label text-label text-on-surface block mb-1">Genel Durum:</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Deprese, dehidrasyon %5 civarı. Mukoz membranlar soluk pembe.</p>
+</div>
+<div>
+<span class="font-label text-label text-on-surface block mb-1">Abdominal Palpasyon:</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Kranial batında hafif hassasiyet mevcut. Kitle veya yabancı cisim palpe edilmedi.</p>
+</div>
+</div>
+</div>
+<!-- Section: Tanı & Tedavi -->
+<div class="p-6 border-b border-border-standard last:border-0 relative">
+<div class="absolute top-6 right-6 text-text-tertiary">
+<span class="material-symbols-outlined text-[20px]">lock</span>
+</div>
+<div class="grid md:grid-cols-2 gap-6">
+<div>
+<h3 class="font-label text-label text-on-surface mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-text-secondary text-[18px]">psychology</span>
+                                    Ön Tanı
+                                </h3>
+<div class="inline-block bg-surface-container-high border border-border-standard px-3 py-1.5 rounded-lg font-body-sm text-body-sm text-on-surface mb-2">
+                                    Akut Gastroenterit
+                                </div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">Diyet kaynaklı şüpheleniliyor.</p>
+</div>
+<div>
+<h3 class="font-label text-label text-on-surface mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-text-secondary text-[18px]">vaccines</span>
+                                    Uygulanan Tedaviler
+                                </h3>
+<ul class="space-y-2">
+<li class="flex items-start gap-2 font-body-sm text-body-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-success mt-0.5">check_circle</span>
+                                        SC Sıvı Tedavisi (Laktatlı Ringer, 150ml)
+                                    </li>
+<li class="flex items-start gap-2 font-body-sm text-body-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-success mt-0.5">check_circle</span>
+                                        Cerenia Enj. (0.4ml, SC)
+                                    </li>
+</ul>
+</div>
+</div>
+</div>
+<!-- Section: Reçete & Öneriler -->
+<div class="p-6 relative bg-surface-table-header/30">
+<div class="absolute top-6 right-6 text-text-tertiary">
+<span class="material-symbols-outlined text-[20px]">lock</span>
+</div>
+<h3 class="font-label text-label text-on-surface mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-text-secondary text-[18px]">prescriptions</span>
+                            Reçete ve Öneriler
+                        </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">
+                            24 saat yiyecek verilmemeli, az miktarda sık sık su sunulmalı. Yarın Gastrointestinal diyete kademeli başlanacak. Kusma devam ederse tekrar kliniğe getirilmeli.
+                        </p>
+<div class="flex items-center gap-3">
+<div class="bg-surface border border-border-standard rounded-md px-3 py-2 flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary-wash flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">medication</span>
+</div>
+<div>
+<div class="font-label text-label text-on-surface">Gastrointestinal Yaş Mama</div>
+<div class="font-metadata text-metadata text-text-secondary">2 Adet</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Audit Trail & Actions -->
+<div class="w-full lg:w-[320px] flex flex-col gap-component-gap">
+<!-- Action Card -->
+<div class="bg-surface-elevated border border-border-standard rounded-[12px] p-5">
+<button class="w-full h-[42px] border border-warning text-warning rounded-[10px] flex items-center justify-center font-label text-label hover:bg-warning-pale transition-colors">
+<span class="material-symbols-outlined mr-2 text-[18px]">edit_note</span>
+                        Düzeltme Oluştur
+                    </button>
+<p class="font-metadata text-metadata text-text-secondary text-center mt-3">Yeni bir ek düzeltme (addendum) kaydı açar. Orijinal kayıt değişmez.</p>
+</div>
+<!-- Audit Trail (Kayıt Geçmişi) -->
+<div class="bg-surface-elevated border border-border-standard rounded-[12px] flex flex-col">
+<div class="p-4 border-b border-border-standard bg-surface-table-header">
+<h3 class="font-label text-label text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">history</span>
+                            Kayıt Geçmişi
+                        </h3>
+</div>
+<div class="p-5">
+<div class="relative border-l border-border-standard ml-3 space-y-6">
+<!-- Timeline Item: İmzalandı -->
+<div class="relative pl-6">
+<div class="absolute -left-[5px] top-1 w-[9px] h-[9px] rounded-full bg-info ring-4 ring-surface-elevated"></div>
+<div class="font-label text-label text-on-surface mb-0.5">İmzalandı ve Kilitlendi</div>
+<div class="font-metadata text-metadata text-text-secondary flex items-center gap-1 mb-1">
+<span class="material-symbols-outlined text-[12px]">schedule</span> 11:20
+                                </div>
+<div class="font-body-sm text-[12px] text-on-surface-variant bg-surface-container-low px-2 py-1 rounded inline-block mt-1 border border-border-standard">
+                                    Dr. Ayşe Yılmaz tarafından
+                                </div>
+</div>
+<!-- Timeline Item: Tedavi -->
+<div class="relative pl-6">
+<div class="absolute -left-[5px] top-1 w-[9px] h-[9px] rounded-full bg-surface-dim border-2 border-surface-elevated"></div>
+<div class="font-body-sm text-[13px] text-on-surface mb-0.5">Tedavi ve Reçete eklendi</div>
+<div class="font-metadata text-metadata text-text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">schedule</span> 11:05
+                                </div>
+</div>
+<!-- Timeline Item: Vital -->
+<div class="relative pl-6">
+<div class="absolute -left-[5px] top-1 w-[9px] h-[9px] rounded-full bg-surface-dim border-2 border-surface-elevated"></div>
+<div class="font-body-sm text-[13px] text-on-surface mb-0.5">Vital Bulgular eklendi</div>
+<div class="font-metadata text-metadata text-text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">schedule</span> 10:55
+                                </div>
+</div>
+<!-- Timeline Item: Created -->
+<div class="relative pl-6">
+<div class="absolute -left-[5px] top-1 w-[9px] h-[9px] rounded-full bg-surface-dim border-2 border-surface-elevated"></div>
+<div class="font-body-sm text-[13px] text-on-surface mb-0.5">Muayene kaydı oluşturuldu</div>
+<div class="font-metadata text-metadata text-text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">schedule</span> 10:45
+                                </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+
+<html class="light" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VetNiva - Ayarlar - Kullanıcılar</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "danger-pale": "#FCEBEA",
+                        "surface-container": "#ebefe8",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed-dim": "#c8c6c8",
+                        "background": "#f6fbf4",
+                        "tertiary": "#8b373d",
+                        "inverse-surface": "#2d322d",
+                        "primary-selected": "#E6F4EC",
+                        "on-primary-fixed": "#002110",
+                        "on-background": "#181d19",
+                        "on-error": "#ffffff",
+                        "inverse-primary": "#7ed9a0",
+                        "on-tertiary-container": "#ffe6e6",
+                        "on-surface-variant": "#3f4941",
+                        "surface": "#f6fbf4",
+                        "surface-variant": "#dfe4dd",
+                        "on-secondary-fixed-variant": "#474649",
+                        "surface-elevated": "#FFFFFF",
+                        "primary": "#005f37",
+                        "secondary": "#5f5e60",
+                        "success": "#248A3D",
+                        "on-secondary-fixed": "#1b1b1d",
+                        "tertiary-fixed": "#ffdada",
+                        "on-tertiary-fixed-variant": "#7c2b33",
+                        "on-tertiary": "#ffffff",
+                        "input-border": "#D5DBD7",
+                        "warning-pale": "#FFF4E5",
+                        "success-pale": "#EAF6EC",
+                        "divider-standard": "#ECEFED",
+                        "text-secondary": "#5F6368",
+                        "warning": "#B86B00",
+                        "primary-fixed": "#9af6bb",
+                        "error": "#ba1a1a",
+                        "surface-dim": "#d7dbd5",
+                        "danger": "#C3362C",
+                        "tertiary-fixed-dim": "#ffb3b5",
+                        "primary-deep": "#0D4D2E",
+                        "text-tertiary": "#86868B",
+                        "outline": "#6f7a70",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-container": "#167a4a",
+                        "primary-hover": "#10633B",
+                        "on-primary": "#ffffff",
+                        "info": "#2775B6",
+                        "primary-wash": "#F0F8F3",
+                        "surface-container-low": "#f0f5ee",
+                        "surface-tint": "#006d3f",
+                        "surface-bg": "#F7F8F7",
+                        "on-tertiary-fixed": "#40000b",
+                        "on-surface": "#181d19",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed": "#e4e2e4",
+                        "surface-container-highest": "#dfe4dd",
+                        "border-standard": "#E1E5E2",
+                        "inverse-on-surface": "#edf2eb",
+                        "on-secondary-container": "#636264",
+                        "on-primary-fixed-variant": "#00522e",
+                        "surface-grouped": "#F1F5F1",
+                        "surface-container-high": "#e5e9e3",
+                        "text-nav-inactive": "#4B5563",
+                        "outline-variant": "#bec9be",
+                        "primary-fixed-dim": "#7ed9a0",
+                        "tertiary-container": "#a94e54",
+                        "secondary-container": "#e2dfe1",
+                        "surface-table-header": "#F6F8F6",
+                        "info-pale": "#EAF3FB",
+                        "on-primary-container": "#a9ffc6",
+                        "surface-bright": "#f6fbf4",
+                        "on-secondary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "8px",
+                        "section-gap": "24px",
+                        "sidebar-width": "248px",
+                        "gutter-desktop": "32px",
+                        "major-gap": "32px",
+                        "component-gap": "16px",
+                        "gutter-mobile": "16px",
+                        "header-height": "72px"
+                    },
+                    "fontFamily": {
+                        "label": ["Inter", "sans-serif"],
+                        "metadata": ["Inter", "sans-serif"],
+                        "body-sm": ["Inter", "sans-serif"],
+                        "table-data": ["Inter", "sans-serif"],
+                        "body-lg": ["Inter", "sans-serif"],
+                        "page-title": ["Inter", "sans-serif"],
+                        "section-title": ["Inter", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "label": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+                        "metadata": ["11px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "body-sm": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+                        "table-data": ["15px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-lg": ["17px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "page-title": ["28px", { "lineHeight": "34px", "fontWeight": "600" }],
+                        "section-title": ["20px", { "lineHeight": "28px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Custom scrollbar for drawer */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #dfe4dd;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #bec9be;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-sm min-h-screen overflow-x-hidden flex">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-screen w-[248px] bg-surface border-r border-border-standard flex flex-col p-4 gap-2 z-40">
+<div class="mb-6 flex items-center px-4 pt-2">
+<span class="font-page-title text-page-title text-primary-deep tracking-tight">VetNiva</span>
+</div>
+<button class="bg-primary-container text-on-primary hover:bg-primary-hover h-[42px] rounded-lg font-label text-label transition-colors mb-4 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">add</span>
+            Yeni Kayıt
+        </button>
+<div class="flex-1 overflow-y-auto flex flex-col gap-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-text-nav-inactive hover:bg-primary-wash transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label text-label">Kontrol Paneli</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-text-nav-inactive hover:bg-primary-wash transition-colors" href="#">
+<span class="material-symbols-outlined">pets</span>
+<span class="font-label text-label">Hastalar</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-text-nav-inactive hover:bg-primary-wash transition-colors" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="font-label text-label">Randevular</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-text-nav-inactive hover:bg-primary-wash transition-colors" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-label text-label">Envanter</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-text-nav-inactive hover:bg-primary-wash transition-colors" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label text-label">Finans</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-text-nav-inactive hover:bg-primary-wash transition-colors" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label text-label">Raporlar</span>
+</a>
+</div>
+<div class="mt-auto border-t border-border-standard pt-4 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary-selected text-primary-deep transition-colors" href="#">
+<span class="material-symbols-outlined fill">settings</span>
+<span class="font-label text-label">Ayarlar</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-text-nav-inactive hover:bg-primary-wash transition-colors" href="#">
+<span class="material-symbols-outlined">help_outline</span>
+<span class="font-label text-label">Destek</span>
+</a>
+</div>
+</nav>
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 h-[72px] w-[calc(100%-248px)] bg-background/80 backdrop-blur-md flex items-center justify-end px-gutter-desktop z-30">
+<div class="flex items-center gap-4">
+<button class="h-10 px-4 rounded border border-border-standard bg-surface-elevated text-on-surface hover:bg-surface-grouped font-label text-label transition-colors">
+                Klinik Değiştir
+            </button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-grouped transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-10 h-10 rounded-full overflow-hidden border border-border-standard">
+<img alt="Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuADm8SprX4OClUGybAvMsP9Ra3Kur_7QhFs-jB06JfTMtyXdDpPnMaXxSxF_a6dv0degvB57XiOD-YO96-22_SebiM_7U_X1wCdtD_JcYajP3G8XZOD7kiNsz9ALO-GF0xmsN4HUIB6WP9uMbCBEn0LGMmoInSchMWT4ZhJ5aFWdFaRDFxU43-6-_CkjuJRU8RuN8zCUDb9ytqm3kZKJQ3jT6wmfiHOu-JTront3lcICDj0QW6CGK1oXA"/>
+</button>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="ml-[248px] mt-[72px] flex-1 p-gutter-desktop pr-[420px] transition-all duration-300 relative">
+<!-- Settings Layout Structure -->
+<div class="flex gap-major-gap h-[calc(100vh-72px-64px)]">
+<!-- Settings Sub-Navigation -->
+<aside class="w-64 shrink-0 flex flex-col gap-1 pr-6 border-r border-divider-standard">
+<h2 class="font-section-title text-section-title text-on-background mb-4 px-3">Ayarlar</h2>
+<a class="px-3 py-2.5 rounded-lg text-text-nav-inactive hover:bg-primary-wash font-body-sm flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">storefront</span>
+                    Klinik Bilgileri
+                </a>
+<a class="px-3 py-2.5 rounded-lg bg-primary-selected text-primary-deep font-body-sm flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl fill">group</span>
+                    Kullanıcılar
+                </a>
+<a class="px-3 py-2.5 rounded-lg text-text-nav-inactive hover:bg-primary-wash font-body-sm flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">notifications_active</span>
+                    Bildirimler
+                </a>
+<a class="px-3 py-2.5 rounded-lg text-text-nav-inactive hover:bg-primary-wash font-body-sm flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">security</span>
+                    Güvenlik
+                </a>
+<a class="px-3 py-2.5 rounded-lg text-text-nav-inactive hover:bg-primary-wash font-body-sm flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">dataset</span>
+                    Veri Yönetimi
+                </a>
+<a class="px-3 py-2.5 rounded-lg text-text-nav-inactive hover:bg-primary-wash font-body-sm flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">receipt_long</span>
+                    Fatura &amp; Abonelik
+                </a>
+</aside>
+<!-- Settings Content (Kullanıcılar) -->
+<div class="flex-1 flex flex-col min-w-0">
+<!-- Content Header -->
+<div class="flex justify-between items-start mb-section-gap">
+<div>
+<h1 class="font-page-title text-page-title text-on-background mb-1">Kullanıcılar</h1>
+<p class="font-body-sm text-text-secondary">Kliniğinize erişimi olan ekip üyelerini yönetin.</p>
+</div>
+<button class="bg-primary-container text-on-primary hover:bg-primary-hover h-[42px] px-4 rounded-[10px] font-label text-label transition-colors flex items-center justify-center gap-2 shadow-sm">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                        Kullanıcı Davet Et
+                    </button>
+</div>
+<!-- Users Table Panel -->
+<div class="bg-surface-elevated border border-border-standard rounded-xl overflow-hidden shadow-sm flex flex-col flex-1">
+<!-- Table Actions/Filters (Optional, but good for real UI) -->
+<div class="p-4 border-b border-border-standard flex items-center justify-between bg-surface-table-header">
+<div class="relative w-72">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">search</span>
+<input class="w-full h-10 pl-10 pr-4 rounded-lg border-input-border bg-surface-elevated text-body-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow placeholder:text-text-tertiary" placeholder="Kullanıcı ara..." type="text"/>
+</div>
+<div class="flex gap-2">
+<button class="h-10 px-3 rounded-lg border border-border-standard bg-surface-elevated text-on-surface hover:bg-surface-grouped font-label text-label transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+                                Filtrele
+                            </button>
+</div>
+</div>
+<!-- The Table -->
+<div class="overflow-x-auto flex-1">
+<table class="w-full text-left whitespace-nowrap">
+<thead>
+<tr class="border-b border-border-standard bg-surface-bg">
+<th class="px-6 py-3 font-label text-metadata text-text-secondary uppercase tracking-wider">Kullanıcı</th>
+<th class="px-6 py-3 font-label text-metadata text-text-secondary uppercase tracking-wider">E-posta</th>
+<th class="px-6 py-3 font-label text-metadata text-text-secondary uppercase tracking-wider">Rol</th>
+<th class="px-6 py-3 font-label text-metadata text-text-secondary uppercase tracking-wider">Şube</th>
+<th class="px-6 py-3 font-label text-metadata text-text-secondary uppercase tracking-wider">Son Giriş</th>
+<th class="px-6 py-3 font-label text-metadata text-text-secondary uppercase tracking-wider">Durum</th>
+<th class="px-6 py-3 font-label text-metadata text-text-secondary uppercase tracking-wider text-right">İşlemler</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-standard font-table-data text-on-background">
+<tr class="hover:bg-primary-wash transition-colors group">
+<td class="px-6 py-4 flex items-center gap-3">
+<img alt="Avatar" class="w-10 h-10 rounded-full border border-border-standard" src="https://lh3.googleusercontent.com/aida-public/AB6AXuANC5ZamQxNX9rQ7C7Ig3D_hm9UoTl0YN3Enc0JfP8BSd1VlGbWE6sn-W7ypq0HFZtVUjnznxfW3trPZpolO-jkp4bq_K1IPUWWJ-Ahh2XFwmj0j4RkowVnSlkQx4jdgPK-uFgOOaXS09nVdE77Ta9y4zHDXDeZOgN9ESA2S5F8kEX1Zxcm1Ufwt11cIMN9pM-7NXVx7dP1RSu5_bQX912ZgWq8NL0vtC5e_8DfPZrIXHP2by5-iM-PqQ"/>
+<div>
+<div class="font-medium">Dr. Ahmet Yılmaz</div>
+<div class="text-metadata text-text-secondary">Başhekim</div>
+</div>
+</td>
+<td class="px-6 py-4 text-text-secondary">ahmet.yilmaz@vetniva.com</td>
+<td class="px-6 py-4">Yönetici</td>
+<td class="px-6 py-4">Merkez Şube</td>
+<td class="px-6 py-4 text-text-secondary">Bugün, 09:30</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-success-pale text-success text-metadata font-medium border border-success/20">
+<span class="w-1.5 h-1.5 rounded-full bg-success"></span>
+                                            Aktif
+                                        </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="w-8 h-8 rounded-full inline-flex items-center justify-center text-text-tertiary group-hover:text-on-surface hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-primary-wash transition-colors group">
+<td class="px-6 py-4 flex items-center gap-3">
+<img alt="Avatar" class="w-10 h-10 rounded-full border border-border-standard" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBadcWhjfReBSAv8zxC1lKcr7iQZmxQSSKTtlLCsKZJaWDxWIiRAbYrjSTroh6j9lH57zddqDcSitmU_-oc_p7QO51CVnRFWXSaC_ANEIVtoBrwxx_SEgIPWdefF31agdnfZ4fj5p-u5I9R0qoVjeZnc2nK10GsA5esq41IRDBeBNt6H5ph0Yz6mVnCRNZfITmB5lzFm220iwUTyVkoGKSBH3brfauuziEJHCVYcqASafepGUwoxuaPew"/>
+<div>
+<div class="font-medium">Ayşe Kaya</div>
+<div class="text-metadata text-text-secondary">Veteriner Hekim</div>
+</div>
+</td>
+<td class="px-6 py-4 text-text-secondary">ayse.kaya@vetniva.com</td>
+<td class="px-6 py-4">Hekim</td>
+<td class="px-6 py-4">Kadıköy Şube</td>
+<td class="px-6 py-4 text-text-secondary">Dün, 16:45</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-success-pale text-success text-metadata font-medium border border-success/20">
+<span class="w-1.5 h-1.5 rounded-full bg-success"></span>
+                                            Aktif
+                                        </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="w-8 h-8 rounded-full inline-flex items-center justify-center text-text-tertiary group-hover:text-on-surface hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-primary-wash transition-colors group bg-surface-grouped/50">
+<td class="px-6 py-4 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-variant border border-border-standard flex items-center justify-center text-text-secondary">
+<span class="material-symbols-outlined">mail</span>
+</div>
+<div>
+<div class="font-medium text-text-secondary italic">Davet Edildi</div>
+<div class="text-metadata text-text-secondary">Asistan</div>
+</div>
+</td>
+<td class="px-6 py-4 text-text-secondary">mehmet.demir@vetniva.com</td>
+<td class="px-6 py-4">Asistan</td>
+<td class="px-6 py-4">Merkez Şube</td>
+<td class="px-6 py-4 text-text-secondary">-</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-warning-pale text-warning text-metadata font-medium border border-warning/20">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+                                            Davet Bekliyor
+                                        </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="w-8 h-8 rounded-full inline-flex items-center justify-center text-text-tertiary group-hover:text-on-surface hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Pagination -->
+<div class="p-4 border-t border-border-standard flex items-center justify-between bg-surface-elevated">
+<span class="font-metadata text-metadata text-text-secondary">Toplam 3 kullanıcı</span>
+<div class="flex items-center gap-2">
+<button class="w-8 h-8 rounded border border-border-standard flex items-center justify-center text-text-tertiary disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded border border-border-standard flex items-center justify-center text-on-surface hover:bg-surface-grouped transition-colors">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Right Drawer: Kullanıcı Davet Et (Open State) -->
+<!-- Backdrop overlay is transparent here to allow main content to remain visible as requested, 
+         but typically you'd have a semi-transparent backdrop if it was a true modal overlay. 
+         We are using a persistent-style drawer fixed to the right. -->
+<aside class="fixed top-[72px] right-0 h-[calc(100vh-72px)] w-[400px] bg-surface-elevated border-l border-border-standard shadow-[-8px_0_24px_rgba(20,45,30,0.04)] flex flex-col z-40 transform transition-transform duration-300 translate-x-0">
+<!-- Drawer Header -->
+<div class="px-6 py-5 border-b border-border-standard flex items-center justify-between bg-surface-bg">
+<h2 class="font-section-title text-section-title text-on-background">Kullanıcı Davet Et</h2>
+<button class="w-8 h-8 rounded-full flex items-center justify-center text-text-secondary hover:bg-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Drawer Body -->
+<div class="p-6 flex-1 overflow-y-auto flex flex-col gap-6">
+<div class="bg-info-pale p-4 rounded-xl border border-info/20 flex gap-3">
+<span class="material-symbols-outlined text-info mt-0.5">info</span>
+<p class="font-body-sm text-metadata text-info">
+                    Davet edilen kullanıcıya bir bağlantı gönderilecektir. Bağlantıya tıklayarak şifresini belirleyebilir ve sisteme giriş yapabilir.
+                </p>
+</div>
+<!-- Form Fields -->
+<div class="flex flex-col gap-5">
+<div>
+<label class="block font-label text-label text-on-surface mb-2">E-posta Adresi <span class="text-danger">*</span></label>
+<input class="w-full h-[44px] px-3 rounded-lg border-input-border bg-surface-elevated text-body-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow" placeholder="ornek@vetniva.com" type="email"/>
+</div>
+<div>
+<label class="block font-label text-label text-on-surface mb-2">Rol <span class="text-danger">*</span></label>
+<div class="relative">
+<select class="w-full h-[44px] px-3 appearance-none rounded-lg border-input-border bg-surface-elevated text-body-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow pr-10">
+<option disabled="" selected="" value="">Rol seçin</option>
+<option value="hekim">Hekim</option>
+<option value="asistan">Asistan / Teknisyen</option>
+<option value="yonetici">Yönetici</option>
+<option value="resepsiyon">Resepsiyon</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none">expand_more</span>
+</div>
+</div>
+<div>
+<label class="block font-label text-label text-on-surface mb-2">Şube (Opsiyonel)</label>
+<div class="relative">
+<select class="w-full h-[44px] px-3 appearance-none rounded-lg border-input-border bg-surface-elevated text-body-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow pr-10">
+<option value="">Tüm Şubeler</option>
+<option value="merkez">Merkez Şube</option>
+<option value="kadikoy">Kadıköy Şube</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none">expand_more</span>
+</div>
+<p class="mt-1 font-metadata text-metadata text-text-tertiary">Belirli bir şube seçilmezse tüm şubelere erişim sağlanır.</p>
+</div>
+<div>
+<label class="block font-label text-label text-on-surface mb-2">Opsiyonel Mesaj</label>
+<textarea class="w-full p-3 rounded-lg border-input-border bg-surface-elevated text-body-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow resize-none" placeholder="Davet e-postasına eklenecek not (isteğe bağlı)..." rows="3"></textarea>
+</div>
+</div>
+</div>
+<!-- Drawer Footer -->
+<div class="p-6 border-t border-border-standard bg-surface-bg flex items-center justify-end gap-3 mt-auto">
+<button class="h-[42px] px-4 rounded-[10px] border border-border-standard bg-surface-elevated text-on-surface hover:bg-surface-grouped font-label text-label transition-colors">
+                İptal
+            </button>
+<button class="h-[42px] px-5 rounded-[10px] bg-primary-container text-on-primary hover:bg-primary-hover font-label text-label transition-colors flex items-center gap-2 shadow-sm">
+<span class="material-symbols-outlined text-[18px]">send</span>
+                Davet Gönder
+            </button>
+</div>
+</aside>
+</body></html>

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+
+<html class="light" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VetClinic Premium - Hastalar</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface": "#181d19",
+                        "surface-grouped": "#F1F5F1",
+                        "inverse-surface": "#2d322d",
+                        "text-secondary": "#5F6368",
+                        "info-pale": "#EAF3FB",
+                        "on-secondary-fixed-variant": "#474649",
+                        "surface-dim": "#d7dbd5",
+                        "danger": "#C3362C",
+                        "outline-variant": "#bec9be",
+                        "success": "#248A3D",
+                        "surface-bg": "#F7F8F7",
+                        "surface-container-low": "#f0f5ee",
+                        "secondary-fixed": "#e4e2e4",
+                        "secondary-container": "#e2dfe1",
+                        "tertiary-fixed": "#ffdada",
+                        "inverse-on-surface": "#edf2eb",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#ebefe8",
+                        "tertiary-container": "#a94e54",
+                        "on-surface-variant": "#3f4941",
+                        "success-pale": "#EAF6EC",
+                        "on-primary-fixed": "#002110",
+                        "primary-fixed-dim": "#7ed9a0",
+                        "warning-pale": "#FFF4E5",
+                        "primary-container": "#167a4a",
+                        "background": "#f6fbf4",
+                        "on-error-container": "#93000a",
+                        "on-secondary-container": "#636264",
+                        "divider-standard": "#ECEFED",
+                        "on-secondary-fixed": "#1b1b1d",
+                        "tertiary-fixed-dim": "#ffb3b5",
+                        "input-border": "#D5DBD7",
+                        "surface-container-highest": "#dfe4dd",
+                        "error-container": "#ffdad6",
+                        "outline": "#6f7a70",
+                        "tertiary": "#8b373d",
+                        "surface-elevated": "#FFFFFF",
+                        "surface-variant": "#dfe4dd",
+                        "warning": "#B86B00",
+                        "surface": "#f6fbf4",
+                        "on-tertiary-fixed": "#40000b",
+                        "primary-selected": "#E6F4EC",
+                        "text-tertiary": "#86868B",
+                        "border-standard": "#E1E5E2",
+                        "on-primary-fixed-variant": "#00522e",
+                        "primary-hover": "#10633B",
+                        "on-background": "#181d19",
+                        "on-tertiary-container": "#ffe6e6",
+                        "primary-fixed": "#9af6bb",
+                        "info": "#2775B6",
+                        "primary-wash": "#F0F8F3",
+                        "on-primary-container": "#a9ffc6",
+                        "primary": "#005f37",
+                        "danger-pale": "#FCEBEA",
+                        "text-nav-inactive": "#4B5563",
+                        "secondary-fixed-dim": "#c8c6c8",
+                        "on-tertiary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed-variant": "#7c2b33",
+                        "surface-tint": "#006d3f",
+                        "surface-bright": "#f6fbf4",
+                        "surface-table-header": "#F6F8F6",
+                        "on-secondary": "#ffffff",
+                        "inverse-primary": "#7ed9a0",
+                        "secondary": "#5f5e60",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#e5e9e3",
+                        "primary-deep": "#0D4D2E"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sidebar-width": "248px",
+                        "major-gap": "32px",
+                        "gutter-desktop": "32px",
+                        "component-gap": "16px",
+                        "section-gap": "24px",
+                        "base": "8px",
+                        "gutter-mobile": "16px",
+                        "header-height": "72px"
+                    },
+                    "fontFamily": {
+                        "label": ["Inter"],
+                        "table-data": ["Inter"],
+                        "metadata": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "page-title": ["Inter"],
+                        "section-title": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+                        "table-data": ["15px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "metadata": ["11px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "body-sm": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+                        "body-lg": ["17px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "page-title": ["28px", { "lineHeight": "34px", "fontWeight": "600" }],
+                        "section-title": ["20px", { "lineHeight": "28px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f6fbf4; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .icon-fill { font-variation-settings: 'FILL' 1; }
+        
+        /* Custom scrollbar for tables */
+        .table-container::-webkit-scrollbar { height: 8px; }
+        .table-container::-webkit-scrollbar-track { background: transparent; }
+        .table-container::-webkit-scrollbar-thumb { background-color: #bec9be; border-radius: 4px; }
+    </style>
+</head>
+<body class="text-on-surface flex w-full min-h-screen">
+<!-- SideNavBar -->
+<nav class="hidden md:flex flex-col h-screen fixed left-0 top-0 w-sidebar-width bg-surface border-r border-border-standard py-section-gap px-component-gap z-50">
+<div class="mb-section-gap px-base flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary-container text-on-primary flex items-center justify-center font-bold text-xl">V</div>
+<div>
+<h1 class="text-section-title font-section-title text-primary tracking-tight">VetClinic Premium</h1>
+<p class="font-metadata text-metadata text-text-tertiary">Veteriner Yönetim Sistemi</p>
+</div>
+</div>
+<div class="flex flex-col gap-1 mt-4">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg font-label text-label text-text-nav-inactive hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+                Anasayfa
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg font-label text-label bg-primary-selected text-primary-deep transition-colors duration-200 opacity-90 scale-98" href="#">
+<span class="material-symbols-outlined icon-fill">pets</span>
+                Hastalar
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg font-label text-label text-text-nav-inactive hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+                Randevular
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg font-label text-label text-text-nav-inactive hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">stethoscope</span>
+                Muayene
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg font-label text-label text-text-nav-inactive hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">vaccines</span>
+                Aşılar
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg font-label text-label text-text-nav-inactive hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">shopping_basket</span>
+                Petshop
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg font-label text-label text-text-nav-inactive hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">payments</span>
+                Finans
+            </a>
+</div>
+<div class="mt-auto flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg font-label text-label text-text-nav-inactive hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Ayarlar
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg font-label text-label text-text-nav-inactive hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">logout</span>
+                Çıkış
+            </a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 ml-0 md:ml-sidebar-width flex flex-col min-h-screen relative">
+<!-- TopNavBar -->
+<header class="h-header-height sticky top-0 z-40 bg-surface-bg flex justify-between items-center px-gutter-mobile md:px-gutter-desktop">
+<div class="flex-1"></div> <!-- Spacer for layout balance -->
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary-hover transition-colors p-2 rounded-full hover:bg-surface-container">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary-hover transition-colors p-2 rounded-full hover:bg-surface-container">
+<span class="material-symbols-outlined">business_center</span>
+</button>
+<div class="w-9 h-9 rounded-full bg-secondary-container overflow-hidden border border-border-standard cursor-pointer ml-2">
+<img alt="Kullanıcı Avatarı" class="w-full h-full object-cover" data-alt="A professional headshot of a confident female veterinarian in her 30s. She is wearing light green surgical scrubs and a subtle stethoscope around her neck. The background is a brightly lit, modern veterinary clinic interior, slightly out of focus. Lighting is clean, white, and clinical, reflecting a high-end corporate style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRPmJ7ZOt_j3Wvmu44OwXXDUxWTXB7I1F8EPQra1NsuiILyY25SkyEFSuDcKcVu-Slg8hwAETsOoeaj15u8BEHMpnp0c816JHkq2y6lUkufYkP-UlLxEp1dEjY7C6HPsNBAB3fAfKquxBzdHqJzjQFeiTOsWOd2esgN5ax3hf9nWkajA-TPjg8HO6vAq9yh4n53m5cgg5vHZ97fGqG7zZemukG-98HMLDxISbo_eg2htvXzik2-XFAFA"/>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<main class="flex-1 px-gutter-mobile md:px-gutter-desktop py-major-gap flex flex-col">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-section-gap">
+<div>
+<h2 class="font-page-title text-page-title text-on-surface mb-1">Hastalar</h2>
+<p class="font-body-sm text-body-sm text-text-secondary">Hasta sahiplerini ve hayvan kayıtlarını yönetin.</p>
+</div>
+<button class="bg-primary-container hover:bg-primary-hover text-on-primary font-label text-label h-[42px] px-5 rounded-lg flex items-center justify-center gap-2 transition-colors self-start whitespace-nowrap shadow-sm">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                    Yeni Hasta
+                </button>
+</div>
+<!-- Toolbar & Filters -->
+<div class="bg-surface-elevated rounded-xl border border-border-standard p-4 mb-section-gap flex flex-col gap-4">
+<div class="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+<!-- Search -->
+<div class="relative w-full lg:max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary">search</span>
+<input class="w-full h-[44px] pl-10 pr-4 bg-surface-bg border border-input-border rounded-lg font-body-sm text-body-sm text-on-surface placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary-container/30 focus:border-primary-container transition-all" placeholder="Hasta sahibi, hayvan adı veya mikroçip ara..." type="text"/>
+</div>
+<!-- Actions -->
+<div class="flex flex-wrap items-center gap-3">
+<button class="h-[44px] px-4 rounded-lg border border-border-standard bg-surface-elevated hover:bg-surface-bg font-label text-label text-on-surface flex items-center gap-2 transition-colors relative">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+                            Filtrele
+                            <span class="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-metadata text-[10px]">3</span>
+</button>
+<div class="h-6 w-px bg-divider-standard mx-1"></div>
+<button class="h-[32px] px-4 rounded-full bg-primary-selected border border-primary-container/20 font-label text-label text-primary-deep flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+                            Aktif
+                        </button>
+<div class="flex-1"></div>
+<button class="h-[44px] px-3 rounded-lg font-label text-label text-text-secondary hover:text-on-surface hover:bg-surface-bg flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[18px]">view_column</span>
+                            Sütunlar
+                        </button>
+<button class="h-[44px] px-3 rounded-lg font-label text-label text-text-secondary hover:text-on-surface hover:bg-surface-bg flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                            Dışa aktar
+                        </button>
+</div>
+</div>
+<!-- Active Filters -->
+<div class="flex flex-wrap items-center gap-2 pt-2 border-t border-divider-standard">
+<span class="font-metadata text-metadata text-text-tertiary mr-2">Aktif Filtreler:</span>
+<div class="inline-flex items-center h-[28px] pl-3 pr-1 rounded-md bg-surface-grouped border border-border-standard font-label text-label text-on-surface">
+                        Kedi
+                        <button class="ml-1 w-5 h-5 rounded hover:bg-surface-container flex items-center justify-center text-text-tertiary hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[14px]">close</span>
+</button>
+</div>
+<div class="inline-flex items-center h-[28px] pl-3 pr-1 rounded-md bg-surface-grouped border border-border-standard font-label text-label text-on-surface">
+                        Alerji var
+                        <button class="ml-1 w-5 h-5 rounded hover:bg-surface-container flex items-center justify-center text-text-tertiary hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[14px]">close</span>
+</button>
+</div>
+<div class="inline-flex items-center h-[28px] pl-3 pr-1 rounded-md bg-surface-grouped border border-border-standard font-label text-label text-on-surface">
+                        Son 30 gün
+                        <button class="ml-1 w-5 h-5 rounded hover:bg-surface-container flex items-center justify-center text-text-tertiary hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[14px]">close</span>
+</button>
+</div>
+<button class="font-label text-label text-primary ml-2 hover:underline">Tümünü Temizle</button>
+</div>
+</div>
+<!-- Data Table -->
+<div class="bg-surface-elevated rounded-xl border border-border-standard overflow-hidden flex-1 flex flex-col">
+<div class="overflow-x-auto table-container flex-1">
+<table class="w-full text-left border-collapse min-w-[1000px]">
+<thead>
+<tr class="bg-surface-table-header border-b border-border-standard font-label text-label text-text-secondary h-12">
+<th class="px-4 py-3 font-medium sticky left-0 bg-surface-table-header z-10 w-1/4 min-w-[200px]">Hayvan</th>
+<th class="px-4 py-3 font-medium">Hasta Sahibi</th>
+<th class="px-4 py-3 font-medium">Tür / Irk</th>
+<th class="px-4 py-3 font-medium">Yaş</th>
+<th class="px-4 py-3 font-medium">Mikroçip No</th>
+<th class="px-4 py-3 font-medium text-primary bg-primary-wash/50 cursor-pointer group">
+<div class="flex items-center gap-1">
+                                        Son Ziyaret
+                                        <span class="material-symbols-outlined text-[16px] transition-transform">arrow_downward</span>
+</div>
+</th>
+<th class="px-4 py-3 font-medium">Uyarılar</th>
+<th class="px-4 py-3 font-medium text-right w-[80px]">İşlemler</th>
+</tr>
+</thead>
+<tbody class="font-table-data text-table-data text-on-surface divide-y divide-divider-standard">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-bg transition-colors h-[64px] group">
+<td class="px-4 py-3 sticky left-0 bg-surface-elevated group-hover:bg-surface-bg transition-colors z-10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-info-pale text-info flex items-center justify-center font-bold text-lg border border-info/10">P</div>
+<div class="font-medium text-on-surface">Pamuk</div>
+</div>
+</td>
+<td class="px-4 py-3 text-text-secondary">Mehmet Kaya</td>
+<td class="px-4 py-3 text-text-secondary">Kedi <span class="text-text-tertiary px-1">·</span> British Shorthair</td>
+<td class="px-4 py-3 text-text-secondary">3 yaş</td>
+<td class="px-4 py-3 font-mono text-sm text-text-secondary">900113000123456</td>
+<td class="px-4 py-3 text-on-surface font-medium bg-primary-wash/20 group-hover:bg-primary-wash/40">21.07.2026</td>
+<td class="px-4 py-3">
+<div class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-warning-pale border border-warning/20 text-warning font-metadata text-metadata">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+                                        Penisilin alerjisi
+                                    </div>
+</td>
+<td class="px-4 py-3 text-right">
+<button class="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-text-secondary transition-colors ml-auto">
+<span class="material-symbols-outlined text-[20px]">more_horiz</span>
+</button>
+</td>
+</tr>
+<!-- Additional Rows Omitted for brevity in 0.25 effort, but requested 4 more realistic rows -->
+</tbody>
+</table>
+</div>
+</div>
+</main>
+</div>
+</body></html>

@@ -1,0 +1,23 @@
+page_id: web.app.locale.settings.users
+route: "/[locale]/settings/users"
+module: settings
+title_key: nav.settings
+purpose:
+  tr-TR: "Kullanıcı ve rol görünümünü Stitch tasarım sistemiyle gösterir."
+  en-GB: "Shows the user and role view in the Stitch design system."
+allowed_roles: [OWNER]
+required_permissions: []
+prerequisites: ["Aktif tenant üyeliği."]
+fields: []
+actions: []
+step_by_step:
+  tr-TR: ["Kullanıcı ve durum bilgisini inceleyin."]
+  en-GB: ["Review user and status information."]
+possible_errors: []
+related_pages: [web.app.locale.settings.clinic]
+related_api: []
+keywords:
+  tr-TR: [ayarlar, kullanıcı, rol]
+  en-GB: [settings, user, role]
+version: "1.0.0"
+last_verified_at: "2026-08-07"

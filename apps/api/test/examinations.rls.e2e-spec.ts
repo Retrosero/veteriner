@@ -318,11 +318,11 @@ describe("Examination PostgreSQL RLS", () => {
   itDb(
     "Repository search tenant-scoped: doğru tenant kendi kayıtlarını sayar",
     async () => {
-      const aResults = examinationsRepository.search(tenantAId, {
+      const aResults = await examinationsRepository.persistedSearch(tenantAId, {
         limit: 20,
         offset: 0,
       });
-      const bResults = examinationsRepository.search(tenantBId, {
+      const bResults = await examinationsRepository.persistedSearch(tenantBId, {
         limit: 20,
         offset: 0,
       });
@@ -339,12 +339,12 @@ describe("Examination PostgreSQL RLS", () => {
   itDb(
     "Repository search patientId filtresi cross-tenant izolasyonu korur",
     async () => {
-      const aOnBPatient = examinationsRepository.search(tenantAId, {
+      const aOnBPatient = await examinationsRepository.persistedSearch(tenantAId, {
         limit: 20,
         offset: 0,
         patientId: patientBId,
       });
-      const aOnAPatient = examinationsRepository.search(tenantAId, {
+      const aOnAPatient = await examinationsRepository.persistedSearch(tenantAId, {
         limit: 20,
         offset: 0,
         patientId: patientAId,
@@ -358,17 +358,17 @@ describe("Examination PostgreSQL RLS", () => {
   itDb(
     "Repository search status filtresi yalnızca kendi tenant'ında eşleşir",
     async () => {
-      const aStatusInProgress = examinationsRepository.search(tenantAId, {
+      const aStatusInProgress = await examinationsRepository.persistedSearch(tenantAId, {
         limit: 20,
         offset: 0,
         status: "in_progress",
       });
-      const aStatusCompleted = examinationsRepository.search(tenantAId, {
+      const aStatusCompleted = await examinationsRepository.persistedSearch(tenantAId, {
         limit: 20,
         offset: 0,
         status: "completed",
       });
-      const bStatusCompleted = examinationsRepository.search(tenantBId, {
+      const bStatusCompleted = await examinationsRepository.persistedSearch(tenantBId, {
         limit: 20,
         offset: 0,
         status: "completed",

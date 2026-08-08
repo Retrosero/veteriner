@@ -12,12 +12,15 @@ API doğrudan erişim yok (BFF pattern); tüm akış web üzerinden.
 
 Demo kullanıcılar:
 
-| Email                        | Şifre                  | Rol          |
-| ---------------------------- | ---------------------- | ------------ |
-| `owner@pilot.vetniva.local`  | `VetNiva-Owner-2026!`  | OWNER        |
-| `owner2@pilot.vetniva.local` | `VetNiva-Owner2-2026!` | OWNER        |
-| `vet@pilot.vetniva.local`    | `VetNiva-Vet-2026!`    | VETERINARIAN |
-| `staff@pilot.vetniva.local`  | `VetNiva-Staff-2026!`  | STAFF        |
+| Email                        | Secret referansı        | Rol          |
+| ---------------------------- | ----------------------- | ------------ |
+| `owner@pilot.vetniva.local`  | `SMOKE_OWNER_PASSWORD`  | OWNER        |
+| `owner2@pilot.vetniva.local` | `SMOKE_OWNER2_PASSWORD` | OWNER        |
+| `vet@pilot.vetniva.local`    | `SMOKE_VET_PASSWORD`    | VETERINARIAN |
+| `staff@pilot.vetniva.local`  | `SMOKE_STAFF_PASSWORD`  | STAFF        |
+
+Parolalar sadece CI secret store veya yerel, sürüm kontrolü dışındaki ortam
+değişkenlerinden sağlanır; bu plana veya sonuç raporlarına yazılmaz.
 
 Tenant: `pilot-vet-kadikoy` (`11c6beec-7c64-4cf6-9cb7-d9ea6fd5c8a1`)
 Branch: `b203d16a-91e2-49c0-b9d7-9bdc55fdf60d`
@@ -34,7 +37,7 @@ Branch: `b203d16a-91e2-49c0-b9d7-9bdc55fdf60d`
 
 1. `/<locale>/login` sayfasına git (varsayılan `tr` locale)
 2. Email: `owner@pilot.vetniva.local`
-3. Şifre: `VetNiva-Owner-2026!`
+3. Şifre: yerel `SMOKE_OWNER_PASSWORD` secret'ı.
 4. **Beklenen:** 200, dashboard'a yönlendirilir, session token cookie'de
 
 ### 2.2 Diğer Roller

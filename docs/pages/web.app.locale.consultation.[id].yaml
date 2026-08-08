@@ -1,0 +1,24 @@
+page_id: web.app.locale.consultation.[id]
+route: "/[locale]/consultation/[id]"
+module: clinic
+title_key: nav.consultation
+purpose:
+  tr-TR: "Aktif muayene için klinik not, tanı planı ve hasta özetini gösterir."
+  en-GB: "Shows clinical notes, diagnostic plan, and patient summary for an active consultation."
+allowed_roles: [OWNER, VETERINARIAN]
+required_permissions: ["clinic:consultation:update"]
+prerequisites: ["Aktif tenant üyeliği."]
+fields: []
+actions: []
+step_by_step:
+  tr-TR: ["Klinik notu ve tanı planını gözden geçirin."]
+  en-GB: ["Review clinical notes and the diagnostic plan."]
+possible_errors: []
+related_pages:
+  - "web.app.locale.consultation.[id].signed"
+related_api: []
+keywords:
+  tr-TR: [muayene, klinik, not]
+  en-GB: [consultation, clinical, note]
+version: "1.0.0"
+last_verified_at: "2026-08-07"

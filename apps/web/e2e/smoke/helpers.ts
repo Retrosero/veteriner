@@ -10,10 +10,8 @@
  * (`pilot-vet-kadikoy`); 4 demo user + 2 hayvan seed edilmiştir.
  * Tenant izolasyonu senaryosunda `owner2` aynı tenant'ta olduğu
  * için `owner` ile aynı verileri görmelidir.
- * @security Demo user şifreleri pilot ortamına özgüdür; production
- * gate'inde dinamik credential rotasyonu zorunludur. Secret
- * yönetimine taşımak için `SMOKE_USERS_JSON` env değişkeni ile
- * override desteği eklenebilir.
+ * @security Demo kullanıcı parolaları yalnızca CI/local secret
+ * ortam değişkenlerinden okunur; repoda veya test raporlarında yer almaz.
  * @since GOAL-127 (FAZ-12) production release gate
  */
 
@@ -39,6 +37,15 @@ export type SmokeUser = {
   label: string;
 };
 
+/** Gerekli smoke secret'ını hata mesajında değerini göstermeden çözer. */
+function requiredSmokeSecret(name: string): string {
+  const value = process.env[name];
+  if (!value || value.trim().length === 0) {
+    throw new Error(`Missing required smoke test secret: ${name}`);
+  }
+  return value;
+}
+
 /**
  * Pilot ortamındaki 4 demo user. Sıralama, smoke test
  * `login.spec.ts` ile aynıdır; tenant izolasyon senaryosu için
@@ -47,25 +54,25 @@ export type SmokeUser = {
 export const DEMO_USERS: ReadonlyArray<SmokeUser> = [
   {
     email: "owner@pilot.vetniva.local",
-    password: "VetNiva-Owner-2026!",
+    password: requiredSmokeSecret("SMOKE_OWNER_PASSWORD"),
     role: "OWNER",
     label: "owner",
   },
   {
     email: "vet@pilot.vetniva.local",
-    password: "VetNiva-Vet-2026!",
+    password: requiredSmokeSecret("SMOKE_VET_PASSWORD"),
     role: "VETERINARIAN",
     label: "vet",
   },
   {
     email: "staff@pilot.vetniva.local",
-    password: "VetNiva-Staff-2026!",
+    password: requiredSmokeSecret("SMOKE_STAFF_PASSWORD"),
     role: "STAFF",
     label: "staff",
   },
   {
     email: "owner2@pilot.vetniva.local",
-    password: "VetNiva-Owner2-2026!",
+    password: requiredSmokeSecret("SMOKE_OWNER2_PASSWORD"),
     role: "OWNER",
     label: "owner2",
   },

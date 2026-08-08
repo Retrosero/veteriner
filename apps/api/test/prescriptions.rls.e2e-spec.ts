@@ -406,11 +406,11 @@ describe("Prescription PostgreSQL RLS", () => {
   itDb(
     "Repository search tenant-scoped: doğru tenant kendi kayıtlarını sayar",
     async () => {
-      const aResults = prescriptionsRepository.search(tenantAId, {
+      const aResults = await prescriptionsRepository.persistedSearch(tenantAId, {
         limit: 20,
         offset: 0,
       });
-      const bResults = prescriptionsRepository.search(tenantBId, {
+      const bResults = await prescriptionsRepository.persistedSearch(tenantBId, {
         limit: 20,
         offset: 0,
       });
@@ -427,12 +427,12 @@ describe("Prescription PostgreSQL RLS", () => {
   itDb(
     "Repository search patientId filtresi cross-tenant izolasyonu korur",
     async () => {
-      const aOnBPatient = prescriptionsRepository.search(tenantAId, {
+      const aOnBPatient = await prescriptionsRepository.persistedSearch(tenantAId, {
         limit: 20,
         offset: 0,
         patientId: patientBId,
       });
-      const aOnAPatient = prescriptionsRepository.search(tenantAId, {
+      const aOnAPatient = await prescriptionsRepository.persistedSearch(tenantAId, {
         limit: 20,
         offset: 0,
         patientId: patientAId,
@@ -448,12 +448,12 @@ describe("Prescription PostgreSQL RLS", () => {
   itDb(
     "Repository search status filtresi yalnızca kendi tenant'ında eşleşir",
     async () => {
-      const aActive = prescriptionsRepository.search(tenantAId, {
+      const aActive = await prescriptionsRepository.persistedSearch(tenantAId, {
         limit: 20,
         offset: 0,
         status: "active",
       });
-      const aDispensed = prescriptionsRepository.search(tenantAId, {
+      const aDispensed = await prescriptionsRepository.persistedSearch(tenantAId, {
         limit: 20,
         offset: 0,
         status: "dispensed",

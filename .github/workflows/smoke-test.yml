@@ -61,6 +61,10 @@ env:
   # Tek doğruluk kaynağı: hedef URL. workflow_dispatch input >
   # repository_dispatch payload > pilot default.
   SMOKE_BASE_URL: ${{ github.event.inputs.base_url || github.event.client_payload.base_url || 'https://vetniva.appsgo.cloud/' }}
+  SMOKE_OWNER_PASSWORD: ${{ secrets.SMOKE_OWNER_PASSWORD }}
+  SMOKE_OWNER2_PASSWORD: ${{ secrets.SMOKE_OWNER2_PASSWORD }}
+  SMOKE_VET_PASSWORD: ${{ secrets.SMOKE_VET_PASSWORD }}
+  SMOKE_STAFF_PASSWORD: ${{ secrets.SMOKE_STAFF_PASSWORD }}
   # Playwright sürümü tek noktada sabit. 1.49.x Node 20 ile uyumlu.
   PLAYWRIGHT_VERSION: "1.49.1"
   NODE_VERSION: "20"

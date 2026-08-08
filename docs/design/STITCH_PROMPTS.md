@@ -14,43 +14,43 @@ hazırlanmış prompt şablonlarını içerir. Workflow:
 
 ### Renk paleti
 
-| Token         | Değer                   | Kullanım                                     |
-| ------------- | ----------------------- | -------------------------------------------- |
-| Primary       | `#0359a1` (clinic-700)  | Ana butonlar, aktif link, vurgu              |
-| Primary hover | `#064b85` (clinic-800)  | Hover state                                  |
-| Success       | `#10b981` (success-500) | "Çalışıyor" badge, onay mesajları            |
-| Warning       | `#f59e0b` (warn-500)    | "Kısmen çalışıyor" badge, uyarılar           |
-| Danger        | `#ef4444` (danger-500)  | "Çalışmıyor" badge, hatalar, silme işlemleri |
-| Text          | `#111827` (gray-900)    | Ana metin                                    |
-| Muted         | `#6b7280` (gray-500)    | İkincil metin, etiketler                     |
-| Border        | `#e5e7eb` (gray-200)    | Kart/alan kenarlıkları                       |
-| Background    | `#fafafc`               | Sayfa arka planı                             |
-| Surface       | `#ffffff`               | Kart, panel, modal                           |
+| Token         | Değer                  | Kullanım                           |
+| ------------- | ---------------------- | ---------------------------------- |
+| Primary       | `#167A4A` (clinic-500) | Ana butonlar, aktif link, vurgu    |
+| Primary hover | `#10633B` (clinic-600) | Hover ve pressed state             |
+| Success       | `#248A3D`              | "Çalışıyor" badge, onay mesajları  |
+| Warning       | `#B86B00`              | "Kısmen çalışıyor" badge, uyarılar |
+| Danger        | `#C3362C`              | "Çalışmıyor" badge, iptal/hatalar  |
+| Text          | `#1D1D1F`              | Ana metin                          |
+| Muted         | `#5F6368`              | İkincil metin, etiketler           |
+| Border        | `#E1E5E2`              | Kart/alan kenarlıkları             |
+| Background    | `#F7F8F7`              | Sayfa arka planı                   |
+| Surface       | `#ffffff`              | Kart, panel, modal                 |
 
 ### Tipografi
 
-- Font: System UI (-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto)
-- Heading: 24/20/18px, font-weight 600
-- Body: 14/16px, font-weight 400
-- Caption: 12px, font-weight 400, color muted
+- Font: Inter; mevcut olduğunda SF Pro Display / SF Pro Text
+- Heading: 28px sayfa, 20px bölüm, semibold
+- Body: 15-17px, font-weight 400
+- Caption: 11-13px, font-weight 400, color muted
 
 ### Spacing
 
 - Skala: 4 / 8 / 12 / 16 / 24 / 32 / 48 / 64 px
 - Kart padding: 16-24px
-- Bölüm arası: 32-48px
+- Bölüm arası: 24-32px
 
 ### Yuvarlatma
 
-- Inputs/butonlar: 6px
-- Kartlar: 8-10px
+- Inputs/butonlar: 10px
+- Kartlar: 14px
 - Badge/chip: 999px (full)
 
 ### Bileşenler (tüm sayfalarda)
 
-- **Button**: primary (mavi), secondary (beyaz + border), ghost (şeffaf), danger (kırmızı); sm/md/lg
-- **Input**: 40px yükseklik, focus state mavi ring
-- **Card**: beyaz arka plan, 1px border, 8-10px radius, hafif gölge
+- **Button**: primary (VetNiva yeşili), secondary (beyaz + border), ghost (şeffaf), danger (kırmızı); sm/md/lg
+- **Input**: 44px yükseklik, focus state yeşil ring
+- **Card**: beyaz arka plan, 1px border, 14px radius, çok hafif gölge
 - **Badge**: yeşil/sarı/kırmızı/mavi; küçük pill şekli
 - **Table**: zebra stripe yok; hover state; sticky header
 - **Empty state**: ikon + başlık + yardım metni + CTA butonu

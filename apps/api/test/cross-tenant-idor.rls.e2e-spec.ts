@@ -151,11 +151,15 @@ type TransactionClient = Prisma.TransactionClient;
 async function withTenant<T>(
   tenantId: string,
   action: (tx: TransactionClient) => Promise<T>,
+  userId?: string,
 ): Promise<T> {
   if (!appPrisma) throw new Error("appPrisma başlatılamadı (skip guard).");
   return appPrisma.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
     await tx.$executeRaw`SELECT set_config('app.is_superadmin', 'false', true)`;
+    if (userId) {
+      await tx.$executeRaw`SELECT set_config('app.user_id', ${userId}, true)`;
+    }
     return action(tx);
   });
 }
@@ -364,7 +368,7 @@ describe("Cross-Tenant IDOR RLS (GOAL-017 pilot coverage)", () => {
     await adminPrisma.auditEvent.create({
       data: {
         id: randomUUID(),
-        eventName: "audit:ct-idor.fixture",
+        eventName: "audit:ct_idor.fixture",
         tenantId: FOREIGN_TENANT_ID,
         actorId: FOREIGN_OWNER_USER_ID,
         actorType: "user",
@@ -381,7 +385,7 @@ describe("Cross-Tenant IDOR RLS (GOAL-017 pilot coverage)", () => {
     await adminPrisma.auditEvent.create({
       data: {
         id: randomUUID(),
-        eventName: "audit:ct-idor.pilot",
+        eventName: "audit:ct_idor.pilot",
         tenantId: PILOT_TENANT_ID,
         actorId: PILOT_VET_USER_ID,
         actorType: "user",
@@ -398,7 +402,7 @@ describe("Cross-Tenant IDOR RLS (GOAL-017 pilot coverage)", () => {
     await adminPrisma.auditEvent.create({
       data: {
         id: randomUUID(),
-        eventName: "audit:ct-idor.pilot.staff",
+        eventName: "audit:ct_idor.pilot.staff",
         tenantId: PILOT_TENANT_ID,
         actorId: PILOT_STAFF_USER_ID,
         actorType: "user",
@@ -465,9 +469,6 @@ describe("Cross-Tenant IDOR RLS (GOAL-017 pilot coverage)", () => {
       where: { tenantId: FOREIGN_TENANT_ID },
     });
     await adminPrisma.owner.deleteMany({
-      where: { tenantId: FOREIGN_TENANT_ID },
-    });
-    await adminPrisma.auditEvent.deleteMany({
       where: { tenantId: FOREIGN_TENANT_ID },
     });
     await adminPrisma.userInvitation.deleteMany({
@@ -757,19 +758,23 @@ describe("Cross-Tenant IDOR RLS (GOAL-017 pilot coverage)", () => {
             replacedById: SESSION_B_ID,
           },
         });
-      });
+      }, PILOT_OWNER_USER_ID);
 
       // Eski token artık geçersiz: revokedAt dolu.
-      const rotatedSession = await withTenant(PILOT_TENANT_ID, (tx) =>
-        tx.userSession.findUnique({ where: { id: SESSION_A_ID } }),
+      const rotatedSession = await withTenant(
+        PILOT_TENANT_ID,
+        (tx) => tx.userSession.findUnique({ where: { id: SESSION_A_ID } }),
+        PILOT_OWNER_USER_ID,
       );
       expect(rotatedSession?.revokedAt).toBeInstanceOf(Date);
       expect(rotatedSession?.revokedReason).toBe("rotated");
       expect(rotatedSession?.replacedById).toBe(SESSION_B_ID);
 
       // Yeni session (B) hâlâ aktif ve pilot bağlamda görünür.
-      const newSession = await withTenant(PILOT_TENANT_ID, (tx) =>
-        tx.userSession.findUnique({ where: { id: SESSION_B_ID } }),
+      const newSession = await withTenant(
+        PILOT_TENANT_ID,
+        (tx) => tx.userSession.findUnique({ where: { id: SESSION_B_ID } }),
+        PILOT_OWNER2_USER_ID,
       );
       expect(newSession?.revokedAt).toBeNull();
       expect(newSession?.tokenHash).toBe(SESSION_B_TOKEN_HASH);

@@ -30,5 +30,9 @@ export default defineConfig({
     testTimeout: 15000,
     hookTimeout: 15000,
     passWithNoTests: false,
+    // Her dosya PostgreSQL rol/grant ve fixture kayitlarini olusturup temizler.
+    // Paralel calisma pg_authid katalog kilitlerinde yarisa ve fixture silinmesine
+    // neden olur; RLS kaniti bu nedenle dosya bazinda sirali uretilir.
+    fileParallelism: false,
   },
 });

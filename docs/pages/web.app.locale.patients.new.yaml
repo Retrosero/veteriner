@@ -1,0 +1,28 @@
+page_id: web.app.locale.patients.new
+route: "/[locale]/patients/new"
+module: clinic
+title_key: nav.patients
+purpose:
+  tr-TR: "Yeni hasta ve sahip bilgileri için Stitch tabanlı kayıt formunu gösterir."
+  en-GB: "Shows the Stitch-based record form for a new patient and owner."
+allowed_roles: [OWNER, VETERINARIAN, STAFF]
+required_permissions: ["clinic:patient:create"]
+prerequisites: ["Aktif tenant üyeliği."]
+fields: []
+actions: []
+step_by_step:
+  tr-TR:
+    [
+      "Sahip ve hasta alanlarını doldurun.",
+      "Kaydetmeden önce mikroçip bilgisini doğrulayın.",
+    ]
+  en-GB:
+    ["Fill in owner and patient fields.", "Verify the microchip before saving."]
+possible_errors: []
+related_pages: [web.app.locale.patients]
+related_api: []
+keywords:
+  tr-TR: [hasta, kayıt, sahip]
+  en-GB: [patient, registration, owner]
+version: "1.0.0"
+last_verified_at: "2026-08-07"

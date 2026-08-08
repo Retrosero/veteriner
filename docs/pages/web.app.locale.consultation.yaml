@@ -1,0 +1,32 @@
+page_id: web.app.locale.consultation
+route: "/[locale]/consultation"
+module: clinical_record
+title_key: nav.consultation
+purpose:
+  tr-TR: "Aktif muayene görünümünü ve hasta özetini Stitch tasarım sistemiyle gösterir."
+  en-GB: "Shows the active consultation view and patient summary in the Stitch design system."
+allowed_roles: [OWNER, VETERINARIAN]
+required_permissions: []
+prerequisites: ["Aktif tenant üyeliği."]
+fields: []
+actions: []
+step_by_step:
+  tr-TR:
+    [
+      "Muayene bilgilerini gözden geçirin.",
+      "Hasta özetindeki uyarıları doğrulayın.",
+    ]
+  en-GB:
+    [
+      "Review consultation information.",
+      "Verify alerts in the patient summary.",
+    ]
+possible_errors: []
+related_pages:
+  ["web.app.locale.consultation.[id]", "web.app.locale.patients.[id]"]
+related_api: []
+keywords:
+  tr-TR: [muayene, klinik, hasta]
+  en-GB: [consultation, clinical, patient]
+version: "1.0.0"
+last_verified_at: "2026-08-07"

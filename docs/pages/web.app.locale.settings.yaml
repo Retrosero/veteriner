@@ -1,0 +1,25 @@
+page_id: web.app.locale.settings
+route: "/[locale]/settings"
+module: settings
+title_key: nav.settings
+purpose:
+  tr-TR: "Klinik ayarları giriş ekranını Stitch tasarım sistemiyle gösterir."
+  en-GB: "Shows the clinic settings entry screen in the Stitch design system."
+allowed_roles: [OWNER]
+required_permissions: []
+prerequisites: ["Aktif tenant üyeliği."]
+fields: []
+actions: []
+step_by_step:
+  tr-TR:
+    ["Klinik bilgilerini gözden geçirin.", "İlgili ayar kategorisini seçin."]
+  en-GB:
+    ["Review clinic information.", "Select the relevant settings category."]
+possible_errors: []
+related_pages: [web.app.locale.settings.clinic, web.app.locale.settings.users]
+related_api: []
+keywords:
+  tr-TR: [ayarlar, klinik, kullanıcı]
+  en-GB: [settings, clinic, user]
+version: "1.0.0"
+last_verified_at: "2026-08-07"
